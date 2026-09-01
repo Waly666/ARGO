@@ -62,6 +62,38 @@ const GRUPOS = [
         key: 'jornadas.evaluaciones.gestionar',
         label: 'Publicar, cerrar y administrar evaluaciones de satisfacción por contrato',
       },
+      {
+        key: 'jornadas.app.hoy',
+        label: 'App móvil Jornadas: Jornadas de hoy',
+      },
+      {
+        key: 'jornadas.app.operar_clase',
+        label: 'App móvil Jornadas: Operar clase (asistencia, evidencias, matrícula)',
+      },
+      {
+        key: 'jornadas.app.registrar_alumno',
+        label: 'App móvil Jornadas: Nuevo alumno jornada (alta ficha)',
+      },
+      {
+        key: 'jornadas.app.certificados',
+        label: 'App móvil Jornadas: Certificados emitidos',
+      },
+      {
+        key: 'jornadas.app.gestionar',
+        label: 'App móvil Jornadas: Gestionar jornadas (cualquier fecha)',
+      },
+      {
+        key: 'jornadas.app.crear',
+        label: 'App móvil Jornadas: Crear jornada',
+      },
+      {
+        key: 'jornadas.app.editar',
+        label: 'App móvil Jornadas: Editar jornada y GPS',
+      },
+      {
+        key: 'jornadas.app.informes',
+        label: 'App móvil Jornadas: Informes y dashboard del contrato',
+      },
     ],
   },
   {

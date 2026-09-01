@@ -24,13 +24,13 @@ export type ChipTone =
   | 'slate';
 
 const TONES: Record<ChipTone, { bg: string; fg: string; border: string }> = {
-  primary: { bg: '#ecfdf5', fg: '#0f766e', border: '#99f6e4' },
-  soft: { bg: '#f0fdfa', fg: '#0f766e', border: '#ccfbf1' },
+  primary: { bg: '#eef2ff', fg: '#3D5CFF', border: '#c7d2fe' },
+  soft: { bg: '#f0f4ff', fg: '#2B46E0', border: '#dbe4ff' },
   mint: { bg: '#ecfdf5', fg: '#047857', border: '#a7f3d0' },
-  deep: { bg: '#0d9488', fg: '#ecfdf5', border: '#14b8a6' },
+  deep: { bg: '#3D5CFF', fg: '#eef2ff', border: '#6B84FF' },
   neutral: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
   pink: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
-  sky: { bg: '#f0fdfa', fg: '#0f766e', border: '#ccfbf1' },
+  sky: { bg: '#e0f2fe', fg: '#0369a1', border: '#7dd3fc' },
   peach: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
   amber: { bg: '#fffbeb', fg: '#92400e', border: '#fde68a' },
   lavender: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },

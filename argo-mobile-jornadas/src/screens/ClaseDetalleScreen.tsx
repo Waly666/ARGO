@@ -1671,7 +1671,7 @@ export default function ClaseDetalleScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: 16, paddingBottom: 40 },
-  sectionTitle: { color: '#134e4a', fontWeight: '800', marginTop: 16, marginBottom: 8 },
+  sectionTitle: { color: '#0F172A', fontWeight: '800', marginTop: 16, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center' },
   chipsRow: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -30,8 +31,10 @@ export function PrimaryButton({
 }: Props) {
   const { buttonMultiplier, highContrast } = useAccessibility();
   const c = themeColors(highContrast);
+  const minH = 52 * buttonMultiplier;
+  const padH = 22 * buttonMultiplier;
   const bg =
-    variant === 'danger' ? c.danger : variant === 'ghost' ? 'transparent' : c.primary;
+    variant === 'danger' ? c.danger : variant === 'ghost' ? c.chipBg : c.primary;
   const color = variant === 'ghost' ? c.primary : '#fff';
 
   return (
@@ -41,21 +44,20 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.base,
         {
-          minHeight: 50 * buttonMultiplier,
-          paddingHorizontal: 20 * buttonMultiplier,
+          minHeight: minH,
+          paddingHorizontal: padH,
           backgroundColor: bg,
-          opacity: disabled ? 0.5 : pressed ? 0.9 : 1,
-          borderWidth: variant === 'ghost' ? 2 : 0,
-          borderColor: variant === 'ghost' ? c.primary : 'transparent',
+          opacity: disabled ? 0.5 : pressed ? 0.92 : 1,
           alignSelf: fullWidth ? 'stretch' : 'center',
-          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
         },
+        variant === 'primary' && !highContrast && !disabled && shadows.button,
         style,
       ]}
+      accessibilityRole="button"
     >
       <View style={styles.inner}>
         {icon ? <Ionicons name={icon} size={20} color={color} style={{ marginRight: 8 }} /> : null}
-        <ScaledText baseSize={17} style={{ color, textAlign: 'center', fontWeight: '700' }}>
+        <ScaledText baseSize={16} style={{ color, textAlign: 'center', fontWeight: '700' }}>
           {label}
         </ScaledText>
       </View>
@@ -64,6 +66,14 @@ export function PrimaryButton({
 }
 
 const styles = StyleSheet.create({
-  base: { borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  inner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  base: {
+    borderRadius: radii.pill,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

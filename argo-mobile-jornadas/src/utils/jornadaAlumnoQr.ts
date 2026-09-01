@@ -129,7 +129,7 @@ export function etiquetaHtmlAlumno(opts: {
       font-size: 6.5pt;
       margin-top: 1mm;
       font-weight: 700;
-      color: #0f766e;
+      color: #3D5CFF;
       line-height: 1.15;
       max-height: 2.2em;
       overflow: hidden;

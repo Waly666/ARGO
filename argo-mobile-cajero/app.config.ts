@@ -35,7 +35,7 @@ const splashPlugin = {
 };
 
 const config: ExpoConfig = {
-  name: 'ARGO Cajero',
+  name: 'ARGO Cajero Finstruvial',
   slug: 'argo-cajero',
   version: '0.1.3',
   orientation: 'portrait',
@@ -43,7 +43,7 @@ const config: ExpoConfig = {
   backgroundColor: AZUL,
   primaryColor: AZUL,
   userInterfaceStyle: 'light',
-  scheme: 'argocajero',
+  scheme: 'finstruvialcajero',
   splash: {
     image: LOGO,
     resizeMode: 'contain',
@@ -60,7 +60,7 @@ const config: ExpoConfig = {
       foregroundImage: ICON,
       backgroundColor: SPLASH_BG,
     },
-    package: 'co.argo.cajero',
+    package: 'co.finstruvial.cajero',
   },
   androidNavigationBar: {
     backgroundColor: AZUL,
@@ -112,7 +112,7 @@ const config: ExpoConfig = {
     ],
   ],
   extra: {
-    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:3000/api',
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://app.finstruvial.edu.co/api',
     eas: {
       projectId: 'cff70a8f-b9ea-4d75-ac50-c9b7cd8a99c6',
     },

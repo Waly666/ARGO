@@ -16,6 +16,6 @@ export const SPLASH_MIN_MS = 2200;
 export const APP_BRANDING = {
   tituloApp: 'ARGO CAJERO',
   /** Texto genérico hasta cargar la marca del servidor. */
-  nombreEmpresaFallback: 'CEA SERVIAL COLOMBIA',
+  nombreEmpresaFallback: 'FINSTRUVIAL',
   logo: require('../../assets/branding/logo.png') as ImageSourcePropType,
 } as const;

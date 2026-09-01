@@ -8,10 +8,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AppBootGate } from './src/bootstrap/splash';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { BrandingProvider } from './src/context/BrandingContext';
 import { DrawerProvider } from './src/context/DrawerContext';
 import { AppDrawerMenu, HamburgerHeaderButton } from './src/components/AppDrawerMenu';
-import { JORNADAS_VERDE } from './src/config/appBranding';
+import { ARGO_AZUL_REY } from './src/config/appBranding';
+import { ScreenPermisoGate } from './src/components/ScreenPermisoGate';
 import type { RootStackParamList } from './src/navigation/types';
+import type { JornadasAppPantalla } from './src/utils/permisos';
 import { VoiceProvider } from './src/voice/VoiceContext';
 import { VoiceMicOverlay } from './src/voice/VoiceMicOverlay';
 import LoginScreen from './src/screens/LoginScreen';
@@ -29,25 +32,49 @@ import CertificadosScreen from './src/screens/CertificadosScreen';
 import CertificadoHtmlScreen from './src/screens/CertificadoHtmlScreen';
 import CambiarPasswordScreen from './src/screens/CambiarPasswordScreen';
 
+function conPermisoPantalla<P extends object>(
+  pantalla: JornadasAppPantalla,
+  Screen: React.ComponentType<P>,
+): React.ComponentType<P> {
+  const Wrapped = (props: P) => (
+    <ScreenPermisoGate pantalla={pantalla}>
+      <Screen {...props} />
+    </ScreenPermisoGate>
+  );
+  Wrapped.displayName = `ConPermiso(${Screen.displayName || Screen.name || pantalla})`;
+  return Wrapped;
+}
+
+const JornadasHoyGate = conPermisoPantalla('hoy', JornadasHoyScreen);
+const JornadasGestionGate = conPermisoPantalla('gestionar', JornadasGestionScreen);
+const CrearJornadaGate = conPermisoPantalla('crear', CrearJornadaScreen);
+const InformesJornadasGate = conPermisoPantalla('informes', InformesJornadasScreen);
+const ClasesJornadaGate = conPermisoPantalla('operar_clase', ClasesJornadaScreen);
+const ClaseDetalleGate = conPermisoPantalla('operar_clase', ClaseDetalleScreen);
+const EditarJornadaGate = conPermisoPantalla('editar', EditarJornadaScreen);
+const CrearAlumnoJornadaGate = conPermisoPantalla('registrar_alumno', CrearAlumnoJornadaScreen);
+const CertificadosGate = conPermisoPantalla('certificados', CertificadosScreen);
+const CertificadoHtmlGate = conPermisoPantalla('certificados', CertificadoHtmlScreen);
+
 const Stack = createStackNavigator<RootStackParamList>();
 
 const navTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: JORNADAS_VERDE,
-    background: '#f0fdfa',
+    primary: ARGO_AZUL_REY,
+    background: '#F4F6FB',
     card: '#ffffff',
-    text: '#134e4a',
-    border: '#ccfbf1',
+    text: '#0F172A',
+    border: '#E8ECF4',
   },
 };
 
 const headerOptions = {
   headerTintColor: '#fff',
-  headerStyle: { backgroundColor: JORNADAS_VERDE, elevation: 0, shadowOpacity: 0 },
+  headerStyle: { backgroundColor: ARGO_AZUL_REY, elevation: 0, shadowOpacity: 0 },
   headerTitleStyle: { fontWeight: '700' as const },
-  cardStyle: { backgroundColor: '#f0fdfa' },
+  cardStyle: { backgroundColor: '#F4F6FB' },
   headerRight: () => <HamburgerHeaderButton />,
 };
 
@@ -97,46 +124,46 @@ function RootNavigator() {
             headerRight: undefined,
           }}
         />
-        <Stack.Screen name="JornadasHoy" component={JornadasHoyScreen} options={{ title: 'Jornadas de hoy' }} />
+        <Stack.Screen name="JornadasHoy" component={JornadasHoyGate} options={{ title: 'Jornadas de hoy' }} />
         <Stack.Screen
           name="JornadasGestion"
-          component={JornadasGestionScreen}
+          component={JornadasGestionGate}
           options={{ title: 'Gestionar jornadas' }}
         />
         <Stack.Screen
           name="CrearJornada"
-          component={CrearJornadaScreen}
+          component={CrearJornadaGate}
           options={{ title: 'Nueva jornada' }}
         />
         <Stack.Screen
           name="InformesJornadas"
-          component={InformesJornadasScreen}
+          component={InformesJornadasGate}
           options={{ title: 'Informes' }}
         />
         <Stack.Screen
           name="ClasesJornada"
-          component={ClasesJornadaScreen}
+          component={ClasesJornadaGate}
           options={({ route }) => ({ title: route.params.jornadaLabel.slice(0, 28) })}
         />
-        <Stack.Screen name="ClaseDetalle" component={ClaseDetalleScreen} options={{ title: 'Operar clase' }} />
+        <Stack.Screen name="ClaseDetalle" component={ClaseDetalleGate} options={{ title: 'Operar clase' }} />
         <Stack.Screen
           name="EditarJornada"
-          component={EditarJornadaScreen}
+          component={EditarJornadaGate}
           options={{ title: 'Editar jornada' }}
         />
         <Stack.Screen
           name="CrearAlumnoJornada"
-          component={CrearAlumnoJornadaScreen}
+          component={CrearAlumnoJornadaGate}
           options={{ title: 'Nuevo alumno jornada' }}
         />
         <Stack.Screen
           name="Certificados"
-          component={CertificadosScreen}
+          component={CertificadosGate}
           options={{ title: 'Certificados' }}
         />
         <Stack.Screen
           name="CertificadoHtml"
-          component={CertificadoHtmlScreen}
+          component={CertificadoHtmlGate}
           options={({ route }) => ({ title: route.params.titulo })}
         />
         <Stack.Screen
@@ -152,20 +179,22 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: JORNADAS_VERDE }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F4F6FB' }}>
       <SafeAreaProvider>
         <AccessibilityProvider>
-          <AuthProvider>
-            <VoiceProvider>
-              <AppBootGate>
-                <NavigationContainer theme={navTheme}>
-                  <RootNavigator />
-                </NavigationContainer>
-              </AppBootGate>
-              <VoiceMicOverlay />
-              <StatusBar style="light" />
-            </VoiceProvider>
-          </AuthProvider>
+          <BrandingProvider>
+            <AuthProvider>
+              <VoiceProvider>
+                <AppBootGate>
+                  <NavigationContainer theme={navTheme}>
+                    <RootNavigator />
+                  </NavigationContainer>
+                </AppBootGate>
+                <VoiceMicOverlay />
+                <StatusBar style="light" />
+              </VoiceProvider>
+            </AuthProvider>
+          </BrandingProvider>
         </AccessibilityProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

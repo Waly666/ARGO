@@ -1,52 +1,85 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { MOBILE_APPS, PROFILES_DIR, profilePath } from './apps.mjs';
+import { MOBILE_APPS, UPLOADS_DIR } from './apps.mjs';
 import { readCurrentFromApp } from './read-current.mjs';
+import {
+  clientProfilePath,
+  emptyTemplate,
+  getActiveClientId,
+  migrateLegacyProfiles,
+  withStructuralDefaults,
+} from './clients.mjs';
 
-function ensureProfilesDir() {
-  fs.mkdirSync(PROFILES_DIR, { recursive: true });
+const PROFILE_META_KEYS = new Set(['clientId']);
+
+function sanitizePatch(patch) {
+  if (!patch || typeof patch !== 'object') return {};
+  const out = { ...patch };
+  for (const key of PROFILE_META_KEYS) delete out[key];
+  return out;
 }
 
-export function defaultProfile(appId) {
-  const app = MOBILE_APPS[appId];
-  return {
-    ...app.defaults,
-    buildProfile: 'production',
-    easProjectId: app.easProjectId,
-    uploads: { logo: null, icon: null, adaptiveIcon: null },
-  };
-}
-
-export function loadProfile(appId) {
-  ensureProfilesDir();
-  const p = profilePath(appId);
-  if (!fs.existsSync(p)) {
-    const fromApp = readCurrentFromApp(appId);
-    const profile = { ...defaultProfile(appId), ...fromApp };
-    saveProfile(appId, profile);
-    return profile;
+function readRawProfile(clientId, appId) {
+  const p = clientProfilePath(clientId, appId);
+  if (!fs.existsSync(p)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    return {};
   }
-  const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-  return { ...defaultProfile(appId), ...raw };
 }
 
-export function saveProfile(appId, profile) {
-  ensureProfilesDir();
-  const merged = { ...defaultProfile(appId), ...profile };
-  fs.writeFileSync(profilePath(appId), `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
-  return merged;
+export function loadProfile(appId, clientId = getActiveClientId()) {
+  migrateLegacyProfiles();
+  const raw = readRawProfile(clientId, appId);
+  if (Object.keys(raw).length === 0) {
+    return withStructuralDefaults(appId, emptyTemplate(appId));
+  }
+  return withStructuralDefaults(appId, raw);
 }
 
-export function listProfiles() {
+/** Guarda solo lo enviado por el usuario; no reinyecta defaults de Servial. */
+export function saveProfile(appId, profile, clientId = getActiveClientId()) {
+  migrateLegacyProfiles();
+  const p = clientProfilePath(clientId, appId);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+
+  const existing = readRawProfile(clientId, appId);
+  const patch = sanitizePatch(profile);
+  const merged = {
+    ...existing,
+    ...patch,
+    uploads: {
+      ...(existing.uploads ?? {}),
+      ...(patch.uploads ?? {}),
+    },
+  };
+
+  const toWrite = sanitizePatch(merged);
+  fs.writeFileSync(p, `${JSON.stringify(toWrite, null, 2)}\n`, 'utf8');
+  return withStructuralDefaults(appId, toWrite);
+}
+
+export function listProfiles(clientId = getActiveClientId()) {
+  migrateLegacyProfiles();
   return Object.keys(MOBILE_APPS).map((id) => ({
     id,
     label: MOBILE_APPS[id].label,
-    profile: loadProfile(id),
+    profile: loadProfile(id, clientId),
   }));
 }
 
-export function uploadPath(appId, kind, filename) {
-  const dir = path.join(PROFILES_DIR, '..', 'uploads', appId);
+export function importProfileFromApp(appId, clientId = getActiveClientId()) {
+  const fromApp = readCurrentFromApp(appId);
+  return saveProfile(appId, fromApp, clientId);
+}
+
+export function uploadDir(clientId, appId) {
+  const dir = path.join(UPLOADS_DIR, clientId, appId);
   fs.mkdirSync(dir, { recursive: true });
-  return path.join(dir, filename);
+  return dir;
+}
+
+export function uploadPath(clientId, appId, filename) {
+  return path.join(uploadDir(clientId, appId), filename);
 }

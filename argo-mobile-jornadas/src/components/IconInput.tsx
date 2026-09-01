@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 import { useVoiceOptional } from '../voice/VoiceContext';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
@@ -13,11 +14,11 @@ type IonName = ComponentProps<typeof Ionicons>['name'];
 type Props = TextInputProps & {
   label: string;
   icon: IonName;
-  /** Si se define, el micrófono puede dictar a este campo y usarlo en «siguiente». */
+  iconColor?: string;
   voiceFieldId?: string;
 };
 
-export function IconInput({ label, icon, style, voiceFieldId, onFocus, onBlur, value, onChangeText, ...rest }: Props) {
+export function IconInput({ label, icon, iconColor, style, voiceFieldId, onFocus, onBlur, value, onChangeText, autoCapitalize, ...rest }: Props) {
   const { textMultiplier, buttonMultiplier, highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const voice = useVoiceOptional();
@@ -26,6 +27,10 @@ export function IconInput({ label, icon, style, voiceFieldId, onFocus, onBlur, v
   valueRef.current = String(value ?? '');
   const onChangeRef = useRef(onChangeText);
   onChangeRef.current = onChangeText;
+
+  const inputH = 52 * buttonMultiplier;
+  const cap = autoCapitalize ?? 'none';
+  const fuerzaMayus = cap === 'characters';
 
   useEffect(() => {
     if (!voice || !voiceFieldId) return;
@@ -38,26 +43,43 @@ export function IconInput({ label, icon, style, voiceFieldId, onFocus, onBlur, v
 
   return (
     <View style={styles.wrap}>
-      <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 6, fontWeight: '600' }}>
+      <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8, fontWeight: '600' }}>
         {label}
       </ScaledText>
-      <View style={[styles.field, { height: 52 * buttonMultiplier, borderColor: c.border, backgroundColor: c.card }]}>
-        <View style={[styles.iconWrap, { backgroundColor: highContrast ? c.bgAlt : '#ecfdf5' }]}>
-          <Ionicons name={icon} size={20} color={c.primary} />
+      <View
+        style={[
+          styles.field,
+          {
+            height: inputH,
+            borderColor: highContrast ? c.border : 'transparent',
+            backgroundColor: c.card,
+          },
+          !highContrast && shadows.cardPressed,
+        ]}
+      >
+        <View style={[styles.iconWrap, { backgroundColor: highContrast ? c.bgAlt : c.chipBg }]}>
+          <Ionicons name={icon} size={20} color={iconColor ?? c.primary} />
         </View>
         <TextInput
           ref={inputRef}
-          placeholderTextColor="#94a3b8"
-          style={[{ flex: 1, paddingHorizontal: 12, fontSize: 16 * textMultiplier, color: c.text }, style]}
+          placeholderTextColor={c.textMuted}
+          autoCapitalize={cap}
+          style={[
+            styles.input,
+            {
+              fontSize: 16 * textMultiplier,
+              color: c.text,
+              ...(fuerzaMayus ? { textTransform: 'uppercase' as const } : null),
+            },
+            style,
+          ]}
           value={value}
           onChangeText={onChangeText}
           onFocus={(e) => {
             if (voiceFieldId) voice?.setFocusedFieldId(voiceFieldId);
             onFocus?.(e);
           }}
-          onBlur={(e) => {
-            onBlur?.(e);
-          }}
+          onBlur={onBlur}
           {...rest}
         />
       </View>
@@ -67,6 +89,25 @@ export function IconInput({ label, icon, style, voiceFieldId, onFocus, onBlur, v
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: 4 },
-  field: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
-  iconWrap: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    overflow: 'hidden',
+    paddingRight: 6,
+  },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    marginLeft: 4,
+    borderRadius: radii.icon,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+  },
 });

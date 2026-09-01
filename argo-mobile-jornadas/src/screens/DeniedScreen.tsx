@@ -19,8 +19,8 @@ export default function DeniedScreen() {
         Sin permiso
       </ScaledText>
       <ScaledText baseSize={15} style={{ color: c.textSoft, lineHeight: 22, marginBottom: 20 }}>
-        {user?.username || 'Usuario'} no tiene permiso «jornadas.operar». Pida acceso al administrador o use la web
-        ARGO para planificación.
+        {user?.username || 'Usuario'} no tiene permisos para usar la app móvil Jornadas. Asigne al menos un
+        permiso «App móvil Jornadas» en Configuración → Roles y permisos del ERP.
       </ScaledText>
       <PrimaryButton label="Cerrar sesión" onPress={() => void signOut()} variant="ghost" fullWidth />
     </View>

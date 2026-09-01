@@ -1,37 +1,88 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { ScaledText } from '../components/ScaledText';
-import { APP_BRANDING, JORNADAS_VERDE } from '../config/appBranding';
+import { APP_BRANDING, SPLASH_BG, SPLASH_MIN_MS } from '../config/appBranding';
+import { useBranding } from '../context/BrandingContext';
+
+const SPLASH_TITLE_COLOR = '#0A0A0A';
+const SPLASH_LOGO = APP_BRANDING.logo;
 
 export function PreLoginBrand() {
+  const { tituloApp, logoSource } = useBranding();
   return (
     <View style={styles.brand}>
-      <Image source={APP_BRANDING.logo} style={styles.logo} resizeMode="contain" />
+      <Image source={logoSource} style={styles.logo} resizeMode="contain" />
       <ScaledText baseSize={24} style={styles.titulo}>
-        {APP_BRANDING.tituloApp}
-      </ScaledText>
-      <ScaledText baseSize={14} style={styles.sub}>
-        Capacitación en campo
+        {tituloApp}
       </ScaledText>
     </View>
   );
 }
 
-/** Solo oculta el splash nativo; no bloquea la UI con overlay. */
-export function AppBootGate({ children }: { children: React.ReactNode }) {
-  React.useEffect(() => {
-    void SplashScreen.hideAsync().catch(() => {});
+function BootSplash() {
+  const onLayout = useCallback(() => {
+    void SplashScreen.hideAsync();
   }, []);
+
+  return (
+    <View style={styles.boot} onLayout={onLayout}>
+      <View style={styles.splashBrand}>
+        <Image source={SPLASH_LOGO} style={styles.splashLogo} resizeMode="contain" />
+        <ScaledText baseSize={22} style={styles.splashTitulo}>
+          {APP_BRANDING.tituloApp}
+        </ScaledText>
+      </View>
+    </View>
+  );
+}
+
+export function AppBootGate({ children }: { children: React.ReactNode }) {
+  const [minTimeDone, setMinTimeDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinTimeDone(true), SPLASH_MIN_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!minTimeDone) {
+    return <BootSplash />;
+  }
 
   return <View style={styles.root}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JORNADAS_VERDE },
+  root: { flex: 1, backgroundColor: SPLASH_BG },
+  boot: {
+    flex: 1,
+    backgroundColor: SPLASH_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashBrand: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  splashLogo: {
+    width: 280,
+    height: 220,
+  },
+  splashTitulo: {
+    color: SPLASH_TITLE_COLOR,
+    fontWeight: '800',
+    marginTop: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
   brand: { alignItems: 'center', width: '100%' },
-  logo: { width: 200, height: 100 },
-  titulo: { color: '#fff', fontWeight: '800', marginTop: 16, textAlign: 'center' },
-  sub: { color: 'rgba(255,255,255,0.85)', marginTop: 6, textAlign: 'center' },
+  logo: { width: 220, height: 110 },
+  titulo: {
+    color: '#ffffff',
+    fontWeight: '800',
+    marginTop: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
 });

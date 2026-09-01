@@ -1146,7 +1146,7 @@ export default function CrearAlumnoJornadaScreen() {
 
 const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40 },
-  secTitle: { fontWeight: '800', marginBottom: 10, color: '#134e4a' },
+  secTitle: { fontWeight: '800', marginBottom: 10, color: '#0F172A' },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

@@ -1,3 +1,5 @@
 node_modules/
 uploads/
+profiles/active.json
+profiles/clients/
 *.log

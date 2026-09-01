@@ -329,5 +329,5 @@ export default function CrearJornadaScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: 16, paddingBottom: 40 },
-  sec: { color: '#134e4a', fontWeight: '800', marginBottom: 10 },
+  sec: { color: '#0F172A', fontWeight: '800', marginBottom: 10 },
 });

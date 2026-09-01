@@ -23,10 +23,14 @@ const APP_META = {
 
 const state = {
   apps: [],
+  clients: [],
+  clientId: null,
   profiles: {},
+  profilesByClient: {},
   active: 'aula',
   jobPoll: null,
   busy: false,
+  clientBarBound: false,
 };
 
 let toastTimer = null;
@@ -65,14 +69,202 @@ function setBusy(busy) {
   });
 }
 
-async function api(path, opts = {}) {
-  const res = await fetch(path, {
+async function api(path, opts = {}, { clientId = state.clientId } = {}) {
+  const url = new URL(path, window.location.origin);
+  if (clientId && !url.searchParams.has('clientId')) {
+    url.searchParams.set('clientId', clientId);
+  }
+  const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
     ...opts,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
+}
+
+function apiBody(body) {
+  return JSON.stringify({ ...body, clientId: state.clientId });
+}
+
+function syncProfilesView() {
+  state.profiles = { ...(state.profilesByClient[state.clientId] ?? {}) };
+}
+
+function cacheCurrentClientProfiles() {
+  if (!state.clientId) return;
+  persistActiveForm();
+  state.profilesByClient[state.clientId] = JSON.parse(JSON.stringify(state.profiles));
+}
+
+function loadProfilesForClient(clientId, profilesList) {
+  const bucket = {};
+  for (const item of profilesList) bucket[item.id] = item.profile;
+  state.profilesByClient[clientId] = bucket;
+  state.clientId = clientId;
+  syncProfilesView();
+}
+
+async function saveCurrentClientToServer() {
+  if (!state.clientId) return;
+  cacheCurrentClientProfiles();
+  const bucket = state.profilesByClient[state.clientId] ?? {};
+  for (const appId of Object.keys(bucket)) {
+    await api(`/api/profiles/${appId}`, {
+      method: 'PUT',
+      body: apiBody(bucket[appId]),
+    }, { clientId: state.clientId });
+  }
+}
+
+async function switchClient(nextId) {
+  if (!nextId || nextId === state.clientId) return;
+  setBusy(true);
+  try {
+    await saveCurrentClientToServer();
+    state.clientId = nextId;
+    const data = await api('/api/clients/active', {
+      method: 'PUT',
+      body: JSON.stringify({ clientId: nextId }),
+    }, { clientId: nextId });
+    loadProfilesForClient(data.activeClientId, data.profiles);
+    renderAll({ refreshClientBar: true });
+    const label = state.clients.find((c) => c.id === state.clientId)?.label ?? state.clientId;
+    toast(`Cliente activo: ${label}`);
+  } catch (err) {
+    toast(err.message, 'err');
+  } finally {
+    setBusy(false);
+  }
+}
+
+function validateProfileLocal(profile) {
+  const missing = [];
+  const need = [
+    ['appName', 'Nombre en el teléfono'],
+    ['slug', 'Slug EAS'],
+    ['androidPackage', 'Package Android'],
+    ['scheme', 'Deep link scheme'],
+    ['apiBaseUrl', 'Servidor API por defecto'],
+    ['tituloApp', 'Título interno'],
+    ['nombreEmpresaFallback', 'Nombre empresa'],
+  ];
+  for (const [key, label] of need) {
+    if (!String(profile?.[key] ?? '').trim()) missing.push(label);
+  }
+  const api = String(profile?.apiBaseUrl ?? '').trim();
+  if (api && !/^https?:\/\/.+/i.test(api)) {
+    missing.push('Servidor API (http:// o https://)');
+  }
+  return missing;
+}
+
+function bodyFromActiveForm() {
+  const appId = state.active;
+  return readForm(appId, fieldsFor(appId));
+}
+
+function readForm(appId, fields) {
+  const body = { ...(state.profiles[appId] ?? {}) };
+  const form = $('#form');
+  if (!form) return body;
+  fields.forEach((f) => {
+    const el = form.querySelector(`[name="${f.key}"]`);
+    if (!el) return;
+    const raw = f.type === 'number' ? Number(el.value) : el.value;
+    body[f.key] = typeof raw === 'string' ? raw.trim() : raw;
+  });
+  return body;
+}
+
+function persistActiveForm() {
+  const appId = state.active;
+  const form = $('#form');
+  if (!form) return;
+  state.profiles[appId] = readForm(appId, fieldsFor(appId));
+}
+
+function renderClientBar({ refresh = false } = {}) {
+  const host = $('#clientBar');
+  if (!host) return;
+
+  if (!host.querySelector('#clientSelect')) {
+    host.innerHTML = `
+      <span class="client-chip">Cliente activo</span>
+      <select id="clientSelect" aria-label="Seleccionar cliente"></select>
+      <div class="client-bar-actions">
+        <button type="button" class="btn btn-outline btn-sm" id="btnNewClient">+ Nuevo</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnDupClient">Duplicar</button>
+      </div>
+    `;
+  }
+
+  const select = $('#clientSelect');
+  if (refresh || select.options.length !== state.clients.length) {
+    select.innerHTML = state.clients
+      .map(
+        (c) =>
+          `<option value="${escapeHtml(c.id)}" ${c.id === state.clientId ? 'selected' : ''}>${escapeHtml(c.label)}</option>`,
+      )
+      .join('');
+  } else {
+    select.value = state.clientId ?? '';
+  }
+
+  if (!state.clientBarBound) {
+    state.clientBarBound = true;
+    select.addEventListener('change', (e) => switchClient(e.target.value));
+    $('#btnNewClient').addEventListener('click', async () => {
+      const label = prompt('Nombre del nuevo cliente (ej. CEA Acme Bogotá):');
+      if (!label?.trim()) return;
+      setBusy(true);
+      try {
+        await saveCurrentClientToServer();
+        const created = await api('/api/clients', {
+          method: 'POST',
+          body: JSON.stringify({ label: label.trim() }),
+        });
+        await reloadClients();
+        await switchClient(created.activeClientId ?? created.id);
+        toast(`Cliente "${created.label}" creado`);
+      } catch (err) {
+        toast(err.message, 'err');
+      } finally {
+        setBusy(false);
+      }
+    });
+    $('#btnDupClient').addEventListener('click', async () => {
+      const current = state.clients.find((c) => c.id === state.clientId);
+      const label = prompt('Nombre del cliente duplicado:', `${current?.label ?? 'Cliente'} copia`);
+      if (!label?.trim()) return;
+      setBusy(true);
+      try {
+        await saveCurrentClientToServer();
+        const created = await api('/api/clients', {
+          method: 'POST',
+          body: JSON.stringify({ label: label.trim(), copyFrom: state.clientId }),
+        }, { clientId: state.clientId });
+        await reloadClients();
+        await switchClient(created.activeClientId ?? created.id);
+        toast(`Cliente duplicado: ${created.label}`);
+      } catch (err) {
+        toast(err.message, 'err');
+      } finally {
+        setBusy(false);
+      }
+    });
+  }
+}
+
+async function reloadClients() {
+  const data = await api('/api/clients');
+  state.clients = data.clients;
+  state.clientId = data.activeClientId;
+}
+
+async function reloadProfiles() {
+  const data = await api('/api/profiles', {}, { clientId: state.clientId });
+  loadProfilesForClient(data.clientId, data.profiles);
 }
 
 function fieldsFor(appId) {
@@ -133,6 +325,7 @@ function renderTabs() {
 
   tabs.querySelectorAll('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
+      persistActiveForm();
       state.active = btn.dataset.tab;
       setAccent(state.active);
       renderAll();
@@ -146,14 +339,16 @@ function renderHeader() {
   const profile = state.profiles[appId];
   const meta = APP_META[appId];
 
+  const client = state.clients.find((c) => c.id === state.clientId);
+
   $('#pageHeader').innerHTML = `
     <div>
       <h2>${meta?.icon ?? ''} ${app?.label ?? 'App'}</h2>
       <p>${meta?.desc ?? ''}</p>
     </div>
     <div class="header-chips">
+      <span class="chip chip-accent"><strong>${escapeHtml(client?.label ?? state.clientId ?? '—')}</strong></span>
       <span class="chip chip-accent"><strong>v${profile?.version ?? '—'}</strong> · build ${profile?.versionCode ?? '—'}</span>
-      <span class="chip"><strong>Perfil</strong> ${profile?.buildProfile ?? 'production'}</span>
       <span class="chip"><strong>Dir</strong> ${app?.dir ?? ''}</span>
     </div>
   `;
@@ -312,12 +507,12 @@ function bindColorInputs() {
   });
 
   $('#form')?.addEventListener('input', updateSummaryLive);
+  $('#form')?.addEventListener('change', updateSummaryLive);
 }
 
 function updateSummaryLive() {
   const appId = state.active;
-  const body = readForm(appId, fieldsFor(appId), false);
-  state.profiles[appId] = { ...state.profiles[appId], ...body };
+  state.profiles[appId] = readForm(appId, fieldsFor(appId));
   renderSummary();
   renderHeader();
 }
@@ -332,7 +527,10 @@ function bindUploads(appId) {
       try {
         const fd = new FormData();
         fd.append('file', file);
-        const res = await fetch(`/api/upload/${appId}/${kind}`, { method: 'POST', body: fd });
+        const res = await fetch(
+          `/api/upload/${appId}/${kind}?clientId=${encodeURIComponent(state.clientId)}`,
+          { method: 'POST', body: fd },
+        );
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al subir');
         state.profiles[appId] = data.profile;
@@ -354,8 +552,8 @@ function bindActions(appId, fields) {
       const current = await api(`/api/profiles/${appId}/current`);
       state.profiles[appId] = { ...state.profiles[appId], ...current };
       renderAll();
-      log(`\n↻ Valores sincronizados desde ${appId}\n`);
-      toast('Valores leídos del proyecto');
+      log(`\n↻ Valores sincronizados desde código fuente (${appId})\n`);
+      toast('Valores leídos del proyecto (no guardados aún)');
     } catch (err) {
       toast(err.message, 'err');
     } finally {
@@ -364,12 +562,17 @@ function bindActions(appId, fields) {
   };
 
   $('#btnSave').onclick = async () => {
+    const activeId = state.active;
     setBusy(true);
     try {
-      const body = readForm(appId, fields);
-      state.profiles[appId] = await api(`/api/profiles/${appId}`, { method: 'PUT', body: JSON.stringify(body) });
+      const body = bodyFromActiveForm();
+      state.profiles[activeId] = await api(`/api/profiles/${activeId}`, {
+        method: 'PUT',
+        body: apiBody(body),
+      }, { clientId: state.clientId });
+      cacheCurrentClientProfiles();
       renderAll();
-      toast('Perfil guardado');
+      toast(`Perfil guardado — ${state.clients.find((c) => c.id === state.clientId)?.label ?? state.clientId}`);
     } catch (err) {
       toast(err.message, 'err');
     } finally {
@@ -378,13 +581,23 @@ function bindActions(appId, fields) {
   };
 
   $('#btnApply').onclick = async () => {
+    const activeId = state.active;
     setBusy(true);
     try {
-      const body = readForm(appId, fields);
-      const result = await api(`/api/profiles/${appId}/apply`, { method: 'POST', body: JSON.stringify(body) });
-      state.profiles[appId] = result.profile;
-      log(`\n✓ ${result.message}\n  Assets: ${result.copiedAssets.join(', ') || '(sin cambios)'}\n`);
-      toast('Perfil aplicado al código');
+      const body = bodyFromActiveForm();
+      const missing = validateProfileLocal(body);
+      if (missing.length) {
+        throw new Error(`Completa: ${missing.join(', ')}`);
+      }
+      cacheCurrentClientProfiles();
+      const result = await api(`/api/profiles/${activeId}/apply`, {
+        method: 'POST',
+        body: apiBody(body),
+      }, { clientId: state.clientId });
+      state.profiles[activeId] = result.profile;
+      renderAll();
+      log(`\n✓ ${result.message}\n  Cliente: ${state.clientId}\n  API: ${body.apiBaseUrl}\n  Assets: ${result.copiedAssets.join(', ') || '(sin cambios)'}\n`);
+      toast(`Aplicado — ${state.clients.find((c) => c.id === state.clientId)?.label ?? state.clientId}`);
     } catch (err) {
       toast(err.message, 'err');
     } finally {
@@ -393,16 +606,27 @@ function bindActions(appId, fields) {
   };
 
   $('#btnBuild').onclick = async () => {
+    const activeId = state.active;
     const btn = $('#btnBuild');
     btn.classList.add('loading');
     btn.querySelector('.btn-icon').textContent = '⟳';
     setBusy(true);
     setTerminalStatus('Compilando…', 'running');
     try {
-      const body = readForm(appId, fields);
-      const { jobId } = await api(`/api/build/${appId}`, { method: 'POST', body: JSON.stringify(body) });
-      pollJob(jobId);
-      toast('Build iniciado en EAS');
+      const body = bodyFromActiveForm();
+      const missing = validateProfileLocal(body);
+      if (missing.length) {
+        throw new Error(`Completa antes del build: ${missing.join(', ')}`);
+      }
+      state.profiles[activeId] = body;
+      cacheCurrentClientProfiles();
+      await api(`/api/profiles/${activeId}`, { method: 'PUT', body: apiBody(body) }, { clientId: state.clientId });
+      const { jobId } = await api(`/api/build/${activeId}`, {
+        method: 'POST',
+        body: apiBody(body),
+      }, { clientId: state.clientId });
+      pollJob(jobId, activeId);
+      toast('Perfil guardado — build iniciado en EAS');
     } catch (err) {
       setTerminalStatus('Error', 'error');
       toast(err.message, 'err');
@@ -413,22 +637,9 @@ function bindActions(appId, fields) {
   };
 }
 
-function readForm(appId, fields, fromDom = true) {
-  const body = { ...state.profiles[appId] };
-  if (!fromDom) {
-    const form = $('#form');
-    if (!form) return body;
-  }
-  const form = $('#form');
-  fields.forEach((f) => {
-    const el = form.elements.namedItem(f.key);
-    if (!el) return;
-    body[f.key] = f.type === 'number' ? Number(el.value) : el.value;
-  });
-  return body;
-}
-
-function renderAll() {
+function renderAll({ persistForm = false, refreshClientBar = false } = {}) {
+  if (persistForm) persistActiveForm();
+  renderClientBar({ refresh: refreshClientBar });
   renderTabs();
   renderHeader();
   renderPanel();
@@ -439,7 +650,7 @@ function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-async function pollJob(jobId) {
+async function pollJob(jobId, appId) {
   if (state.jobPoll) clearInterval(state.jobPoll);
   log(`\n— Build job #${jobId} —\n`, true);
   setTerminalStatus(`Job #${jobId}`, 'running');
@@ -463,9 +674,18 @@ async function pollJob(jobId) {
         log(`\n✗ ${job.error}\n`);
         toast('El build falló — revisa la consola', 'err');
       } else {
+        if (job.profiles) {
+          for (const [id, profile] of Object.entries(job.profiles)) {
+            state.profiles[id] = profile;
+          }
+          renderAll();
+        } else if (job.profile && appId) {
+          state.profiles[appId] = job.profile;
+          renderAll();
+        }
         setTerminalStatus('Build completado', 'done');
         log(`\n✓ Build finalizado correctamente\n`);
-        toast('Build completado');
+        toast('Build completado — perfil guardado');
       }
     } catch {
       /* seguir polling */
@@ -474,12 +694,12 @@ async function pollJob(jobId) {
 }
 
 async function init() {
-  state.apps = await api('/api/apps');
-  const list = await api('/api/profiles');
-  for (const item of list) state.profiles[item.id] = item.profile;
+  state.apps = await api('/api/apps', {}, { clientId: null });
+  await reloadClients();
+  await reloadProfiles();
   state.active = state.apps[0]?.id ?? 'aula';
   setAccent(state.active);
-  renderAll();
+  renderAll({ refreshClientBar: true });
 
   $('#btnClearLog').onclick = () => {
     $('#log').textContent = '';
@@ -490,9 +710,13 @@ async function init() {
   $('#btnApplyAll').onclick = async () => {
     setBusy(true);
     try {
-      const results = await api('/api/apply-all', { method: 'POST' });
-      log(`\n✓ Perfil aplicado en ${results.length} apps\n`);
-      toast(`Aplicado en ${results.length} aplicaciones`);
+      await saveCurrentClientToServer();
+      const results = await api('/api/apply-all', {
+        method: 'POST',
+        body: JSON.stringify({ clientId: state.clientId }),
+      }, { clientId: state.clientId });
+      log(`\n✓ Perfil aplicado (${state.clientId}) en ${results.length} apps\n`);
+      toast(`Aplicado — ${state.clients.find((c) => c.id === state.clientId)?.label ?? state.clientId}`);
     } catch (err) {
       toast(err.message, 'err');
     } finally {
@@ -505,18 +729,14 @@ async function init() {
     setTerminalStatus('Build múltiple…', 'running');
     log('\n— Iniciando build de las 3 apps —\n', true);
     try {
-      for (const a of state.apps) {
-        await api(`/api/profiles/${a.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(state.profiles[a.id]),
-        });
-      }
+      await saveCurrentClientToServer();
+      const profiles = { ...(state.profilesByClient[state.clientId] ?? {}) };
       const { jobId } = await api('/api/build-all', {
         method: 'POST',
-        body: JSON.stringify({ buildProfile: 'production' }),
-      });
+        body: JSON.stringify({ buildProfile: 'production', profiles, clientId: state.clientId }),
+      }, { clientId: state.clientId });
       pollJob(jobId);
-      toast('Build ×3 iniciado');
+      toast('Perfiles guardados — build ×3 iniciado');
     } catch (err) {
       setTerminalStatus('Error', 'error');
       toast(err.message, 'err');

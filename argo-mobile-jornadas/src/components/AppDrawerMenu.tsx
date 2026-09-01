@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Modal,
   Pressable,
@@ -17,10 +17,10 @@ import { useAuth } from '../context/AuthContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
-import { JORNADAS_VERDE } from '../config/appBranding';
+import { ARGO_AZUL_REY } from '../config/appBranding';
 import type { AuthUser } from '../api/types';
 import type { RootStackParamList } from '../navigation/types';
-import { puedeGestionarJornadas, puedeRegistrarAlumnosJornada } from '../utils/permisos';
+import { modulosHomeVisibles } from '../theme/modules';
 
 function nombreUsuario(user: AuthUser | null): string {
   if (!user) return 'Usuario';
@@ -37,7 +37,6 @@ type MenuItem = {
   hint?: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
-  danger?: boolean;
 };
 
 export function HamburgerHeaderButton() {
@@ -65,13 +64,12 @@ export function AppDrawerMenu() {
   const c = themeColors(highContrast);
 
   const user = state.status === 'signedIn' ? state.user : null;
-  const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
-  const puedeRegistrar = puedeRegistrarAlumnosJornada(user?.permisos);
   const drawerWidth = Math.min(300, Math.round(width * 0.82));
+
+  const modulos = useMemo(() => modulosHomeVisibles(user?.permisos), [user?.permisos]);
 
   const go = (fn: () => void) => {
     closeDrawer();
-    // Deja cerrar el modal antes de navegar
     setTimeout(fn, 80);
   };
 
@@ -83,67 +81,20 @@ export function AppDrawerMenu() {
       icon: 'home-outline',
       onPress: () => go(() => nav.navigate('Home')),
     },
-    {
-      key: 'hoy',
-      label: 'Jornadas de hoy',
-      hint: 'Clases y operación del día',
-      icon: 'today-outline',
-      onPress: () => go(() => nav.navigate('JornadasHoy')),
-    },
+    ...modulos.map((mod) => ({
+      key: mod.key,
+      label: mod.title,
+      hint: mod.hint,
+      icon: mod.icon,
+      onPress: () =>
+        go(() => {
+          if (mod.route === 'CrearAlumnoJornada') nav.navigate('CrearAlumnoJornada', {});
+          else if (mod.route === 'Certificados') nav.navigate('Certificados', {});
+          else if (mod.route === 'CrearJornada') nav.navigate('CrearJornada', {});
+          else nav.navigate(mod.route as 'Home');
+        }),
+    })),
   ];
-
-  if (puedeRegistrar) {
-    items.push({
-      key: 'alumno',
-      label: 'Nuevo alumno jornada',
-      hint: 'Alta (Registro / Recepción)',
-      icon: 'person-add-outline',
-      onPress: () => go(() => nav.navigate('CrearAlumnoJornada', {})),
-    });
-  }
-
-  items.push(
-    {
-      key: 'certs',
-      label: 'Certificados',
-      hint: 'Emitidos por contrato',
-      icon: 'ribbon-outline',
-      onPress: () => go(() => nav.navigate('Certificados', {})),
-    },
-    {
-      key: 'password',
-      label: 'Cambiar contraseña',
-      hint: 'Actualizar clave de su usuario',
-      icon: 'key-outline',
-      onPress: () => go(() => nav.navigate('CambiarPassword')),
-    },
-  );
-
-  if (esAdmin) {
-    items.push(
-      {
-        key: 'gestion',
-        label: 'Gestionar jornadas',
-        hint: 'Listar, editar y crear (cualquier fecha)',
-        icon: 'calendar-outline',
-        onPress: () => go(() => nav.navigate('JornadasGestion')),
-      },
-      {
-        key: 'crear',
-        label: 'Nueva jornada',
-        hint: 'Agregar jornada a un contrato',
-        icon: 'add-circle-outline',
-        onPress: () => go(() => nav.navigate('CrearJornada', {})),
-      },
-      {
-        key: 'informes',
-        label: 'Informes',
-        hint: 'Dashboard del contrato y PDF (como en el frontend)',
-        icon: 'stats-chart-outline',
-        onPress: () => go(() => nav.navigate('InformesJornadas')),
-      },
-    );
-  }
 
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={closeDrawer}>
@@ -159,10 +110,10 @@ export function AppDrawerMenu() {
             },
           ]}
         >
-          <View style={[styles.panelHead, { backgroundColor: JORNADAS_VERDE }]}>
+          <View style={[styles.panelHead, { backgroundColor: ARGO_AZUL_REY }]}>
             <View style={styles.headRow}>
               <View style={styles.avatar}>
-                <Ionicons name="person" size={22} color={JORNADAS_VERDE} />
+                <Ionicons name="person" size={22} color={ARGO_AZUL_REY} />
               </View>
               <Pressable onPress={closeDrawer} hitSlop={12} accessibilityLabel="Cerrar">
                 <Ionicons name="close" size={24} color="#fff" />

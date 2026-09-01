@@ -4,24 +4,26 @@ import type { ExpoConfig } from 'expo/config';
  * App móvil instructores — jornadas de capacitación (carpa).
  * `.env`: EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:3000/api
  */
-const VERDE = '#0d9488';
+const SPLASH_BG = '#FFFFFF';
+/** Azul cabeceras/login (independiente del splash). */
+const AZUL = '#3D5CFF';
 const LOGO = './assets/branding/logo.png';
 const ICON = './assets/branding/icon-app.png';
 const SPLASH_IOS = './assets/branding/splash-full.png';
 
 const splashPlugin = {
-  backgroundColor: VERDE,
+  backgroundColor: SPLASH_BG,
   image: LOGO,
   imageWidth: 240,
   resizeMode: 'contain' as const,
   android: {
-    backgroundColor: VERDE,
+    backgroundColor: SPLASH_BG,
     image: LOGO,
     imageWidth: 240,
     resizeMode: 'contain' as const,
   },
   ios: {
-    backgroundColor: VERDE,
+    backgroundColor: SPLASH_BG,
     image: SPLASH_IOS,
     resizeMode: 'cover' as const,
     enableFullScreenImage_legacy: true,
@@ -35,37 +37,37 @@ const config: ExpoConfig = {
   version: '0.1.0',
   orientation: 'portrait',
   icon: ICON,
-  backgroundColor: VERDE,
-  primaryColor: VERDE,
+  backgroundColor: AZUL,
+  primaryColor: AZUL,
   userInterfaceStyle: 'light',
   scheme: 'argojornadas',
   splash: {
     image: LOGO,
     resizeMode: 'contain',
-    backgroundColor: VERDE,
+    backgroundColor: SPLASH_BG,
   },
   android: {
     icon: ICON,
     splash: {
       image: LOGO,
       resizeMode: 'contain',
-      backgroundColor: VERDE,
+      backgroundColor: SPLASH_BG,
     },
     adaptiveIcon: {
       foregroundImage: ICON,
-      backgroundColor: VERDE,
+      backgroundColor: SPLASH_BG,
     },
     package: 'co.argo.jornadas',
   },
   androidNavigationBar: {
-    backgroundColor: VERDE,
+    backgroundColor: AZUL,
   },
   ios: {
     icon: ICON,
     splash: {
       image: SPLASH_IOS,
       resizeMode: 'cover',
-      backgroundColor: VERDE,
+      backgroundColor: SPLASH_BG,
     },
   },
   plugins: [

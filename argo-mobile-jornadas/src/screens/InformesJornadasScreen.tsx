@@ -31,7 +31,7 @@ import type { InformeDashboardDto } from '../api/types';
 import { useAuth } from '../context/AuthContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { compartirArchivoBytes } from '../services/fileShare';
-import { puedeGestionarJornadas, tienePermiso } from '../utils/permisos';
+import { puedeInformesApp } from '../utils/permisos';
 import { themeColors } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -41,9 +41,7 @@ export default function InformesJornadasScreen() {
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const user = state.status === 'signedIn' ? state.user : null;
-  const puede =
-    puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre) ||
-    tienePermiso(user?.permisos, ['jornadas.ver', 'jornadas.gestionar', '*']);
+  const puede = puedeInformesApp(user?.permisos);
 
   const [contratosOpts, setContratosOpts] = useState<CatalogOption[]>([]);
   const [idContrato, setIdContrato] = useState('');

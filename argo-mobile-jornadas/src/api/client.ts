@@ -1,3 +1,4 @@
+import type { AuthUser, StaffLoginResponse } from './types';
 import { getApiBaseUrl } from '../config/apiBase';
 
 type TokenGetter = () => string | null;
@@ -256,8 +257,8 @@ export async function pingHealth(): Promise<{ ok: boolean }> {
   return apiFetch('/health', { auth: false, timeoutMs: 8000 });
 }
 
-export async function login(username: string, password: string): Promise<import('./types').LoginResponse> {
-  const raw = await apiFetch<import('./types').LoginApiRaw & Record<string, unknown>>('/auth/login', {
+export async function login(username: string, password: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/login', {
     method: 'POST',
     auth: false,
     timeoutMs: 20_000,
@@ -266,23 +267,36 @@ export async function login(username: string, password: string): Promise<import(
     },
     body: JSON.stringify({ username, password }),
   });
+}
 
-  // Backend nativo (X-ARGO-Cliente: jornadas) debe devolver step complete sin MFA web.
-  if (raw.step === 'mfa_verify' || raw.step === 'mfa_setup') {
-    throw new Error(
-      'El servidor exige MFA en la app. En el servidor confirme MFA_STAFF_WEB_ONLY=true (o 1) en deploy/.env y reinicie argo-backend.',
-    );
-  }
+export async function mfaVerify(mfaToken: string, code: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/mfa/verify', {
+    method: 'POST',
+    auth: false,
+    timeoutMs: 20_000,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mfaToken, code }),
+  });
+}
 
-  const token = raw.token;
-  const user = raw.user;
-  if (!token || !user) {
-    throw new Error(
-      raw.message ||
-        'El servidor no devolvió sesión válida. Verifique usuario/contraseña y el campo Servidor (app.finstruvial.edu.co).',
-    );
-  }
-  return { token, user };
+export async function mfaSetupConfirm(setupToken: string, code: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/mfa/setup/confirm', {
+    method: 'POST',
+    auth: false,
+    timeoutMs: 20_000,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ setupToken, code }),
+  });
+}
+
+export async function mfaRecovery(mfaToken: string, recoveryCode: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/mfa/recovery', {
+    method: 'POST',
+    auth: false,
+    timeoutMs: 20_000,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mfaToken, recoveryCode }),
+  });
 }
 
 export async function fetchMe() {

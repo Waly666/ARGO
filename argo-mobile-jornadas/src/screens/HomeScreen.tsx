@@ -1,22 +1,26 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableCard } from '../components/PressableCard';
 import { ScaledText } from '../components/ScaledText';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
 import type { AuthUser } from '../api/types';
+import { ARGO_AZUL_REY, ARGO_NAVY, ARGO_NAVY_SOFT } from '../config/appBranding';
 import { themeColors } from '../theme/colors';
+import { modulosHomeVisibles, type JornadasHomeModule } from '../theme/modules';
+import { radii, spacing } from '../theme/tokens';
 import { useAccessibility } from '../context/AccessibilityContext';
-import { puedeGestionarJornadas, puedeRegistrarAlumnosJornada } from '../utils/permisos';
+import { puedeGestionarJornadas } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 
 function nombreBienvenida(user: AuthUser | null): string {
   if (!user) return 'Instructor';
-  // Preferir nombres de la cuenta de login (admin/staff), no una ficha RRHH ajena.
   const completo = [user.nombres, user.apellidos].filter(Boolean).join(' ').trim();
   if (completo) return completo;
   const desdeEmpleado = String(user.empleado?.nombreCompleto || '').trim();
@@ -24,179 +28,214 @@ function nombreBienvenida(user: AuthUser | null): string {
   return user.username || 'Instructor';
 }
 
-type MenuTile = {
-  title: string;
-  hint: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  accent: string;
-  iconBg: string;
-  iconColor: string;
-  onPress: () => void;
+const TILE_STYLES: Record<
+  string,
+  { accent: 'primary' | 'primaryDark' | 'mint' | 'mintFg' }
+> = {
+  hoy: { accent: 'primary' },
+  registrar: { accent: 'mintFg' },
+  certificados: { accent: 'primaryDark' },
+  password: { accent: 'primary' },
+  gestionar: { accent: 'primary' },
+  crear: { accent: 'mintFg' },
+  informes: { accent: 'primaryDark' },
 };
 
 export default function HomeScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const { state } = useAuth();
+  const { tituloApp, nombreEmpresa, logoSource } = useBranding();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const user = state.status === 'signedIn' ? state.user : null;
   const nombre = nombreBienvenida(user);
   const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
-  const puedeRegistrar = puedeRegistrarAlumnosJornada(user?.permisos);
 
-  const tiles: MenuTile[] = [
-    {
-      title: 'Jornadas de hoy',
-      hint: esAdmin
-        ? 'Operación del día (admin también gestiona otras fechas)'
-        : 'Solo la jornada activa del día',
-      icon: 'today-outline',
-      accent: c.primary,
-      iconBg: c.accentSoft,
-      iconColor: c.primaryDark,
-      onPress: () => nav.navigate('JornadasHoy'),
-    },
-  ];
+  const modulos = useMemo(
+    () => modulosHomeVisibles(user?.permisos),
+    [user?.permisos],
+  );
 
-  if (puedeRegistrar) {
-    tiles.push({
-      title: 'Nuevo alumno jornada',
-      hint: 'Alta con PDF417 de la cédula o digitación (Registro)',
-      icon: 'person-add-outline',
-      accent: c.pastelMintFg,
-      iconBg: c.pastelMint,
-      iconColor: c.pastelMintFg,
-      onPress: () => nav.navigate('CrearAlumnoJornada', {}),
-    });
+  const headerColors: [string, string, string] = highContrast
+    ? [c.card, c.bgAlt, c.bg]
+    : [ARGO_NAVY, ARGO_NAVY_SOFT, '#1A2240'];
+
+  function tileColors(key: string) {
+    const style = TILE_STYLES[key] || TILE_STYLES.hoy;
+    switch (style.accent) {
+      case 'mintFg':
+        return { accent: c.pastelMintFg, iconBg: c.pastelMint, iconColor: c.pastelMintFg };
+      case 'primaryDark':
+        return { accent: c.primaryDark, iconBg: c.accentSoft, iconColor: c.primaryDark };
+      default:
+        return { accent: c.primary, iconBg: c.accentSoft, iconColor: c.primaryDark };
+    }
   }
 
-  tiles.push({
-    title: 'Certificados emitidos',
-    hint: 'Consulta y abre certificados de jornadas',
-    icon: 'ribbon-outline',
-    accent: c.primaryDark,
-    iconBg: c.accentSoft,
-    iconColor: c.primaryDark,
-    onPress: () => nav.navigate('Certificados', {}),
-  });
-
-  tiles.push({
-    title: 'Cambiar contraseña',
-    hint: 'Actualizar la clave de su usuario',
-    icon: 'key-outline',
-    accent: c.primary,
-    iconBg: c.pastelMint,
-    iconColor: c.pastelMintFg,
-    onPress: () => nav.navigate('CambiarPassword'),
-  });
-
-  if (esAdmin) {
-    tiles.push(
-      {
-        title: 'Gestionar jornadas',
-        hint: 'Listar, editar y operar jornadas de cualquier fecha',
-        icon: 'calendar-outline',
-        accent: c.primary,
-        iconBg: c.pastelMint,
-        iconColor: c.pastelMintFg,
-        onPress: () => nav.navigate('JornadasGestion'),
-      },
-      {
-        title: 'Nueva jornada',
-        hint: 'Crear jornada en un contrato',
-        icon: 'add-circle-outline',
-        accent: c.pastelMintFg,
-        iconBg: c.accentSoft,
-        iconColor: c.primaryDark,
-        onPress: () => nav.navigate('CrearJornada', {}),
-      },
-      {
-        title: 'Informes',
-        hint: 'Dashboard del contrato y PDF formal',
-        icon: 'stats-chart-outline',
-        accent: c.primaryDark,
-        iconBg: c.pastelMint,
-        iconColor: c.pastelMintFg,
-        onPress: () => nav.navigate('InformesJornadas'),
-      },
-    );
+  function abrirModulo(mod: JornadasHomeModule) {
+    switch (mod.route) {
+      case 'CrearAlumnoJornada':
+        nav.navigate('CrearAlumnoJornada', {});
+        break;
+      case 'Certificados':
+        nav.navigate('Certificados', {});
+        break;
+      case 'CrearJornada':
+        nav.navigate('CrearJornada', {});
+        break;
+      default:
+        nav.navigate(mod.route);
+    }
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={styles.scroll}>
-      <LinearGradient
-        colors={highContrast ? [c.card, c.bgAlt] : c.heroGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.hero}
-      >
-        <View style={styles.heroTop}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={22} color={c.primary} />
+    <View style={[styles.root, { backgroundColor: c.bg }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <LinearGradient
+          colors={headerColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.walletHeader, { paddingTop: Math.max(insets.top, 12) + 8 }]}
+        >
+          <View style={styles.headerGlow} />
+          <View style={styles.brandRow}>
+            <Image source={logoSource} style={styles.logo} resizeMode="contain" />
+            <View style={styles.brandText}>
+              <ScaledText baseSize={11} style={styles.brandKicker} numberOfLines={1}>
+                {tituloApp}
+              </ScaledText>
+              <ScaledText baseSize={14} style={styles.brandEmpresa} numberOfLines={2}>
+                {nombreEmpresa}
+              </ScaledText>
+            </View>
           </View>
-          <View style={styles.heroBadge}>
-            <Ionicons name="shield-checkmark-outline" size={12} color="#fff" />
-            <ScaledText baseSize={11} style={{ color: '#fff', fontWeight: '700', marginLeft: 4 }}>
-              Campo
+
+          <View style={styles.balanceCard}>
+            <ScaledText baseSize={12} style={styles.welcomeLabel}>
+              Bienvenido de nuevo
+            </ScaledText>
+            <View style={styles.userRow}>
+              <View style={styles.avatar}>
+                <Ionicons name="person" size={22} color={c.primary} />
+              </View>
+              <View style={styles.userMeta}>
+                <ScaledText baseSize={18} style={styles.userName} numberOfLines={1}>
+                  {nombre}
+                </ScaledText>
+                <View style={styles.rolePill}>
+                  <Ionicons name="shield-checkmark" size={12} color={ARGO_AZUL_REY} />
+                  <ScaledText baseSize={12} style={styles.roleText} numberOfLines={1}>
+                    {user?.rolNombre || user?.rol || 'Instructor jornadas'}
+                  </ScaledText>
+                </View>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.sectionHead}>
+          <View>
+            <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800', letterSpacing: -0.3 }}>
+              Operación en campo
+            </ScaledText>
+            <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 2 }}>
+              Accesos según permisos del rol en el ERP
+            </ScaledText>
+          </View>
+          <View style={[styles.countBadge, { backgroundColor: c.chipBg }]}>
+            <ScaledText baseSize={12} style={{ color: c.primary, fontWeight: '700' }}>
+              {modulos.length}
             </ScaledText>
           </View>
         </View>
-        <ScaledText baseSize={13} style={{ color: 'rgba(255,255,255,0.9)', marginTop: 14 }}>
-          Bienvenido
-        </ScaledText>
-        <ScaledText
-          baseSize={22}
-          style={{ color: '#fff', fontWeight: '800', marginTop: 4, lineHeight: 28 }}
-        >
-          {nombre}
-        </ScaledText>
-        <ScaledText baseSize={13} style={{ color: 'rgba(255,255,255,0.85)', marginTop: 6 }}>
-          {user?.rolNombre || user?.rol || 'Instructor jornadas'}
-        </ScaledText>
-      </LinearGradient>
 
-      <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '800', marginBottom: 12 }}>
-        Operación en campo
-      </ScaledText>
+        {modulos.map((mod) => {
+          const colors = tileColors(mod.key);
+          const hint =
+            mod.key === 'hoy' && esAdmin
+              ? 'Operación del día (admin también gestiona otras fechas)'
+              : mod.hint;
+          return (
+            <PressableCard
+              key={mod.key}
+              onPress={() => abrirModulo(mod)}
+              cardStyle={styles.tileCard}
+            >
+              <View style={[styles.cardAccent, { backgroundColor: colors.accent }]} />
+              <View style={styles.tileBody}>
+                <View style={[styles.iconBox, { backgroundColor: colors.iconBg }]}>
+                  <Ionicons name={mod.icon} size={26} color={colors.iconColor} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800' }}>
+                    {mod.title}
+                  </ScaledText>
+                  <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4, lineHeight: 18 }}>
+                    {hint}
+                  </ScaledText>
+                </View>
+                <View style={[styles.openBtn, { backgroundColor: colors.iconBg }]}>
+                  <Ionicons name="chevron-forward" size={18} color={colors.iconColor} />
+                </View>
+              </View>
+            </PressableCard>
+          );
+        })}
 
-      {tiles.map((tile) => (
-        <PressableCard key={tile.title} onPress={tile.onPress} cardStyle={styles.tileCard}>
-          <View style={[styles.cardAccent, { backgroundColor: tile.accent }]} />
-          <View style={styles.tileBody}>
-            <View style={[styles.iconBox, { backgroundColor: tile.iconBg }]}>
-              <Ionicons name={tile.icon} size={26} color={tile.iconColor} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800' }}>
-                {tile.title}
-              </ScaledText>
-              <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4, lineHeight: 18 }}>
-                {tile.hint}
-              </ScaledText>
-            </View>
-            <View style={[styles.openBtn, { backgroundColor: tile.iconBg }]}>
-              <Ionicons name="chevron-forward" size={18} color={tile.iconColor} />
-            </View>
-          </View>
-        </PressableCard>
-      ))}
+        {!modulos.length ? (
+          <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', paddingHorizontal: spacing.screen }}>
+            Su rol no tiene pantallas de la app móvil asignadas. Configure permisos «App móvil Jornadas» en
+            Configuración → Roles.
+          </ScaledText>
+        ) : null}
 
-      <View style={{ height: 16 }} />
-      <ScaledText baseSize={12} style={{ color: c.textSoft, textAlign: 'center' }}>
-        Use el menú ☰ arriba para navegar o cerrar sesión.
-      </ScaledText>
-    </ScrollView>
+        <ScaledText baseSize={12} style={{ color: c.textSoft, textAlign: 'center', marginTop: 8 }}>
+          Use el menú ☰ arriba para navegar o cerrar sesión.
+        </ScaledText>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: 16, paddingBottom: 32 },
-  hero: { borderRadius: 18, padding: 20, marginBottom: 20 },
-  heroTop: {
+  root: { flex: 1 },
+  scroll: { paddingBottom: 32 },
+  walletHeader: {
+    paddingHorizontal: spacing.screen,
+    paddingBottom: 28,
+    borderBottomLeftRadius: radii.xl,
+    borderBottomRightRadius: radii.xl,
+    overflow: 'hidden',
+  },
+  headerGlow: {
+    position: 'absolute',
+    top: -40,
+    right: -30,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(61,92,255,0.25)',
+  },
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 16,
   },
+  logo: { width: 52, height: 52 },
+  brandText: { flex: 1 },
+  brandKicker: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 0.8 },
+  brandEmpresa: { color: '#fff', fontWeight: '700', marginTop: 2 },
+  balanceCard: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: radii.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  welcomeLabel: { color: 'rgba(255,255,255,0.8)', marginBottom: 10 },
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: {
     width: 44,
     height: 44,
@@ -205,24 +244,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroBadge: {
+  userMeta: { flex: 1 },
+  userName: { color: '#fff', fontWeight: '800' },
+  rolePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+  roleText: { color: ARGO_AZUL_REY, fontWeight: '700', maxWidth: 200 },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.screen,
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  countBadge: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
   tileCard: {
     padding: 0,
     overflow: 'hidden',
     flexDirection: 'row',
+    marginHorizontal: spacing.screen,
+    marginBottom: 12,
   },
-  cardAccent: {
-    width: 5,
-  },
+  cardAccent: { width: 5 },
   tileBody: {
     flex: 1,
     flexDirection: 'row',
@@ -245,5 +304,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12 },
 });

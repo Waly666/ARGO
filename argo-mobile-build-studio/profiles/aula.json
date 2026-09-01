@@ -13,8 +13,8 @@
   "buildProfile": "production",
   "easProjectId": "572bdf10-65ce-47c7-acfb-33aa5a3b3ea1",
   "uploads": {
-    "logo": null,
-    "icon": null,
-    "adaptiveIcon": null
+    "logo": "logo.png",
+    "icon": "icon.png",
+    "adaptiveIcon": "adaptiveIcon.png"
   }
 }

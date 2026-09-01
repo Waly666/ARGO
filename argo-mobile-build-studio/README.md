@@ -39,6 +39,18 @@ pnpm start
 
 Abre **http://127.0.0.1:3847**
 
+### Varios clientes (marcas)
+
+Cada cliente tiene su propio perfil guardado en `profiles/clients/<id>/` (local, no va a Git).
+
+1. Arriba en la barra lateral elige el **cliente activo** (ej. *CEA Servial*)
+2. **+ Nuevo** — crea un cliente vacío para otra marca
+3. **Duplicar** — copia el cliente actual como punto de partida
+4. Edita Aula / Cajero / Jornadas y **Guardar perfil** (se guarda solo para ese cliente)
+5. **Aplicar + Build EAS** — compila el APK con la marca del cliente activo
+
+> No uses **Leer del proyecto** si quieres conservar lo que escribiste: ese botón trae los valores del código fuente (que puede seguir siendo Servial).
+
 1. Elige pestaña (Aula / Cajero / Jornadas)
 2. Edita campos o sube imágenes
 3. **Aplicar al código** — actualiza archivos sin compilar

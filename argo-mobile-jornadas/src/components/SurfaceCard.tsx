@@ -2,32 +2,45 @@ import React from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 
 type Props = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  /** Fondo gris fuerte + bordes para clase terminada. */
+  elevated?: boolean;
   terminada?: boolean;
 };
 
-export function SurfaceCard({ children, style, terminada }: Props) {
+export function SurfaceCard({ children, style, elevated = true, terminada }: Props) {
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
+
+  if (terminada) {
+    return (
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: c.terminadaBg,
+            borderColor: c.terminadaBorder,
+          },
+          style,
+        ]}
+      >
+        {children}
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
         styles.card,
-        terminada
-          ? {
-              backgroundColor: c.terminadaBg,
-              borderColor: c.terminadaBorder,
-              shadowColor: c.terminadaBorder,
-            }
-          : {
-              backgroundColor: c.card,
-              borderColor: c.border,
-              shadowColor: c.shadow,
-            },
+        {
+          backgroundColor: c.card,
+          borderColor: highContrast ? c.border : 'transparent',
+        },
+        elevated && !highContrast && shadows.card,
         style,
       ]}
     >
@@ -38,12 +51,8 @@ export function SurfaceCard({ children, style, terminada }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    padding: 16,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    padding: 18,
   },
 });

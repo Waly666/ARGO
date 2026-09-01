@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { MOBILE_APPS, appRoot, UPLOADS_DIR } from './apps.mjs';
+import { getActiveClientId } from './clients.mjs';
 import { loadProfile } from './profiles.mjs';
+import { assertProfile } from './validate-profile.mjs';
 
 function replaceOrThrow(src, pattern, replacement, label) {
   if (!pattern.test(src)) {
@@ -17,10 +19,10 @@ function copyIfExists(from, to) {
   return true;
 }
 
-function resolveUpload(appId, kind, profile) {
+function resolveUpload(clientId, appId, kind, profile) {
   const rel = profile.uploads?.[kind];
   if (!rel) return null;
-  const abs = path.join(UPLOADS_DIR, appId, rel);
+  const abs = path.join(UPLOADS_DIR, clientId, appId, rel);
   return fs.existsSync(abs) ? abs : null;
 }
 
@@ -45,12 +47,16 @@ function patchBranding(root, relPath, profile) {
 }
 
 function patchEasJson(root, apiBaseUrl) {
+  const url = String(apiBaseUrl ?? '').trim();
+  if (!url) {
+    throw new Error('Servidor API por defecto es obligatorio para actualizar eas.json');
+  }
   const file = path.join(root, 'eas.json');
   const eas = JSON.parse(fs.readFileSync(file, 'utf8'));
   for (const key of ['preview', 'production']) {
     if (!eas.build[key]) eas.build[key] = {};
     if (!eas.build[key].env) eas.build[key].env = {};
-    eas.build[key].env.EXPO_PUBLIC_API_BASE_URL = apiBaseUrl;
+    eas.build[key].env.EXPO_PUBLIC_API_BASE_URL = url;
   }
   fs.writeFileSync(file, `${JSON.stringify(eas, null, 2)}\n`, 'utf8');
 }
@@ -124,9 +130,10 @@ function writeBuildProfileJson(root, profile, app) {
 }
 
 /** Aplica perfil a una app: JSON local, eas.json, branding, assets y app.config.ts */
-export function applyProfile(appId, profileInput) {
+export function applyProfile(appId, profileInput, clientId = getActiveClientId()) {
   const app = MOBILE_APPS[appId];
-  const profile = profileInput ?? loadProfile(appId);
+  const profile = profileInput ?? loadProfile(appId, clientId);
+  assertProfile(profile);
   const root = appRoot(appId);
   const copied = [];
 
@@ -136,15 +143,15 @@ export function applyProfile(appId, profileInput) {
 
   if (appId === 'aula') {
     patchAppConfigAula(root, profile);
-    if (copyIfExists(resolveUpload(appId, 'logo', profile), path.join(root, app.assets.logo))) {
+    if (copyIfExists(resolveUpload(clientId, appId, 'logo', profile), path.join(root, app.assets.logo))) {
       copied.push(app.assets.logo);
     }
-    if (copyIfExists(resolveUpload(appId, 'icon', profile), path.join(root, app.assets.icon))) {
+    if (copyIfExists(resolveUpload(clientId, appId, 'icon', profile), path.join(root, app.assets.icon))) {
       copied.push(app.assets.icon);
     }
     if (
       copyIfExists(
-        resolveUpload(appId, 'adaptiveIcon', profile),
+        resolveUpload(clientId, appId, 'adaptiveIcon', profile),
         path.join(root, app.assets.adaptiveIcon),
       )
     ) {
@@ -152,10 +159,10 @@ export function applyProfile(appId, profileInput) {
     }
   } else {
     patchAppConfigCajeroJornadas(root, profile, appId === 'jornadas');
-    if (copyIfExists(resolveUpload(appId, 'logo', profile), path.join(root, app.assets.logo))) {
+    if (copyIfExists(resolveUpload(clientId, appId, 'logo', profile), path.join(root, app.assets.logo))) {
       copied.push(app.assets.logo);
     }
-    if (copyIfExists(resolveUpload(appId, 'icon', profile), path.join(root, app.assets.icon))) {
+    if (copyIfExists(resolveUpload(clientId, appId, 'icon', profile), path.join(root, app.assets.icon))) {
       copied.push(app.assets.icon);
       // icon-app suele ser el mismo para splash/adaptive en cajero/jornadas
       const iconDest = path.join(root, app.assets.icon);
@@ -180,6 +187,6 @@ export function applyProfile(appId, profileInput) {
   };
 }
 
-export function applyAllProfiles(getProfile = loadProfile) {
-  return Object.keys(MOBILE_APPS).map((id) => applyProfile(id, getProfile(id)));
+export function applyAllProfiles(clientId = getActiveClientId(), getProfile = (id) => loadProfile(id, clientId)) {
+  return Object.keys(MOBILE_APPS).map((id) => applyProfile(id, getProfile(id), clientId));
 }

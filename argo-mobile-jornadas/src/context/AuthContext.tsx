@@ -17,7 +17,7 @@ import {
   SERVIDOR_API_STORAGE_KEY,
 } from '../config/apiBase';
 import { storeDelete, storeGet, storeSet } from '../storage/safeStore';
-import type { AuthUser } from '../api/types';
+import type { AuthUser, StaffLoginResponse } from '../api/types';
 import { withTimeout } from '../utils/timeout';
 import { puedeUsarAppJornadas } from '../utils/permisos';
 
@@ -32,7 +32,8 @@ type AuthState =
 
 type AuthCtx = {
   state: AuthState;
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<StaffLoginResponse>;
+  finalizeSignIn: (token: string, user: AuthUser) => Promise<void>;
   signOut: () => Promise<void>;
   setServidor: (apiBase: string) => Promise<void>;
 };
@@ -40,7 +41,6 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Arranca en login de inmediato; la sesión se restaura en segundo plano.
   const [state, setState] = useState<AuthState>({ status: 'signedOut' });
   const bootstrapped = useRef(false);
 
@@ -118,22 +118,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async (username: string, password: string) => {
-    const res = await apiLogin(username, password);
-    const user = res.user;
-    if (!user) {
-      throw new Error('El servidor no devolvió datos del usuario.');
-    }
+  const finalizeSignIn = useCallback(async (token: string, user: AuthUser) => {
     if (!puedeUsarAppJornadas(user.permisos)) {
       setState({ status: 'denied', user });
       throw new Error(
         'Su usuario no tiene permiso para operar jornadas. Pida «jornadas.operar» a un administrador.',
       );
     }
-    setTokenGetter(() => res.token);
-    setState({ status: 'signedIn', token: res.token, user });
-    void storeSet(K_TOKEN, res.token);
-    void storeSet(K_USER, JSON.stringify(user));
+    setTokenGetter(() => token);
+    setState({ status: 'signedIn', token, user });
+    await storeSet(K_TOKEN, token);
+    await storeSet(K_USER, JSON.stringify(user));
+  }, []);
+
+  const signIn = useCallback(async (username: string, password: string) => {
+    return apiLogin(username, password);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -158,8 +157,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ state, signIn, signOut, setServidor }),
-    [state, signIn, signOut, setServidor],
+    () => ({ state, signIn, finalizeSignIn, signOut, setServidor }),
+    [state, signIn, finalizeSignIn, signOut, setServidor],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

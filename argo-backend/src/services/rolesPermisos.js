@@ -61,6 +61,9 @@ const ROLES_SISTEMA = {
       'programas.agregar',
       'jornadas.ver',
       'jornadas.operar',
+      'jornadas.app.hoy',
+      'jornadas.app.operar_clase',
+      'jornadas.app.certificados',
       'programacion_cea.ver',
       'programacion_cea.operar',
       'cohortes_academicas.ver',
@@ -84,6 +87,7 @@ const ROLES_SISTEMA = {
       'servicios.ver',
       'jornadas.ver',
       'jornadas.registrar_alumnos',
+      'jornadas.app.registrar_alumno',
       'jornadas.evaluaciones.ver',
       'jornadas.evaluaciones.gestionar',
       'programacion_cea.ver',
@@ -125,6 +129,24 @@ const LEGACY_PERMISO_EXPANSION = {
     'config.usuarios.editar',
     'config.usuarios.eliminar',
   ],
+  'jornadas.operar': [
+    'jornadas.app.hoy',
+    'jornadas.app.operar_clase',
+    'jornadas.app.certificados',
+  ],
+  'jornadas.gestionar': [
+    'jornadas.app.hoy',
+    'jornadas.app.operar_clase',
+    'jornadas.app.registrar_alumno',
+    'jornadas.app.certificados',
+    'jornadas.app.gestionar',
+    'jornadas.app.crear',
+    'jornadas.app.editar',
+    'jornadas.app.informes',
+  ],
+  'jornadas.registrar_alumnos': ['jornadas.app.registrar_alumno'],
+  'jornadas.ver': ['jornadas.app.informes'],
+  'alumnos.certificados': ['jornadas.app.certificados'],
 };
 
 function concedidoPorPermisoLegacy(permisos, clave) {

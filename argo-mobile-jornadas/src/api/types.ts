@@ -15,21 +15,30 @@ export interface AuthUser {
   };
 }
 
-export interface LoginResponse {
-  token: string;
-  user: AuthUser;
-}
+export type StaffLoginStep = 'complete' | 'mfa_verify' | 'mfa_setup';
 
-/** Respuesta cruda del backend (puede incluir MFA o step complete). */
-export type LoginApiRaw = {
-  step?: 'complete' | 'mfa_verify' | 'mfa_setup';
+export interface StaffLoginResponse {
+  step: StaffLoginStep;
   token?: string;
   user?: AuthUser;
   mfaToken?: string;
   setupToken?: string;
   username?: string;
+  qrDataUrl?: string;
+  manualSecret?: string;
+  issuer?: string;
+  recoveryCodes?: string[];
+  recoveryRemaining?: number;
   message?: string;
-};
+}
+
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+/** @deprecated Use StaffLoginResponse */
+export type LoginApiRaw = StaffLoginResponse;
 
 export interface ContratoJornada {
   _id: string;

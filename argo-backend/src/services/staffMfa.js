@@ -63,8 +63,8 @@ function mfaAppliesToRequest(req) {
   if (!mfaStaffRequired()) return false;
   if (mfaStaffWebOnly()) {
     const cliente = String(req.get('X-ARGO-Cliente') || '').toLowerCase();
-    // App cajero exige 2FA igual que el ERP web; jornadas/aula quedan exentas.
-    if (cliente === 'cajero') return true;
+    // Apps nativas de staff (cajero y jornadas) exigen 2FA igual que el ERP web.
+    if (cliente === 'cajero' || cliente === 'jornadas') return true;
     if (isClienteNativo(req)) return false;
   }
   return true;

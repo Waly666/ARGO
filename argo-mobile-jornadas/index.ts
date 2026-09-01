@@ -5,9 +5,9 @@ import * as SystemUI from 'expo-system-ui';
 import { registerRootComponent } from 'expo';
 
 import App from './App';
-import { JORNADAS_VERDE } from './src/config/appBranding';
+import { SPLASH_BG } from './src/config/appBranding';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-void SystemUI.setBackgroundColorAsync(JORNADAS_VERDE);
+void SystemUI.setBackgroundColorAsync(SPLASH_BG);
 
 registerRootComponent(App);

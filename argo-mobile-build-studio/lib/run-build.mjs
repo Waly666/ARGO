@@ -36,11 +36,12 @@ function runCommand(cwd, command, args, onLine) {
  */
 export async function runBuild(appId, opts = {}) {
   const app = MOBILE_APPS[appId];
-  const profile = loadProfile(appId);
+  const clientId = opts.clientId;
+  const profile = opts.profile ?? loadProfile(appId, clientId);
   const buildProfile = opts.buildProfile ?? profile.buildProfile ?? 'production';
   const root = appRoot(appId);
 
-  applyProfile(appId, { ...profile, buildProfile });
+  applyProfile(appId, { ...profile, buildProfile }, clientId);
 
   const args = [
     'dlx',
