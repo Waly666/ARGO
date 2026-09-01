@@ -3,6 +3,11 @@
  * Solo aplica cuando portal-theme.service marca html[data-finstruvial-portal='1'].
  */
 html[data-finstruvial-portal='1'] {
+  /* Mismo fondo que el hero de inicio (starfield / --av-hero-bg) en todos los heroes. */
+  av-portal-promo-banner-hero .ppbh {
+    background: var(--av-hero-bg) !important;
+  }
+
   av-portal-promo-banner-hero:not(.home-promo-hero) {
     .ppbh {
       --fv-hero-max: min(var(--av-max, 1180px), calc(100% - 2rem));
@@ -18,20 +23,9 @@ html[data-finstruvial-portal='1'] {
       min-height: unset !important;
       padding: clamp(2.25rem, 5vw, 3.5rem) 0;
       overflow: hidden;
-      background:
-        radial-gradient(ellipse at 80% 0%, var(--av-primary-a35, rgba(37, 99, 235, 0.35)), transparent 55%),
-        radial-gradient(ellipse at 10% 100%, var(--av-accent-a22, rgba(59, 130, 246, 0.22)), transparent 50%),
-        var(--av-page-hero-bg, linear-gradient(135deg, #030712 0%, #0b1224 45%, #0f172a 100%));
 
       &::before {
-        content: '';
-        position: absolute;
-        inset: auto -5% -45% auto;
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        background: radial-gradient(circle, var(--av-page-hero-glow, rgba(59, 130, 246, 0.18)), transparent 70%);
-        pointer-events: none;
+        display: none;
       }
     }
 
