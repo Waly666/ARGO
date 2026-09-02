@@ -87,6 +87,8 @@ export class ServicioLineaComponent implements OnInit {
       s.slug === 'planeacionGestionVial';
     if (!layoutSplit) return false;
     if (
+      s.slug === 'aulaVirtual' ||
+      s.slug === 'peridata' ||
       s.slug === 'herramientasEducativasTecnologicas' ||
       s.slug === 'inventariosViales' ||
       s.slug === 'planeacionGestionVial' ||

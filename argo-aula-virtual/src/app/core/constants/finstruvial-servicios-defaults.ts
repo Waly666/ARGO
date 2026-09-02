@@ -172,6 +172,21 @@ function arr<T>(val: T[] | undefined | null, fallback: T[]): T[] {
   return Array.isArray(val) && val.length ? val : fallback;
 }
 
+/** Perfiles publicados antes del wireframe guardaban `estilo: "default"` y anulaban academy/tech. */
+function resolveEstilo(
+  slug: FinstruvialServicioSlug,
+  srcEstilo: unknown,
+  defaultEstilo: PortalFinstruvialServicioLanding['estilo'],
+): PortalFinstruvialServicioLanding['estilo'] {
+  const wireEstilo = FINSTRUVIAL_SERVICIOS_WIREFRAME[slug]?.estilo;
+  const fromSrc = String(srcEstilo ?? '').trim();
+  if (fromSrc && fromSrc !== 'default') {
+    return fromSrc as PortalFinstruvialServicioLanding['estilo'];
+  }
+  if (wireEstilo) return wireEstilo as PortalFinstruvialServicioLanding['estilo'];
+  return defaultEstilo || 'default';
+}
+
 const HERO_PARRAFO_MAX_CHARS = 200;
 
 function mergeHeroParrafos(
@@ -444,7 +459,7 @@ export function mergeFinstruvialServicioLanding(
     slug,
     activa: src.activa !== false,
     menuLabel: str(src.menuLabel, d.menuLabel),
-    estilo: (src.estilo as PortalFinstruvialServicioLanding['estilo']) || d.estilo,
+    estilo: resolveEstilo(slug, src.estilo, d.estilo),
     kicker: str(src.kicker, d.kicker),
     tituloLinea: str(src.tituloLinea, d.tituloLinea),
     tituloAcento: str(src.tituloAcento, d.tituloAcento),

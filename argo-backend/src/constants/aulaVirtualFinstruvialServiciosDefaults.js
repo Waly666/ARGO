@@ -88,6 +88,19 @@ function arr(val, fallback) {
 
 }
 
+const ESTILO_WIREFRAME_POR_SLUG = {
+  aulaVirtual: 'academy',
+  peridata: 'tech',
+  inventariosViales: 'tech',
+  herramientasEducativasTecnologicas: 'tech',
+};
+
+function resolveEstilo(slug, srcEstilo, defaultEstilo) {
+  const fromSrc = String(srcEstilo ?? '').trim();
+  if (fromSrc && fromSrc !== 'default') return fromSrc;
+  return ESTILO_WIREFRAME_POR_SLUG[slug] || defaultEstilo || 'default';
+}
+
 
 
 function mergePagina(slug, raw, defaults) {
@@ -322,7 +335,7 @@ function mergePagina(slug, raw, defaults) {
 
     introMedios: arr(src.introMedios, d.introMedios),
 
-    estilo: src.estilo || d.estilo || 'default',
+    estilo: resolveEstilo(slug, src.estilo, d.estilo),
 
     bloquesKicker: str(src.bloquesKicker, d.bloquesKicker),
 
