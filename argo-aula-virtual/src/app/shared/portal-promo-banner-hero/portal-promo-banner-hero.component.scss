@@ -44,6 +44,32 @@
   background-repeat: no-repeat;
   transform: scale(1.02);
   animation: ppbh-photo-drift 18s ease-in-out infinite;
+  -webkit-mask-image: radial-gradient(
+    ellipse 112% 98% at 68% 48%,
+    #000 38%,
+    rgba(0, 0, 0, 0.9) 56%,
+    rgba(0, 0, 0, 0.42) 78%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 112% 98% at 68% 48%,
+    #000 38%,
+    rgba(0, 0, 0, 0.9) 56%,
+    rgba(0, 0, 0, 0.42) 78%,
+    transparent 100%
+  );
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, var(--ppbh-navy-deep) 0%, transparent 20%),
+      linear-gradient(to left, rgba(11, 27, 71, 0.5) 0%, transparent 16%),
+      linear-gradient(to bottom, transparent 58%, var(--ppbh-navy-deep) 100%),
+      linear-gradient(to top, rgba(11, 27, 71, 0.45) 0%, transparent 10%);
+    pointer-events: none;
+  }
 
   &--placeholder {
     display: none !important;
@@ -54,8 +80,9 @@
   position: absolute;
   inset: 0;
   background:
+    radial-gradient(ellipse 95% 88% at 72% 46%, transparent 18%, rgba(11, 27, 71, 0.28) 62%, rgba(11, 27, 71, 0.72) 100%),
     linear-gradient(105deg, rgba(11, 27, 71, 0.9) 0%, rgba(11, 27, 71, 0.78) 34%, rgba(11, 27, 71, 0.42) 58%, rgba(11, 27, 71, 0.16) 100%),
-    linear-gradient(180deg, transparent 0%, rgba(11, 27, 71, 0.52) 100%);
+    linear-gradient(180deg, rgba(11, 27, 71, 0.35) 0%, transparent 14%, transparent 72%, rgba(11, 27, 71, 0.62) 100%);
   pointer-events: none;
 }
 
@@ -172,6 +199,7 @@
 .ppbh__title-accent {
   font-size: clamp(2.1rem, 6vw, 3.75rem);
   color: var(--ppbh-accent);
+  text-transform: uppercase;
   text-shadow: 0 0 28px color-mix(in srgb, var(--ppbh-accent) 35%, transparent);
   animation: ppbh-title-glow 4s ease-in-out infinite;
 }
@@ -390,10 +418,25 @@
 @media (max-width: 640px) {
   .ppbh__photo {
     background-position: center center;
+    -webkit-mask-image: radial-gradient(
+      ellipse 118% 105% at 50% 46%,
+      #000 32%,
+      rgba(0, 0, 0, 0.82) 54%,
+      rgba(0, 0, 0, 0.35) 76%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      ellipse 118% 105% at 50% 46%,
+      #000 32%,
+      rgba(0, 0, 0, 0.82) 54%,
+      rgba(0, 0, 0, 0.35) 76%,
+      transparent 100%
+    );
   }
 
   .ppbh__overlay {
     background:
+      radial-gradient(ellipse 100% 92% at 50% 44%, transparent 8%, rgba(6, 20, 40, 0.35) 58%, rgba(6, 20, 40, 0.85) 100%),
       linear-gradient(180deg, rgba(6, 20, 40, 0.92) 0%, rgba(6, 20, 40, 0.78) 55%, rgba(6, 20, 40, 0.55) 100%);
   }
 

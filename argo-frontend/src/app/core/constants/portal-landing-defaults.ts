@@ -42,6 +42,11 @@ import {
   PortalJornadasCapacitacionLanding,
 } from './jornadas-capacitacion-landing-defaults';
 import { mergePqrLanding, PQR_LANDING_DEFAULTS, PortalPqrLanding } from './pqr-landing-defaults';
+import {
+  FINSTRUVIAL_SERVICIOS_DEFAULTS,
+  mergeFinstruvialServicios,
+} from './finstruvial-servicios-defaults';
+import type { PortalFinstruvialServiciosConfig } from './finstruvial-servicio-landing.types';
 import { PortalPromoHeroTheme } from './portal-promo-hero-fields.util';
 
 export type { PortalCursosConduccionLanding };
@@ -49,6 +54,7 @@ export type { PortalAcercaLanding };
 export type { PortalExamenTeoricoLanding };
 export type { PortalMercanciasPeligrosasLanding };
 export type { PortalTrabajoEnAlturasLanding };
+export type { PortalFinstruvialServiciosConfig };
 export type { PortalFundacionLanding };
 export type { PortalPqrLanding };
 export type { PortalJornadasCapacitacionLanding };
@@ -289,6 +295,7 @@ export interface PortalLandingConfig {
   examenTeorico: PortalExamenTeoricoLanding;
   mercanciasPeligrosas: PortalMercanciasPeligrosasLanding;
   trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
+  finstruvialServicios: PortalFinstruvialServiciosConfig;
   servicios: { titulo: string; items: LandingServicioItem[] };
   valores: { titulo: string; lead: string; items: LandingItemBasico[] };
   testimonios: { kicker: string; titulo: string; lead: string; items: LandingTestimonio[] };
@@ -530,6 +537,9 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   trabajoEnAlturas: JSON.parse(
     JSON.stringify(TRABAJO_EN_ALTURAS_LANDING),
   ) as PortalTrabajoEnAlturasLanding,
+  finstruvialServicios: JSON.parse(
+    JSON.stringify(FINSTRUVIAL_SERVICIOS_DEFAULTS),
+  ) as PortalFinstruvialServiciosConfig,
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [
@@ -938,6 +948,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
+    finstruvialServicios: mergeFinstruvialServicios(raw.finstruvialServicios),
     servicios: {
       ...d.servicios,
       ...raw.servicios,

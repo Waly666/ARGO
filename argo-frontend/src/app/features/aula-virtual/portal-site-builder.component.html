@@ -43,6 +43,22 @@
       </header>
     }
 
+    @if (finstruvialLineaSlug(panel()); as slug) {
+      <p class="psb-note">
+        Página pública en <strong>{{ finstruvialServicioRoute(slug) }}</strong>. Edite textos e imágenes; pulse
+        <strong>Publicar cambios</strong> para guardar los textos.
+      </p>
+      @for (linea of [slug]; track linea) {
+        <argo-portal-finstruvial-servicios-editor
+          modo="linea"
+          [lineaSlug]="linea"
+          [portalUrl]="portalUrl"
+          [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+    } @else {
     @switch (panel()) {
       @case ('panel') {
         <div class="psb-progress">
@@ -430,6 +446,16 @@
         </p>
         <argo-portal-trabajo-en-alturas-editor
           [trabajoEnAlturas]="ensureTrabajoEnAlturasLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('finstruvialServiciosHub') {
+        <argo-portal-finstruvial-servicios-editor
+          modo="hub"
+          [portalUrl]="portalUrl"
+          [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -836,6 +862,7 @@
           }
         </div>
       }
+    }
     }
   </div>
 

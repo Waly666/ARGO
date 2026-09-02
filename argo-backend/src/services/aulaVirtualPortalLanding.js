@@ -1,4 +1,4 @@
-const { LANDING_DEFAULTS, mergeConsultaCertificados, mergeLandingHero, mergeBlogSection, mergePqrLanding, mergeJornadasCapacitacionLanding, mergeEvaluacionJornadasLanding } = require('../constants/aulaVirtualLandingDefaults');
+const { LANDING_DEFAULTS, mergeConsultaCertificados, mergeLandingHero, mergeBlogSection, mergePqrLanding, mergeJornadasCapacitacionLanding, mergeEvaluacionJornadasLanding, mergeFinstruvialServicios } = require('../constants/aulaVirtualLandingDefaults');
 const { examenTeoricoContenidoAntiguo } = require('../constants/aulaVirtualExamenTeoricoDefaults');
 const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMercanciasPeligrosasDefaults');
 const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
@@ -534,6 +534,7 @@ function normalizarLanding(input) {
     pqr: mergePqrLanding(pqrSrc),
     jornadasCapacitacion: mergeJornadasCapacitacionLanding(jornadasSrc),
     evaluacionJornadas: mergeEvaluacionJornadasLanding(evaluacionJornadasSrc),
+    finstruvialServicios: normalizarFinstruvialServicios(src.finstruvialServicios),
     asistente: normalizarAsistente(src.asistente, consultaCertSrc),
   };
 }
@@ -821,6 +822,26 @@ function normalizarFundacion(src, d) {
       sedeNota: str(contactoSrc.sedeNota, d.contacto?.sedeNota),
     },
   };
+}
+
+function normalizarFinstruvialServicios(raw) {
+  const { SLUGS } = require('../constants/aulaVirtualFinstruvialServiciosDefaults');
+  const merged = mergeFinstruvialServicios(raw);
+  if (merged.hub?.heroImagenUrl) {
+    merged.hub.heroImagenUrlAbsoluta =
+      publicUploadUrl(merged.hub.heroImagenUrl) || merged.hub.heroImagenUrlAbsoluta;
+  }
+  for (const slug of SLUGS) {
+    const p = merged.paginas?.[slug];
+    if (!p) continue;
+    if (p.heroImagenUrl) {
+      p.heroImagenUrlAbsoluta = publicUploadUrl(p.heroImagenUrl) || p.heroImagenUrlAbsoluta;
+    }
+    for (const img of p.imagenes || []) {
+      if (img?.url) img.urlAbsoluta = publicUploadUrl(img.url) || img.urlAbsoluta;
+    }
+  }
+  return merged;
 }
 
 function mergeLanding(stored) {

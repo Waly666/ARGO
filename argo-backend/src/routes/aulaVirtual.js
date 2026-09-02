@@ -25,6 +25,8 @@ const {
   aulaVirtualJornadasHero,
   aulaVirtualEvaluacionJornadasHero,
   aulaVirtualConsultaCertificadosHero,
+  aulaVirtualFinstruvialServicios,
+  aulaVirtualFinstruvialServiciosVideo,
   aulaVirtualGaleria,
   aulaVirtualHomeFotos,
   aulaVirtualHomePublicidad,
@@ -283,6 +285,45 @@ router.delete(
   requireAuth,
   configPortal,
   admin.quitarLandingHeroImagenPortal,
+);
+router.post(
+  '/admin/portal/finstruvial-servicios/hub-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualFinstruvialServicios.single('imagen'),
+  admin.subirImagenFinstruvialServiciosHubPortal,
+);
+router.delete(
+  '/admin/portal/finstruvial-servicios/hub-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenFinstruvialServiciosHubPortal,
+);
+router.post(
+  '/admin/portal/finstruvial-servicios/:slug/imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualFinstruvialServicios.single('imagen'),
+  admin.subirImagenFinstruvialServicioPortal,
+);
+router.delete(
+  '/admin/portal/finstruvial-servicios/:slug/imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenFinstruvialServicioPortal,
+);
+router.post(
+  '/admin/portal/finstruvial-servicios/:slug/video',
+  requireAuth,
+  configPortal,
+  aulaVirtualFinstruvialServiciosVideo.single('video'),
+  admin.subirVideoFinstruvialServicioPortal,
+);
+router.delete(
+  '/admin/portal/finstruvial-servicios/:slug/video',
+  requireAuth,
+  configPortal,
+  admin.quitarVideoFinstruvialServicioPortal,
 );
 router.post(
   '/admin/portal/popup-imagen',

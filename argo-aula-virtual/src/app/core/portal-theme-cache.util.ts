@@ -1,13 +1,16 @@
 import { PortalConfig } from './models';
+import { googleFontsCssUrl, portalFontsToLoad } from './portal-fonts.util';
 import { buildPortalThemeCssVars, resolvePortalHeroEstilo } from './portal-theme-css.util';
 
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 export interface PortalThemeCachePayload {
   v: number;
   vars: Record<string, string>;
   heroEstilo?: string;
   nombreCea?: string;
+  /** URL de Google Fonts para precargar con portal-boot.js */
+  fontsUrl?: string;
 }
 
 export function portalThemeCacheKey(hostname = ''): string {
@@ -35,6 +38,17 @@ export function applyPortalThemeCache(data: PortalThemeCachePayload | null, root
     if (val) el.style.setProperty(key, val);
   }
   if (data.heroEstilo) el.dataset['heroEstilo'] = data.heroEstilo;
+  if (data.fontsUrl) {
+    const id = 'av-portal-google-fonts';
+    let link = document.getElementById(id) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    if (link.href !== data.fontsUrl) link.href = data.fontsUrl;
+  }
 }
 
 export function persistPortalThemeCache(config: PortalConfig | null): void {
@@ -45,6 +59,7 @@ export function persistPortalThemeCache(config: PortalConfig | null): void {
     vars: buildPortalThemeCssVars(tema),
     heroEstilo: resolvePortalHeroEstilo(tema),
     nombreCea: config.nombreCea?.trim() || undefined,
+    fontsUrl: googleFontsCssUrl(portalFontsToLoad(tema)) || undefined,
   };
   try {
     localStorage.setItem(portalThemeCacheKey(), JSON.stringify(payload));

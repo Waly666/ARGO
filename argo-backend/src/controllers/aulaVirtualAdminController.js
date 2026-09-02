@@ -196,7 +196,7 @@ exports.eliminarMaterial = async (req, res, next) => {
   }
 };
 
-exports.obtenerConfigPortal = async (_req, res, next) => {
+exports.obtenerConfigPortal = async (req, res, next) => {
   try {
     res.json(await obtenerConfigPortalAdmin(req));
   } catch (e) {
@@ -1509,6 +1509,15 @@ const {
   quitarLandingHeroImagen,
 } = require('../services/portalLandingHeroImage');
 
+const {
+  subirImagenServicioFinstruvial,
+  quitarImagenServicioFinstruvial,
+  subirVideoServicioFinstruvial,
+  quitarVideoServicioFinstruvial,
+  subirImagenHubServicios,
+  quitarImagenHubServicios,
+} = require('../services/portalFinstruvialServicioImage');
+
 exports.subirLandingHeroImagenPortal = async (req, res, next) => {
   try {
     const result = await subirLandingHeroImagen(req.params.landingHeroKey, req.file, req.user);
@@ -1522,6 +1531,87 @@ exports.subirLandingHeroImagenPortal = async (req, res, next) => {
 exports.quitarLandingHeroImagenPortal = async (req, res, next) => {
   try {
     const result = await quitarLandingHeroImagen(req.params.landingHeroKey, req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirImagenFinstruvialServicioPortal = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Seleccione una imagen' });
+    const result = await subirImagenServicioFinstruvial(
+      req.params.slug,
+      req.body?.imagenId || req.query?.imagenId || 'hero',
+      req.file,
+      req.user,
+    );
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarImagenFinstruvialServicioPortal = async (req, res, next) => {
+  try {
+    const result = await quitarImagenServicioFinstruvial(
+      req.params.slug,
+      req.body?.imagenId || 'hero',
+      req.user,
+    );
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirVideoFinstruvialServicioPortal = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Seleccione un video MP4 o WEBM' });
+    const result = await subirVideoServicioFinstruvial(
+      req.params.slug,
+      req.body?.videoId || req.query?.videoId,
+      req.file,
+      req.user,
+    );
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarVideoFinstruvialServicioPortal = async (req, res, next) => {
+  try {
+    const result = await quitarVideoServicioFinstruvial(
+      req.params.slug,
+      req.body?.videoId,
+      req.user,
+    );
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirImagenFinstruvialServiciosHubPortal = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Seleccione una imagen' });
+    const result = await subirImagenHubServicios(req.file, req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarImagenFinstruvialServiciosHubPortal = async (req, res, next) => {
+  try {
+    const result = await quitarImagenHubServicios(req.user);
     res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

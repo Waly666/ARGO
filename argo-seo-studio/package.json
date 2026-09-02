@@ -1,0 +1,13 @@
+{
+  "name": "@argo/seo-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Herramienta local para generar títulos, descripciones y keywords SEO del portal aula virtual por cliente.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

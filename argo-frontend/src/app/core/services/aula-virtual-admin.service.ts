@@ -660,6 +660,90 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenFinstruvialServiciosHubPortal(file: File): Observable<{
+    config: PortalAulaConfig;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/finstruvial-servicios/hub-imagen`, fd);
+  }
+
+  quitarImagenFinstruvialServiciosHubPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/finstruvial-servicios/hub-imagen`,
+    );
+  }
+
+  subirImagenFinstruvialServicioPortal(
+    file: File,
+    slug: string,
+    imagenId: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('imagenId', imagenId);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/finstruvial-servicios/${slug}/imagen`, fd);
+  }
+
+  quitarImagenFinstruvialServicioPortal(
+    slug: string,
+    imagenId: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/finstruvial-servicios/${slug}/imagen`,
+      { body: { imagenId } },
+    );
+  }
+
+  subirVideoFinstruvialServicioPortal(
+    file: File,
+    slug: string,
+    videoId: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('video', file);
+    fd.append('videoId', videoId);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/finstruvial-servicios/${slug}/video`, fd);
+  }
+
+  quitarVideoFinstruvialServicioPortal(
+    slug: string,
+    videoId: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/finstruvial-servicios/${slug}/video`,
+      { body: { videoId } },
+    );
+  }
+
   matricularAlumno(
     idPrograma: string | number,
     body: {

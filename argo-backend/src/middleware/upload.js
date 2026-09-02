@@ -338,6 +338,8 @@ module.exports = {
   aulaVirtualJornadasHero: buildImagen('aula-virtual-jornadas-hero', 8),
   aulaVirtualEvaluacionJornadasHero: buildImagen('aula-virtual-evaluacion-jornadas-hero', 8),
   aulaVirtualConsultaCertificadosHero: buildImagen('aula-virtual-consulta-certificados-hero', 8),
+  aulaVirtualFinstruvialServicios: buildImagen('aula-virtual-finstruvial-servicios', 8),
+  aulaVirtualFinstruvialServiciosVideo: buildVideo('aula-virtual-finstruvial-servicios', 50),
   aulaVirtualGaleria: buildGaleriaMedia('aula-virtual-galeria', 25),
   aulaVirtualHomeFotos: buildImagen('aula-virtual-home-fotos', 8),
   aulaVirtualHomePublicidad: buildImagen('aula-virtual-home-publicidad', 8),

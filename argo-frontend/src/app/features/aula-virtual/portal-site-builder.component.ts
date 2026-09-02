@@ -43,6 +43,18 @@ import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalGoogleSearchConsoleEditorComponent } from './portal-google-search-console-editor.component';
 import { PortalSeoEditorComponent } from './portal-seo-editor.component';
+import {
+  mergeFinstruvialServicios,
+  finstruvialServiciosIncompleto,
+} from '../../core/constants/finstruvial-servicios-defaults';
+import { FINSTRUVIAL_SERVICIO_SLUGS } from '../../core/constants/finstruvial-servicios.constants';
+import {
+  FINSTRUVIAL_SERVICIO_BUILDER_MENU,
+  finstruvialServicioRoute,
+  finstruvialServicioSlugFromBuilderPanel,
+} from '../../core/constants/finstruvial-servicios-editor-panels';
+import type { PortalFinstruvialServiciosConfig } from '../../core/constants/finstruvial-servicio-landing.types';
+import { PortalFinstruvialServiciosEditorComponent } from './portal-finstruvial-servicios-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
@@ -72,6 +84,14 @@ export type BuilderPanel =
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'finstruvialServiciosHub'
+  | 'finstruvialServicioAulaVirtual'
+  | 'finstruvialServicioPeridata'
+  | 'finstruvialServicioCapacitacion'
+  | 'finstruvialServicioEstudios'
+  | 'finstruvialServicioHerramientas'
+  | 'finstruvialServicioInventarios'
+  | 'finstruvialServicioPlaneacion'
   | 'acerca'
   | 'empresa'
   | 'marca'
@@ -115,6 +135,7 @@ interface GuiaPaso {
     PortalExamenTeoricoEditorComponent,
     PortalMercanciasPeligrosasEditorComponent,
     PortalTrabajoEnAlturasEditorComponent,
+    PortalFinstruvialServiciosEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalGaleriaHeroImagenEditorComponent,
     PortalPromoHeroImagenEditorComponent,
@@ -149,6 +170,9 @@ export class PortalSiteBuilderComponent {
   readonly fuentes = PORTAL_FUENTES;
 
   readonly portalSeoEditor = environment.portalSeoEditor;
+  readonly finstruvialServicioMenu = FINSTRUVIAL_SERVICIO_BUILDER_MENU;
+  readonly finstruvialServicioRoute = finstruvialServicioRoute;
+  readonly finstruvialLineaSlug = finstruvialServicioSlugFromBuilderPanel;
 
   private readonly menuGroupsAll: MenuGroup[] = [
     {
@@ -191,6 +215,17 @@ export class PortalSiteBuilderComponent {
       ],
     },
     {
+      title: 'Nuestros servicios',
+      items: [
+        { id: 'finstruvialServiciosHub', icon: '📂', label: 'Portafolio (/servicios)' },
+        ...FINSTRUVIAL_SERVICIO_BUILDER_MENU.map((item) => ({
+          id: item.id,
+          icon: item.icon,
+          label: item.label,
+        })),
+      ],
+    },
+    {
       title: 'Diseño',
       items: [
         { id: 'apariencia', icon: '🎨', label: 'Colores y estilo' },
@@ -203,11 +238,26 @@ export class PortalSiteBuilderComponent {
   ];
 
   get menuGroups(): MenuGroup[] {
-    if (this.portalSeoEditor) return this.menuGroupsAll;
-    return this.menuGroupsAll.map((g) => ({
-      ...g,
-      items: g.items.filter((i) => i.id !== 'seo'),
-    }));
+    const cfg = this.ensureFinstruvialServiciosLanding();
+    const base = this.portalSeoEditor
+      ? this.menuGroupsAll
+      : this.menuGroupsAll.map((g) => ({
+          ...g,
+          items: g.items.filter((i) => i.id !== 'seo'),
+        }));
+    return base.map((g) => {
+      if (g.title !== 'Nuestros servicios') return g;
+      return {
+        ...g,
+        items: g.items.map((item) => {
+          if (item.id === 'finstruvialServiciosHub') return item;
+          const slug = this.finstruvialLineaSlug(item.id);
+          if (!slug) return item;
+          const nombre = cfg.paginas[slug]?.menuLabel?.trim();
+          return nombre ? { ...item, label: nombre } : item;
+        }),
+      };
+    });
   }
 
   panel = signal<BuilderPanel>('panel');
@@ -282,6 +332,9 @@ export class PortalSiteBuilderComponent {
     if (!this.portalForm.landing.acerca) {
       this.portalForm.landing.acerca = mergePortalLanding().acerca;
     }
+    if (!this.portalForm.landing.finstruvialServicios) {
+      this.portalForm.landing.finstruvialServicios = mergePortalLanding().finstruvialServicios;
+    }
     this.ensureExamenTeoricoLanding();
     return this.portalForm.landing;
   }
@@ -325,6 +378,18 @@ export class PortalSiteBuilderComponent {
       );
     }
     return this.portalForm.landing.trabajoEnAlturas;
+  }
+
+  /** Inicializa servicios Finstruvial sin reemplazar el objeto en cada render (conserva textos y enlaces). */
+  ensureFinstruvialServiciosLanding(): PortalFinstruvialServiciosConfig {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    const actual = this.portalForm.landing.finstruvialServicios;
+    if (!actual || finstruvialServiciosIncompleto(actual)) {
+      this.portalForm.landing.finstruvialServicios = mergeFinstruvialServicios(actual);
+    }
+    return this.portalForm.landing.finstruvialServicios;
   }
 
   get consultaCertificados() {
@@ -429,6 +494,39 @@ export class PortalSiteBuilderComponent {
         title: 'Trabajo en alturas',
         help:
           'Página educativa en /trabajo-en-alturas con el programa de 20 módulos, normativa Res. 4272 y material descargable. Las imágenes se guardan al subirlas; publique el sitio para los textos.',
+      },
+      finstruvialServiciosHub: {
+        title: 'Portafolio de servicios',
+        help:
+          'Página índice /servicios y el nombre del menú «Nuestros servicios». Edite textos del hero y la imagen del portafolio.',
+      },
+      finstruvialServicioAulaVirtual: {
+        title: 'Servicio: Aula Virtual',
+        help: 'Página /servicios/aula-virtual — textos, bloques, botones e imágenes editables.',
+      },
+      finstruvialServicioPeridata: {
+        title: 'Servicio: PERIDATA',
+        help: 'Página /servicios/peridata — textos, bloques, producto PERIDATA e imágenes editables.',
+      },
+      finstruvialServicioCapacitacion: {
+        title: 'Servicio: Capacitación',
+        help: 'Página /servicios/capacitacion-sensibilizacion — contenido completo editable.',
+      },
+      finstruvialServicioEstudios: {
+        title: 'Servicio: Estudios técnicos',
+        help: 'Página /servicios/estudios-diagnosticos-tecnicos — contenido completo editable.',
+      },
+      finstruvialServicioHerramientas: {
+        title: 'Servicio: Herramientas educativas',
+        help: 'Página /servicios/herramientas-educativas-tecnologicas — contenido completo editable.',
+      },
+      finstruvialServicioInventarios: {
+        title: 'Servicio: Inventarios viales',
+        help: 'Página /servicios/inventarios-viales (incluye Infravial) — contenido completo editable.',
+      },
+      finstruvialServicioPlaneacion: {
+        title: 'Servicio: Planeación vial',
+        help: 'Página /servicios/planeacion-gestion-vial — contenido completo editable.',
       },
       blog: {
         title: 'Página Blog',
@@ -653,8 +751,19 @@ export class PortalSiteBuilderComponent {
   }
 
   applyPortalConfig(config: PortalAulaConfig) {
+    const prevFinstruvial = this.portalForm.landing?.finstruvialServicios;
     Object.assign(this.portalForm, config);
     this.portalForm.landing = mergePortalLanding(config.landing);
+    if (prevFinstruvial?.paginas && this.portalForm.landing.finstruvialServicios?.paginas) {
+      for (const slug of FINSTRUVIAL_SERVICIO_SLUGS) {
+        const prevUrl = prevFinstruvial.paginas[slug]?.heroVideoYoutubeUrl?.trim();
+        if (!prevUrl) continue;
+        const next = this.portalForm.landing.finstruvialServicios.paginas[slug];
+        if (!next?.heroVideoYoutubeUrl?.trim()) {
+          next.heroVideoYoutubeUrl = prevUrl;
+        }
+      }
+    }
     this.portalForm.site = mergePortalSiteDefaults(config.site);
     if (this.portalForm.site.tema.fuenteTitulos === undefined) {
       this.portalForm.site.tema.fuenteTitulos = '';

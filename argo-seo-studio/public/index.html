@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ARGO SEO Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">📈</div>
+          <div>
+            <p class="brand-kicker">ARGO DevTools</p>
+            <h1 class="brand-title">SEO Studio</h1>
+          </div>
+        </div>
+
+        <p class="sidebar-label">Cliente / portal</p>
+        <div class="client-bar" id="clientBar"></div>
+
+        <div class="sidebar-divider"></div>
+
+        <p class="sidebar-label">Flujo</p>
+        <ol class="flow-steps">
+          <li>Datos de la empresa</li>
+          <li>Servicios que presta</li>
+          <li>Generar y copiar al ERP</li>
+        </ol>
+
+        <div class="sidebar-actions">
+          <button type="button" id="btnGenerate" class="btn btn-primary">
+            <span class="btn-icon">✨</span>
+            Generar SEO
+          </button>
+        </div>
+
+        <div class="sidebar-foot">
+          <span class="badge">Solo desarrollo local</span>
+          <span class="badge badge-port">127.0.0.1:3848</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="page-header">
+          <div>
+            <h2 id="pageTitle">Configuración del cliente</h2>
+            <p id="pageSubtitle">Complete los datos y seleccione los servicios principales. El generador crea textos alineados con el editor SEO del portal.</p>
+          </div>
+        </header>
+
+        <div class="content-grid">
+          <section class="panel" id="formPanel"></section>
+          <aside class="panel panel--results" id="resultsPanel">
+            <div class="results-empty" id="resultsEmpty">
+              <div class="results-empty__icon">🔍</div>
+              <h3>Vista previa del pack SEO</h3>
+              <p>Configure el cliente y pulse <strong>Generar SEO</strong> para ver títulos, descripciones y keywords por página.</p>
+            </div>
+            <div class="results-body hidden" id="resultsBody"></div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js?v=3" type="module"></script>
+  </body>
+</html>

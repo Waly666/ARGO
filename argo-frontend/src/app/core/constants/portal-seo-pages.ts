@@ -1,5 +1,15 @@
 /** Catálogo SEO editable por página — editor del sitio web (ERP). */
 
+import {
+  FINSTRUVIAL_SERVICIO_ROUTE,
+  FINSTRUVIAL_SERVICIO_SLUGS,
+  FinstruvialServicioSlug,
+} from './finstruvial-servicios.constants';
+import { mergeFinstruvialServicios } from './finstruvial-servicios-defaults';
+import { PortalFinstruvialServiciosConfig } from './finstruvial-servicio-landing.types';
+
+export type FinstruvialServicioSeoKey = `servicio_${FinstruvialServicioSlug}`;
+
 export type PortalSeoPageKey =
   | 'home'
   | 'cursos'
@@ -11,11 +21,63 @@ export type PortalSeoPageKey =
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'serviciosHub'
+  | FinstruvialServicioSeoKey
   | 'blog'
   | 'galeria'
   | 'pqr'
   | 'jornadasCapacitacion'
   | 'evaluacionJornadas';
+
+export function finstruvialServicioSeoKey(slug: FinstruvialServicioSlug): FinstruvialServicioSeoKey {
+  return `servicio_${slug}`;
+}
+
+export function isFinstruvialServicioSeoKey(key: string): key is FinstruvialServicioSeoKey {
+  return key.startsWith('servicio_') && FINSTRUVIAL_SERVICIO_SLUGS.includes(key.slice(9) as FinstruvialServicioSlug);
+}
+
+function finstruvialServicioTitulo(
+  pagina: { tituloLinea: string; tituloAcento: string; menuLabel: string },
+): string {
+  return [pagina.tituloLinea, pagina.tituloAcento].filter(Boolean).join(' ') || pagina.menuLabel;
+}
+
+function buildFinstruvialSeoCatalog(): PortalSeoPageMeta[] {
+  const servicios = mergeFinstruvialServicios();
+  const hub = servicios.hub;
+  const hubTitulo = [hub.tituloLinea, hub.tituloAcento].filter(Boolean).join(' ') || servicios.menuLabel;
+  const hubEntry: PortalSeoPageMeta = {
+    key: 'serviciosHub',
+    label: 'Portafolio de servicios',
+    ruta: '/servicios',
+    grupo: 'FINSTRUVIAL',
+    hint:
+      'Página índice /servicios. Si deja los campos vacíos, se usan los textos del editor «Portafolio (/servicios)».',
+    defaultTitulo: `${hubTitulo} | FINSTRUVIAL`,
+    defaultDescripcion:
+      hub.lead?.trim() ||
+      'Consultoría, estudios técnicos, planeación vial, tecnología y formación en tránsito, transporte y seguridad vial.',
+    defaultKeywords: 'servicios FINSTRUVIAL, consultoría vial, seguridad vial, portafolio servicios',
+  };
+
+  const lineas = FINSTRUVIAL_SERVICIO_SLUGS.map((slug): PortalSeoPageMeta => {
+    const p = servicios.paginas[slug];
+    const titulo = finstruvialServicioTitulo(p);
+    return {
+      key: finstruvialServicioSeoKey(slug),
+      label: p.menuLabel,
+      ruta: FINSTRUVIAL_SERVICIO_ROUTE[slug],
+      grupo: 'FINSTRUVIAL',
+      hint: `Línea de servicio. Si deja los campos vacíos, se usa el «Texto para Google» de ${p.menuLabel} en el editor del portafolio.`,
+      defaultTitulo: `${titulo} | FINSTRUVIAL`,
+      defaultDescripcion: p.metaDescription?.trim() || p.lead?.trim() || p.introLead?.trim() || p.menuLabel,
+      defaultKeywords: `${p.menuLabel}, FINSTRUVIAL, seguridad vial, consultoría vial`,
+    };
+  });
+
+  return [hubEntry, ...lineas];
+}
 
 export interface PortalSeoPageConfig {
   titulo: string;
@@ -141,6 +203,7 @@ export const PORTAL_SEO_PAGE_CATALOG: PortalSeoPageMeta[] = [
     defaultDescripcion: 'Capacitación en trabajo seguro en alturas: normativa, EPI y buenas prácticas.',
     defaultKeywords: 'trabajo en alturas, Resolución 4272, seguridad',
   },
+  ...buildFinstruvialSeoCatalog(),
   {
     key: 'blog',
     label: 'Blog',
@@ -219,12 +282,47 @@ export function mergePortalSeoPages(
   return base;
 }
 
+export function finstruvialSeoEditorFallback(
+  key: PortalSeoPageKey,
+  landing?: { finstruvialServicios?: Partial<PortalFinstruvialServiciosConfig> } | null,
+): PortalSeoPageConfig | null {
+  if (!landing?.finstruvialServicios) return null;
+  const servicios = mergeFinstruvialServicios(landing.finstruvialServicios);
+
+  if (key === 'serviciosHub') {
+    const hub = servicios.hub;
+    const titulo = [hub.tituloLinea, hub.tituloAcento].filter(Boolean).join(' ') || servicios.menuLabel;
+    return {
+      titulo: `${titulo} | FINSTRUVIAL`,
+      descripcion:
+        hub.lead?.trim() ||
+        'Consultoría, estudios técnicos, planeación vial, tecnología y formación en tránsito, transporte y seguridad vial.',
+      keywords: 'servicios FINSTRUVIAL, consultoría vial, seguridad vial',
+    };
+  }
+
+  if (!isFinstruvialServicioSeoKey(key)) return null;
+  const slug = key.slice(9) as FinstruvialServicioSlug;
+  const p = servicios.paginas[slug];
+  const titulo = finstruvialServicioTitulo(p);
+  return {
+    titulo: `${titulo} | FINSTRUVIAL`,
+    descripcion: p.metaDescription?.trim() || p.lead?.trim() || p.introLead?.trim() || p.menuLabel,
+    keywords: `${p.menuLabel}, FINSTRUVIAL, seguridad vial`,
+  };
+}
+
 export function seoPageForEditor(
   site: { seo?: Partial<Record<PortalSeoPageKey, PortalSeoPageConfig>> } | null | undefined,
   key: PortalSeoPageKey,
-  landing?: { metaDescription?: string; metaKeywords?: string } | null,
+  landing?: {
+    metaDescription?: string;
+    metaKeywords?: string;
+    finstruvialServicios?: Partial<PortalFinstruvialServiciosConfig>;
+  } | null,
 ): PortalSeoPageConfig {
   const stored = site?.seo?.[key];
+  const finstruvial = finstruvialSeoEditorFallback(key, landing);
   if (key === 'home') {
     return {
       titulo: stored?.titulo?.trim() || '',
@@ -233,9 +331,9 @@ export function seoPageForEditor(
     };
   }
   return {
-    titulo: stored?.titulo?.trim() || '',
-    descripcion: stored?.descripcion?.trim() || '',
-    keywords: stored?.keywords?.trim() || '',
+    titulo: stored?.titulo?.trim() || finstruvial?.titulo?.trim() || '',
+    descripcion: stored?.descripcion?.trim() || finstruvial?.descripcion?.trim() || '',
+    keywords: stored?.keywords?.trim() || finstruvial?.keywords?.trim() || '',
   };
 }
 

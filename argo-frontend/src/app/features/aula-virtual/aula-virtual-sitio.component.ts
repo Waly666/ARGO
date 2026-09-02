@@ -10,6 +10,7 @@ import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constant
 import { mergeExamenTeoricoLanding } from '../../core/constants/examen-teorico-landing-defaults';
 import { mergeMercanciasPeligrosasLanding } from '../../core/constants/mercancias-peligrosas-landing-defaults';
 import { mergeTrabajoEnAlturasLanding } from '../../core/constants/trabajo-en-alturas-landing-defaults';
+import { mergeFinstruvialServicios } from '../../core/constants/finstruvial-servicios-defaults';
 import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
 import { PORTAL_PLANTILLAS, PortalPlantilla } from '../../core/constants/portal-plantillas';
 import {
@@ -101,6 +102,11 @@ export class AulaVirtualSitioComponent implements OnInit {
     if (this.portalForm.landing?.trabajoEnAlturas) {
       this.portalForm.landing.trabajoEnAlturas = mergeTrabajoEnAlturasLanding(
         this.portalForm.landing.trabajoEnAlturas,
+      );
+    }
+    if (this.portalForm.landing?.finstruvialServicios) {
+      this.portalForm.landing.finstruvialServicios = mergeFinstruvialServicios(
+        this.portalForm.landing.finstruvialServicios,
       );
     }
     this.svc.guardarPortal(this.portalForm).subscribe({

@@ -135,6 +135,16 @@ export const routes: Routes = [
         canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/pqr/pqr.component').then((m) => m.PqrComponent),
       },
+      {
+        path: 'servicios',
+        loadComponent: () =>
+          import('./pages/servicios/servicios-hub.component').then((m) => m.ServiciosHubComponent),
+      },
+      {
+        path: 'servicios/:slug',
+        loadComponent: () =>
+          import('./pages/servicios/servicio-linea.component').then((m) => m.ServicioLineaComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

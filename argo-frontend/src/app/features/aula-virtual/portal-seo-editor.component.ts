@@ -3,12 +3,14 @@ import { Component, Input, OnChanges, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
+  finstruvialSeoEditorFallback,
   mergePortalSeoPages,
   PORTAL_SEO_PAGE_CATALOG,
   PortalSeoPageKey,
   seoPageForEditor,
   seoPreviewText,
 } from '../../core/constants/portal-seo-pages';
+import { FINSTRUVIAL_SERVICIO_BUILDER_MENU } from '../../core/constants/finstruvial-servicios-editor-panels';
 import { PortalSiteConfig } from '../../core/constants/portal-site-defaults';
 import { PortalLandingConfig } from '../../core/constants/portal-landing-defaults';
 import {
@@ -19,7 +21,7 @@ import {
 } from '../../core/utils/portal-seo-import.util';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 
-const PAGE_ICONS: Record<PortalSeoPageKey, string> = {
+const PAGE_ICONS: Partial<Record<PortalSeoPageKey, string>> = {
   home: '🏠',
   cursos: '📚',
   tienda: '🛒',
@@ -35,12 +37,17 @@ const PAGE_ICONS: Record<PortalSeoPageKey, string> = {
   pqr: '📝',
   jornadasCapacitacion: '⛺',
   evaluacionJornadas: '⭐',
+  serviciosHub: '📂',
+  ...Object.fromEntries(
+    FINSTRUVIAL_SERVICIO_BUILDER_MENU.map((item) => [`servicio_${item.slug}`, item.icon] as const),
+  ),
 };
 
 const GRUPO_ICONS: Record<string, string> = {
   Principal: '✨',
   Institucional: '🏢',
   Servicios: '🎓',
+  FINSTRUVIAL: '🛣️',
   Contenido: '📄',
 };
 
@@ -127,7 +134,14 @@ export class PortalSeoEditorComponent implements OnChanges {
   }
 
   effective(key: PortalSeoPageKey) {
-    return seoPageForEditor(this.site, key, this.landing);
+    const base = seoPageForEditor(this.site, key, this.landing);
+    const meta = this.pageMeta(key);
+    const fb = finstruvialSeoEditorFallback(key, this.landing);
+    return {
+      titulo: base.titulo || fb?.titulo || meta.defaultTitulo,
+      descripcion: base.descripcion || fb?.descripcion || meta.defaultDescripcion,
+      keywords: base.keywords || fb?.keywords || meta.defaultKeywords,
+    };
   }
 
   previewTitle(key: PortalSeoPageKey): string {

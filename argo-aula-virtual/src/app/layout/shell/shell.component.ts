@@ -12,6 +12,11 @@ import { etiquetaPagina, paginaActiva, clavePaginaPorRuta, type PortalPaginaKey 
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { asistenteVistaParaPagina } from '../../core/portal-asistente.util';
+import { PortalThemeService } from '../../core/portal-theme.service';
+import {
+  FINSTRUVIAL_SERVICIO_ROUTE,
+} from '../../core/constants/finstruvial-servicios.constants';
+import { finstruvialPortafolioActivo, finstruvialServiciosActivos } from '../../core/constants/finstruvial-servicios-defaults';
 import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
@@ -48,6 +53,16 @@ export interface FooterServicioEnlace {
   external: boolean;
 }
 
+export type ShellNavEntry =
+  | { kind: 'link'; key: PortalPaginaKey; route: string; label: string }
+  | {
+      kind: 'submenu';
+      key: 'servicios';
+      label: string;
+      hubRoute: string;
+      children: { route: string; label: string }[];
+    };
+
 @Component({
   selector: 'av-shell',
   standalone: true,
@@ -63,11 +78,13 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
   private host = inject(ElementRef<HTMLElement>);
   private menuToggle = viewChild<ElementRef<HTMLButtonElement>>('menuToggle');
+  private portalTheme = inject(PortalThemeService);
   auth = inject(PortalAuthService);
 
   config = this.portalConfig.config;
   portalReady = this.portalConfig.ready;
   menuAbierto = signal(false);
+  serviciosSubmenuAbierto = signal(false);
   popupOpenTick = signal(0);
   rutaActual = signal('/');
 
@@ -111,6 +128,38 @@ export class ShellComponent implements OnInit, AfterViewInit {
     return items.filter((i) => paginaActiva(cfg, i.key));
   });
 
+  navEntries = computed((): ShellNavEntry[] => {
+    const items = this.navItems();
+    if (!this.portalTheme.finstruvialPortal()) {
+      return items.map((item) => ({ kind: 'link' as const, ...item }));
+    }
+    const servicios = this.landing().finstruvialServicios;
+    if (!finstruvialPortafolioActivo(servicios)) {
+      return items.map((item) => ({ kind: 'link' as const, ...item }));
+    }
+    const submenu: ShellNavEntry = {
+      kind: 'submenu',
+      key: 'servicios',
+      label: servicios.menuLabel || 'Nuestros servicios',
+      hubRoute: '/servicios',
+      children: finstruvialServiciosActivos(servicios).map((p) => ({
+        route: FINSTRUVIAL_SERVICIO_ROUTE[p.slug],
+        label: p.menuLabel,
+      })),
+    };
+    const entries: ShellNavEntry[] = [];
+    for (const item of items) {
+      entries.push({ kind: 'link', ...item });
+      if (item.key === 'fundacion') {
+        entries.push(submenu);
+      }
+    }
+    if (!entries.some((e) => e.kind === 'submenu')) {
+      entries.splice(Math.min(2, entries.length), 0, submenu);
+    }
+    return entries;
+  });
+
   footerEnlaces = computed((): FooterEnlace[] => {
     const cfg = this.config();
     const nav = this.landing().nav;
@@ -129,17 +178,36 @@ export class ShellComponent implements OnInit, AfterViewInit {
         label: etiquetaPagina(cfg, p.key, nav[p.key as keyof typeof nav] as string),
         route: p.route,
       }));
+    const serviciosEnlace: FooterEnlace[] =
+      this.portalTheme.finstruvialPortal() && finstruvialPortafolioActivo(this.landing().finstruvialServicios)
+        ? [
+            {
+              label: this.landing().finstruvialServicios.menuLabel || 'Servicios',
+              route: '/servicios',
+            },
+          ]
+        : this.portalTheme.finstruvialPortal()
+          ? []
+          : [{ label: 'Servicios', route: '/', fragment: 'servicios-empresa' }];
     return [
       ...pages,
-      { label: 'Servicios', route: '/', fragment: 'servicios-empresa' },
+      ...serviciosEnlace,
       { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
       { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
       { label: 'Contacto', route: '/acerca', fragment: 'contacto' },
     ];
   });
 
-  footerServiciosLinks = computed((): FooterServicioEnlace[] =>
-    this.footerServicios().map((label) => {
+  footerServiciosLinks = computed((): FooterServicioEnlace[] => {
+    if (this.portalTheme.finstruvialPortal()) {
+      const servicios = this.landing().finstruvialServicios;
+      return finstruvialServiciosActivos(servicios).map((p) => ({
+        label: p.menuLabel,
+        route: FINSTRUVIAL_SERVICIO_ROUTE[p.slug],
+        external: false,
+      }));
+    }
+    return this.footerServicios().map((label) => {
       const href = FOOTER_SERVICIO_HREF[label.trim().toLowerCase()] || '/#servicios-empresa';
       if (href.startsWith('http')) {
         return { label, href, external: true };
@@ -149,8 +217,8 @@ export class ShellComponent implements OnInit, AfterViewInit {
         return { label, route: route || '/', fragment, external: false };
       }
       return { label, route: href, external: false };
-    }),
-  );
+    });
+  });
 
   sitioInstitucionalUrl = '/';
 
@@ -193,9 +261,23 @@ export class ShellComponent implements OnInit, AfterViewInit {
   }
 
   cerrarMenu() {
+    this.serviciosSubmenuAbierto.set(false);
     if (!this.menuAbierto()) return;
     this.menuAbierto.set(false);
     this.devolverFocoMenu();
+  }
+
+  cerrarServiciosSubmenu() {
+    this.serviciosSubmenuAbierto.set(false);
+  }
+
+  toggleServiciosSubmenu() {
+    this.serviciosSubmenuAbierto.update((v) => !v);
+  }
+
+  serviciosSubmenuActivo(): boolean {
+    const url = this.rutaActual();
+    return url === '/servicios' || url.startsWith('/servicios/');
   }
 
   private devolverFocoMenu() {
@@ -205,6 +287,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.rutaActual.set(this.router.url);
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe((e) => {
+      this.cerrarServiciosSubmenu();
       this.cerrarMenu();
       if (e instanceof NavigationEnd) this.rutaActual.set(e.urlAfterRedirects || e.url);
     });

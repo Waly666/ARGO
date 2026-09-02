@@ -1,0 +1,37 @@
+<div class="fsv-page">
+  <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="hub().heroImagenAlt"
+    [kicker]="hub().kicker"
+    [titleLine]="hub().tituloLinea"
+    [titleAccent]="hub().tituloAcento"
+    [lead]="hub().lead"
+    [showVirtualBadge]="false"
+    theme="blue"
+    titleId="fsv-hub-title"
+  />
+
+  <main>
+    <section class="fsv-section fsv-section--alt" id="portafolio">
+      <div class="container">
+        <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+          <p class="fsv-section-head__kicker">Portafolio</p>
+          <h2 class="fsv-section__title">{{ hub().gridTitulo }}</h2>
+          <p class="fsv-section-head__lead">{{ hub().gridLead }}</p>
+        </header>
+
+        <div class="fsv-grid reveal" avRevealOnScroll [revealDelay]="60">
+          @for (item of tarjetas(); track item.slug; let i = $index) {
+            <a class="fsv-card" [routerLink]="item.route" [style.animation-delay]="i * 60 + 'ms'">
+              <span class="fsv-card__icon" aria-hidden="true">{{ item.hubIcon }}</span>
+              <h3>{{ item.menuLabel }}</h3>
+              <p>{{ item.hubLead }}</p>
+              <span class="fsv-card__link">{{ item.tarjetaCta }} →</span>
+            </a>
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

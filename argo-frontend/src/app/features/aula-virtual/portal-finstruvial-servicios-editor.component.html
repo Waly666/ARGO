@@ -1,0 +1,1318 @@
+<div class="psb-stack">
+  <div class="ple-toolbar">
+    <p class="psb-note">
+      @if (modo === 'hub') {
+        Portafolio en <strong>/servicios</strong> y nombre del menú «Nuestros servicios». Las imágenes se guardan al
+        subirlas; los textos al publicar el sitio.
+      } @else {
+        Página <strong>{{ routes[lineaActiva()] }}</strong>. Edite todos los textos e imágenes de esta línea. Las
+        imágenes se guardan al subirlas; los textos al publicar el sitio.
+      }
+    </p>
+  </div>
+
+  @if (modo === 'hub') {
+  <section class="psb-card fsv-visibilidad">
+    <div class="fsv-visibilidad__head">
+      <div>
+        <h3 class="psb-card__title">Visibilidad en el sitio</h3>
+        <p class="fsv-visibilidad__lead">
+          Controla si el portafolio y cada línea aparecen en el menú, el pie de página y las rutas
+          <strong>/servicios</strong>.
+        </p>
+      </div>
+      <div class="fsv-visibilidad__global">
+        <span class="fsv-visibilidad__state" [class.is-on]="portafolioVisible()">
+          {{ portafolioVisible() ? 'Portafolio visible' : 'Portafolio oculto' }}
+        </span>
+        <label class="psb-switch" aria-label="Mostrar portafolio en el sitio">
+          <input
+            type="checkbox"
+            [checked]="portafolioVisible()"
+            (change)="setPortafolioVisible($any($event.target).checked)"
+          />
+          <span></span>
+        </label>
+      </div>
+    </div>
+    <ul class="fsv-lineas-switch" [class.fsv-lineas-switch--off]="!portafolioVisible()">
+      @for (item of lineasMenu; track item.slug) {
+        <li class="fsv-lineas-switch__row" [class.fsv-lineas-switch__row--off]="!lineaVisible(item.slug)">
+          <span class="fsv-lineas-switch__label">
+            <span aria-hidden="true">{{ item.icon }}</span>
+            {{ finstruvialServicios.paginas[item.slug]?.menuLabel || item.label }}
+          </span>
+          <span class="fsv-lineas-switch__state" [class.is-on]="lineaVisible(item.slug)">
+            {{ lineaVisible(item.slug) ? 'Visible' : 'Oculta' }}
+          </span>
+          <label class="psb-switch" [attr.aria-label]="'Mostrar ' + item.label">
+            <input
+              type="checkbox"
+              [checked]="lineaVisible(item.slug)"
+              (change)="setLineaVisible(item.slug, $any($event.target).checked)"
+            />
+            <span></span>
+          </label>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="psb-card">
+    <div class="ple-toolbar">
+      <h3 class="psb-card__title">Menú y portafolio</h3>
+      <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarHub()">Restaurar portafolio</button>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta en el menú principal</span>
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.menuLabel" />
+    </label>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta pequeña</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título (línea 1)</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.tituloLinea" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título (acento)</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.tituloAcento" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Texto principal del portafolio</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.lead"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Título de la grilla de servicios</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.gridTitulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto bajo el título de la grilla</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.gridLead"></textarea>
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Texto alternativo de la imagen</span>
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.heroImagenAlt" />
+    </label>
+    <div class="psb-imagen-slot">
+      <div class="psb-imagen-slot__head"><strong>Imagen del portafolio</strong></div>
+      @if (previewUrl(finstruvialServicios.hub.heroImagenUrl, finstruvialServicios.hub.heroImagenUrlAbsoluta); as src) {
+        <img class="psb-imagen-slot__preview" [src]="src" [alt]="finstruvialServicios.hub.heroImagenAlt" />
+      } @else {
+        <div class="psb-imagen-slot__empty">Sin imagen (diseño sin foto en Finstruvial)</div>
+      }
+      <div class="psb-imagen-slot__actions">
+        <label class="psb-btn psb-btn--ghost">
+          {{ uploadingId() === 'hub' ? 'Subiendo…' : 'Subir imagen' }}
+          <input type="file" accept="image/*" hidden (change)="onHubImagen($event)" />
+        </label>
+        @if (finstruvialServicios.hub.heroImagenUrl) {
+          <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen()">Quitar imagen</button>
+        }
+      </div>
+    </div>
+  </section>
+  }
+
+  @if (modo === 'linea') {
+  <section class="psb-card fsv-editor">
+    <div class="ple-toolbar fsv-editor__toolbar">
+      <div>
+        <h3 class="psb-card__title">{{ paginaActiva().menuLabel }}</h3>
+        <p class="fsv-editor__hint">
+          Edite en el mismo orden en que el visitante ve la página.
+          @if (vistaPreviaPagina(); as url) {
+            <a [href]="url" target="_blank" rel="noopener noreferrer">Abrir página pública ↗</a>
+          }
+        </p>
+      </div>
+      <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarLinea()">Restaurar textos</button>
+    </div>
+
+    @if (paginaActiva(); as p) {
+      <nav class="fsv-indice" aria-label="Secciones de la página">
+        <p class="fsv-indice__label">Ir a la sección:</p>
+        <div class="fsv-indice__chips">
+          @for (item of indicePagina(); track item.grupo) {
+            <button type="button" class="fsv-indice__chip" (click)="irAGrupo(item.grupo)">
+              <span class="fsv-indice__chip-step">{{ item.paso }}</span>
+              {{ item.titulo }}
+            </button>
+          }
+        </div>
+      </nav>
+
+      @if (grupoVisible('portafolio')) {
+        @if (metaGrupo('portafolio'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-portafolio"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('portafolio')"
+          (toggle)="toggleGrupo('portafolio')"
+        >
+      @if (mostrarSeccion('portafolio')) {
+      <div class="fsv-linea-switch-row">
+        <div>
+          <strong>Visibilidad en el sitio</strong>
+          <p class="fsv-editor__hint">Mostrar esta línea en el menú y en el portafolio.</p>
+        </div>
+        <label class="psb-switch" aria-label="Mostrar esta línea en el menú y en el portafolio">
+          <input type="checkbox" [(ngModel)]="p.activa" />
+          <span></span>
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain psb-field--highlight">
+        <span>Nombre de la página (menú, tarjetas y título público)</span>
+        <input type="text" class="psb-input" [(ngModel)]="p.menuLabel" placeholder="Ej. Capacitación y Sensibilización" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón en la tarjeta del portafolio</span>
+        <input type="text" class="psb-input" [(ngModel)]="p.tarjetaCta" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Descripción corta (tarjeta del portafolio)</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.hubLead"></textarea>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Icono en tarjeta (emoji)</span>
+        <input type="text" class="psb-input" [(ngModel)]="p.hubIcon" maxlength="4" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto para Google (SEO)</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.metaDescription" placeholder="Resumen breve para buscadores"></textarea>
+        <small class="psb-note">
+          Se usa si no hay título ni descripción en <strong>Diseño → SEO (Google)</strong> para esta línea.
+        </small>
+      </label>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('hero')) {
+        @if (metaGrupo('hero'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-hero"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('hero')"
+          (toggle)="toggleGrupo('hero')"
+        >
+      @if (mostrarSeccion('hero')) {
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Títulos del banner</p>
+      <div class="psb-grid3">
+        <label class="psb-field psb-field--plain">
+          <span>Texto superior pequeño</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.kicker" placeholder="Ej. Plataforma educativa" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título principal</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.tituloLinea" placeholder="Ej. Aula Virtual" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título destacado (color)</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.tituloAcento" placeholder="Ej. FINSTRUVIAL" />
+        </label>
+      </div>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Frase debajo del título</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.lead"></textarea>
+      </label>
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Imagen de fondo del banner</p>
+        <p class="psb-hint">Foto grande detrás del título. Si no sube ninguna, el banner se muestra solo con color y efectos.</p>
+        <div class="psb-imagen-slot">
+          @if (previewUrl(p.heroImagenUrl, p.heroImagenUrlAbsoluta); as src) {
+            <img class="psb-imagen-slot__preview psb-imagen-slot__preview--banner" [src]="src" [alt]="p.heroImagenAlt" />
+          } @else {
+            <div class="psb-imagen-slot__empty">Sin imagen de banner</div>
+          }
+          <label class="psb-field psb-field--plain">
+            <span>Texto alternativo de la imagen</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.heroImagenAlt" placeholder="Descripción breve de la foto" />
+          </label>
+          <div class="psb-imagen-slot__actions">
+            <label class="psb-btn psb-btn--ghost">
+              {{ uploadingId() === lineaActiva() + ':hero' ? 'Subiendo…' : 'Subir imagen del banner' }}
+              <input type="file" accept="image/*" hidden (change)="onLineaImagen($event, 'hero')" />
+            </label>
+            @if (p.heroImagenUrl) {
+              <button type="button" class="psb-link psb-link--danger" (click)="quitarLineaImagen('hero')">Quitar imagen</button>
+            }
+          </div>
+        </div>
+      </div>
+      <argo-portal-promo-hero-fields-editor
+        [hero]="p"
+        [showTitle]="false"
+        [showLead]="false"
+        [showVirtualBadge]="true"
+        [showTheme]="true"
+      />
+      @for (parrafo of p.heroParrafos; track $index; let i = $index) {
+        <div class="ple-list__row">
+          <textarea class="psb-input" rows="2" [(ngModel)]="p.heroParrafos[i]"></textarea>
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.heroParrafos, i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addHeroParrafo()">+ Añadir párrafo</button>
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Botones del banner</p>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Texto botón principal</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ctaPrincipal" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>A dónde lleva (ruta o URL)</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ctaPrincipalUrl" placeholder="/aula o /cursos" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto botón secundario</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ctaSecundario" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>A dónde lleva el secundario</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ctaSecundarioUrl" />
+        </label>
+      </div>
+      </div>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('introduccion')) {
+        @if (metaGrupo('introduccion'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-introduccion"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('introduccion')"
+          (toggle)="toggleGrupo('introduccion')"
+        >
+      @if (mostrarSeccion('introduccion')) {
+      @if (presentacionSplitEnEditor()) {
+        <div class="fsv-callout fsv-callout--info">
+          El texto queda a la <strong>izquierda</strong> y esta imagen a la <strong>derecha</strong>.
+          Es independiente de la foto del banner superior.
+        </div>
+        <div class="fsv-fieldset">
+          <p class="fsv-fieldset__legend">Imagen de presentación</p>
+          <div class="psb-imagen-slot">
+            @if (imagenPresentacionUrl(); as src) {
+              <img class="psb-imagen-slot__preview" [src]="src" [alt]="imagenSeccionSlot().alt" />
+            } @else {
+              <div class="psb-imagen-slot__empty">Sin imagen de presentación</div>
+            }
+            <label class="psb-field psb-field--plain">
+              <span>Texto alternativo</span>
+              <input type="text" class="psb-input" [(ngModel)]="imagenSeccionSlot().alt" placeholder="Descripción de la foto" />
+            </label>
+            <div class="psb-imagen-slot__actions">
+              <label class="psb-btn psb-btn--ghost">
+                {{ uploadingId() === lineaActiva() + ':seccion' ? 'Subiendo…' : 'Subir imagen de presentación' }}
+                <input type="file" accept="image/*" hidden (change)="onLineaImagen($event, 'seccion')" />
+              </label>
+              @if (imagenPresentacionUrl()) {
+                <button type="button" class="psb-link psb-link--danger" (click)="quitarLineaImagen('seccion')">Quitar imagen</button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.introKicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.introTitulo" />
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Resumen (debajo del título)</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.introLead"></textarea>
+      </label>
+      @for (parrafo of p.introParrafos; track $index; let i = $index) {
+        <div class="ple-list__row">
+          <textarea class="psb-input" rows="2" [(ngModel)]="p.introParrafos[i]"></textarea>
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.introParrafos, i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addIntroParrafo()">+ Añadir párrafo</button>
+      }
+
+      @if (mostrarSeccion('introMedios')) {
+        <argo-portal-finstruvial-medios-panel
+          [editor]="this"
+          [medios]="p.introMedios"
+          target="intro"
+          titulo="Fotos y videos opcionales"
+          descripcion="Aparecen debajo del texto de introducción, en el orden que los añada."
+        />
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('catalogoCursos')) {
+        @if (metaGrupo('catalogoCursos'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-catalogoCursos"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('catalogoCursos')"
+          (toggle)="toggleGrupo('catalogoCursos')"
+        >
+      @if (mostrarSeccion('catalogoCursos')) {
+        <div class="fsv-callout fsv-callout--info">
+          Los cursos se gestionan en <strong>Aula virtual → Cursos</strong> (marque «Publicado en portal»). Aquí solo cambia el título de la sección.
+        </div>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Etiqueta superior (ej. «Cursos»)</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.bloquesKicker" placeholder="Cursos" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título grande (ej. «Programas destacados»)</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.bloquesTitulo" placeholder="Programas destacados" />
+          </label>
+        </div>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('pilares')) {
+        @if (metaGrupo('pilares'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-pilares"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('pilares')"
+          (toggle)="toggleGrupo('pilares')"
+        >
+      @if (mostrarSeccion('pilares')) {
+        @for (pilar of p.pilaresEducativos; track $index; let i = $index) {
+          <div class="ple-list__row ple-list__row--stack">
+            <div class="psb-grid3">
+              <label class="psb-field psb-field--plain">
+                <span>Icono</span>
+                <input type="text" class="psb-input" [(ngModel)]="p.pilaresEducativos[i].icon" />
+              </label>
+              <label class="psb-field psb-field--plain">
+                <span>Título</span>
+                <input type="text" class="psb-input" [(ngModel)]="p.pilaresEducativos[i].titulo" placeholder="SABER, SABER HACER, SER…" />
+              </label>
+              <label class="psb-field psb-field--plain psb-field--span2">
+                <span>Descripción</span>
+                <textarea class="psb-input" rows="2" [(ngModel)]="p.pilaresEducativos[i].texto"></textarea>
+              </label>
+            </div>
+            <button type="button" class="psb-icon-btn" (click)="removeItem(p.pilaresEducativos, i)">×</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addPilarEducativo()">+ Añadir pilar</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('ruta')) {
+        @if (metaGrupo('ruta'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-ruta"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('ruta')"
+          (toggle)="toggleGrupo('ruta')"
+        >
+      @if (mostrarSeccion('ruta')) {
+        @for (paso of p.rutaAprendizaje; track $index; let i = $index) {
+          <div class="ple-list__row">
+            <input type="text" class="psb-input" [(ngModel)]="p.rutaAprendizaje[i]" placeholder="Paso de la ruta" />
+            <button type="button" class="psb-icon-btn" (click)="removeItem(p.rutaAprendizaje, i)">×</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addRutaPaso()">+ Añadir paso</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('tarjetas')) {
+        @if (metaGrupo('tarjetas'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-tarjetas"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('tarjetas')"
+          (toggle)="toggleGrupo('tarjetas')"
+        >
+      @if (mostrarSeccion('bloquesHeader')) {
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior de la grilla</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.bloquesKicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la grilla</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.bloquesTitulo" />
+        </label>
+      </div>
+      }
+
+      @if (mostrarSeccion('bloquesManual')) {
+      <div class="fsv-fieldset fsv-fieldset--nested">
+        <p class="fsv-fieldset__legend">Cada tarjeta de la grilla</p>
+      @if (tarjetasSoloIcono()) {
+        <p class="psb-hint">Solo icono, título y texto. Esta grilla no muestra fotos en el sitio público.</p>
+      } @else if (herramientasModo()) {
+        <p class="psb-hint">Tarjetas de simulador: icono, título y texto breve. Sin fotos en el sitio.</p>
+      } @else if (tarjetasConFoto()) {
+        <p class="psb-hint">Tres tarjetas en fila: foto arriba, título corto y una línea de texto. Use textos breves.</p>
+      } @else if (estudiosModo()) {
+        <p class="psb-hint">
+          Las <strong>3 primeras tarjetas</strong> llevan foto destacada. Del 4.º en adelante solo icono y texto en grilla.
+        </p>
+      } @else {
+        <p class="psb-hint">La foto se sube en «Banco de imágenes» al final, usando el mismo nombre (foto1, foto2…).</p>
+      }
+
+      @if (estudiosModo()) {
+        <p class="fsv-subsection-title">Destacados con foto (3)</p>
+        @for (i of estudiosDestacadosIndices(); track i) {
+          @if (p.bloques[i]; as bloque) {
+            <div class="ple-list__row ple-list__row--stack fsv-tarjeta-card">
+              <div class="fsv-tarjeta-foto">
+                <div class="fsv-tarjeta-foto__preview">
+                  @if (imagenUrl(imagenIdBloque(i)); as src) {
+                    <img [src]="src" [alt]="bloque.titulo || 'Estudio ' + (i + 1)" />
+                  } @else {
+                    <div class="fsv-tarjeta-foto__empty">
+                      <span>{{ bloque.icon || '📷' }}</span>
+                      <p>Estudio {{ i + 1 }} — sin foto</p>
+                    </div>
+                  }
+                </div>
+                <div class="fsv-tarjeta-foto__fields">
+                  <p class="fsv-tarjeta-foto__label">Destacado {{ i + 1 }} · {{ imagenIdBloque(i) }}</p>
+                  <div class="psb-grid2">
+                    <label class="psb-field psb-field--plain">
+                      <span>Icono</span>
+                      <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].icon" />
+                    </label>
+                    <label class="psb-field psb-field--plain">
+                      <span>Título</span>
+                      <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].titulo" />
+                    </label>
+                  </div>
+                  <label class="psb-field psb-field--plain">
+                    <span>Texto breve</span>
+                    <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].texto" placeholder="Una frase que resume el estudio" />
+                  </label>
+                  <label class="psb-btn psb-btn--ghost">
+                    {{ uploadingId() === lineaActiva() + ':' + imagenIdBloque(i) ? 'Subiendo…' : 'Subir foto' }}
+                    <input type="file" accept="image/*" hidden (change)="onLineaImagen($event, imagenIdBloque(i))" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          }
+        }
+        <p class="fsv-subsection-title">Otros estudios (solo icono y texto)</p>
+      }
+
+      @for (b of p.bloques; track $index; let i = $index) {
+        @if (!estudiosModo() || i >= 3) {
+        <div class="ple-list__row ple-list__row--stack fsv-tarjeta-card">
+          @if (tarjetasConFoto()) {
+            <div class="fsv-tarjeta-foto">
+              <div class="fsv-tarjeta-foto__preview">
+                @if (imagenUrl(imagenIdBloque(i)); as src) {
+                  <img [src]="src" [alt]="p.bloques[i].titulo || 'Línea ' + (i + 1)" />
+                } @else {
+                  <div class="fsv-tarjeta-foto__empty">
+                    <span>{{ p.bloques[i].icon || '📷' }}</span>
+                    <p>Tarjeta {{ i + 1 }} — sin foto</p>
+                  </div>
+                }
+              </div>
+              <div class="fsv-tarjeta-foto__fields">
+                <p class="fsv-tarjeta-foto__label">Tarjeta {{ i + 1 }} · {{ imagenIdBloque(i) }}</p>
+                <div class="psb-grid2">
+                  <label class="psb-field psb-field--plain">
+                    <span>Icono</span>
+                    <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].icon" />
+                  </label>
+                  <label class="psb-field psb-field--plain">
+                    <span>Título corto</span>
+                    <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].titulo" />
+                  </label>
+                </div>
+                <label class="psb-field psb-field--plain">
+                  <span>Texto breve (una línea)</span>
+                  <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].texto" placeholder="Una frase que resume la línea" />
+                </label>
+                <label class="psb-btn psb-btn--ghost">
+                  {{ uploadingId() === lineaActiva() + ':' + imagenIdBloque(i) ? 'Subiendo…' : 'Subir foto de esta tarjeta' }}
+                  <input type="file" accept="image/*" hidden (change)="onLineaImagen($event, imagenIdBloque(i))" />
+                </label>
+              </div>
+            </div>
+          } @else {
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Icono</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].icon" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Título</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].titulo" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--span2">
+              <span>Texto</span>
+              <textarea class="psb-input" rows="2" [(ngModel)]="p.bloques[i].texto"></textarea>
+            </label>
+            @if (!tarjetasSoloIcono() && !estudiosModo()) {
+            <label class="psb-field psb-field--plain">
+              <span>ID foto (foto1, foto2…)</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].imagenId" placeholder="foto1" />
+            </label>
+            <div class="psb-field psb-field--plain psb-field--span2">
+              <span>Video en esta tarjeta <em class="fsv-optional">(opcional)</em></span>
+              <div class="fsv-capsules fsv-capsules--inline">
+                <button
+                  type="button"
+                  class="fsv-capsule"
+                  [class.fsv-capsule--active]="bloqueVideoModo(p.bloques[i]) === 'none'"
+                  (click)="setBloqueVideoModo(p.bloques[i], 'none')"
+                >
+                  Sin video
+                </button>
+                <button
+                  type="button"
+                  class="fsv-capsule"
+                  [class.fsv-capsule--active]="bloqueVideoModo(p.bloques[i]) === 'youtube'"
+                  (click)="setBloqueVideoModo(p.bloques[i], 'youtube')"
+                >
+                  ▶️ YouTube
+                </button>
+                <button
+                  type="button"
+                  class="fsv-capsule"
+                  [class.fsv-capsule--active]="bloqueVideoModo(p.bloques[i]) === 'archivo'"
+                  (click)="setBloqueVideoModo(p.bloques[i], 'archivo')"
+                >
+                  📁 Archivo MP4
+                </button>
+              </div>
+              @if (bloqueVideoModo(p.bloques[i]) === 'youtube') {
+                <label class="psb-field psb-field--plain fsv-video-field">
+                  <span>Enlace de YouTube</span>
+                  <input type="url" class="psb-input" [(ngModel)]="p.bloques[i].youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." />
+                </label>
+              }
+              @if (bloqueVideoModo(p.bloques[i]) === 'archivo' && p.bloques[i].videoId) {
+                <div class="fsv-video-upload">
+                  <span
+                    class="fsv-status"
+                    [class.fsv-status--ok]="videoSubido(p.bloques[i].videoId!)"
+                    [class.fsv-status--pending]="!videoSubido(p.bloques[i].videoId!)"
+                  >
+                    {{ videoSubido(p.bloques[i].videoId!) ? 'Video subido' : 'Seleccione un archivo para subir' }}
+                  </span>
+                  <div class="fsv-video-upload__actions">
+                    <label class="psb-btn psb-btn--ghost">
+                      {{ uploadingId() === videoUploadKey(p.bloques[i].videoId!) ? 'Subiendo…' : 'Subir video (MP4 o WEBM)' }}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,.mp4,.webm"
+                        hidden
+                        (change)="onLineaVideo($event, p.bloques[i].videoId!)"
+                      />
+                    </label>
+                    @if (videoSubido(p.bloques[i].videoId!)) {
+                      <button type="button" class="psb-link psb-link--danger" (click)="quitarLineaVideo(p.bloques[i].videoId!)">
+                        Eliminar archivo
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+            }
+          </div>
+          }
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.bloques, i)">×</button>
+        </div>
+        }
+      }
+      <button type="button" class="psb-link" (click)="addBloque()">+ Añadir tarjeta</button>
+      </div>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('producto')) {
+        @if (metaGrupo('producto'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-producto"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('producto')"
+          (toggle)="toggleGrupo('producto')"
+        >
+      @if (mostrarSeccion('producto')) {
+      @if (productoShowcaseModo()) {
+        <div class="fsv-callout fsv-callout--info">
+          El texto queda a la <strong>izquierda</strong> y la imagen de {{ productoShowcaseNombre() }} a la <strong>derecha</strong>, en un bloque destacado.
+        </div>
+        <div class="fsv-fieldset">
+          <p class="fsv-fieldset__legend">Imagen de {{ productoShowcaseNombre() }}</p>
+          <div class="psb-imagen-slot">
+            @if (imagenProductoUrl(); as src) {
+              <img class="psb-imagen-slot__preview" [src]="src" [alt]="imagenProductoSlot().alt" />
+            } @else {
+              <div class="psb-imagen-slot__empty">Sin imagen de {{ productoShowcaseNombre() }}</div>
+            }
+            <label class="psb-field psb-field--plain">
+              <span>Texto alternativo</span>
+              <input type="text" class="psb-input" [(ngModel)]="imagenProductoSlot().alt" [placeholder]="'Captura de la plataforma ' + productoShowcaseNombre()" />
+            </label>
+            <div class="psb-imagen-slot__actions">
+              <label class="psb-btn psb-btn--ghost">
+                {{ uploadingId() === lineaActiva() + ':producto' ? 'Subiendo…' : 'Subir imagen de ' + productoShowcaseNombre() }}
+                <input type="file" accept="image/*" hidden (change)="onLineaImagen($event, 'producto')" />
+              </label>
+              @if (imagenProductoUrl()) {
+                <button type="button" class="psb-link psb-link--danger" (click)="quitarLineaImagen('producto')">Quitar imagen</button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.productoKicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.productoNombre" />
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Resumen corto</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.productoLead"></textarea>
+      </label>
+      @for (parrafo of p.productoParrafos; track $index; let i = $index) {
+        <div class="ple-list__row">
+          <textarea class="psb-input" rows="2" [(ngModel)]="p.productoParrafos[i]"></textarea>
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.productoParrafos, i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addProductoParrafo()">+ Añadir párrafo</button>
+      @if (productoShowcaseModo()) {
+        <div class="fsv-fieldset fsv-fieldset--nested">
+          <p class="fsv-fieldset__legend">Etiquetas temáticas (debajo del resumen)</p>
+          @for (tag of p.productoEtiquetas; track $index; let i = $index) {
+            <div class="ple-list__row">
+              <input type="text" class="psb-input" [(ngModel)]="p.productoEtiquetas[i]" placeholder="🚦 Tránsito" />
+              <button type="button" class="psb-icon-btn" (click)="removeItem(p.productoEtiquetas, i)">×</button>
+            </div>
+          }
+          <button type="button" class="psb-link" (click)="addProductoEtiqueta()">+ Añadir etiqueta</button>
+        </div>
+      }
+      }
+
+      @if (mostrarSeccion('productoMedios')) {
+        <argo-portal-finstruvial-medios-panel
+          [editor]="this"
+          [medios]="p.productoMedios"
+          target="producto"
+          titulo="Fotos y videos de esta sección"
+          descripcion="Galería debajo del texto de actividades experienciales. Añada imágenes o videos en el orden deseado."
+        />
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('experienciaEducativa')) {
+        @if (metaGrupo('experienciaEducativa'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-experienciaEducativa"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('experienciaEducativa')"
+          (toggle)="toggleGrupo('experienciaEducativa')"
+        >
+      @if (mostrarSeccion('experienciaEducativa')) {
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.experienciaSeccionKicker" placeholder="Metodología o Carpas interactivas" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.experienciaSeccionTitulo" placeholder="Experiencia educativa o Actividades en campo" />
+        </label>
+      </div>
+      <div class="fsv-fieldset fsv-fieldset--nested">
+        <p class="fsv-fieldset__legend">Cada tarjeta de la grilla</p>
+      @for (item of p.experienciaItems; track $index; let i = $index) {
+        <div class="ple-list__row ple-list__row--stack">
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Icono</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.experienciaItems[i].icon" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Título</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.experienciaItems[i].titulo" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--span2">
+              <span>Texto</span>
+              <textarea class="psb-input" rows="2" [(ngModel)]="p.experienciaItems[i].texto"></textarea>
+            </label>
+          </div>
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.experienciaItems, i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addExperienciaItem()">+ Añadir tarjeta</button>
+      </div>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('modulosPlataforma')) {
+        @if (metaGrupo('modulosPlataforma'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-modulosPlataforma"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('modulosPlataforma')"
+          (toggle)="toggleGrupo('modulosPlataforma')"
+        >
+      @if (mostrarSeccion('modulosPlataforma')) {
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Etiqueta</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.modulosPlataformaKicker" placeholder="Plataforma" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.modulosPlataformaTitulo" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto introductorio</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="p.modulosPlataformaLead"></textarea>
+        </label>
+        @for (m of p.modulosPlataforma; track $index; let i = $index) {
+          <div class="ple-list__row ple-list__row--stack">
+            <div class="psb-grid3">
+              <label class="psb-field psb-field--plain">
+                <span>Icono</span>
+                <input type="text" class="psb-input" [(ngModel)]="p.modulosPlataforma[i].icon" />
+              </label>
+              <label class="psb-field psb-field--plain">
+                <span>Módulo</span>
+                <input type="text" class="psb-input" [(ngModel)]="p.modulosPlataforma[i].titulo" placeholder="Tablero, Tus cursos…" />
+              </label>
+              <label class="psb-field psb-field--plain psb-field--span2">
+                <span>Descripción</span>
+                <textarea class="psb-input" rows="2" [(ngModel)]="p.modulosPlataforma[i].texto"></textarea>
+              </label>
+              <label class="psb-field psb-field--plain">
+                <span>ID captura</span>
+                <input
+                  type="text"
+                  class="psb-input"
+                  [(ngModel)]="p.modulosPlataforma[i].imagenId"
+                  [attr.list]="'imagen-ids-' + lineaActiva()"
+                  placeholder="modulo-tablero"
+                />
+              </label>
+              @if (p.modulosPlataforma[i].imagenId) {
+                <div class="psb-imagen-slot__actions">
+                  <label class="psb-btn psb-btn--ghost">
+                    {{ uploadingId() === lineaActiva() + ':' + p.modulosPlataforma[i].imagenId ? 'Subiendo…' : 'Subir captura' }}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      (change)="onLineaImagen($event, p.modulosPlataforma[i].imagenId!)"
+                    />
+                  </label>
+                </div>
+              }
+            </div>
+            <button type="button" class="psb-icon-btn" (click)="removeItem(p.modulosPlataforma, i)">×</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addModuloPlataforma()">+ Añadir módulo</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('metodologia')) {
+        @if (metaGrupo('metodologia'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-metodologia"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('metodologia')"
+          (toggle)="toggleGrupo('metodologia')"
+        >
+      @if (mostrarSeccion('metodologia')) {
+      <div class="psb-grid3">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.metodologiaKicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.metodologiaTitulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto bajo el flujo</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.metodologiaLead" />
+        </label>
+      </div>
+      @for (paso of p.metodologiaPasos; track $index; let i = $index) {
+        <div class="ple-list__row">
+          <input type="text" class="psb-input" [(ngModel)]="p.metodologiaPasos[i]" placeholder="Paso del flujo" />
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.metodologiaPasos, i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addMetodologiaPaso()">+ Añadir paso</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('resultado')) {
+        @if (metaGrupo('resultado'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-resultado"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('resultado')"
+          (toggle)="toggleGrupo('resultado')"
+        >
+      @if (mostrarSeccion('resultado')) {
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Etiqueta</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.resultadoKicker" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.resultadoTitulo" />
+          </label>
+        </div>
+        @for (item of p.resultadoIconos; track $index; let i = $index) {
+          <div class="ple-list__row ple-list__row--stack">
+            <div class="psb-grid2">
+              <label class="psb-field psb-field--plain">
+                <span>Icono</span>
+                <input type="text" class="psb-input" [(ngModel)]="p.resultadoIconos[i].icon" />
+              </label>
+              <label class="psb-field psb-field--plain">
+                <span>Título</span>
+                <input type="text" class="psb-input" [(ngModel)]="p.resultadoIconos[i].titulo" />
+              </label>
+            </div>
+            <button type="button" class="psb-icon-btn" (click)="removeItem(p.resultadoIconos, i)">×</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addResultadoIcono()">+ Añadir entregable</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('publicos')) {
+        @if (metaGrupo('publicos'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-publicos"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('publicos')"
+          (toggle)="toggleGrupo('publicos')"
+        >
+      @if (mostrarSeccion('publicos')) {
+        @for (tag of p.publicos; track $index; let i = $index) {
+          <div class="ple-list__row">
+            <input type="text" class="psb-input" [(ngModel)]="p.publicos[i]" placeholder="🚚 Conductores profesionales" />
+            <button type="button" class="psb-icon-btn" (click)="removeItem(p.publicos, i)">×</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addPublico()">+ Añadir público</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('ecosistema')) {
+        @if (metaGrupo('ecosistema'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-ecosistema"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('ecosistema')"
+          (toggle)="toggleGrupo('ecosistema')"
+        >
+      @if (mostrarSeccion('ecosistema')) {
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Etiqueta superior</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaKicker" placeholder="Ecosistema" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título de la sección</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaTitulo" placeholder="Tecnología para aprender" />
+          </label>
+        </div>
+        <div class="fsv-callout fsv-callout--info">
+          El texto del <strong>centro</strong> aparece en el medio del diagrama. Cada herramienta se muestra alrededor con icono, título y descripción.
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto del nodo central</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaCentro" placeholder="FINSTRUVIAL" />
+        </label>
+        <div class="fsv-fieldset fsv-fieldset--nested">
+          <p class="fsv-fieldset__legend">Herramientas del ecosistema</p>
+          @for (item of p.ecosistemaItems; track $index; let i = $index) {
+            <div class="ple-list__row ple-list__row--stack">
+              <div class="psb-grid3">
+                <label class="psb-field psb-field--plain">
+                  <span>Icono</span>
+                  <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaItems[i].icon" />
+                </label>
+                <label class="psb-field psb-field--plain">
+                  <span>Título</span>
+                  <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaItems[i].titulo" />
+                </label>
+                <label class="psb-field psb-field--plain psb-field--span2">
+                  <span>Texto</span>
+                  <textarea class="psb-input" rows="2" [(ngModel)]="p.ecosistemaItems[i].texto"></textarea>
+                </label>
+              </div>
+              <button type="button" class="psb-icon-btn" (click)="removeItem(p.ecosistemaItems, i)">×</button>
+            </div>
+          }
+          <button type="button" class="psb-link" (click)="addEcosistemaItem()">+ Añadir herramienta</button>
+        </div>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('gamificacion')) {
+        @if (metaGrupo('gamificacion'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-gamificacion"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('gamificacion')"
+          (toggle)="toggleGrupo('gamificacion')"
+        >
+      @if (mostrarSeccion('gamificacion')) {
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Etiqueta superior</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.gamificacionKicker" placeholder="Gamificación" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título de la sección</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.gamificacionTitulo" placeholder="Aprender jugando" />
+          </label>
+        </div>
+        <p class="psb-hint">Cada etiqueta aparece como una pastilla con emoji. Ejemplo: «🎯 Retos».</p>
+        @for (tag of p.gamificacionItems; track $index; let i = $index) {
+          <div class="ple-list__row">
+            <input type="text" class="psb-input" [(ngModel)]="p.gamificacionItems[i]" placeholder="🎯 Retos" />
+            <button type="button" class="psb-icon-btn" (click)="removeItem(p.gamificacionItems, i)">×</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addGamificacionItem()">+ Añadir dinámica</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('formula')) {
+        @if (metaGrupo('formula'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-formula"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('formula')"
+          (toggle)="toggleGrupo('formula')"
+        >
+      @if (mostrarSeccion('formula')) {
+        <label class="psb-field psb-field--plain">
+          <span>Frase destacada</span>
+          <input
+            type="text"
+            class="psb-input"
+            [(ngModel)]="p.formulaAprendizaje"
+            placeholder="VER + ESCUCHAR + EXPERIMENTAR + PRACTICAR = APRENDER"
+          />
+        </label>
+        <p class="psb-hint">Aparece centrada en un bloque visual grande, justo antes del cierre.</p>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('cierre')) {
+        @if (metaGrupo('cierre'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-cierre"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('cierre')"
+          (toggle)="toggleGrupo('cierre')"
+        >
+      @if (mostrarSeccion('cierre')) {
+      <label class="psb-field psb-field--plain">
+        <span>Frase inspiradora</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.cierreQuote" placeholder="Cita que aparece antes del contacto"></textarea>
+      </label>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('listaServicios')) {
+        @if (metaGrupo('listaServicios'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-listaServicios"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('listaServicios')"
+          (toggle)="toggleGrupo('listaServicios')"
+        >
+      @if (mostrarSeccion('listaServicios')) {
+      <label class="psb-field psb-field--plain">
+        <span>Título de la lista</span>
+        <input type="text" class="psb-input" [(ngModel)]="p.listaTitulo" />
+      </label>
+      @for (item of p.listaServicios; track $index; let i = $index) {
+        <div class="ple-list__row ple-list__row--stack">
+          <div class="psb-grid2">
+            <label class="psb-field psb-field--plain">
+              <span>Título</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.listaServicios[i].titulo" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Descripción</span>
+              <textarea class="psb-input" rows="2" [(ngModel)]="p.listaServicios[i].texto"></textarea>
+            </label>
+          </div>
+          <button type="button" class="psb-icon-btn" (click)="removeItem(p.listaServicios, i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addListaItem()">+ Añadir ítem</button>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('contacto')) {
+        @if (metaGrupo('contacto'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-contacto"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [ancla]="g.ancla || ''"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('contacto')"
+          (toggle)="toggleGrupo('contacto')"
+        >
+      @if (mostrarSeccion('contacto')) {
+      <label class="psb-field psb-field--plain">
+        <span>Título del bloque</span>
+        <input type="text" class="psb-input" [(ngModel)]="p.ctaTitulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto del bloque</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="p.ctaLead"></textarea>
+      </label>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Botón principal</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ctaBtnPrincipal" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto del botón secundario</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.ctaBtnSecundario" />
+        </label>
+      </div>
+      <p class="psb-hint">Los enlaces de los botones van a Contacto y al portafolio de servicios (no se cambian aquí).</p>
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+
+      @if (grupoVisible('imagenes')) {
+        @if (metaGrupo('imagenes'); as g) {
+        <argo-portal-finstruvial-editor-seccion
+          anchorId="fsv-grupo-imagenes"
+          [paso]="g.paso"
+          [titulo]="g.titulo"
+          [descripcion]="g.descripcion"
+          [icono]="g.icono"
+          [vistaPreviaUrl]="vistaPreviaPagina()"
+          [abierta]="grupoAbierto('imagenes')"
+          (toggle)="toggleGrupo('imagenes')"
+        >
+      @if (mostrarSeccion('imagenes')) {
+      @if (lineaActiva() === 'capacitacionSensibilizacion') {
+        <div class="fsv-callout fsv-callout--info">
+          <p><strong>foto1, foto2, foto3</strong> — fotos de las tres líneas de formación.</p>
+          <p>El <strong>banner</strong> y la <strong>presentación</strong> se suben en sus secciones correspondientes arriba.</p>
+        </div>
+      }
+      @if (lineaActiva() === 'estudiosDiagnosticosTecnicos') {
+        <div class="fsv-callout fsv-callout--info">
+          <p><strong>foto1, foto2, foto3</strong> — fotos de los 3 estudios destacados.</p>
+          <p>El <strong>banner</strong> y la <strong>presentación</strong> se suben en sus secciones correspondientes arriba.</p>
+        </div>
+      }
+      @if (lineaActiva() === 'herramientasEducativasTecnologicas') {
+        <div class="fsv-callout fsv-callout--info">
+          <p><strong>hero</strong> — banner · <strong>seccion</strong> — presentación (nuestro servicio) · <strong>producto</strong> — ENCIVIRTRANS.</p>
+          <p>Las tres se suben en sus secciones correspondientes arriba. Los simuladores no llevan foto.</p>
+        </div>
+      }
+      @if (inventariosModo()) {
+        <div class="fsv-callout fsv-callout--info">
+          <p><strong>hero</strong> — banner · <strong>seccion</strong> — presentación · <strong>producto</strong> — INFRAVIAL · <strong>captura-*</strong> — dashboard, mapa, estadísticas, categorización, SINC, móvil, conteos y reportes.</p>
+        </div>
+      }
+      @for (img of p.imagenes; track img.id) {
+        @if (img.id !== 'hero' && img.id !== 'seccion') {
+        <div class="psb-imagen-slot">
+          <div class="psb-imagen-slot__head"><strong>{{ img.etiqueta }}</strong> ({{ img.id }})</div>
+          @if (previewUrl(img.url, img.urlAbsoluta); as src) {
+            <img class="psb-imagen-slot__preview" [src]="src" [alt]="img.alt || p.menuLabel" />
+          } @else {
+            <div class="psb-imagen-slot__empty">Sin imagen</div>
+          }
+          <label class="psb-field psb-field--plain">
+            <span>Texto alternativo</span>
+            <input type="text" class="psb-input" [(ngModel)]="img.alt" />
+          </label>
+          <div class="psb-imagen-slot__actions">
+            <label class="psb-btn psb-btn--ghost">
+              {{ uploadingId() === lineaActiva() + ':' + img.id ? 'Subiendo…' : 'Subir imagen' }}
+              <input type="file" accept="image/*" hidden (change)="onLineaImagen($event, img.id)" />
+            </label>
+            @if (img.url) {
+              <button type="button" class="psb-link psb-link--danger" (click)="quitarLineaImagen(img.id)">
+                Quitar imagen
+              </button>
+            }
+          </div>
+        </div>
+        }
+      }
+      }
+        </argo-portal-finstruvial-editor-seccion>
+        }
+      }
+    }
+  </section>
+  }
+</div>

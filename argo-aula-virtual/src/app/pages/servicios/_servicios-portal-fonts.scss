@@ -1,0 +1,32 @@
+/// Tipografía del portal (ERP → Colores y estilos → fuente / fuente títulos).
+@mixin servicios-portal-fonts() {
+  font-family: var(--av-font-sans);
+
+  :where(h1, h2, h3, h4, h5, h6),
+  :where([class*='__title']) {
+    font-family: var(--av-font-display, var(--av-font-sans));
+  }
+
+  :where(
+    p,
+    li,
+    span,
+    label,
+    button,
+    input,
+    textarea,
+    select,
+    a,
+    small,
+    figcaption,
+    td,
+    th,
+    .fsv-section-head__kicker,
+    .fsv-section-head__lead,
+    .fsv-text,
+    .fsv-tag,
+    .fsv-chip
+  ) {
+    font-family: var(--av-font-sans);
+  }
+}

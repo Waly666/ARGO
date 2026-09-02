@@ -18,7 +18,14 @@ import {
   type PortalJornadasCapacitacionLanding,
 } from './constants/jornadas-capacitacion-landing-defaults';
 import { mergePqrLanding, PQR_LANDING_DEFAULTS, type PortalPqrLanding } from './constants/pqr-landing-defaults';
+import {
+  FINSTRUVIAL_SERVICIOS_DEFAULTS,
+  mergeFinstruvialServicios,
+} from './constants/finstruvial-servicios-defaults';
+import type { PortalFinstruvialServiciosConfig } from './constants/finstruvial-servicio-landing.types';
 import { mergePromoHeroPillars, type PortalPromoHeroTheme } from './constants/portal-promo-hero-fields.util';
+
+export type { PortalFinstruvialServiciosConfig };
 
 export type { PortalAcercaLanding };
 export type { PortalPqrLanding };
@@ -316,6 +323,7 @@ export interface PortalLandingConfig {
   pqr: PortalPqrLanding;
   jornadasCapacitacion: PortalJornadasCapacitacionLanding;
   evaluacionJornadas: PortalEvaluacionJornadasLanding;
+  finstruvialServicios: PortalFinstruvialServiciosConfig;
   asistente: PortalAsistenteConfig;
 }
 
@@ -577,6 +585,9 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   evaluacionJornadas: JSON.parse(
     JSON.stringify(EVALUACION_JORNADAS_LANDING_DEFAULTS),
   ) as PortalEvaluacionJornadasLanding,
+  finstruvialServicios: JSON.parse(
+    JSON.stringify(FINSTRUVIAL_SERVICIOS_DEFAULTS),
+  ) as PortalFinstruvialServiciosConfig,
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: {
@@ -785,6 +796,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     pqr: mergePqrLanding(raw.pqr),
     jornadasCapacitacion: mergeJornadasCapacitacionLanding(raw.jornadasCapacitacion),
     evaluacionJornadas: mergeEvaluacionJornadasLanding(raw.evaluacionJornadas),
+    finstruvialServicios: mergeFinstruvialServicios(raw.finstruvialServicios),
     asistente: mergePortalAsistente(
       raw.asistente,
       raw.consultaCertificados as LegacyConsultaAsistente | undefined,

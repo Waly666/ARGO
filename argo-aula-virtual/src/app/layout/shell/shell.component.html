@@ -28,13 +28,47 @@
       [class.topbar-menu--open]="menuAbierto()"
     >
       <nav class="nav">
-        @for (item of navItems(); track item.key) {
-          <a
-            [routerLink]="item.route"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="item.route === '/' ? { exact: true } : { exact: false }"
-            (click)="cerrarMenu()"
-          >{{ item.label }}</a>
+        @for (entry of navEntries(); track entry.kind === 'link' ? entry.key : entry.key) {
+          @if (entry.kind === 'link') {
+            <a
+              [routerLink]="entry.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="entry.route === '/' ? { exact: true } : { exact: false }"
+              (click)="cerrarMenu()"
+            >{{ entry.label }}</a>
+          } @else {
+            <div
+              class="nav-submenu"
+              [class.nav-submenu--open]="serviciosSubmenuAbierto()"
+              [class.nav-submenu--active]="serviciosSubmenuActivo()"
+            >
+              <button
+                type="button"
+                class="nav-submenu__trigger"
+                [attr.aria-expanded]="serviciosSubmenuAbierto()"
+                (click)="toggleServiciosSubmenu()"
+              >
+                {{ entry.label }}
+                <span class="nav-submenu__caret" aria-hidden="true"></span>
+              </button>
+              <div class="nav-submenu__panel" role="menu">
+                <a
+                  class="nav-submenu__item nav-submenu__item--hub"
+                  [routerLink]="entry.hubRoute"
+                  routerLinkActive="active"
+                  (click)="cerrarServiciosSubmenu(); cerrarMenu()"
+                >Portafolio de servicios</a>
+                @for (child of entry.children; track child.route) {
+                  <a
+                    class="nav-submenu__item"
+                    [routerLink]="child.route"
+                    routerLinkActive="active"
+                    (click)="cerrarServiciosSubmenu(); cerrarMenu()"
+                  >{{ child.label }}</a>
+                }
+              </div>
+            </div>
+          }
         }
       </nav>
       <div class="actions">
@@ -60,13 +94,47 @@
   >
     <div class="container topbar-menu-inner">
       <nav class="nav">
-        @for (item of navItems(); track item.key) {
-          <a
-            [routerLink]="item.route"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="item.route === '/' ? { exact: true } : { exact: false }"
-            (click)="cerrarMenu()"
-          >{{ item.label }}</a>
+        @for (entry of navEntries(); track entry.kind === 'link' ? entry.key : entry.key) {
+          @if (entry.kind === 'link') {
+            <a
+              [routerLink]="entry.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="entry.route === '/' ? { exact: true } : { exact: false }"
+              (click)="cerrarMenu()"
+            >{{ entry.label }}</a>
+          } @else {
+            <div
+              class="nav-submenu"
+              [class.nav-submenu--open]="serviciosSubmenuAbierto()"
+              [class.nav-submenu--active]="serviciosSubmenuActivo()"
+            >
+              <button
+                type="button"
+                class="nav-submenu__trigger"
+                [attr.aria-expanded]="serviciosSubmenuAbierto()"
+                (click)="toggleServiciosSubmenu()"
+              >
+                {{ entry.label }}
+                <span class="nav-submenu__caret" aria-hidden="true"></span>
+              </button>
+              <div class="nav-submenu__panel" role="menu">
+                <a
+                  class="nav-submenu__item nav-submenu__item--hub"
+                  [routerLink]="entry.hubRoute"
+                  routerLinkActive="active"
+                  (click)="cerrarServiciosSubmenu(); cerrarMenu()"
+                >Portafolio de servicios</a>
+                @for (child of entry.children; track child.route) {
+                  <a
+                    class="nav-submenu__item"
+                    [routerLink]="child.route"
+                    routerLinkActive="active"
+                    (click)="cerrarServiciosSubmenu(); cerrarMenu()"
+                  >{{ child.label }}</a>
+                }
+              </div>
+            </div>
+          }
         }
       </nav>
       <div class="actions">

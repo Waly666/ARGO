@@ -1,5 +1,12 @@
 /** Resolución de SEO por página desde site.seo (editor del sitio). */
 
+import {
+  FINSTRUVIAL_SERVICIO_SLUGS,
+  FinstruvialServicioSlug,
+} from './constants/finstruvial-servicios.constants';
+
+export type FinstruvialServicioSeoKey = `servicio_${FinstruvialServicioSlug}`;
+
 export type PortalSeoPageKey =
   | 'home'
   | 'cursos'
@@ -11,11 +18,21 @@ export type PortalSeoPageKey =
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'serviciosHub'
+  | FinstruvialServicioSeoKey
   | 'blog'
   | 'galeria'
   | 'pqr'
   | 'jornadasCapacitacion'
   | 'evaluacionJornadas';
+
+export function finstruvialServicioSeoKey(slug: FinstruvialServicioSlug): FinstruvialServicioSeoKey {
+  return `servicio_${slug}`;
+}
+
+export function isFinstruvialServicioSeoKey(key: string): key is FinstruvialServicioSeoKey {
+  return key.startsWith('servicio_') && FINSTRUVIAL_SERVICIO_SLUGS.includes(key.slice(9) as FinstruvialServicioSlug);
+}
 
 export interface PortalSeoPageConfig {
   titulo: string;

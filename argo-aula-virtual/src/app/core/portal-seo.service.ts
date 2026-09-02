@@ -3,6 +3,11 @@ import { inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 
 import {
+  FINSTRUVIAL_SERVICIO_ROUTE,
+  FinstruvialServicioSlug,
+} from './constants/finstruvial-servicios.constants';
+import { mergeFinstruvialServicios } from './constants/finstruvial-servicios-defaults';
+import {
   DEFAULT_CEA_CORTO,
   DEFAULT_CEA_NOMBRE,
 } from './portal-brand-defaults';
@@ -31,7 +36,7 @@ import {
   TIENDA_SEO_TITLE,
 } from './portal-seo-defaults';
 import { CursoVirtual, PortalConfig } from './models';
-import { resolvePortalSeoPage, PortalSeoPageKey } from './portal-seo-resolver.util';
+import { resolvePortalSeoPage, PortalSeoPageKey, finstruvialServicioSeoKey } from './portal-seo-resolver.util';
 
 type PageMetaOpts = {
   pageTitle: string;
@@ -377,6 +382,71 @@ export class PortalSeoService {
       jsonLd: this.breadcrumbJsonLd(url, [
         { name: 'Inicio', path: '/' },
         { name: 'Trabajo en alturas', path: '/trabajo-en-alturas' },
+      ]),
+    });
+  }
+
+  applyServiciosHub(config: PortalConfig | null) {
+    const servicios = mergeFinstruvialServicios(config?.landing?.finstruvialServicios);
+    const hub = servicios.hub;
+    const titulo = [hub.tituloLinea, hub.tituloAcento].filter(Boolean).join(' ') || 'Servicios';
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
+      hub.lead?.trim() ||
+        'Consultoría, estudios técnicos, planeación vial, tecnología y formación en tránsito, transporte y seguridad vial.',
+    );
+    const url = this.pageUrl('/servicios');
+    const seo = this.resolvedSeo(config, 'serviciosHub', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: `${BLOG_SEO_KEYWORDS}, servicios, consultoría vial, seguridad vial, FINSTRUVIAL`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: servicios.menuLabel || 'Servicios', path: '/servicios' },
+      ]),
+    });
+  }
+
+  applyServicioLinea(config: PortalConfig | null, slug: FinstruvialServicioSlug | null) {
+    if (!slug) {
+      this.applyServiciosHub(config);
+      return;
+    }
+    const servicios = mergeFinstruvialServicios(config?.landing?.finstruvialServicios);
+    const p = servicios.paginas[slug];
+    const titulo = [p.tituloLinea, p.tituloAcento].filter(Boolean).join(' ') || p.menuLabel;
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
+      p.metaDescription?.trim() || p.lead?.trim() || p.introLead?.trim() || p.menuLabel,
+    );
+    const route = FINSTRUVIAL_SERVICIO_ROUTE[slug];
+    const url = this.pageUrl(route);
+    const seo = this.resolvedSeo(config, finstruvialServicioSeoKey(slug), {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: `${BLOG_SEO_KEYWORDS}, ${p.menuLabel}, seguridad vial, FINSTRUVIAL`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: servicios.menuLabel || 'Servicios', path: '/servicios' },
+        { name: p.menuLabel, path: route },
       ]),
     });
   }

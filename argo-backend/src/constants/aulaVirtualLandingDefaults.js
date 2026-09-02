@@ -22,6 +22,10 @@ const {
   EVALUACION_JORNADAS_LANDING_DEFAULTS,
   mergeEvaluacionJornadasLanding,
 } = require('./aulaVirtualEvaluacionJornadasDefaults');
+const {
+  FINSTRUVIAL_SERVICIOS_DEFAULTS,
+  mergeFinstruvialServicios,
+} = require('./aulaVirtualFinstruvialServiciosDefaults');
 const { mergePromoHeroTheme } = require('./portalPromoHeroFields');
 const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
 
@@ -515,6 +519,7 @@ const LANDING_DEFAULTS = {
   pqr: JSON.parse(JSON.stringify(PQR_LANDING_DEFAULTS)),
   jornadasCapacitacion: JSON.parse(JSON.stringify(JORNADAS_CAPACITACION_LANDING_DEFAULTS)),
   evaluacionJornadas: JSON.parse(JSON.stringify(EVALUACION_JORNADAS_LANDING_DEFAULTS)),
+  finstruvialServicios: JSON.parse(JSON.stringify(FINSTRUVIAL_SERVICIOS_DEFAULTS)),
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: {
@@ -634,6 +639,7 @@ module.exports = {
   mergePqrLanding,
   mergeJornadasCapacitacionLanding,
   mergeEvaluacionJornadasLanding,
+  mergeFinstruvialServicios,
   mergeMercanciasPeligrosasLanding,
   mergeTrabajoEnAlturasLanding,
 };

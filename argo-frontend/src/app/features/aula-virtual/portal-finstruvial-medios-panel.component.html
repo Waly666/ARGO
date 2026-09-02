@@ -1,0 +1,124 @@
+<div class="fsv-medios">
+  <header class="fsv-medios__head">
+    <p class="fsv-medios__title">{{ titulo }}</p>
+    @if (descripcion) {
+      <p class="fsv-medios__desc">{{ descripcion }}</p>
+    }
+  </header>
+
+  @if (!medios.length) {
+    <p class="fsv-medios__empty">{{ vacioHint }}</p>
+  }
+
+  @for (medio of medios; track $index; let i = $index) {
+    <article class="fsv-medio-card">
+      <header class="fsv-medio-card__head">
+        <span class="fsv-medio-card__badge">Medio {{ i + 1 }}</span>
+        <button type="button" class="fsv-medio-card__remove" (click)="quitar(i)" title="Quitar este medio">
+          Quitar
+        </button>
+      </header>
+
+      <div class="fsv-capsules" role="tablist" aria-label="Tipo de medio">
+        @for (t of tipos; track t.id) {
+          <button
+            type="button"
+            class="fsv-capsule"
+            [class.fsv-capsule--active]="tipoActual(medio) === t.id"
+            (click)="cambiarTipo(medio, t.id)"
+            [attr.aria-pressed]="tipoActual(medio) === t.id"
+          >
+            <span aria-hidden="true">{{ t.icono }}</span>
+            {{ t.etiqueta }}
+          </button>
+        }
+      </div>
+
+      <div class="fsv-medio-card__body">
+        @if (tipoActual(medio) === 'imagen') {
+          @if (medio.imagenId) {
+            <div class="fsv-medio-preview">
+              @if (editor.imagenUrl(medio.imagenId); as src) {
+                <img class="fsv-medio-preview__img" [src]="src" [alt]="editor.imagenEtiqueta(medio.imagenId)" />
+              } @else {
+                <div class="fsv-medio-preview__placeholder">📷 Sin imagen subida</div>
+              }
+              <div class="fsv-medio-preview__meta">
+                <span
+                  class="fsv-status"
+                  [class.fsv-status--ok]="editor.imagenSubida(medio.imagenId)"
+                  [class.fsv-status--pending]="!editor.imagenSubida(medio.imagenId)"
+                >
+                  {{ editor.imagenSubida(medio.imagenId) ? 'Imagen lista' : 'Falta subir la imagen' }}
+                </span>
+              </div>
+            </div>
+            <label class="psb-btn psb-btn--ghost fsv-medio-card__upload">
+              {{ subiendoImagen(medio.imagenId) ? 'Subiendo…' : 'Elegir o cambiar imagen' }}
+              <input type="file" accept="image/*" hidden (change)="editor.onLineaImagen($event, medio.imagenId!)" />
+            </label>
+          }
+        } @else if (tipoActual(medio) === 'youtube') {
+          <label class="psb-field psb-field--plain">
+            <span>Enlace de YouTube</span>
+            <input
+              type="url"
+              class="psb-input"
+              [(ngModel)]="medio.youtubeUrl"
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+          </label>
+          <p class="fsv-medios__tip">Pegue el enlace completo del video. No hace falta código de inserción.</p>
+        } @else {
+          @if (medio.videoId) {
+            <div class="fsv-medio-preview fsv-medio-preview--video">
+              <div class="fsv-medio-preview__placeholder">🎬 Video MP4 / WEBM</div>
+              <div class="fsv-medio-preview__meta">
+                <span
+                  class="fsv-status"
+                  [class.fsv-status--ok]="editor.videoSubido(medio.videoId)"
+                  [class.fsv-status--pending]="!editor.videoSubido(medio.videoId)"
+                >
+                  {{ editor.videoSubido(medio.videoId) ? 'Video subido' : 'Seleccione un archivo para subir' }}
+                </span>
+              </div>
+            </div>
+            <div class="fsv-medio-card__actions">
+              <label class="psb-btn psb-btn--ghost">
+                {{ subiendoVideo(medio.videoId) ? 'Subiendo…' : 'Subir video (MP4 o WEBM)' }}
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,.mp4,.webm"
+                  hidden
+                  (change)="editor.onLineaVideo($event, medio.videoId!)"
+                />
+              </label>
+              @if (editor.videoSubido(medio.videoId)) {
+                <button type="button" class="psb-link psb-link--danger" (click)="editor.quitarLineaVideo(medio.videoId!)">
+                  Eliminar archivo
+                </button>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <label class="psb-field psb-field--plain fsv-medio-card__caption">
+        <span>Pie de foto o video <em>(opcional)</em></span>
+        <input type="text" class="psb-input" [(ngModel)]="medio.caption" placeholder="Texto breve bajo la imagen o el video" />
+      </label>
+    </article>
+  }
+
+  <div class="fsv-medios__add">
+    <span class="fsv-medios__add-label">Añadir:</span>
+    <div class="fsv-capsules fsv-capsules--add">
+      @for (t of tipos; track t.id) {
+        <button type="button" class="fsv-capsule fsv-capsule--add" (click)="anadir(t.id)">
+          <span aria-hidden="true">+ {{ t.icono }}</span>
+          {{ t.etiqueta }}
+        </button>
+      }
+    </div>
+  </div>
+</div>

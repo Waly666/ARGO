@@ -1,0 +1,988 @@
+@if (servicio(); as s) {
+  <div class="fsv-page" [class.fsv-page--tech]="s.estilo === 'tech'" [class.fsv-page--academy]="s.estilo === 'academy'">
+    <av-portal-promo-banner-hero
+      [showPhoto]="!!heroPhoto()"
+      [photoUrl]="heroPhoto()"
+      [photoAlt]="s.heroImagenAlt"
+      [kicker]="s.kicker"
+      [titleLine]="s.tituloLinea"
+      [titleAccent]="s.tituloAcento"
+      [lead]="s.lead"
+      [showVirtualBadge]="s.mostrarBadgeVirtual"
+      [theme]="s.theme"
+      titleId="fsv-servicio-title"
+    >
+      <a ppbh-top routerLink="/servicios" class="ppbh-back">Volver a servicios</a>
+      @for (p of s.heroParrafos; track $index) {
+        <p ppbh-extra class="fsv-hero-text">{{ p }}</p>
+      }
+      <div ppbh-actions class="ppbh-ctas">
+        @if (enlaceRuta(s.ctaPrincipalUrl); as ruta) {
+          <a class="btn btn-primary" [routerLink]="ruta">{{ s.ctaPrincipal }}</a>
+        } @else {
+          @if (enlaceHref(s.ctaPrincipalUrl); as href) {
+            <a class="btn btn-primary" [href]="href" target="_blank" rel="noopener noreferrer">{{ s.ctaPrincipal }}</a>
+          }
+        }
+        @if (s.ctaSecundario.trim()) {
+          @if (enlaceRuta(s.ctaSecundarioUrl); as ruta2) {
+            <a class="btn btn-outline" [routerLink]="ruta2">{{ s.ctaSecundario }}</a>
+          } @else {
+            @if (enlaceHref(s.ctaSecundarioUrl); as href2) {
+              <a class="btn btn-outline" [href]="href2" target="_blank" rel="noopener noreferrer">{{ s.ctaSecundario }}</a>
+            }
+          }
+        }
+      </div>
+    </av-portal-promo-banner-hero>
+
+    <main>
+      @if (mostrarPresentacionSplit()) {
+        @if (servicio(); as s) {
+        <section
+          class="fsv-section fsv-section--presentacion"
+          [class.fsv-section--presentacion-tech]="s.estilo === 'tech'"
+          id="introduccion"
+        >
+          <div class="container">
+            <div
+              class="fsv-presentacion reveal"
+              [class.fsv-presentacion--image-right]="presentacionImagenDerecha()"
+              avRevealOnScroll
+            >
+              <div class="fsv-presentacion__media">
+                <div class="fsv-presentacion__frame">
+                  @if (presentacionImagen(); as src) {
+                    <img
+                      [src]="src"
+                      [alt]="presentacionImagenAlt()"
+                      loading="lazy"
+                      width="640"
+                      height="720"
+                    />
+                  } @else {
+                    <div class="fsv-presentacion__placeholder" aria-hidden="true">
+                      <span>🧰</span>
+                      <p>{{ presentacionImagenAlt() }}</p>
+                    </div>
+                  }
+                </div>
+                <div class="fsv-presentacion__glow" aria-hidden="true"></div>
+              </div>
+              <div class="fsv-presentacion__copy">
+                @if (s.introKicker.trim()) {
+                  <p class="fsv-presentacion__kicker">{{ s.introKicker }}</p>
+                }
+                @if (s.introTitulo.trim()) {
+                  <h2 class="fsv-presentacion__title">{{ s.introTitulo }}</h2>
+                }
+                @if (s.introLead.trim()) {
+                  <p class="fsv-presentacion__lead">{{ s.introLead }}</p>
+                }
+                <div class="fsv-presentacion__body">
+                  @for (p of s.introParrafos; track $index) {
+                    <p class="fsv-presentacion__p" [class.fsv-presentacion__p--lead]="$first">{{ p }}</p>
+                  }
+                </div>
+                @if (s.estilo === 'academy') {
+                  <ul class="fsv-presentacion__tags" aria-label="Enfoque formativo">
+                    <li><span>📖</span> Saber</li>
+                    <li><span>🛠️</span> Saber hacer</li>
+                    <li><span>💚</span> Ser</li>
+                  </ul>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+        }
+      } @else if (mostrarIntro()) {
+        <section class="fsv-section" id="introduccion">
+          <div class="container">
+            <article class="fsv-article reveal" avRevealOnScroll>
+              @if (s.introKicker.trim() || s.introTitulo.trim()) {
+                <header class="fsv-article__head">
+                  @if (s.introKicker.trim()) {
+                    <p class="fsv-article__kicker">{{ s.introKicker }}</p>
+                  }
+                  @if (s.introTitulo.trim()) {
+                    <h2 class="fsv-article__title">{{ s.introTitulo }}</h2>
+                  }
+                </header>
+              }
+              @if (s.introLead.trim()) {
+                <p class="fsv-article__lead">{{ s.introLead }}</p>
+              }
+              <div class="fsv-article__body">
+                @for (p of s.introParrafos; track $index) {
+                  <p class="fsv-article__p">{{ p }}</p>
+                }
+              </div>
+              @if (s.introMedios.length) {
+                <div class="fsv-article__gallery fsv-article__gallery--intro">
+                  @for (medio of s.introMedios; track $index) {
+                    @if (medio.tipo === 'imagen' && medio.imagenId) {
+                      @if (imagenUrl(s.imagenes, medio.imagenId); as imgUrl) {
+                        <figure class="fsv-figure fsv-figure--wide reveal" avRevealOnScroll [revealDelay]="80">
+                          <img [src]="imgUrl" [alt]="etiquetaImagen(s.imagenes, medio.imagenId)" loading="lazy" />
+                          <figcaption>{{ medioCaption(medio, etiquetaImagen(s.imagenes, medio.imagenId)) }}</figcaption>
+                        </figure>
+                      } @else {
+                        <figure class="fsv-figure fsv-figure--wide fsv-figure--pending reveal" avRevealOnScroll [revealDelay]="80">
+                          <span class="fsv-figure__pending-icon" aria-hidden="true">📷</span>
+                          <p>{{ etiquetaImagen(s.imagenes, medio.imagenId) }}</p>
+                          <figcaption>{{ medioCaption(medio, 'Imagen pendiente por cargar') }}</figcaption>
+                        </figure>
+                      }
+                    }
+                    @if (medio.tipo === 'video') {
+                      @if (medioVideoEsArchivo(medio) && medio.videoId) {
+                        @if (videoUrl(s.videos, medio.videoId); as src) {
+                          <figure class="fsv-figure fsv-figure--wide fsv-figure--video reveal" avRevealOnScroll [revealDelay]="80">
+                            <video
+                              class="fsv-figure__video"
+                              controls
+                              playsinline
+                              preload="metadata"
+                              [src]="src"
+                              [attr.aria-label]="medioCaption(medio, s.menuLabel)"
+                            ></video>
+                            <figcaption>{{ medioCaption(medio, 'Video — ' + s.menuLabel) }}</figcaption>
+                          </figure>
+                        } @else {
+                          <figure class="fsv-figure fsv-figure--wide fsv-figure--pending fsv-figure--video reveal" avRevealOnScroll [revealDelay]="80">
+                            <span class="fsv-figure__pending-icon" aria-hidden="true">▶</span>
+                            <p>{{ etiquetaVideo(s.videos, medio.videoId) }}</p>
+                            <figcaption>{{ medioCaption(medio, 'Video pendiente por cargar') }}</figcaption>
+                          </figure>
+                        }
+                      } @else {
+                        @if (videoEmbed(medio.youtubeUrl); as embedSrc) {
+                        <figure class="fsv-figure fsv-figure--wide fsv-figure--video reveal" avRevealOnScroll [revealDelay]="80">
+                          <div class="fsv-figure__frame">
+                            <iframe
+                              [src]="embedSrc"
+                              [title]="medioCaption(medio, s.menuLabel)"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowfullscreen
+                              loading="lazy"
+                              referrerpolicy="strict-origin-when-cross-origin"
+                            ></iframe>
+                          </div>
+                          <figcaption>{{ medioCaption(medio, 'Video — ' + s.menuLabel) }}</figcaption>
+                        </figure>
+                        } @else {
+                        <figure class="fsv-figure fsv-figure--wide fsv-figure--pending fsv-figure--video reveal" avRevealOnScroll [revealDelay]="80">
+                          <span class="fsv-figure__pending-icon" aria-hidden="true">▶</span>
+                          <p>Video</p>
+                          <figcaption>{{ medioCaption(medio, 'Video pendiente por cargar') }}</figcaption>
+                        </figure>
+                        }
+                      }
+                    }
+                  }
+                </div>
+              }
+            </article>
+          </div>
+        </section>
+      }
+
+      @if (mostrarCatalogoCursos()) {
+        <section class="fsv-section fsv-section--alt fsv-section--catalog" id="cursos">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">{{ s.bloquesKicker }}</p>
+              <h2 class="fsv-section__title">{{ s.bloquesTitulo }}</h2>
+            </header>
+            <div class="fsv-catalog-grid reveal" avRevealOnScroll [revealDelay]="60">
+              @for (c of cursosCatalogo(); track c.idPrograma) {
+                <av-curso-card [curso]="c" modo="cursos" [logoUrl]="logoUrl()" />
+              } @empty {
+                <p class="fsv-catalog-empty">
+                  No hay cursos publicados en el portal. Active «Publicado en portal» en ARGO → Aula virtual.
+                </p>
+              }
+            </div>
+            <p class="fsv-catalog-more reveal" avRevealOnScroll [revealDelay]="90">
+              <a routerLink="/cursos" class="btn btn-outline">Ver catálogo completo</a>
+            </p>
+          </div>
+        </section>
+      } @else if (s.slug !== 'aulaVirtual' && s.bloques.length && s.bloquesTitulo.trim()) {
+        <section class="fsv-section fsv-section--alt" id="servicios">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">{{ s.bloquesKicker }}</p>
+              <h2 class="fsv-section__title">{{ s.bloquesTitulo }}</h2>
+            </header>
+            @if (bloquesModoEstudios(s.slug)) {
+            <div class="fsv-estudios-bloques reveal" avRevealOnScroll [revealDelay]="60">
+              <div class="fsv-grid fsv-grid--lineas-formacion">
+                @for (b of bloquesEstudiosDestacados(s.bloques); track b.titulo) {
+                  <article class="fsv-linea-card">
+                    <div class="fsv-linea-card__media">
+                      @if (b.imagenId) {
+                        @if (imagenUrl(s.imagenes, b.imagenId); as imgUrl) {
+                          <img
+                            [src]="imgUrl"
+                            [alt]="etiquetaImagen(s.imagenes, b.imagenId)"
+                            loading="lazy"
+                            width="640"
+                            height="400"
+                          />
+                        } @else {
+                          <div class="fsv-linea-card__placeholder" aria-hidden="true">
+                            <span>📷</span>
+                            <p>{{ etiquetaImagen(s.imagenes, b.imagenId) }}</p>
+                          </div>
+                        }
+                      } @else {
+                        <div class="fsv-linea-card__placeholder" aria-hidden="true">
+                          <span>{{ b.icon }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="fsv-linea-card__body">
+                      <span class="fsv-linea-card__icon" aria-hidden="true">{{ b.icon }}</span>
+                      <h3 class="fsv-linea-card__title">{{ b.titulo }}</h3>
+                      @if (b.texto.trim()) {
+                        <p class="fsv-linea-card__text">{{ b.texto }}</p>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+              @if (bloquesEstudiosLista(s.bloques).length) {
+                <div class="fsv-grid fsv-grid--bloques fsv-grid--estudios-lista">
+                  @for (b of bloquesEstudiosLista(s.bloques); track b.titulo) {
+                    <article class="fsv-card fsv-card--capability">
+                      <span class="fsv-card__icon" aria-hidden="true">{{ b.icon }}</span>
+                      <h3>{{ b.titulo }}</h3>
+                      @if (b.texto.trim()) {
+                        <p>{{ b.texto }}</p>
+                      }
+                    </article>
+                  }
+                </div>
+              }
+            </div>
+            } @else if (bloquesModoFotoTarjetas(s.slug)) {
+            <div class="fsv-grid fsv-grid--lineas-formacion reveal" avRevealOnScroll [revealDelay]="60">
+              @for (b of s.bloques; track b.titulo) {
+                <article class="fsv-linea-card">
+                  <div class="fsv-linea-card__media">
+                    @if (b.imagenId) {
+                      @if (imagenUrl(s.imagenes, b.imagenId); as imgUrl) {
+                        <img
+                          [src]="imgUrl"
+                          [alt]="etiquetaImagen(s.imagenes, b.imagenId)"
+                          loading="lazy"
+                          width="640"
+                          height="400"
+                        />
+                      } @else {
+                        <div class="fsv-linea-card__placeholder" aria-hidden="true">
+                          <span>📷</span>
+                          <p>{{ etiquetaImagen(s.imagenes, b.imagenId) }}</p>
+                        </div>
+                      }
+                    } @else {
+                      <div class="fsv-linea-card__placeholder" aria-hidden="true">
+                        <span>{{ b.icon }}</span>
+                      </div>
+                    }
+                  </div>
+                  <div class="fsv-linea-card__body">
+                    <span class="fsv-linea-card__icon" aria-hidden="true">{{ b.icon }}</span>
+                    <h3 class="fsv-linea-card__title">{{ b.titulo }}</h3>
+                    @if (b.texto.trim()) {
+                      <p class="fsv-linea-card__text">{{ b.texto }}</p>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+            } @else if (bloquesModoSimuladores(s.slug)) {
+            <div class="fsv-sim-grid reveal" avRevealOnScroll [revealDelay]="60">
+              @for (b of s.bloques; track b.titulo) {
+                <article class="fsv-sim-card">
+                  <span class="fsv-sim-card__icon" aria-hidden="true">{{ b.icon }}</span>
+                  <h3 class="fsv-sim-card__title">{{ b.titulo }}</h3>
+                  @if (b.texto.trim()) {
+                    <p class="fsv-sim-card__text">{{ b.texto }}</p>
+                  }
+                </article>
+              }
+            </div>
+            } @else if (bloquesModoTarjetas(s.slug, s.bloques)) {
+            <div class="fsv-grid fsv-grid--bloques reveal" avRevealOnScroll [revealDelay]="60">
+              @for (b of s.bloques; track b.titulo) {
+                <article class="fsv-card fsv-card--capability">
+                  <span class="fsv-card__icon" aria-hidden="true">{{ b.icon }}</span>
+                  <h3>{{ b.titulo }}</h3>
+                  @if (b.texto.trim()) {
+                    <p>{{ b.texto }}</p>
+                  }
+                </article>
+              }
+            </div>
+            } @else {
+            <div class="fsv-editorial-flow reveal" avRevealOnScroll [revealDelay]="60">
+              @for (b of s.bloques; track b.titulo; let i = $index) {
+                @if (bloqueTieneMedia(b)) {
+                  <article class="fsv-feature" [class.fsv-feature--reverse]="featureAlterna(i)">
+                    <div class="fsv-feature__text">
+                      <p class="fsv-feature__label">
+                        <span class="fsv-feature__icon" aria-hidden="true">{{ b.icon }}</span>
+                        {{ s.bloquesKicker }}
+                      </p>
+                      <h3 class="fsv-feature__title">{{ b.titulo }}</h3>
+                      @if (b.texto.trim()) {
+                        <p class="fsv-article__p">{{ b.texto }}</p>
+                      }
+                    </div>
+                    <div class="fsv-feature__media">
+                      @if (b.imagenId) {
+                        @if (imagenUrl(s.imagenes, b.imagenId); as imgUrl) {
+                          <figure class="fsv-figure">
+                            <img [src]="imgUrl" [alt]="etiquetaImagen(s.imagenes, b.imagenId)" loading="lazy" />
+                            <figcaption>{{ etiquetaImagen(s.imagenes, b.imagenId) }}</figcaption>
+                          </figure>
+                        } @else {
+                          <figure class="fsv-figure fsv-figure--pending">
+                            <span class="fsv-figure__pending-icon" aria-hidden="true">📷</span>
+                            <p>{{ etiquetaImagen(s.imagenes, b.imagenId) }}</p>
+                            <figcaption>Imagen pendiente por cargar</figcaption>
+                          </figure>
+                        }
+                      }
+                      @if (bloqueTieneVideo(b)) {
+                        @if (bloqueVideoEsArchivo(b) && b.videoId) {
+                          @if (videoUrl(s.videos, b.videoId); as src) {
+                            <figure class="fsv-figure fsv-figure--video">
+                              <video
+                                class="fsv-figure__video"
+                                controls
+                                playsinline
+                                preload="metadata"
+                                [src]="src"
+                                [attr.aria-label]="b.titulo"
+                              ></video>
+                              <figcaption>Video — {{ b.titulo }}</figcaption>
+                            </figure>
+                          } @else {
+                            <figure class="fsv-figure fsv-figure--pending fsv-figure--video">
+                              <span class="fsv-figure__pending-icon" aria-hidden="true">▶</span>
+                              <p>{{ etiquetaVideo(s.videos, b.videoId) }}</p>
+                              <figcaption>Video pendiente por cargar</figcaption>
+                            </figure>
+                          }
+                        } @else if (tieneSlotVideo(b.youtubeUrl)) {
+                        @if (videoEmbed(b.youtubeUrl); as embedSrc) {
+                          <figure class="fsv-figure fsv-figure--video">
+                            <div class="fsv-figure__frame">
+                              <iframe
+                                [src]="embedSrc"
+                                [title]="b.titulo"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen
+                                loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                              ></iframe>
+                            </div>
+                            <figcaption>Video — {{ b.titulo }}</figcaption>
+                          </figure>
+                        } @else {
+                          <figure class="fsv-figure fsv-figure--pending fsv-figure--video">
+                            <span class="fsv-figure__pending-icon" aria-hidden="true">▶</span>
+                            <p>Video</p>
+                            <figcaption>Video pendiente por cargar</figcaption>
+                          </figure>
+                        }
+                        }
+                      }
+                    </div>
+                  </article>
+                } @else {
+                  <article class="fsv-editorial-item">
+                    <span class="fsv-editorial-item__icon" aria-hidden="true">{{ b.icon }}</span>
+                    <div class="fsv-editorial-item__body">
+                      <h3>{{ b.titulo }}</h3>
+                      @if (b.texto.trim()) {
+                        <p>{{ b.texto }}</p>
+                      }
+                    </div>
+                  </article>
+                }
+              }
+            </div>
+            }
+          </div>
+        </section>
+      }
+
+      @if (s.metodologiaPasos.length) {
+        <section class="fsv-section" id="metodologia">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              @if (s.metodologiaKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ s.metodologiaKicker }}</p>
+              }
+              @if (s.metodologiaTitulo.trim()) {
+                <h2 class="fsv-section__title">{{ s.metodologiaTitulo }}</h2>
+              }
+              @if (s.metodologiaLead.trim()) {
+                <p class="fsv-section-head__lead">{{ s.metodologiaLead }}</p>
+              }
+            </header>
+            <div class="fsv-flow reveal" avRevealOnScroll [revealDelay]="60">
+              @for (paso of s.metodologiaPasos; track paso; let last = $last) {
+                <span class="fsv-flow__step">{{ paso }}</span>
+                @if (!last) {
+                  <span class="fsv-flow__arrow" aria-hidden="true">→</span>
+                }
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.estilo === 'tech' && (s.dashboardFiltros.length || s.dashboardStats.length)) {
+        <section class="fsv-section fsv-section--tech" id="dashboard">
+          <div class="container">
+            <div class="fsv-dashboard reveal" avRevealOnScroll>
+              <p class="fsv-dashboard__note">Datos de ejemplo ilustrativos hasta cargar información real.</p>
+              <div class="fsv-dashboard__layout">
+                @if (s.dashboardFiltros.length) {
+                  <aside class="fsv-dashboard__filters">
+                    <h3>Filtrar por</h3>
+                    <ul>
+                      @for (f of s.dashboardFiltros; track f) {
+                        <li>{{ f }}</li>
+                      }
+                    </ul>
+                  </aside>
+                }
+                <div class="fsv-dashboard__map" aria-label="Mapa de calor ilustrativo">
+                  <span class="fsv-dashboard__map-label">Mapa / mapa de calor</span>
+                  <div class="fsv-dashboard__map-grid" aria-hidden="true"></div>
+                </div>
+                @if (s.dashboardStats.length) {
+                  <aside class="fsv-dashboard__stats">
+                    <h3>Indicadores</h3>
+                    @for (stat of s.dashboardStats; track stat.etiqueta) {
+                      <div class="fsv-stat">
+                        <strong>{{ stat.valor }}</strong>
+                        <span>{{ stat.etiqueta }}</span>
+                      </div>
+                    }
+                  </aside>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.preguntas.length) {
+        <section class="fsv-section fsv-section--alt" id="preguntas">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Análisis</p>
+              <h2 class="fsv-section__title">¿Qué podemos descubrir?</h2>
+            </header>
+            <div class="fsv-preguntas reveal" avRevealOnScroll [revealDelay]="60">
+              @for (q of s.preguntas; track q) {
+                <article class="fsv-pregunta">{{ q }}</article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.productoNombre.trim()) {
+        @if (mostrarProductoShowcase()) {
+        <section class="fsv-section fsv-section--producto-showcase" id="producto">
+          <div class="container">
+            <article class="fsv-producto-showcase reveal" avRevealOnScroll>
+              <div class="fsv-producto-showcase__copy">
+                <p class="fsv-producto-showcase__kicker">{{ s.productoKicker }}</p>
+                <h2 class="fsv-producto-showcase__title">{{ s.productoNombre }}</h2>
+                @if (s.productoLead.trim()) {
+                  <p class="fsv-producto-showcase__lead">{{ s.productoLead }}</p>
+                }
+                @if (s.productoEtiquetas.length) {
+                <ul class="fsv-producto-showcase__topics" [attr.aria-label]="'Temas de ' + s.productoNombre">
+                  @for (tag of s.productoEtiquetas; track tag) {
+                    <li>{{ tag }}</li>
+                  }
+                </ul>
+                }
+                @if (s.productoParrafos.length) {
+                  <div class="fsv-producto-showcase__body">
+                    @for (p of s.productoParrafos; track $index; let i = $index) {
+                      <p class="fsv-producto-showcase__p" [class.fsv-producto-showcase__p--highlight]="i === 0">{{ p }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="fsv-producto-showcase__media">
+                <div class="fsv-producto-showcase__frame">
+                  @if (imagenUrl(s.imagenes, productoImagenSlotId()); as imgUrl) {
+                    <img
+                      [src]="imgUrl"
+                      [alt]="etiquetaImagen(s.imagenes, productoImagenSlotId())"
+                      loading="lazy"
+                      width="720"
+                      height="540"
+                    />
+                  } @else {
+                    <div class="fsv-producto-showcase__placeholder" aria-hidden="true">
+                      <span>📚</span>
+                      <p>ENCIVIRTRANS</p>
+                    </div>
+                  }
+                </div>
+                <div class="fsv-producto-showcase__glow" aria-hidden="true"></div>
+              </div>
+            </article>
+            @if (mostrarProductoMedia()) {
+              <div class="fsv-producto-showcase__gallery reveal" avRevealOnScroll [revealDelay]="80">
+                @for (medio of productoMediosVisibles(s); track $index) {
+                  @if (medio.tipo === 'imagen' && medio.imagenId) {
+                    @if (imagenUrl(s.imagenes, medio.imagenId); as imgUrl) {
+                      <figure class="fsv-figure fsv-figure--wide">
+                        <img [src]="imgUrl" [alt]="etiquetaImagen(s.imagenes, medio.imagenId)" loading="lazy" />
+                        <figcaption>{{ medioCaption(medio, etiquetaImagen(s.imagenes, medio.imagenId)) }}</figcaption>
+                      </figure>
+                    }
+                  }
+                }
+              </div>
+            }
+          </div>
+        </section>
+        } @else {
+        <section class="fsv-section" [class.fsv-section--alt]="s.estilo !== 'tech'" id="producto">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">{{ s.productoKicker }}</p>
+              <h2 class="fsv-section__title">{{ s.productoNombre }}</h2>
+              @if (s.productoLead.trim()) {
+                <p class="fsv-section-head__lead">{{ s.productoLead }}</p>
+              }
+            </header>
+            @if (s.productoParrafos.length || mostrarProductoMedia()) {
+              <article class="fsv-article fsv-article--producto reveal" avRevealOnScroll [revealDelay]="60">
+                @if (s.productoParrafos.length) {
+                  <div class="fsv-article__body">
+                    @for (p of s.productoParrafos; track $index) {
+                      <p class="fsv-article__p">{{ p }}</p>
+                    }
+                  </div>
+                }
+                @if (mostrarProductoMedia()) {
+                  <div class="fsv-article__gallery">
+                    @for (medio of productoMediosVisibles(s); track $index) {
+                      @if (medio.tipo === 'imagen' && medio.imagenId) {
+                        @if (imagenUrl(s.imagenes, medio.imagenId); as imgUrl) {
+                          <figure class="fsv-figure fsv-figure--wide">
+                            <img [src]="imgUrl" [alt]="etiquetaImagen(s.imagenes, medio.imagenId)" loading="lazy" />
+                            <figcaption>{{ medioCaption(medio, etiquetaImagen(s.imagenes, medio.imagenId)) }}</figcaption>
+                          </figure>
+                        } @else {
+                          <figure class="fsv-figure fsv-figure--wide fsv-figure--pending">
+                            <span class="fsv-figure__pending-icon" aria-hidden="true">📷</span>
+                            <p>{{ etiquetaImagen(s.imagenes, medio.imagenId) }}</p>
+                            <figcaption>{{ medioCaption(medio, 'Imagen pendiente por cargar') }}</figcaption>
+                          </figure>
+                        }
+                      }
+                      @if (medio.tipo === 'video') {
+                        @if (medioVideoEsArchivo(medio) && medio.videoId) {
+                          @if (videoUrl(s.videos, medio.videoId); as src) {
+                            <figure class="fsv-figure fsv-figure--wide fsv-figure--video">
+                              <video
+                                class="fsv-figure__video"
+                                controls
+                                playsinline
+                                preload="metadata"
+                                [src]="src"
+                                [attr.aria-label]="medioCaption(medio, s.productoNombre)"
+                              ></video>
+                              <figcaption>{{ medioCaption(medio, 'Video — ' + s.productoNombre) }}</figcaption>
+                            </figure>
+                          } @else {
+                            <figure class="fsv-figure fsv-figure--wide fsv-figure--pending fsv-figure--video">
+                              <span class="fsv-figure__pending-icon" aria-hidden="true">▶</span>
+                              <p>{{ etiquetaVideo(s.videos, medio.videoId) }}</p>
+                              <figcaption>{{ medioCaption(medio, 'Video pendiente por cargar') }}</figcaption>
+                            </figure>
+                          }
+                        } @else {
+                          @if (videoEmbed(medio.youtubeUrl); as embedSrc) {
+                          <figure class="fsv-figure fsv-figure--wide fsv-figure--video">
+                            <div class="fsv-figure__frame">
+                              <iframe
+                                [src]="embedSrc"
+                                [title]="medioCaption(medio, s.productoNombre)"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen
+                                loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                              ></iframe>
+                            </div>
+                            <figcaption>{{ medioCaption(medio, 'Video — ' + s.productoNombre) }}</figcaption>
+                          </figure>
+                          } @else {
+                          <figure class="fsv-figure fsv-figure--wide fsv-figure--pending fsv-figure--video">
+                            <span class="fsv-figure__pending-icon" aria-hidden="true">▶</span>
+                            <p>Video</p>
+                            <figcaption>{{ medioCaption(medio, 'Video pendiente por cargar') }}</figcaption>
+                          </figure>
+                          }
+                        }
+                      }
+                    }
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        </section>
+        }
+      }
+
+      @if (s.flujoTecnologico.length) {
+        <section class="fsv-section fsv-section--alt" id="flujo-tech">
+          <div class="container">
+            <div class="fsv-flow fsv-flow--tech reveal" avRevealOnScroll>
+              @for (paso of s.flujoTecnologico; track paso; let last = $last) {
+                <span class="fsv-flow__step fsv-flow__step--pill">{{ paso }}</span>
+                @if (!last) {
+                  <span class="fsv-flow__arrow" aria-hidden="true">→</span>
+                }
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.flujoVertical.length) {
+        <section class="fsv-section" id="proceso">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Proceso</p>
+              <h2 class="fsv-section__title">¿Para qué sirve?</h2>
+            </header>
+            <div class="fsv-vertical-flow reveal" avRevealOnScroll [revealDelay]="60">
+              @for (paso of s.flujoVertical; track paso.titulo; let last = $last) {
+                <article class="fsv-vertical-flow__item">
+                  <h3>{{ paso.titulo }}</h3>
+                  <p>{{ paso.texto }}</p>
+                </article>
+                @if (!last) {
+                  <span class="fsv-vertical-flow__arrow" aria-hidden="true">↓</span>
+                }
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.sistemaSeguroItems.length) {
+        <section class="fsv-section fsv-section--alt" id="sistema-seguro">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Enfoque</p>
+              <h2 class="fsv-section__title">Sistema seguro</h2>
+            </header>
+            <div class="fsv-safe-system reveal" avRevealOnScroll [revealDelay]="60">
+              @for (item of s.sistemaSeguroItems; track item) {
+                <span class="fsv-safe-system__node">{{ item }}</span>
+              }
+              @if (s.sistemaSeguroCentro.trim()) {
+                <span class="fsv-safe-system__core">{{ s.sistemaSeguroCentro }}</span>
+              }
+            </div>
+            @if (s.sistemaSeguroLead.trim()) {
+              <p class="fsv-quote fsv-quote--inline reveal" avRevealOnScroll [revealDelay]="90">{{ s.sistemaSeguroLead }}</p>
+            }
+          </div>
+        </section>
+      }
+
+      @if (s.publicos.length) {
+        <section class="fsv-section" id="publicos">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Audiencias</p>
+              <h2 class="fsv-section__title">Nuestros públicos</h2>
+            </header>
+            <div class="fsv-tags reveal" avRevealOnScroll [revealDelay]="60">
+              @for (tag of s.publicos; track tag) {
+                <span class="fsv-tag">{{ tag }}</span>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.experiencias.length) {
+        <section class="fsv-section fsv-section--alt" id="experiencias">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Experiencias</p>
+              <h2 class="fsv-section__title">Dinámicas formativas</h2>
+            </header>
+            <div class="fsv-grid reveal" avRevealOnScroll [revealDelay]="60">
+              @for (exp of s.experiencias; track exp.titulo) {
+                <article class="fsv-card">
+                  <span class="fsv-card__icon" aria-hidden="true">{{ exp.icon }}</span>
+                  <h3>{{ exp.titulo }}</h3>
+                  <p>{{ exp.texto }}</p>
+                </article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.mensajeTitulo.trim()) {
+        <section class="fsv-section fsv-section--message" id="mensaje">
+          <div class="container reveal" avRevealOnScroll>
+            <h2 class="fsv-message__title">{{ s.mensajeTitulo }}</h2>
+            @if (s.mensajeSubtitulo.trim()) {
+              <p class="fsv-message__subtitle">{{ s.mensajeSubtitulo }}</p>
+            }
+          </div>
+        </section>
+      }
+
+      @if (s.ecosistemaItems.length) {
+        <section class="fsv-section fsv-section--alt fsv-section--ecosistema" id="ecosistema">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              @if (s.ecosistemaKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ s.ecosistemaKicker }}</p>
+              }
+              @if (s.ecosistemaTitulo.trim()) {
+                <h2 class="fsv-section__title">{{ s.ecosistemaTitulo }}</h2>
+              }
+            </header>
+            <div class="fsv-ecosystem fsv-ecosystem--hub reveal" avRevealOnScroll [revealDelay]="60">
+              @if (s.ecosistemaCentro.trim()) {
+                <span class="fsv-ecosystem__core">{{ s.ecosistemaCentro }}</span>
+              }
+              @for (item of s.ecosistemaItems; track item.titulo) {
+                <article class="fsv-ecosystem__node">
+                  <span aria-hidden="true">{{ item.icon }}</span>
+                  <strong>{{ item.titulo }}</strong>
+                  <p>{{ item.texto }}</p>
+                </article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.gamificacionItems.length) {
+        <section class="fsv-section fsv-section--gamificacion" id="gamificacion">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              @if (s.gamificacionKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ s.gamificacionKicker }}</p>
+              }
+              @if (s.gamificacionTitulo.trim()) {
+                <h2 class="fsv-section__title">{{ s.gamificacionTitulo }}</h2>
+              }
+            </header>
+            <div class="fsv-tags fsv-tags--play reveal" avRevealOnScroll [revealDelay]="60">
+              @for (g of s.gamificacionItems; track g) {
+                <span class="fsv-tag fsv-tag--play">{{ g }}</span>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.formulaAprendizaje.trim()) {
+        <section class="fsv-section fsv-section--formula" id="formula">
+          <div class="container reveal" avRevealOnScroll>
+            <p class="fsv-formula">{{ s.formulaAprendizaje }}</p>
+          </div>
+        </section>
+      }
+
+      @if (s.pilaresEducativos.length) {
+        <section class="fsv-section fsv-section--alt" id="pilares">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Metodología educativa</p>
+              <h2 class="fsv-section__title">Saber, saber hacer y ser</h2>
+            </header>
+            <div class="fsv-pilares reveal" avRevealOnScroll [revealDelay]="60">
+              @for (pilar of s.pilaresEducativos; track pilar.titulo) {
+                <article class="fsv-card fsv-card--pilar">
+                  <span class="fsv-card__icon" aria-hidden="true">{{ pilar.icon }}</span>
+                  <h3>{{ pilar.titulo }}</h3>
+                  <p>{{ pilar.texto }}</p>
+                </article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.rutaAprendizaje.length) {
+        <section class="fsv-section" id="ruta">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Ruta</p>
+              <h2 class="fsv-section__title">Ruta de aprendizaje</h2>
+            </header>
+            <div class="fsv-flow fsv-flow--numbered reveal" avRevealOnScroll [revealDelay]="60">
+              @for (paso of s.rutaAprendizaje; track paso; let i = $index; let last = $last) {
+                <span class="fsv-flow__step"><em>{{ i + 1 }}.</em> {{ paso }}</span>
+                @if (!last) {
+                  <span class="fsv-flow__arrow" aria-hidden="true">→</span>
+                }
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.resultadoIconos.length) {
+        <section class="fsv-section fsv-section--alt" id="resultado">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              @if (s.resultadoKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ s.resultadoKicker }}</p>
+              }
+              <h2 class="fsv-section__title">{{ s.resultadoTitulo }}</h2>
+            </header>
+            <div class="fsv-icon-grid reveal" avRevealOnScroll [revealDelay]="60">
+              @for (item of s.resultadoIconos; track item.titulo) {
+                <article class="fsv-icon-card">
+                  <span aria-hidden="true">{{ item.icon }}</span>
+                  <p>{{ item.titulo }}</p>
+                </article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.experienciaItems.length) {
+        <section class="fsv-section" id="experiencia-educativa">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">{{ s.experienciaSeccionKicker || 'Experiencias' }}</p>
+              <h2 class="fsv-section__title">{{ s.experienciaSeccionTitulo || 'Experiencia educativa' }}</h2>
+            </header>
+            <div class="fsv-grid fsv-grid--bloques reveal" avRevealOnScroll [revealDelay]="60">
+              @for (item of s.experienciaItems; track item.titulo) {
+                <article class="fsv-card">
+                  <span class="fsv-card__icon" aria-hidden="true">{{ item.icon }}</span>
+                  <h3>{{ item.titulo }}</h3>
+                  <p>{{ item.texto }}</p>
+                </article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (mostrarModulosPlataforma()) {
+        <section class="fsv-section fsv-section--alt" id="plataforma">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              @if (s.modulosPlataformaKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ s.modulosPlataformaKicker }}</p>
+              }
+              <h2 class="fsv-section__title">{{ s.modulosPlataformaTitulo }}</h2>
+              @if (s.modulosPlataformaLead.trim()) {
+                <p class="fsv-section-head__lead">{{ s.modulosPlataformaLead }}</p>
+              }
+            </header>
+            <div class="fsv-editorial-flow reveal" avRevealOnScroll [revealDelay]="60">
+              @for (m of s.modulosPlataforma; track m.titulo; let i = $index) {
+                <article class="fsv-feature" [class.fsv-feature--reverse]="featureAlterna(i)">
+                  <div class="fsv-feature__text">
+                    <p class="fsv-feature__label">
+                      <span class="fsv-feature__icon" aria-hidden="true">{{ m.icon }}</span>
+                      {{ s.modulosPlataformaKicker || 'Plataforma' }}
+                    </p>
+                    <h3 class="fsv-feature__title">{{ m.titulo }}</h3>
+                    @if (m.texto.trim()) {
+                      <p class="fsv-article__p">{{ m.texto }}</p>
+                    }
+                  </div>
+                  <div class="fsv-feature__media">
+                    @if (m.imagenId) {
+                      @if (imagenUrl(s.imagenes, m.imagenId); as imgUrl) {
+                        <figure class="fsv-figure fsv-figure--screenshot">
+                          <img [src]="imgUrl" [alt]="etiquetaImagen(s.imagenes, m.imagenId)" loading="lazy" />
+                          <figcaption>{{ etiquetaImagen(s.imagenes, m.imagenId) }}</figcaption>
+                        </figure>
+                      } @else {
+                        <figure class="fsv-figure fsv-figure--pending fsv-figure--screenshot">
+                          <span class="fsv-figure__pending-icon" aria-hidden="true">📷</span>
+                          <p>{{ etiquetaImagen(s.imagenes, m.imagenId) }}</p>
+                          <figcaption>Captura pendiente por cargar</figcaption>
+                        </figure>
+                      }
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (s.listaServicios.length) {
+        <section class="fsv-section fsv-section--alt" id="detalle">
+          <div class="container">
+            <header class="fsv-section-head reveal" avRevealOnScroll>
+              <p class="fsv-section-head__kicker">Detalle</p>
+              <h2 class="fsv-section__title">{{ s.listaTitulo }}</h2>
+            </header>
+            <ul class="fsv-check-list fsv-check-list--cards reveal" avRevealOnScroll [revealDelay]="60">
+              @for (item of s.listaServicios; track item.titulo) {
+                <li>
+                  <strong>{{ item.titulo }}</strong>
+                  <span>{{ item.texto }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </section>
+      }
+
+      <section class="fsv-section" id="contacto">
+        <div class="container">
+          @if (s.cierreQuote.trim()) {
+            <blockquote class="fsv-quote reveal" avRevealOnScroll>{{ s.cierreQuote }}</blockquote>
+          }
+          <article class="fsv-cta reveal" avRevealOnScroll [revealDelay]="60">
+            <h2>{{ s.ctaTitulo }}</h2>
+            <p>{{ s.ctaLead }}</p>
+            <div class="fsv-cta__actions">
+              <a class="btn btn-primary" routerLink="/acerca" fragment="contacto">{{ s.ctaBtnPrincipal }}</a>
+              <a class="btn btn-outline" routerLink="/servicios">{{ s.ctaBtnSecundario }}</a>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+} @else {
+  <section class="fsv-missing container">
+    <h1>Servicio no encontrado</h1>
+    <p>La línea de servicio solicitada no está disponible.</p>
+    <a routerLink="/servicios" class="btn btn-primary">Volver al portafolio</a>
+  </section>
+}

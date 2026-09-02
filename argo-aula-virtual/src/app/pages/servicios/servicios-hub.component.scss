@@ -1,0 +1,141 @@
+@use '../shared/portal-page-effects' as fx;
+@use 'servicios-portal-fonts' as fsvFonts;
+
+:host {
+  display: block;
+  @include fsvFonts.servicios-portal-fonts();
+  --pp-fx-accent-rgb: 59, 130, 246;
+}
+
+.fsv-page {
+  @include fsvFonts.servicios-portal-fonts();
+  --fsv-ink: #0f172a;
+  --fsv-muted: #475569;
+  --fsv-primary: #2563eb;
+  --fsv-primary-soft: #eff6ff;
+  --fsv-shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --fsv-shadow-md: 0 16px 40px rgba(37, 99, 235, 0.12);
+  --fsv-radius: 16px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(37, 99, 235, 0.05), transparent 45%),
+    radial-gradient(ellipse at 100% 20%, rgba(16, 185, 129, 0.04), transparent 40%),
+    #f8fafc;
+  color: var(--fsv-ink);
+}
+
+.container {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.fsv-section {
+  padding: clamp(2.25rem, 4.5vw, 3.5rem) 0;
+  scroll-margin-top: 4.5rem;
+
+  &--alt {
+    background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  }
+}
+
+.fsv-section-head {
+  margin-bottom: 1.25rem;
+
+  &--center {
+    text-align: center;
+    max-width: 760px;
+    margin-inline: auto;
+  }
+
+  &__kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fsv-primary);
+  }
+
+  &__lead {
+    margin: 0.5rem 0 0;
+    line-height: 1.65;
+    color: var(--fsv-muted);
+  }
+}
+
+.fsv-section__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 900;
+}
+
+.fsv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.fsv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 100%;
+  padding: 1.15rem;
+  border-radius: var(--fsv-radius);
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: var(--fsv-shadow-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--fsv-shadow-md);
+    border-color: #bfdbfe;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  p {
+    margin: 0;
+    flex: 1;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--fsv-muted);
+  }
+}
+
+.fsv-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 12px;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--fsv-primary);
+  background: var(--fsv-primary-soft);
+  border: 1px solid #bfdbfe;
+}
+
+.fsv-card__link {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fsv-primary);
+}
+
+@media (max-width: 640px) {
+  .fsv-grid {
+    grid-template-columns: 1fr;
+  }
+}
