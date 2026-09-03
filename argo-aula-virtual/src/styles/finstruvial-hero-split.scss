@@ -116,23 +116,23 @@ html[data-finstruvial-portal='1'] {
     }
 
     .ppbh__title {
-      text-transform: none;
-      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
 
     .ppbh__title-line {
       font-size: clamp(1.45rem, 3vw, 2.1rem);
       font-weight: 800;
       line-height: 1.12;
-      text-transform: none;
-      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
 
     .ppbh__title-accent {
       font-size: clamp(1.45rem, 3vw, 2.1rem);
       line-height: 1.12;
-      text-transform: none;
-      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
 
     .ppbh__pillars {
@@ -185,10 +185,6 @@ html[data-finstruvial-portal='1'] {
 
     &.ppbh--no-photo .ppbh__ribbon {
       grid-column: 2;
-    }
-
-    &.consulta-hero-banner .ppbh__title-accent {
-      text-transform: uppercase;
     }
   }
 }

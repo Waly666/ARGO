@@ -257,7 +257,13 @@ export class ShellComponent implements OnInit, AfterViewInit {
   toggleMenu() {
     const abrir = !this.menuAbierto();
     this.menuAbierto.set(abrir);
-    if (!abrir) this.devolverFocoMenu();
+    if (abrir && this.serviciosSubmenuActivo()) {
+      this.serviciosSubmenuAbierto.set(true);
+    }
+    if (!abrir) {
+      this.serviciosSubmenuAbierto.set(false);
+      this.devolverFocoMenu();
+    }
   }
 
   cerrarMenu() {
@@ -271,7 +277,9 @@ export class ShellComponent implements OnInit, AfterViewInit {
     this.serviciosSubmenuAbierto.set(false);
   }
 
-  toggleServiciosSubmenu() {
+  toggleServiciosSubmenu(event?: Event) {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.serviciosSubmenuAbierto.update((v) => !v);
   }
 

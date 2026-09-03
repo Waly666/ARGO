@@ -3,12 +3,11 @@
 
 :host {
   display: block;
-  @include fsvFonts.servicios-portal-fonts();
   --pp-fx-accent-rgb: 59, 130, 246;
+  @include fsvFonts.servicios-portal-fonts();
 }
 
 .fsv-page {
-  @include fsvFonts.servicios-portal-fonts();
   --fsv-ink: #0f172a;
   --fsv-muted: #475569;
   --fsv-primary: #2563eb;
@@ -21,6 +20,8 @@
     radial-gradient(ellipse at 100% 20%, rgba(16, 185, 129, 0.04), transparent 40%),
     #f8fafc;
   color: var(--fsv-ink);
+
+  @include fsvFonts.servicios-portal-fonts();
 }
 
 .container {
