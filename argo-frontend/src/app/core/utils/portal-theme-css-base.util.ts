@@ -225,7 +225,7 @@ const AMBER_LIKE_ACCENTS = new Set([
   '#ea580c',
 ]);
 
-function resolvePortalHeroEstilo(
+export function resolvePortalHeroEstilo(
   tema: PortalTemaLike | null | undefined,
 ): 'starfield' | 'servial-mesh' | 'educarte-mesh' {
   const explicit = tema?.heroEstilo;

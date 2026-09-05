@@ -79,7 +79,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly portalSectionIcon = portalSectionIcon;
 
-  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
 
   nombreCea = computed(() => this.config()?.nombreCea || DEFAULT_CEA_NOMBRE);
 
@@ -122,7 +122,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ordenSecciones = computed(() => {
     const cfg = this.config();
-    const landing = mergePortalLanding(cfg?.landing);
+    const landing = mergePortalLanding(cfg?.landing, cfg?.site?.tema);
     return ordenSeccionesHome(cfg).filter((id) => {
       if (id === 'infoCards') return false;
       if (id === 'fotosInicio') {

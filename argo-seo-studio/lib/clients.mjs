@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { emptyProfile, profileEsFinstruvial } from './generate-seo.mjs';
+import { profileEsServial, servialProfileDefaults } from './servial-seo.mjs';
+import { SERVIAL_PORTAFOLIO_PAGE_KEYS, SERVIAL_SERVICIOS_DEFAULT } from './catalog.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROFILES_DIR = path.join(__dirname, '..', 'profiles');
@@ -85,7 +87,10 @@ export function createClient(label, { copyFrom = null, clientId = null } = {}) {
 
   let profile = emptyProfile();
   profile.marca = label.trim();
-  if (/finstruvial/i.test(label)) {
+  if (/servial/i.test(label)) {
+    profile = { ...emptyProfile(), ...servialProfileDefaults(label.trim()) };
+  } else if (/finstruvial/i.test(label)) {
+    profile.incluirPortafolio = true;
     profile.incluirPortafolioFinstruvial = true;
     const sel = new Set(profile.serviciosSeleccionados ?? []);
     sel.add('finstruvial-portafolio');
@@ -102,6 +107,32 @@ export function createClient(label, { copyFrom = null, clientId = null } = {}) {
 function migrateProfile(merged) {
   if (!Array.isArray(merged.paginasPortafolio)) {
     merged.paginasPortafolio = [];
+  }
+  if (!Object.hasOwn(merged, 'incluirPortafolio')) {
+    if (merged.incluirPortafolioServial === true || merged.incluirPortafolioFinstruvial === true) {
+      merged.incluirPortafolio = true;
+    } else if (merged.incluirPortafolioFinstruvial === false && !profileEsServial(merged)) {
+      merged.incluirPortafolio = false;
+    } else if (
+      profileEsServial(merged) ||
+      profileEsFinstruvial(merged) ||
+      (merged.serviciosSeleccionados ?? []).includes('servial-portafolio') ||
+      (merged.serviciosSeleccionados ?? []).includes('finstruvial-portafolio')
+    ) {
+      merged.incluirPortafolio = true;
+    }
+  }
+  if (profileEsServial(merged)) {
+    const sel = merged.serviciosSeleccionados ?? [];
+    const generic = ['seguridad-vial', 'manejo-defensivo', 'cursos-virtuales', 'licencias'];
+    const isThin =
+      !sel.length ||
+      (!sel.includes('servial-portafolio') && sel.every((id) => generic.includes(id)));
+    if (isThin) merged.serviciosSeleccionados = [...SERVIAL_SERVICIOS_DEFAULT];
+    if (!merged.paginasPortafolio?.length) {
+      merged.paginasPortafolio = [...SERVIAL_PORTAFOLIO_PAGE_KEYS];
+    }
+    if (merged.incluirPortafolio == null) merged.incluirPortafolio = true;
   }
   if (!Object.hasOwn(merged, 'incluirPortafolioFinstruvial')) {
     merged.incluirPortafolioFinstruvial =

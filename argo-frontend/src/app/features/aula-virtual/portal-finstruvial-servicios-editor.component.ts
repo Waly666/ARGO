@@ -12,10 +12,13 @@ import {
   FINSTRUVIAL_SERVICIO_BUILDER_MENU,
 } from '../../core/constants/finstruvial-servicios-editor-panels';
 import {
-  FINSTRUVIAL_SERVICIOS_DEFAULTS,
   finstruvialServiciosLista,
-  mergeFinstruvialServicios,
 } from '../../core/constants/finstruvial-servicios-defaults';
+import {
+  mergePortafolioServicios,
+  portafolioServiciosDefaultsForTema,
+} from '../../core/utils/portafolio-servicios.util';
+import type { PortalTemaLike } from '../../core/utils/portal-theme-css-base.util';
 import {
   FinstruvialEditorGrupo,
   finstruvialEditorIndice,
@@ -58,6 +61,7 @@ export class PortalFinstruvialServiciosEditorComponent {
   private api = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) finstruvialServicios!: PortalFinstruvialServiciosConfig;
+  @Input() portalTema: PortalTemaLike | null | undefined = null;
   /** `hub` = portafolio /servicios; `linea` = una de las siete páginas. */
   @Input() modo: 'hub' | 'linea' = 'hub';
   /** Obligatorio cuando `modo` es `linea`. */
@@ -83,6 +87,14 @@ export class PortalFinstruvialServiciosEditorComponent {
     return 'aulaVirtual';
   }
 
+  private portafolioDefaults() {
+    return portafolioServiciosDefaultsForTema(this.portalTema);
+  }
+
+  private mergePortafolio(raw?: Partial<PortalFinstruvialServiciosConfig> | null) {
+    return mergePortafolioServicios(raw ?? this.finstruvialServicios, this.portalTema);
+  }
+
   lineas() {
     return finstruvialServiciosLista(this.finstruvialServicios);
   }
@@ -91,9 +103,9 @@ export class PortalFinstruvialServiciosEditorComponent {
     const slug = this.lineaActiva();
     let p = this.finstruvialServicios?.paginas?.[slug];
     if (!p) {
-      const merged = mergeFinstruvialServicios(this.finstruvialServicios).paginas[slug];
+      const merged = this.mergePortafolio(this.finstruvialServicios).paginas[slug];
       if (!this.finstruvialServicios.paginas) {
-        this.finstruvialServicios.paginas = mergeFinstruvialServicios().paginas;
+        this.finstruvialServicios.paginas = this.mergePortafolio().paginas;
       }
       this.finstruvialServicios.paginas[slug] = merged;
       p = merged;
@@ -195,7 +207,7 @@ export class PortalFinstruvialServiciosEditorComponent {
 
   setLineaVisible(slug: FinstruvialServicioSlug, activa: boolean): void {
     if (!this.finstruvialServicios.paginas[slug]) {
-      this.finstruvialServicios.paginas[slug] = mergeFinstruvialServicios().paginas[slug];
+      this.finstruvialServicios.paginas[slug] = this.mergePortafolio().paginas[slug];
     }
     this.finstruvialServicios.paginas[slug].activa = activa;
   }
@@ -204,12 +216,13 @@ export class PortalFinstruvialServiciosEditorComponent {
     if (!confirm('¿Restaurar textos del portafolio (/servicios)? Las imágenes subidas y la visibilidad se conservan.')) return;
     const hero = { ...this.finstruvialServicios.hub };
     const activa = this.finstruvialServicios.activa;
+    const defaults = this.portafolioDefaults();
     this.finstruvialServicios.hub = {
-      ...FINSTRUVIAL_SERVICIOS_DEFAULTS.hub,
+      ...defaults.hub,
       heroImagenUrl: hero.heroImagenUrl,
       heroImagenUrlAbsoluta: hero.heroImagenUrlAbsoluta,
     };
-    this.finstruvialServicios.menuLabel = FINSTRUVIAL_SERVICIOS_DEFAULTS.menuLabel;
+    this.finstruvialServicios.menuLabel = defaults.menuLabel;
     this.finstruvialServicios.activa = activa;
   }
 
@@ -223,7 +236,7 @@ export class PortalFinstruvialServiciosEditorComponent {
     const heroUrl = this.finstruvialServicios.paginas[slug].heroImagenUrl;
     const heroAbs = this.finstruvialServicios.paginas[slug].heroImagenUrlAbsoluta;
     this.finstruvialServicios.paginas[slug] = {
-      ...mergeFinstruvialServicios().paginas[slug],
+      ...this.mergePortafolio().paginas[slug],
       imagenes,
       videos,
       heroImagenUrl: heroUrl,

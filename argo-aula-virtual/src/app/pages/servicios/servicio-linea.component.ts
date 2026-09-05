@@ -7,7 +7,7 @@ import { AulaApiService } from '../../core/aula-api.service';
 import {
   finstruvialServicioSlugFromRouteSegment,
 } from '../../core/constants/finstruvial-servicios.constants';
-import { mergeFinstruvialServicioLanding, finstruvialPortafolioActivo } from '../../core/constants/finstruvial-servicios-defaults';
+import { finstruvialPortafolioActivo } from '../../core/constants/finstruvial-servicios-defaults';
 import {
   finstruvialServicioHeroPhoto,
   finstruvialServicioImagenUrl,
@@ -41,14 +41,14 @@ export class ServicioLineaComponent implements OnInit {
   cursosCatalogo = signal<CursoVirtual[]>([]);
   slug = signal(finstruvialServicioSlugFromRouteSegment(this.route.snapshot.paramMap.get('slug') || ''));
 
-  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
   servicio = computed(() => {
     const s = this.slug();
     if (!s) return null;
     const cfg = this.landing().finstruvialServicios;
     if (!finstruvialPortafolioActivo(cfg)) return null;
-    const p = mergeFinstruvialServicioLanding(s, cfg.paginas[s]);
-    return p.activa !== false ? p : null;
+    const p = cfg.paginas[s];
+    return p?.activa !== false ? p : null;
   });
 
   heroPhoto = computed(() => {

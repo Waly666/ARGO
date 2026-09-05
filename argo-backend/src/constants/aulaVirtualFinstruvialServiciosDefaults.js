@@ -287,7 +287,7 @@ function mergePagina(slug, raw, defaults) {
 
     slug,
 
-    activa: src.activa !== false,
+    activa: src.activa !== false && d.activa !== false,
 
     menuLabel: str(src.menuLabel, d.menuLabel),
 
@@ -466,9 +466,9 @@ function mergePagina(slug, raw, defaults) {
 
 
 
-function mergeFinstruvialServicios(raw, paginasDefaults = {}) {
+function mergeFinstruvialServicios(raw, paginasDefaults = {}, configDefaults = FINSTRUVIAL_SERVICIOS_DEFAULTS) {
 
-  const d = FINSTRUVIAL_SERVICIOS_DEFAULTS;
+  const d = configDefaults;
 
   const src = raw && typeof raw === 'object' ? raw : {};
 
@@ -482,7 +482,7 @@ function mergeFinstruvialServicios(raw, paginasDefaults = {}) {
 
   return {
 
-    activa: src.activa !== false,
+    activa: src.activa !== false && d.activa !== false,
 
     menuLabel: str(src.menuLabel, d.menuLabel),
 

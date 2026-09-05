@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SERVICIOS_CATALOGO, PORTAL_PAGES } from './lib/catalog.mjs';
+import { SERVICIOS_CATALOGO, PORTAL_PAGES, SERVICIOS_CATEGORIAS } from './lib/catalog.mjs';
 import {
   createClient,
   getActiveClientId,
@@ -32,7 +32,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/catalog', (_req, res) => {
-  res.json({ servicios: SERVICIOS_CATALOGO, paginas: PORTAL_PAGES });
+  res.json({ servicios: SERVICIOS_CATALOGO, paginas: PORTAL_PAGES, categorias: SERVICIOS_CATEGORIAS });
 });
 
 app.get('/api/clients', (_req, res) => {

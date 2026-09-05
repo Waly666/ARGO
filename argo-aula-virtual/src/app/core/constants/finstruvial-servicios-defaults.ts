@@ -44,13 +44,22 @@ function defaultImagenes(wire: Partial<PortalFinstruvialServicioLanding>): Porta
   return [img('hero', 'Imagen principal'), img('seccion', 'Imagen de sección')];
 }
 
-function pagina(slug: FinstruvialServicioSlug): PortalFinstruvialServicioLanding {
-  const wire = FINSTRUVIAL_SERVICIOS_WIREFRAME[slug] || {};
-  const menuLabel = wire.menuLabel || MENU_LABELS[slug];
+export type PortafolioServiciosWireframe = Partial<
+  Record<FinstruvialServicioSlug, Partial<PortalFinstruvialServicioLanding>>
+>;
+
+function paginaFromWireframe(
+  slug: FinstruvialServicioSlug,
+  wireframe: PortafolioServiciosWireframe,
+  menuLabels: Record<FinstruvialServicioSlug, string>,
+  hubIcons: Record<FinstruvialServicioSlug, string>,
+): PortalFinstruvialServicioLanding {
+  const wire = wireframe[slug] || {};
+  const menuLabel = wire.menuLabel || menuLabels[slug];
   const lead = wire.lead || '';
   return {
     slug,
-    activa: true,
+    activa: wire.activa !== false,
     menuLabel,
     estilo: wire.estilo || 'default',
     kicker: wire.kicker || '',
@@ -67,7 +76,7 @@ function pagina(slug: FinstruvialServicioSlug): PortalFinstruvialServicioLanding
     ctaPrincipalUrl: wire.ctaPrincipalUrl || '/acerca#contacto',
     ctaSecundario: wire.ctaSecundario || 'Ver todos los servicios',
     ctaSecundarioUrl: wire.ctaSecundarioUrl || '/servicios',
-    hubIcon: wire.hubIcon || HUB_ICONS[slug],
+    hubIcon: wire.hubIcon || hubIcons[slug],
     hubLead: wire.hubLead || lead,
     introKicker: wire.introKicker || 'Nuestro servicio',
     introTitulo: wire.introTitulo ?? '',
@@ -138,6 +147,37 @@ function pagina(slug: FinstruvialServicioSlug): PortalFinstruvialServicioLanding
   };
 }
 
+function pagina(slug: FinstruvialServicioSlug): PortalFinstruvialServicioLanding {
+  return paginaFromWireframe(slug, FINSTRUVIAL_SERVICIOS_WIREFRAME, MENU_LABELS, HUB_ICONS);
+}
+
+export function buildPortafolioServiciosDefaults(opts: {
+  wireframe: PortafolioServiciosWireframe;
+  menuLabels: Record<FinstruvialServicioSlug, string>;
+  hubIcons: Record<FinstruvialServicioSlug, string>;
+  hub: PortalFinstruvialServiciosConfig['hub'];
+  menuLabel: string;
+  activa?: boolean;
+}): PortalFinstruvialServiciosConfig {
+  const paginas = FINSTRUVIAL_SERVICIO_SLUGS.reduce(
+    (acc, slug) => {
+      acc[slug] = paginaFromWireframe(slug, opts.wireframe, opts.menuLabels, opts.hubIcons);
+      return acc;
+    },
+    {} as Record<FinstruvialServicioSlug, PortalFinstruvialServicioLanding>,
+  );
+  return {
+    activa: opts.activa !== false,
+    menuLabel: opts.menuLabel,
+    hub: {
+      ...opts.hub,
+      heroImagenUrl: opts.hub.heroImagenUrl || '',
+      heroImagenAlt: opts.hub.heroImagenAlt || opts.menuLabel,
+    },
+    paginas: JSON.parse(JSON.stringify(paginas)),
+  };
+}
+
 export const FINSTRUVIAL_SERVICIOS_PAGINAS_DEFAULTS = FINSTRUVIAL_SERVICIO_SLUGS.reduce(
   (acc, slug) => {
     acc[slug] = pagina(slug);
@@ -177,8 +217,9 @@ function resolveEstilo(
   slug: FinstruvialServicioSlug,
   srcEstilo: unknown,
   defaultEstilo: PortalFinstruvialServicioLanding['estilo'],
+  wireframe: PortafolioServiciosWireframe,
 ): PortalFinstruvialServicioLanding['estilo'] {
-  const wireEstilo = FINSTRUVIAL_SERVICIOS_WIREFRAME[slug]?.estilo;
+  const wireEstilo = wireframe[slug]?.estilo;
   const fromSrc = String(srcEstilo ?? '').trim();
   if (fromSrc && fromSrc !== 'default') {
     return fromSrc as PortalFinstruvialServicioLanding['estilo'];
@@ -193,13 +234,14 @@ function mergeHeroParrafos(
   slug: FinstruvialServicioSlug,
   raw: string[] | undefined,
   defaults: string[],
+  wireframe: PortafolioServiciosWireframe,
 ): string[] {
   const saved = Array.isArray(raw)
     ? raw.map((p) => String(p || '').trim()).filter(Boolean)
     : [];
   if (!saved.length) return defaults;
 
-  const wireHero = FINSTRUVIAL_SERVICIOS_WIREFRAME[slug]?.heroParrafos;
+  const wireHero = wireframe[slug]?.heroParrafos;
   if (wireHero && wireHero.length === 0) {
     const compact = saved.filter((p) => p.length <= HERO_PARRAFO_MAX_CHARS);
     return compact.length ? compact : defaults;
@@ -405,6 +447,7 @@ function legacyProductoMedios(
   d: PortalFinstruvialServicioLanding,
   slug: FinstruvialServicioSlug,
   imagenes: PortalFinstruvialServicioImagen[],
+  wireframe: PortafolioServiciosWireframe,
 ): PortalFinstruvialServicioMedio[] {
   const medios: PortalFinstruvialServicioMedio[] = [];
   const imgId = str(src.productoImagenId, d.productoImagenId).trim();
@@ -416,7 +459,7 @@ function legacyProductoMedios(
       caption: img?.etiqueta || img?.alt || '',
     });
   }
-  const wire = FINSTRUVIAL_SERVICIOS_WIREFRAME[slug];
+  const wire = wireframe[slug];
   if (wire?.productoVideoYoutubeUrl !== undefined) {
     const videoUrl = str(src.productoVideoYoutubeUrl, d.productoVideoYoutubeUrl).trim();
     if (videoUrl) {
@@ -434,8 +477,10 @@ function legacyProductoMedios(
 export function mergeFinstruvialServicioLanding(
   slug: FinstruvialServicioSlug,
   raw?: Partial<PortalFinstruvialServicioLanding> | null,
+  base: PortalFinstruvialServiciosConfig = FINSTRUVIAL_SERVICIOS_DEFAULTS,
+  wireframe: PortafolioServiciosWireframe = FINSTRUVIAL_SERVICIOS_WIREFRAME,
 ): PortalFinstruvialServicioLanding {
-  const d = FINSTRUVIAL_SERVICIOS_PAGINAS_DEFAULTS[slug];
+  const d = base.paginas[slug];
   const src = raw && typeof raw === 'object' ? raw : {};
   const intro =
     slug === 'capacitacionSensibilizacion'
@@ -453,18 +498,18 @@ export function mergeFinstruvialServicioLanding(
   const introMedios = mergeMedios(src.introMedios, legacyIntroMedios(src, d, imagenes));
   const productoMedios = mergeMedios(
     src.productoMedios,
-    legacyProductoMedios(src, d, slug, imagenes),
+    legacyProductoMedios(src, d, slug, imagenes, wireframe),
   );
   return {
     slug,
-    activa: src.activa !== false,
+    activa: src.activa !== false && d.activa !== false,
     menuLabel: str(src.menuLabel, d.menuLabel),
-    estilo: resolveEstilo(slug, src.estilo, d.estilo),
+    estilo: resolveEstilo(slug, src.estilo, d.estilo, wireframe),
     kicker: str(src.kicker, d.kicker),
     tituloLinea: str(src.tituloLinea, d.tituloLinea),
     tituloAcento: str(src.tituloAcento, d.tituloAcento),
     lead: str(src.lead, d.lead),
-    heroParrafos: mergeHeroParrafos(slug, src.heroParrafos, d.heroParrafos),
+    heroParrafos: mergeHeroParrafos(slug, src.heroParrafos, d.heroParrafos, wireframe),
     theme: (src.theme as PortalFinstruvialServicioLanding['theme']) || d.theme,
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
     heroImagenUrl: str(src.heroImagenUrl, d.heroImagenUrl),
@@ -551,15 +596,17 @@ export function mergeFinstruvialServicioLanding(
 
 export function mergeFinstruvialServicios(
   raw?: Partial<PortalFinstruvialServiciosConfig> | null,
+  base: PortalFinstruvialServiciosConfig = FINSTRUVIAL_SERVICIOS_DEFAULTS,
+  wireframe: PortafolioServiciosWireframe = FINSTRUVIAL_SERVICIOS_WIREFRAME,
 ): PortalFinstruvialServiciosConfig {
-  const d = FINSTRUVIAL_SERVICIOS_DEFAULTS;
+  const d = base;
   const src = raw && typeof raw === 'object' ? raw : {};
   const paginas = {} as Record<FinstruvialServicioSlug, PortalFinstruvialServicioLanding>;
   for (const slug of FINSTRUVIAL_SERVICIO_SLUGS) {
-    paginas[slug] = mergeFinstruvialServicioLanding(slug, src.paginas?.[slug]);
+    paginas[slug] = mergeFinstruvialServicioLanding(slug, src.paginas?.[slug], base, wireframe);
   }
   return {
-    activa: src.activa !== false,
+    activa: src.activa !== false && d.activa !== false,
     menuLabel: str(src.menuLabel, d.menuLabel),
     hub: {
       kicker: str(src.hub?.kicker, d.hub.kicker),

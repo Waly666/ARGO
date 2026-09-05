@@ -10,7 +10,7 @@ import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constant
 import { mergeExamenTeoricoLanding } from '../../core/constants/examen-teorico-landing-defaults';
 import { mergeMercanciasPeligrosasLanding } from '../../core/constants/mercancias-peligrosas-landing-defaults';
 import { mergeTrabajoEnAlturasLanding } from '../../core/constants/trabajo-en-alturas-landing-defaults';
-import { mergeFinstruvialServicios } from '../../core/constants/finstruvial-servicios-defaults';
+import { mergePortafolioServicios } from '../../core/utils/portafolio-servicios.util';
 import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
 import { PORTAL_PLANTILLAS, PortalPlantilla } from '../../core/constants/portal-plantillas';
 import {
@@ -105,14 +105,15 @@ export class AulaVirtualSitioComponent implements OnInit {
       );
     }
     if (this.portalForm.landing?.finstruvialServicios) {
-      this.portalForm.landing.finstruvialServicios = mergeFinstruvialServicios(
+      this.portalForm.landing.finstruvialServicios = mergePortafolioServicios(
         this.portalForm.landing.finstruvialServicios,
+        this.portalForm.site?.tema,
       );
     }
     this.svc.guardarPortal(this.portalForm).subscribe({
       next: (res) => {
         Object.assign(this.portalForm, res.config);
-        this.portalForm.landing = mergePortalLanding(res.config.landing);
+        this.portalForm.landing = mergePortalLanding(res.config.landing, res.config.site?.tema);
         this.portalForm.site = mergePortalSiteDefaults(res.config.site);
         this.portalPublicUrlConfigured.set(res.config.portalPublicUrl || '');
         this.saving.set(false);

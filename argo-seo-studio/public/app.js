@@ -103,12 +103,38 @@ function renderClientBar() {
   });
 }
 
-function finstruvialPaginasCatalog() {
-  return (state.catalog.paginas ?? []).filter((p) => p.grupo === 'FINSTRUVIAL');
+function esPaginaPortafolio(page) {
+  return page?.grupo === 'Portafolio' || page?.grupo === 'FINSTRUVIAL';
+}
+
+function perfilEsServial(profile) {
+  const txt = `${profile?.marca ?? ''} ${profile?.nombreCea ?? ''} ${profile?.dominio ?? ''}`.toLowerCase();
+  return txt.includes('servial');
+}
+
+function portafolioPaginasCatalog() {
+  return (state.catalog.paginas ?? []).filter(esPaginaPortafolio);
+}
+
+function pageLabel(page, profile = state.profile) {
+  if (perfilEsServial(profile) && page.labelServial) return page.labelServial;
+  return page.label;
+}
+
+function portafolioIncluido(profile) {
+  if (profile?.incluirPortafolio === true) return true;
+  if (profile?.incluirPortafolio === false) return false;
+  if (perfilEsServial(profile)) return true;
+  const txt = `${profile?.marca ?? ''} ${profile?.nombreCea ?? ''}`.toLowerCase();
+  if (txt.includes('finstruvial')) return profile.incluirPortafolioFinstruvial !== false;
+  if (profile?.incluirPortafolioFinstruvial === true) return true;
+  if (profile?.incluirPortafolioFinstruvial === false) return false;
+  const sel = profile?.serviciosSeleccionados ?? [];
+  return sel.includes('servial-portafolio') || sel.includes('finstruvial-portafolio');
 }
 
 function portafolioPaginaActiva(profile, pageKey) {
-  if (profile.incluirPortafolioFinstruvial === false) return false;
+  if (!portafolioIncluido(profile)) return false;
   const sel = profile.paginasPortafolio ?? [];
   if (!sel.length) return true;
   return sel.includes(pageKey);
@@ -117,10 +143,41 @@ function portafolioPaginaActiva(profile, pageKey) {
 function renderForm() {
   const p = state.profile;
   const servicios = state.catalog.servicios ?? [];
-  const finstruvialPages = finstruvialPaginasCatalog();
-  const incluirPortafolio = p.incluirPortafolioFinstruvial !== false;
+  const categorias = state.catalog.categorias ?? [];
+  const portafolioPages = portafolioPaginasCatalog();
+  const servial = perfilEsServial(p);
+  const incluirPortafolio = portafolioIncluido(p);
 
-  const chips = servicios
+  const chipsByCategoria = (catId) =>
+    servicios
+      .filter((s) => (s.categoria || 'portafolio') === catId)
+      .map((s) => {
+        const on = (p.serviciosSeleccionados ?? []).includes(s.id);
+        return `
+        <label class="service-chip ${on ? 'service-chip--on' : ''}">
+          <input type="checkbox" data-servicio="${esc(s.id)}" ${on ? 'checked' : ''} />
+          <span>
+            <strong>${esc(s.label)}</strong>
+            <small>${esc((s.keywords ?? []).slice(0, 3).join(' · '))}</small>
+          </span>
+        </label>
+      `;
+      })
+      .join('');
+
+  const chipsGrouped = (categorias.length
+    ? categorias
+    : [{ id: 'portafolio', label: 'Servicios' }]
+  )
+    .map((cat) => {
+      const inner = chipsByCategoria(cat.id);
+      if (!inner) return '';
+      return `<div class="services-cat"><p class="services-cat__label">${esc(cat.label)}</p><div class="services-grid">${inner}</div></div>`;
+    })
+    .join('');
+
+  const leftover = servicios.filter((s) => !categorias.some((c) => c.id === s.categoria));
+  const leftoverChips = leftover
     .map((s) => {
       const on = (p.serviciosSeleccionados ?? []).includes(s.id);
       return `
@@ -135,14 +192,14 @@ function renderForm() {
     })
     .join('');
 
-  const portafolioChips = finstruvialPages
+  const portafolioChips = portafolioPages
     .map((page) => {
       const on = incluirPortafolio && portafolioPaginaActiva(p, page.key);
       return `
         <label class="service-chip service-chip--compact ${on ? 'service-chip--on' : ''}">
           <input type="checkbox" data-pagina-portafolio="${esc(page.key)}" ${on ? 'checked' : ''} ${incluirPortafolio ? '' : 'disabled'} />
           <span>
-            <strong>${esc(page.label)}</strong>
+            <strong>${esc(pageLabel(page, p))}</strong>
             <small>${esc(page.ruta)}</small>
           </span>
         </label>
@@ -167,15 +224,15 @@ function renderForm() {
     <div class="field-grid">
       <div class="field">
         <label for="marca">Marca corta</label>
-        <input id="marca" type="text" value="${esc(p.marca)}" placeholder="Finstruvial" />
+        <input id="marca" type="text" value="${esc(p.marca)}" placeholder="Servial Colombia" />
       </div>
       <div class="field">
         <label for="dominio">Dominio del portal</label>
-        <input id="dominio" type="text" value="${esc(p.dominio)}" placeholder="finstruvial.edu.co" />
+        <input id="dominio" type="text" value="${esc(p.dominio)}" placeholder="servial.com.co" />
       </div>
       <div class="field" style="grid-column: 1 / -1">
         <label for="nombreCea">Nombre completo CEA / institución</label>
-        <input id="nombreCea" type="text" value="${esc(p.nombreCea)}" placeholder="Centro de Enseñanza Automovilística Finstruvial" />
+        <input id="nombreCea" type="text" value="${esc(p.nombreCea)}" placeholder="CEA Servial Colombia" />
       </div>
       <div class="field">
         <label for="ciudad">Ciudad</label>
@@ -193,17 +250,21 @@ function renderForm() {
 
     <h3 class="section-title">Servicios que más presta</h3>
     <p style="margin:0 0 0.75rem;font-size:0.84rem;color:#94a3b8;line-height:1.5">
-      Marque los servicios principales. El generador creará títulos y descripciones por página del portal.
+      Marque los servicios principales. En Servial priorice licencias, clases en vehículos, cursos no formales y aula virtual.
     </p>
-    <div class="services-grid" id="servicesGrid">${chips}</div>
+    <div id="servicesGrid">${chipsGrouped}${leftoverChips ? `<div class="services-grid">${leftoverChips}</div>` : ''}</div>
 
-    <h3 class="section-title">Portafolio /servicios (FINSTRUVIAL)</h3>
+    <h3 class="section-title">${servial ? 'Portafolio /servicios (SERVIAL)' : 'Portafolio /servicios'}</h3>
     <p style="margin:0 0 0.75rem;font-size:0.84rem;color:#94a3b8;line-height:1.5">
-      Páginas nuevas del portal: hub <code>/servicios</code> y cada línea de servicio. Active el bloque y elija las rutas a incluir en el pack SEO.
+      ${
+        servial
+          ? 'Mismas rutas del portal (<code>/servicios</code>), con textos de CEA, cursos, aula virtual y trámites — no PERIDATA ni INFRAVIAL.'
+          : 'Hub <code>/servicios</code> y cada línea. En Finstruvial: consultoría, PERIDATA, INFRAVIAL. En Servial: capacitación y CEA.'
+      }
     </p>
     <label class="portafolio-master">
       <input type="checkbox" id="incluirPortafolio" ${incluirPortafolio ? 'checked' : ''} />
-      <span><strong>Generar SEO del portafolio de servicios</strong> (recomendado para Finstruvial)</span>
+      <span><strong>Generar SEO del portafolio de servicios</strong>${servial ? ' (recomendado para Servial)' : ''}</span>
     </label>
     <div class="services-grid services-grid--portafolio ${incluirPortafolio ? '' : 'services-grid--disabled'}" id="portafolioGrid">${portafolioChips}</div>
 
@@ -273,10 +334,10 @@ function collectProfileFromForm() {
     keywords: row.querySelector('[data-custom-kw]')?.value ?? '',
   }));
 
-  const incluirPortafolioFinstruvial = $('#incluirPortafolio')?.checked !== false;
+  const incluirPortafolio = $('#incluirPortafolio')?.checked !== false;
   let paginasPortafolio = [];
-  if (incluirPortafolioFinstruvial) {
-    const allKeys = finstruvialPaginasCatalog().map((page) => page.key);
+  if (incluirPortafolio) {
+    const allKeys = portafolioPaginasCatalog().map((page) => page.key);
     const checked = [...document.querySelectorAll('[data-pagina-portafolio]:checked')].map(
       (el) => el.dataset.paginaPortafolio,
     );
@@ -296,7 +357,7 @@ function collectProfileFromForm() {
     notas: $('#notas')?.value ?? '',
     serviciosSeleccionados,
     serviciosCustom,
-    incluirPortafolioFinstruvial,
+    incluirPortafolio,
     paginasPortafolio,
   };
 }
@@ -325,8 +386,8 @@ async function onGenerate() {
     state.profile = data.profile;
     state.pack = data;
     renderResults();
-    const fin = (data.paginas ?? []).filter((page) => page.grupo === 'FINSTRUVIAL').length;
-    toast(`SEO generado — ${data.paginas?.length ?? 0} páginas (${fin} del portafolio /servicios)`);
+    const port = (data.paginas ?? []).filter((page) => esPaginaPortafolio(page)).length;
+    toast(`SEO generado — ${data.paginas?.length ?? 0} páginas (${port} del portafolio /servicios)`);
   } catch (err) {
     toast(err.message);
   }
@@ -353,7 +414,7 @@ function renderResults() {
           <div class="page-card__head">
             <h4>${esc(page.label)}</h4>
             <span class="page-card__path">${esc(page.ruta)}</span>
-            ${page.grupo === 'FINSTRUVIAL' ? '<span class="page-card__tag">Portafolio</span>' : ''}
+            ${esPaginaPortafolio(page) ? '<span class="page-card__tag">Portafolio</span>' : ''}
           </div>
           <div class="seo-block">
             <label>Título</label>

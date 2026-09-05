@@ -44,9 +44,10 @@ import {
 import { mergePqrLanding, PQR_LANDING_DEFAULTS, PortalPqrLanding } from './pqr-landing-defaults';
 import {
   FINSTRUVIAL_SERVICIOS_DEFAULTS,
-  mergeFinstruvialServicios,
 } from './finstruvial-servicios-defaults';
 import type { PortalFinstruvialServiciosConfig } from './finstruvial-servicio-landing.types';
+import { mergePortafolioServicios } from '../utils/portafolio-servicios.util';
+import type { PortalTemaLike } from '../utils/portal-theme-css-base.util';
 import { PortalPromoHeroTheme } from './portal-promo-hero-fields.util';
 
 export type { PortalCursosConduccionLanding };
@@ -922,7 +923,10 @@ function mergePublicidad(
   };
 }
 
-export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): PortalLandingConfig {
+export function mergePortalLanding(
+  raw?: Partial<PortalLandingConfig> | null,
+  tema?: PortalTemaLike | null,
+): PortalLandingConfig {
   const d = PORTAL_LANDING_DEFAULTS;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
   return {
@@ -948,7 +952,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
-    finstruvialServicios: mergeFinstruvialServicios(raw.finstruvialServicios),
+    finstruvialServicios: mergePortafolioServicios(raw.finstruvialServicios, tema),
     servicios: {
       ...d.servicios,
       ...raw.servicios,

@@ -1,4 +1,14 @@
-import { PORTAL_PAGES, SERVICIOS_CATALOGO, FINSTRUVIAL_PORTAL_PAGE_KEYS } from './catalog.mjs';
+import {
+  PORTAL_PAGES,
+  SERVICIOS_CATALOGO,
+  PORTAFOLIO_PAGE_KEYS,
+  SERVIAL_PORTAFOLIO_PAGE_KEYS,
+  pageDisplayLabel,
+  esPaginaPortafolio,
+} from './catalog.mjs';
+import { profileEsServial, SERVIAL_BUILDERS, ideasBlogServial } from './servial-seo.mjs';
+
+export { profileEsServial };
 
 export function emptyProfile() {
   return {
@@ -10,7 +20,8 @@ export function emptyProfile() {
     dominio: '',
     serviciosSeleccionados: ['seguridad-vial', 'manejo-defensivo', 'cursos-virtuales', 'licencias'],
     serviciosCustom: [],
-    /** Si true, genera SEO para /servicios y líneas FINSTRUVIAL. undefined = auto (Finstruvial en marca/dominio). */
+    /** Si true, genera SEO para /servicios. undefined = auto según marca (Servial / Finstruvial). */
+    incluirPortafolio: undefined,
     paginasPortafolio: [],
     notas: '',
   };
@@ -99,6 +110,7 @@ function tituloConMarca(tituloBase, profile) {
 }
 
 function buildHome(profile, servicios) {
+  if (profileEsServial(profile)) return SERVIAL_BUILDERS.home(profile);
   const marca = marcaCorta(profile);
   const loc = siteSuffix(profile);
   const topPhrase = servicios[0]?.keywords?.[0] ?? servicios[0]?.label ?? 'seguridad vial';
@@ -111,6 +123,7 @@ function buildHome(profile, servicios) {
 }
 
 function buildCursos(profile, servicios) {
+  if (profileEsServial(profile)) return SERVIAL_BUILDERS.cursos(profile);
   const rel = serviciosParaPagina(servicios, 'cursos');
   const tema = rel[0]?.label ?? 'seguridad vial';
   const titulo = tituloConMarca(`Catálogo de cursos de ${tema.toLowerCase()}`, profile);
@@ -438,20 +451,30 @@ export function profileEsFinstruvial(profile) {
   return txt.includes('finstruvial');
 }
 
-export function resolveFinstruvialPageKeys(profile) {
-  if (profile.incluirPortafolioFinstruvial === true) {
-    const explicit = (profile.paginasPortafolio ?? []).filter((k) => FINSTRUVIAL_PORTAL_PAGE_KEYS.includes(k));
-    if (explicit.length) return explicit;
-    return [...FINSTRUVIAL_PORTAL_PAGE_KEYS];
-  }
-
-  if (profile.incluirPortafolioFinstruvial === false) return [];
+function incluirPortafolioAuto(profile) {
+  if (profile.incluirPortafolio === true || profile.incluirPortafolioServial === true) return true;
+  if (profile.incluirPortafolio === false) return false;
+  if (profile.incluirPortafolioFinstruvial === true) return true;
+  if (profile.incluirPortafolioFinstruvial === false && !profileEsServial(profile)) return false;
 
   const servicios = profile.serviciosSeleccionados ?? [];
-  if (servicios.includes('finstruvial-portafolio')) return [...FINSTRUVIAL_PORTAL_PAGE_KEYS];
-  if (profileEsFinstruvial(profile)) return [...FINSTRUVIAL_PORTAL_PAGE_KEYS];
+  if (servicios.includes('servial-portafolio') || servicios.includes('finstruvial-portafolio')) return true;
+  if (profileEsServial(profile) || profileEsFinstruvial(profile)) return true;
+  return false;
+}
 
-  return [];
+export function resolvePortafolioPageKeys(profile) {
+  if (!incluirPortafolioAuto(profile)) return [];
+
+  const allowed = profileEsServial(profile) ? SERVIAL_PORTAFOLIO_PAGE_KEYS : PORTAFOLIO_PAGE_KEYS;
+  const explicit = (profile.paginasPortafolio ?? []).filter((k) => allowed.includes(k) || PORTAFOLIO_PAGE_KEYS.includes(k));
+  if (explicit.length) return explicit.filter((k) => allowed.includes(k));
+  return [...allowed];
+}
+
+/** @deprecated usar resolvePortafolioPageKeys */
+export function resolveFinstruvialPageKeys(profile) {
+  return resolvePortafolioPageKeys(profile);
 }
 
 export function paginasRelevantes(profile) {
@@ -460,7 +483,7 @@ export function paginasRelevantes(profile) {
   for (const s of servicios) {
     for (const k of s.pages ?? []) keys.add(k);
   }
-  for (const k of resolveFinstruvialPageKeys(profile)) keys.add(k);
+  for (const k of resolvePortafolioPageKeys(profile)) keys.add(k);
   return PORTAL_PAGES.filter((p) => keys.has(p.key));
 }
 
@@ -468,9 +491,11 @@ export function generateSeoPack(profile) {
   const servicios = resolveServicios(profile);
   const seo = {};
   const relevant = paginasRelevantes(profile);
+  const servial = profileEsServial(profile);
+  const builders = servial ? { ...BUILDERS, ...SERVIAL_BUILDERS } : BUILDERS;
 
   for (const page of relevant) {
-    const fn = BUILDERS[page.key];
+    const fn = builders[page.key];
     if (fn) seo[page.key] = fn(profile, servicios);
   }
 
@@ -483,9 +508,15 @@ export function generateSeoPack(profile) {
       nombreCea: nombreCea(profile),
       dominio: str(profile.dominio),
       ubicacion: siteSuffix(profile),
+      tono: servial ? 'servial' : profileEsFinstruvial(profile) ? 'finstruvial' : 'general',
     },
     serviciosUsados: servicios.map((s) => s.label),
-    paginas: relevant.map((p) => ({ ...p, seo: seo[p.key] })),
+    paginas: relevant.map((p) => ({
+      ...p,
+      label: pageDisplayLabel(p, { servial }),
+      grupo: esPaginaPortafolio(p) ? 'Portafolio' : p.grupo,
+      seo: seo[p.key],
+    })),
     exportErp: {
       site: { seo },
       landing: {
@@ -493,9 +524,11 @@ export function generateSeoPack(profile) {
         metaKeywords: home.keywords,
       },
     },
-    ideasBlog: servicios.slice(0, 6).map((s) => ({
-      titulo: `Guía de ${s.label.toLowerCase()} en ${str(profile.ciudad) || 'Colombia'}`,
-      keywords: (s.keywords ?? []).slice(0, 4).join(', '),
-    })),
+    ideasBlog: servial
+      ? ideasBlogServial(profile)
+      : servicios.slice(0, 6).map((s) => ({
+          titulo: `Guía de ${s.label.toLowerCase()} en ${str(profile.ciudad) || 'Colombia'}`,
+          keywords: (s.keywords ?? []).slice(0, 4).join(', '),
+        })),
   };
 }

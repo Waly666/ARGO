@@ -43,10 +43,7 @@ import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalGoogleSearchConsoleEditorComponent } from './portal-google-search-console-editor.component';
 import { PortalSeoEditorComponent } from './portal-seo-editor.component';
-import {
-  mergeFinstruvialServicios,
-  finstruvialServiciosIncompleto,
-} from '../../core/constants/finstruvial-servicios-defaults';
+import { mergePortafolioServicios } from '../../core/utils/portafolio-servicios.util';
 import { FINSTRUVIAL_SERVICIO_SLUGS } from '../../core/constants/finstruvial-servicios.constants';
 import {
   FINSTRUVIAL_SERVICIO_BUILDER_MENU,
@@ -380,14 +377,16 @@ export class PortalSiteBuilderComponent {
     return this.portalForm.landing.trabajoEnAlturas;
   }
 
-  /** Inicializa servicios Finstruvial sin reemplazar el objeto en cada render (conserva textos y enlaces). */
   ensureFinstruvialServiciosLanding(): PortalFinstruvialServiciosConfig {
     if (!this.portalForm.landing) {
-      this.portalForm.landing = mergePortalLanding();
+      this.portalForm.landing = mergePortalLanding(null, this.portalForm.site?.tema);
     }
+    const tema = this.portalForm.site?.tema;
     const actual = this.portalForm.landing.finstruvialServicios;
-    if (!actual || finstruvialServiciosIncompleto(actual)) {
-      this.portalForm.landing.finstruvialServicios = mergeFinstruvialServicios(actual);
+    const incompleto =
+      !actual?.paginas || FINSTRUVIAL_SERVICIO_SLUGS.some((slug) => !actual.paginas?.[slug]);
+    if (!actual || incompleto) {
+      this.portalForm.landing.finstruvialServicios = mergePortafolioServicios(actual, tema);
     }
     return this.portalForm.landing.finstruvialServicios;
   }
@@ -753,7 +752,11 @@ export class PortalSiteBuilderComponent {
   applyPortalConfig(config: PortalAulaConfig) {
     const prevFinstruvial = this.portalForm.landing?.finstruvialServicios;
     Object.assign(this.portalForm, config);
-    this.portalForm.landing = mergePortalLanding(config.landing);
+    this.portalForm.site = mergePortalSiteDefaults(config.site);
+    if (this.portalForm.site.tema.fuenteTitulos === undefined) {
+      this.portalForm.site.tema.fuenteTitulos = '';
+    }
+    this.portalForm.landing = mergePortalLanding(config.landing, this.portalForm.site.tema);
     if (prevFinstruvial?.paginas && this.portalForm.landing.finstruvialServicios?.paginas) {
       for (const slug of FINSTRUVIAL_SERVICIO_SLUGS) {
         const prevUrl = prevFinstruvial.paginas[slug]?.heroVideoYoutubeUrl?.trim();
@@ -763,10 +766,6 @@ export class PortalSiteBuilderComponent {
           next.heroVideoYoutubeUrl = prevUrl;
         }
       }
-    }
-    this.portalForm.site = mergePortalSiteDefaults(config.site);
-    if (this.portalForm.site.tema.fuenteTitulos === undefined) {
-      this.portalForm.site.tema.fuenteTitulos = '';
     }
     loadPortalGoogleFonts(this.doc, this.portalForm.site.tema);
   }

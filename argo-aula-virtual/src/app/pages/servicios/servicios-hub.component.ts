@@ -26,7 +26,7 @@ export class ServiciosHubComponent implements OnInit {
   private router = inject(Router);
 
   config = signal<PortalConfig | null>(null);
-  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
   servicios = computed(() => this.landing().finstruvialServicios);
   hub = computed(() => this.servicios().hub);
   tarjetas = computed(() =>
@@ -47,7 +47,7 @@ export class ServiciosHubComponent implements OnInit {
     this.api.config().subscribe({
       next: (c) => {
         this.config.set(c);
-        const landing = mergePortalLanding(c?.landing);
+        const landing = mergePortalLanding(c?.landing, c?.site?.tema);
         if (!finstruvialPortafolioActivo(landing.finstruvialServicios)) {
           void this.router.navigateByUrl('/');
           return;

@@ -139,7 +139,7 @@ async function obtenerConfigPortalAdmin(req) {
   const [aula, recibo] = await Promise.all([obtenerConfigAula(), obtenerConfigRecibo()]);
   const empresa = pickEmpresa(aula, recibo);
   const logo = pickLogo(aula, recibo);
-  const landing = mergeLanding(aula.landing);
+  const landing = mergeLanding(aula.landing, aula.site?.tema);
   const portalPublicUrl = resolverBasePortal({
     origin: req?.headers?.origin || req?.get?.('origin'),
   });
@@ -168,7 +168,7 @@ async function obtenerConfigPortalPublica() {
   const [recibo, aula] = await Promise.all([obtenerConfigRecibo(), obtenerConfigAula()]);
   const empresa = pickEmpresa(aula, recibo);
   const logo = pickLogo(aula, recibo);
-  const landing = mergeLanding(aula.landing);
+  const landing = mergeLanding(aula.landing, aula.site?.tema);
   const site = armarSitePublico(aula, landing);
   const landingNav = sincronizarNavLanding(landing, site);
   return {

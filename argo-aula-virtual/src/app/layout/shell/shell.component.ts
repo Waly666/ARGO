@@ -98,7 +98,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
 
   logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
-  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
 
   footerServicios = computed(() => this.landing().footerServicios);
 
@@ -130,9 +130,6 @@ export class ShellComponent implements OnInit, AfterViewInit {
 
   navEntries = computed((): ShellNavEntry[] => {
     const items = this.navItems();
-    if (!this.portalTheme.finstruvialPortal()) {
-      return items.map((item) => ({ kind: 'link' as const, ...item }));
-    }
     const servicios = this.landing().finstruvialServicios;
     if (!finstruvialPortafolioActivo(servicios)) {
       return items.map((item) => ({ kind: 'link' as const, ...item }));
@@ -178,17 +175,14 @@ export class ShellComponent implements OnInit, AfterViewInit {
         label: etiquetaPagina(cfg, p.key, nav[p.key as keyof typeof nav] as string),
         route: p.route,
       }));
-    const serviciosEnlace: FooterEnlace[] =
-      this.portalTheme.finstruvialPortal() && finstruvialPortafolioActivo(this.landing().finstruvialServicios)
+    const serviciosEnlace: FooterEnlace[] = finstruvialPortafolioActivo(this.landing().finstruvialServicios)
         ? [
             {
               label: this.landing().finstruvialServicios.menuLabel || 'Servicios',
               route: '/servicios',
             },
           ]
-        : this.portalTheme.finstruvialPortal()
-          ? []
-          : [{ label: 'Servicios', route: '/', fragment: 'servicios-empresa' }];
+        : [{ label: 'Servicios', route: '/', fragment: 'servicios-empresa' }];
     return [
       ...pages,
       ...serviciosEnlace,
@@ -199,7 +193,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   });
 
   footerServiciosLinks = computed((): FooterServicioEnlace[] => {
-    if (this.portalTheme.finstruvialPortal()) {
+    if (finstruvialPortafolioActivo(this.landing().finstruvialServicios)) {
       const servicios = this.landing().finstruvialServicios;
       return finstruvialServiciosActivos(servicios).map((p) => ({
         label: p.menuLabel,

@@ -1,4 +1,13 @@
-const { LANDING_DEFAULTS, mergeConsultaCertificados, mergeLandingHero, mergeBlogSection, mergePqrLanding, mergeJornadasCapacitacionLanding, mergeEvaluacionJornadasLanding, mergeFinstruvialServicios } = require('../constants/aulaVirtualLandingDefaults');
+const {
+  LANDING_DEFAULTS,
+  mergeConsultaCertificados,
+  mergeLandingHero,
+  mergeBlogSection,
+  mergePqrLanding,
+  mergeJornadasCapacitacionLanding,
+  mergeEvaluacionJornadasLanding,
+} = require('../constants/aulaVirtualLandingDefaults');
+const { mergePortafolioServicios } = require('../constants/aulaVirtualPortafolioServicios');
 const { examenTeoricoContenidoAntiguo } = require('../constants/aulaVirtualExamenTeoricoDefaults');
 const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMercanciasPeligrosasDefaults');
 const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
@@ -321,7 +330,7 @@ function normalizarAsistente(raw, legacyConsulta) {
   };
 }
 
-function normalizarLanding(input) {
+function normalizarLanding(input, tema) {
   const d = LANDING_DEFAULTS;
   const src = input && typeof input === 'object' ? input : {};
 
@@ -534,7 +543,7 @@ function normalizarLanding(input) {
     pqr: mergePqrLanding(pqrSrc),
     jornadasCapacitacion: mergeJornadasCapacitacionLanding(jornadasSrc),
     evaluacionJornadas: mergeEvaluacionJornadasLanding(evaluacionJornadasSrc),
-    finstruvialServicios: normalizarFinstruvialServicios(src.finstruvialServicios),
+    finstruvialServicios: normalizarFinstruvialServicios(src.finstruvialServicios, tema),
     asistente: normalizarAsistente(src.asistente, consultaCertSrc),
   };
 }
@@ -824,9 +833,9 @@ function normalizarFundacion(src, d) {
   };
 }
 
-function normalizarFinstruvialServicios(raw) {
+function normalizarFinstruvialServicios(raw, tema) {
   const { SLUGS } = require('../constants/aulaVirtualFinstruvialServiciosDefaults');
-  const merged = mergeFinstruvialServicios(raw);
+  const merged = mergePortafolioServicios(raw, tema);
   if (merged.hub?.heroImagenUrl) {
     merged.hub.heroImagenUrlAbsoluta =
       publicUploadUrl(merged.hub.heroImagenUrl) || merged.hub.heroImagenUrlAbsoluta;
@@ -844,8 +853,8 @@ function normalizarFinstruvialServicios(raw) {
   return merged;
 }
 
-function mergeLanding(stored) {
-  return normalizarLanding(stored);
+function mergeLanding(stored, tema) {
+  return normalizarLanding(stored, tema);
 }
 
 module.exports = {

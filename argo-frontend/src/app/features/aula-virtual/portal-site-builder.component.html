@@ -53,6 +53,7 @@
           modo="linea"
           [lineaSlug]="linea"
           [portalUrl]="portalUrl"
+          [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
@@ -455,6 +456,7 @@
         <argo-portal-finstruvial-servicios-editor
           modo="hub"
           [portalUrl]="portalUrl"
+          [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
