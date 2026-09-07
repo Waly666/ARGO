@@ -247,6 +247,14 @@
           (seleccionado)="onProgramaModalPick($event)"
           (limpiado)="onProgramaModalLimpiar()"
         />
+        <p class="hint hint-compact">
+          Si el instructor tiene programas en el contrato, el combo solo muestra los que él dicta.
+        </p>
+        @if (origenPorClaseSinProgramas()) {
+          <p class="hint hint-compact hint-warn">
+            {{ mensajeSinProgramasClase() }}
+          </p>
+        }
         @if (programasJornada().length === 0) {
           <p class="hint hint-compact hint-warn">No se cargaron programas. Verifique permisos o recargue la página.</p>
         }
@@ -313,6 +321,11 @@
       }
       @if (claseAnteriorMensajeVacio()) {
         <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
+      }
+      @if (alumnosClaseAnteriorOmitidosPrograma().length > 0) {
+        <p class="hint hint-compact hint-warn">
+          Se omitieron {{ alumnosClaseAnteriorOmitidosPrograma().length }} alumno(s) que ya tomaron este programa en el contrato.
+        </p>
       }
       @if (alumnosClaseAnteriorDisponibles().length > 0) {
           <div class="clase-anterior-copiar">
@@ -590,6 +603,16 @@
       @if (puedeEliminarClase() && claseActiva(); as clDel) {
         <button type="button" class="danger ghost" (click)="eliminarClase(clDel)">
           🗑 Borrar clase
+        </button>
+      }
+      @if (puedeBorrarVacios()) {
+        <button
+          type="button"
+          class="danger ghost"
+          (click)="borrarVaciosContrato()"
+          [disabled]="purgandoVacios()"
+          title="Borra solo las clases sin alumnos, asistencias ni certificado vigente. No borra jornadas.">
+          🗑 Borrar vacíos
         </button>
       }
     </div>

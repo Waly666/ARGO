@@ -9,4 +9,4 @@ export type ProgresoEntregaEmit = {
 
 export const TITULO_PROGRESO_PAQUETE_CONTRATO = 'Generando paquete de entrega del contrato';
 export const SUBTITULO_PROGRESO_PAQUETE_CONTRATO =
-  'Informes generales + encuesta de satisfacción + carpetas por jornada (informe, certificados, evidencia, imágenes)';
+  'Informes generales + encuesta + por jornada (informe, certificados, evidencia PDF, fotos de clases y evidencia fotográfica adicional)';

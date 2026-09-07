@@ -6,6 +6,10 @@ const AsisClasJorCap = require('../models/AsisClasJorCap');
 const Certificado = require('../models/Certificado');
 const DatosAlumno = require('../models/DatosAlumno');
 const { parseNumDoc } = require('../utils/numDoc');
+const {
+  normalizarMunicipiosPlan,
+  totalClasesDesdePlan,
+} = require('../constants/municipiosPlanContrato');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
 const {
   configCertificacionParaOrigen,
@@ -60,8 +64,12 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
   const clasesTotales = clases.length;
   const metaJornadas = Math.max(0, parseInt(contrato.numerojornadas, 10) || 0);
   const clasesPorJornada = Math.max(0, parseInt(contrato.clasesPorJornada, 10) || 0);
-  const metaClasesContrato =
-    metaJornadas > 0 && clasesPorJornada > 0 ? metaJornadas * clasesPorJornada : 0;
+  const plan = normalizarMunicipiosPlan(contrato.municipiosPlan, contrato.clasesPorJornada);
+  const metaClasesContrato = plan.length
+    ? totalClasesDesdePlan(plan)
+    : metaJornadas > 0 && clasesPorJornada > 0
+      ? metaJornadas * clasesPorJornada
+      : 0;
   const numSesCertFallback = Math.max(1, parseInt(contrato.numSesCert, 10) || 1);
 
   const asistPorAlumno = claseIds.length

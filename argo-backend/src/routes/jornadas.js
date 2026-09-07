@@ -23,6 +23,7 @@ const registrarAlumnos = requirePermiso(
 );
 const fotoEvidenciaClase = upload.evidenciasCap.single('foto');
 const evidenciaJornadaFiles = upload.evidenciaJornadaMemoria.array('evidencias', 20);
+const fotosEvidenciaAdicionalJornada = upload.evidenciasCapJornadaAdicional.array('fotos', 20);
 const soporteIngresoContrato = upload.ingresos.single('soporte');
 
 const evalVer = requirePermiso('jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar');
@@ -40,11 +41,24 @@ router.get('/paquete-entrega/jobs/:jobId/download', ver, ctrl.descargarPaqueteEn
 
 router.get('/contratos/:id/informe-dashboard', ver, ctrl.informeDashboardContrato);
 router.get('/contratos/:id/informe-pdf', ver, ctrl.informeContratoPdf);
+router.get('/contratos/:id/programas-instructor', ver, ctrl.programasInstructorContrato);
 router.get('/contratos/:id', ver, ctrl.obtenerContrato);
 router.post('/contratos', gest, ctrl.crearContrato);
 router.put('/contratos/:id', gest, contratoMutable.contratoPorParametro, ctrl.actualizarContrato);
 router.delete('/contratos/:id', requireAdminTotal, contratoMutable.contratoPorParametro, ctrl.eliminarContrato);
 router.post('/contratos/:id/generar-jornadas', gest, contratoMutable.contratoPorParametro, ctrl.generarJornadas);
+router.get(
+  '/contratos/:id/purgar-vacios',
+  requireAdminTotal,
+  contratoMutable.contratoPorParametro,
+  ctrl.previewPurgaVacios,
+);
+router.post(
+  '/contratos/:id/purgar-vacios',
+  requireAdminTotal,
+  contratoMutable.contratoPorParametro,
+  ctrl.purgarVacios,
+);
 router.get('/contratos/:id/reprogramacion-jornadas/opciones', gest, ctrl.opcionesReprogramacionJornadas);
 router.post(
   '/contratos/:id/reprogramacion-jornadas/vista-previa',
@@ -86,6 +100,20 @@ router.post(
   loadJornadaParaEvidencia,
   evidenciaJornadaFiles,
   ctrl.subirEvidenciaConsolidadaJornada,
+);
+router.post(
+  '/jornadas/:id/fotos-evidencia-adicional',
+  gest,
+  contratoMutable.jornadaPorParametro,
+  loadJornadaParaEvidencia,
+  fotosEvidenciaAdicionalJornada,
+  ctrl.subirFotosEvidenciaAdicionalJornada,
+);
+router.delete(
+  '/jornadas/:id/fotos-evidencia-adicional/:fotoId',
+  gest,
+  contratoMutable.jornadaPorParametro,
+  ctrl.eliminarFotoEvidenciaAdicionalJornada,
 );
 router.post('/jornadas/:id/cerrar-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.cerrarJornadaOperacion);
 router.post('/jornadas/:id/reabrir-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.reabrirJornadaOperacion);

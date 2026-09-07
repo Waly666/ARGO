@@ -10,6 +10,7 @@ const DatosAlumno = require('../models/DatosAlumno');
 const { parseFechaCalendario } = require('../utils/fechaCalendario');
 const { buscarPrograma } = require('./programaServicio');
 const { mapaNombresCarpas, normalizarIdCarpa } = require('./carpaJornada');
+const { mapaEtiquetasActorVial, textoActorVialAlumnoInforme } = require('./caracterizacionPoblacion');
 
 function oid(v) {
   if (!v) return null;
@@ -239,7 +240,7 @@ function mapsDesdeContexto(ctx) {
   };
 }
 
-function filaBaseAlumno(al, numDoc) {
+function filaBaseAlumno(al, numDoc, actorVialMap) {
   return {
     numDoc: numDoc ?? al?.numDoc ?? '',
     nombreAlumno: nombreAlumno(al),
@@ -247,6 +248,7 @@ function filaBaseAlumno(al, numDoc) {
     nombre2: al?.nombre2 || '',
     apellido1: al?.apellido1 || '',
     apellido2: al?.apellido2 || '',
+    actorVial: textoActorVialAlumnoInforme(al, actorVialMap),
     telefono: al?.telefono || al?.celular || '',
     email: al?.email || '',
     empresaNombre: al?.empresaNombre || '',
@@ -276,7 +278,7 @@ function construirFilasPorClase(ctx) {
     const progId = String(clase.idPrograma || '').trim();
 
     filas.push({
-      ...filaBaseAlumno(al, numDoc),
+      ...filaBaseAlumno(al, numDoc, ctx.actorVialMap),
       codContrato: contrato?.codContrato || '',
       contratoLabel: contrato
         ? `${contrato.codContrato || ''} — ${contrato.nombreComercial || contrato.razoSocial || ''}`.trim()
@@ -373,6 +375,7 @@ function agregarDesdeFilasClase(filasClase, groupKeyFn, opts = {}) {
       nombre2: g.nombre2,
       apellido1: g.apellido1,
       apellido2: g.apellido2,
+      actorVial: g.actorVial,
       telefono: g.telefono,
       email: g.email,
       empresaNombre: g.empresaNombre,
@@ -752,7 +755,7 @@ function construirFilasCertificados(ctx) {
     const contrato = m.contrById.get(String(cert.idContrato));
     const jornada = cert.idJornada ? m.jorById.get(String(cert.idJornada)) : null;
     filas.push({
-      ...filaBaseAlumno(al, cert.numDoc),
+      ...filaBaseAlumno(al, cert.numDoc, ctx.actorVialMap),
       empresaNombre: cert.empresaNombre || al?.empresaNombre || '',
       codigoCert: cert.codigoCert || '',
       fechaEmision: ymd(cert.fechaEmision || cert.createdAt),
@@ -791,6 +794,7 @@ function resumenDesdeFilas(filasClase, filasCert, extras = {}) {
 
 async function generarInformesJornada(query = {}) {
   const ctx = await cargarContextoInformes(query);
+  ctx.actorVialMap = await mapaEtiquetasActorVial();
   const porClase = construirFilasPorClase(ctx);
   const trazabilidad = construirFilasTrazabilidad(porClase);
   const resumenContratos = construirResumenContratos(ctx, porClase);
@@ -846,6 +850,7 @@ const HOJAS = {
       ['horaFin', 'Hora fin'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Nombre completo'],
+      ['actorVial', 'Actor vial'],
       ['nombre1', 'Nombre 1'],
       ['nombre2', 'Nombre 2'],
       ['apellido1', 'Apellido 1'],
@@ -875,6 +880,7 @@ const HOJAS = {
       ['metaAlumnosJornada', 'Meta alumnos'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Nombre completo'],
+      ['actorVial', 'Actor vial'],
       ['telefono', 'Teléfono'],
       ['email', 'Email'],
       ['empresaNombre', 'Empresa'],
@@ -899,6 +905,7 @@ const HOJAS = {
       ['municipio', 'Municipio'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Alumno'],
+      ['actorVial', 'Actor vial'],
       ['empresaNombre', 'Empresa'],
       ['clasesInscrito', 'Clases inscrito'],
       ['clasesAsistidas', 'Clases asistidas'],
@@ -916,6 +923,7 @@ const HOJAS = {
       ['contratoLabel', 'Contrato (detalle)'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Nombre completo'],
+      ['actorVial', 'Actor vial'],
       ['telefono', 'Teléfono'],
       ['email', 'Email'],
       ['empresaNombre', 'Empresa'],
@@ -1005,6 +1013,7 @@ const HOJAS = {
       ['codContrato', 'Contrato'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Nombre completo'],
+      ['actorVial', 'Actor vial'],
       ['telefono', 'Teléfono'],
       ['email', 'Email'],
       ['empresaNombre', 'Empresa'],
@@ -1046,6 +1055,7 @@ const HOJAS = {
       ['estado', 'Estado'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Nombre completo'],
+      ['actorVial', 'Actor vial'],
       ['telefono', 'Teléfono'],
       ['email', 'Email'],
       ['empresaNombre', 'Empresa'],

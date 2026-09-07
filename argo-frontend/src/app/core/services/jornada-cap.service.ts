@@ -11,9 +11,13 @@ export interface AlumnoClaseAnteriorItem {
   nombreCompleto?: string;
   yaInscritoEnEstaClase?: boolean;
   yaCertificadoContrato?: boolean;
-  /** Si false, no se puede matricular (certificado global o ya en esta clase). */
+  /** Ya cursó el mismo programa en otra clase de este contrato. */
+  yaTomoProgramaContrato?: boolean;
+  programaYaTomadoNombre?: string;
+  /** Si false, no se puede matricular (certificado global, mismo programa o ya en esta clase). */
   puedeMatricular?: boolean;
   certificadoCodigo?: string | null;
+  origenJornadaCap?: string | null;
 }
 
 export interface ClaseAnteriorResumenDto {
@@ -49,6 +53,14 @@ export interface EstadoCobroContratoDto {
   totalPagado: number;
   saldoPendiente: number;
   cuentaCobro: { numero: string; generadaAt?: string | null } | null;
+}
+
+export interface CertificacionOrigenRow {
+  numSesCert?: number;
+  tipoCertificado?: string;
+  idProgramaCertificacion?: string;
+  /** Programas permitidos en la clase cuando tipoCertificado es por_clase. */
+  idProgramas?: string[];
 }
 
 export interface ContratacionDto {
@@ -98,9 +110,11 @@ export interface ContratacionDto {
   fechaInicJornadas?: string;
   /** Último día para programar jornadas (planificación). */
   fechaFinJornadas?: string;
+  /** global = fechas del contrato; municipio = inicio/fin en cada fila del plan. */
+  programacionJornadasModo?: 'global' | 'municipio';
   /** Fallback legado; preferir certificacionOrigen. */
   numSesCert?: number;
-  /** Programas del contrato para reparto equitativo al autogenerar clases. */
+  /** Programas del contrato para reparto al autogenerar (legado; preferir certificacionOrigen[].idProgramas). */
   idProgramas?: string[];
   /** Orígenes habilitados: colegio, estamento, empresa, operativo. */
   origenesAlumnos?: {
@@ -111,10 +125,10 @@ export interface ContratacionDto {
   };
   /** Certificación independiente por origen. */
   certificacionOrigen?: {
-    colegio?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
-    estamento?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
-    empresa?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
-    operativo?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
+    colegio?: CertificacionOrigenRow;
+    estamento?: CertificacionOrigenRow;
+    empresa?: CertificacionOrigenRow;
+    operativo?: CertificacionOrigenRow;
   };
   /** Plan ordenado de municipios + jornadas (empresa u otros: 1 o varios). */
   municipiosPlan?: Array<{
@@ -125,6 +139,22 @@ export interface ContratacionDto {
     numJornadas?: number;
     /** Jornadas de este municipio el mismo día al generar. */
     jornadasPorDia?: number;
+    /** Clases autogeneradas en cada jornada de este municipio. */
+    clasesPorJornada?: number;
+    /** Solo modo municipio. */
+    fechaInicJornadas?: string;
+    fechaFinJornadas?: string;
+  }>;
+  /**
+   * Instructores (cargo) del contrato y programas que dictan.
+   * Al generar, las clases se reparte equitativamente entre quienes tienen ese programa.
+   */
+  instructoresPlan?: Array<{
+    orden?: number;
+    idEmpleado?: number;
+    idUsuario?: string;
+    nombre?: string;
+    idProgramas?: string[];
   }>;
   jornadasGeneradas?: boolean;
   /** Jornadas ya creadas en BD (informativo). */
@@ -217,6 +247,10 @@ export interface CertificadosZipJobProgreso {
 export interface InformeDashboardAlumno {
   numDoc: number;
   nombreCompleto: string;
+  origenLabel?: string;
+  perfilLabel?: string;
+  actorVialLabel?: string;
+  caracterizacion?: string;
   certificado?: boolean;
 }
 
@@ -256,6 +290,7 @@ export interface InformeDashboardDto {
     alumnosPorJornada: InformeDashboardChartItem[];
     alumnosPorPrograma: InformeDashboardChartItem[];
     clasesPorInstructor: InformeDashboardChartItem[];
+    porActorVial?: InformeDashboardChartItem[];
     porEdad?: InformeDashboardChartItem[];
     porGenero?: InformeDashboardChartItem[];
     porEstadoCivil?: InformeDashboardChartItem[];
@@ -278,6 +313,7 @@ export interface InformeDashboardDto {
   };
   caracterizacionPoblacion?: {
     total: number;
+    porActorVial?: InformeDashboardChartItem[];
     porEdad: InformeDashboardChartItem[];
     porGenero: InformeDashboardChartItem[];
     porEstadoCivil: InformeDashboardChartItem[];
@@ -313,6 +349,7 @@ export interface InformeDashboardDto {
       certificacionAlumnos?: InformeDashboardChartItem[];
       alumnosPorPrograma?: InformeDashboardChartItem[];
       clasesPorInstructor?: InformeDashboardChartItem[];
+      porActorVial?: InformeDashboardChartItem[];
       porEdad?: InformeDashboardChartItem[];
       porGenero?: InformeDashboardChartItem[];
       porEstadoCivil?: InformeDashboardChartItem[];
@@ -436,6 +473,13 @@ export interface JornadaCapDto {
   alumnosCapacitados?: number;
   /** PDF único con evidencias consolidadas (PNG/PDF). */
   urlEvidenciaConsolidada?: string;
+  /** Fotos JPG/PNG extra de la jornada. */
+  fotosEvidenciaAdicional?: Array<{
+    _id?: string;
+    url: string;
+    nombre?: string;
+    createdAt?: string;
+  }>;
 }
 
 export type ReprogramacionJornadasModo = 'corrimiento' | 'fechaAncla';
@@ -523,6 +567,7 @@ export interface ClaseJornadaDto {
   estado: string;
   fechaJornada?: string;
   jornadaEstado?: string;
+  codigoJornada?: string;
   idContrato?: string;
   municipioJornada?: string;
   direccionJornada?: string;
@@ -544,6 +589,10 @@ export interface ClaseJornadaDto {
     empresa?: boolean;
     operativo?: boolean;
   } | null;
+  /** Certificación por origen del contrato (para filtrar programas al operar). */
+  certificacionOrigen?: ContratacionDto['certificacionOrigen'] | null;
+  /** Instructores y programas del contrato (para filtrar el combo al crear/editar clase). */
+  instructoresPlan?: ContratacionDto['instructoresPlan'] | null;
   /** Ruta relativa bajo uploads/ (evidenciascap/{codContrato}/fotos/...). */
   urlforo?: string;
 }
@@ -738,6 +787,14 @@ export class JornadaCapService {
     jornadasCompletas?: boolean;
     clasesCreadas?: number;
     jornadasProcesadasClases?: number;
+    municipiosGenerados?: Array<{
+      municipio: string;
+      depto?: string;
+      codMunicipio?: string;
+      count: number;
+    }>;
+    fechaPrimeraGenerada?: string | null;
+    fechaUltimaGenerada?: string | null;
     contrato?: ContratoSyncDto;
   }> {
     return this.http.post<{
@@ -750,8 +807,44 @@ export class JornadaCapService {
       jornadasCompletas?: boolean;
       clasesCreadas?: number;
       jornadasProcesadasClases?: number;
+      municipiosGenerados?: Array<{
+        municipio: string;
+        depto?: string;
+        codMunicipio?: string;
+        count: number;
+      }>;
+      fechaPrimeraGenerada?: string | null;
+      fechaUltimaGenerada?: string | null;
       contrato?: ContratoSyncDto;
     }>(`${this.base}/contratos/${idContrato}/generar-jornadas`, {});
+  }
+
+  previewPurgaVacios(idContrato: string, alcance: 'jornadas' | 'clases') {
+    return this.http.get<{
+      ok: boolean;
+      alcance?: 'jornadas' | 'clases';
+      clasesSinAlumnos: number;
+      jornadasSinClases: number;
+      clasesConMovimiento: number;
+      jornadasConClases: number;
+      totalClases: number;
+      totalJornadas: number;
+    }>(`${this.base}/contratos/${idContrato}/purgar-vacios`, {
+      params: { alcance },
+    });
+  }
+
+  purgarVacios(idContrato: string, alcance: 'jornadas' | 'clases') {
+    return this.http.post<{
+      ok: boolean;
+      alcance?: 'jornadas' | 'clases';
+      message?: string;
+      clasesEliminadas: number;
+      jornadasEliminadas: number;
+      clasesConservadas: number;
+      jornadasConservadas: number;
+      contrato?: ContratoSyncDto;
+    }>(`${this.base}/contratos/${idContrato}/purgar-vacios`, { alcance });
   }
 
   opcionesReprogramacionJornadas(idContrato: string): Observable<ReprogramacionJornadasOpcionesDto> {
@@ -938,6 +1031,7 @@ export class JornadaCapService {
     horarioManual?: boolean;
     horaInicio?: string | null;
     horaFin?: string | null;
+    origenOperacion?: string | null;
   }) {
     return this.http.post<ClaseJornadaDto & { contrato?: ContratoSyncDto }>(`${this.base}/clases`, dto);
   }
@@ -1034,6 +1128,18 @@ export class JornadaCapService {
     const fd = new FormData();
     for (const f of files) fd.append('evidencias', f, f.name);
     return this.http.post<JornadaCapDto>(`${this.base}/jornadas/${id}/evidencia-consolidada`, fd);
+  }
+
+  subirFotosEvidenciaAdicionalJornada(id: string, files: File[]): Observable<JornadaCapDto> {
+    const fd = new FormData();
+    for (const f of files) fd.append('fotos', f, f.name);
+    return this.http.post<JornadaCapDto>(`${this.base}/jornadas/${id}/fotos-evidencia-adicional`, fd);
+  }
+
+  eliminarFotoEvidenciaAdicionalJornada(id: string, fotoId: string): Observable<JornadaCapDto> {
+    return this.http.delete<JornadaCapDto>(
+      `${this.base}/jornadas/${id}/fotos-evidencia-adicional/${encodeURIComponent(fotoId)}`,
+    );
   }
 
   registrarAsistencia(idClase: string, numDoc: number | string) {
@@ -1213,7 +1319,7 @@ export class JornadaCapService {
     );
   }
 
-  /** Job asíncrono: paquete de entrega (informe + certificados + evidencia) por jornada. */
+  /** Job asíncrono: paquete de entrega (informe + certificados + evidencia PDF + evidencia fotográfica adicional) por jornada. */
   iniciarPaqueteEntregaJornadaJob(idJornada: string) {
     return this.http.post<CertificadosZipJobProgreso>(
       `${this.base}/jornadas/${encodeURIComponent(idJornada)}/paquete-entrega/jobs`,
@@ -1353,8 +1459,10 @@ export class JornadaCapService {
     return this.http.get<any[]>(`${this.base}/supervisores`);
   }
 
-  listarInstructores(): Observable<InstructorJornadaDto[]> {
-    return this.http.get<InstructorJornadaDto[]>(`${this.base}/instructores`);
+  listarInstructores(opts?: { soloCargo?: boolean }): Observable<InstructorJornadaDto[]> {
+    let params = new HttpParams();
+    if (opts?.soloCargo) params = params.set('soloCargo', '1');
+    return this.http.get<InstructorJornadaDto[]>(`${this.base}/instructores`, { params });
   }
 
   crearSupervisor(dto: { nombre: string; documento?: string; email?: string; telefono?: string }) {
@@ -1387,16 +1495,29 @@ export class JornadaCapService {
     });
   }
 
-  progresoCertificacion(numDoc: number | string, idContrato: string) {
+  progresoCertificacion(
+    numDoc: number | string,
+    idContrato: string,
+    idPrograma?: string,
+    exceptClaseId?: string,
+  ) {
     const nd = parseNumDocForApi(numDoc);
+    let params: Record<string, string> = { idContrato };
+    const prog = String(idPrograma || '').trim();
+    if (prog) params = { ...params, idPrograma: prog };
+    const except = String(exceptClaseId || '').trim();
+    if (except) params = { ...params, exceptClaseId: except };
     return this.http.get<{
       sesiones: number;
       numSesCert: number;
       cumplio: boolean;
       faltan: number;
       certificado?: { _id?: string; codigoCert?: string } | null;
+      yaTomoProgramaContrato?: boolean;
+      programaNombre?: string;
+      mensajeYaTomoPrograma?: string;
     }>(`${this.base}/alumnos/${encodeURIComponent(formatNumDoc(nd ?? numDoc))}/progreso-cert`, {
-      params: { idContrato },
+      params,
     });
   }
 

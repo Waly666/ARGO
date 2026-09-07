@@ -12,6 +12,7 @@ export interface AuthUser {
     nombreCompleto?: string;
     numeroDocumento?: string | number;
     esInstructor?: boolean;
+    idUsuario?: string;
   };
 }
 
@@ -57,6 +58,20 @@ export interface ContratoJornada {
     empresa?: boolean;
     operativo?: boolean;
   } | null;
+  certificacionOrigen?: {
+    colegio?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string; idProgramas?: string[] };
+    estamento?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string; idProgramas?: string[] };
+    empresa?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string; idProgramas?: string[] };
+    operativo?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string; idProgramas?: string[] };
+  } | null;
+  idProgramas?: string[];
+  instructoresPlan?: {
+    orden?: number;
+    idEmpleado: number;
+    idUsuario?: string;
+    nombre?: string;
+    idProgramas?: string[];
+  }[];
 }
 
 export interface JornadaCap {
@@ -235,11 +250,13 @@ export interface ClaseJornada {
     empresa?: boolean;
     operativo?: boolean;
   } | null;
+  certificacionOrigen?: ContratoJornada['certificacionOrigen'];
 }
 
 export interface ProgramaJornada {
   _id?: string;
-  idPrograma?: string;
+  idPrograma?: string | number;
+  idProg?: string | number;
   nombreProg?: string;
   codigoProg?: string;
   idCarpa?: number | null;
@@ -266,6 +283,8 @@ export interface AlumnoClaseAnterior {
   nombreCompleto?: string;
   yaInscritoEnEstaClase?: boolean;
   yaCertificadoContrato?: boolean;
+  yaTomoProgramaContrato?: boolean;
+  programaYaTomadoNombre?: string;
   puedeMatricular?: boolean;
   certificadoCodigo?: string | null;
   origenJornadaCap?: string | null;

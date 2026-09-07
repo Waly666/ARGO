@@ -92,7 +92,7 @@ const GRUPOS = [
       },
       {
         key: 'jornadas.app.informes',
-        label: 'App móvil Jornadas: Informes y dashboard del contrato',
+        label: 'App móvil Jornadas: Informes y dashboard del contrato (solo si está marcado; no lo abre «Consultar hub»)',
       },
     ],
   },

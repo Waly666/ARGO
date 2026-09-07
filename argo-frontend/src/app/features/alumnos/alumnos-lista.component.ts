@@ -15,6 +15,7 @@ import { EliminacionOperacionService } from '../../core/services/eliminacion-ope
 import { AlarmaService } from '../../core/services/alarma.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import {
+  ACTOR_VIAL_DEF,
   ESTADOS_CIVIL_DEF,
   JORNADAS_DEF,
   ORIGEN_SISTEMA,
@@ -60,6 +61,7 @@ type SortColAlumnos =
   | 'nombre'
   | 'fechaNac'
   | 'jornada'
+  | 'actorVial'
   | 'estadoCivil'
   | 'correo'
   | 'celular'
@@ -84,6 +86,7 @@ const SORT_COLUMNS: ReadonlyArray<{ key: SortColAlumnos; label: string }> = [
   { key: 'nombre', label: 'Nombre' },
   { key: 'fechaNac', label: 'Fecha nac.' },
   { key: 'jornada', label: 'Jornada' },
+  { key: 'actorVial', label: 'Actor vial' },
   { key: 'estadoCivil', label: 'Estado civil' },
   { key: 'correo', label: 'Correo' },
   { key: 'celular', label: 'Celular' },
@@ -149,6 +152,7 @@ export class AlumnosListaComponent implements OnInit {
 
   private jornadaLabels = buildCatalogoLabelMap([], JORNADAS_DEF, ['idJornada', 'id', 'codigo']);
   private estadoCivilLabels = buildCatalogoLabelMap([], ESTADOS_CIVIL_DEF, ['idEstadoCivil', 'id', 'codigo']);
+  private actorVialLabels = buildCatalogoLabelMap([], ACTOR_VIAL_DEF, ['idActorVial', 'id', 'codigo']);
   catalogosReady = signal(0);
 
   query = signal('');
@@ -184,7 +188,9 @@ export class AlumnosListaComponent implements OnInit {
   empresaFiltroNombre = signal('');
   origenFiltro = signal('');
   jornadaCatFiltro = signal('');
+  actorVialFiltro = signal('');
   opcionesJornadaCat = signal<EnumBuscarOption[]>([]);
+  opcionesActorVial = signal<EnumBuscarOption[]>([]);
 
   readonly opcionesOrigen: EnumBuscarOption[] = [
     { value: ORIGEN_SISTEMA, label: 'Inscrito por sistema' },
@@ -224,6 +230,12 @@ export class AlumnosListaComponent implements OnInit {
     return this.opcionesJornadaCat().find((o) => String(o.value) === v)?.label || v;
   });
 
+  textoActorVialSel = computed(() => {
+    const v = this.actorVialFiltro();
+    if (!v) return '';
+    return this.opcionesActorVial().find((o) => String(o.value) === v)?.label || v;
+  });
+
   filtroJornadaActivo = computed(() => !!(this.fechaJornadaCap().trim() || this.idJornadaCap().trim()));
 
   filtroListaActivo = computed(
@@ -232,6 +244,7 @@ export class AlumnosListaComponent implements OnInit {
         this.empresaFiltroId().trim() ||
         this.origenFiltro().trim() ||
         this.jornadaCatFiltro().trim() ||
+        this.actorVialFiltro().trim() ||
         this.filtroJornadaActivo() ||
         this.certJornadaFiltro()
       ),
@@ -268,6 +281,7 @@ export class AlumnosListaComponent implements OnInit {
     empresaId: string;
     origen: string;
     jornada: string;
+    actorVial: string;
   }>();
 
   ngOnInit(): void {
@@ -284,35 +298,26 @@ export class AlumnosListaComponent implements OnInit {
     forkJoin({
       jornada: this.catSvc.list<Record<string, unknown>>('jornada'),
       estadoCivil: this.catSvc.list<Record<string, unknown>>('estadoCivil'),
+      actorVial: this.catSvc.list<Record<string, unknown>>('actorVial'),
     }).subscribe({
-      next: ({ jornada, estadoCivil }) => {
+      next: ({ jornada, estadoCivil, actorVial }) => {
         this.jornadaLabels = buildCatalogoLabelMap(jornada, JORNADAS_DEF, ['idJornada', 'id', 'codigo']);
         this.estadoCivilLabels = buildCatalogoLabelMap(estadoCivil, ESTADOS_CIVIL_DEF, [
           'idEstadoCivil',
           'id',
           'codigo',
         ]);
-        const pool = jornada?.length ? jornada : (JORNADAS_DEF as unknown as Record<string, unknown>[]);
-        const opts: EnumBuscarOption[] = [];
-        const seen = new Set<string>();
-        for (const raw of pool) {
-          const value = catValor(raw);
-          if (!value || seen.has(value)) continue;
-          seen.add(value);
-          opts.push({ value, label: catEtiqueta(raw) });
-        }
-        this.opcionesJornadaCat.set(opts);
+        this.actorVialLabels = buildCatalogoLabelMap(actorVial, ACTOR_VIAL_DEF, ['idActorVial', 'id', 'codigo']);
+        this.opcionesJornadaCat.set(this.opcionesDesdeCatalogo(jornada, JORNADAS_DEF));
+        this.opcionesActorVial.set(this.opcionesDesdeCatalogo(actorVial, ACTOR_VIAL_DEF));
         this.catalogosReady.update((n) => n + 1);
       },
       error: () => {
         this.jornadaLabels = buildCatalogoLabelMap([], JORNADAS_DEF, ['idJornada', 'id', 'codigo']);
         this.estadoCivilLabels = buildCatalogoLabelMap([], ESTADOS_CIVIL_DEF, ['idEstadoCivil', 'id', 'codigo']);
-        this.opcionesJornadaCat.set(
-          (JORNADAS_DEF as unknown as Record<string, unknown>[]).map((raw) => ({
-            value: catValor(raw),
-            label: catEtiqueta(raw),
-          })),
-        );
+        this.actorVialLabels = buildCatalogoLabelMap([], ACTOR_VIAL_DEF, ['idActorVial', 'id', 'codigo']);
+        this.opcionesJornadaCat.set(this.opcionesDesdeCatalogo([], JORNADAS_DEF));
+        this.opcionesActorVial.set(this.opcionesDesdeCatalogo([], ACTOR_VIAL_DEF));
         this.catalogosReady.update((n) => n + 1);
       },
     });
@@ -320,7 +325,7 @@ export class AlumnosListaComponent implements OnInit {
     this.load$
       .pipe(
         debounceTime(280),
-        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada, empresaId, origen, jornada }) => {
+        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada, empresaId, origen, jornada, actorVial }) => {
           this.loading.set(true);
           const opts: {
             q: string;
@@ -335,6 +340,7 @@ export class AlumnosListaComponent implements OnInit {
             empresaId?: string;
             origen?: string;
             jornada?: string;
+            actorVial?: string;
           } = {
             q,
             limit: this.pageSize,
@@ -351,6 +357,7 @@ export class AlumnosListaComponent implements OnInit {
           if (empresaId) opts.empresaId = empresaId;
           if (origen) opts.origen = origen;
           if (jornada) opts.jornada = jornada;
+          if (actorVial) opts.actorVial = actorVial;
           return this.alumnoSvc.listar(opts);
         }),
       )
@@ -489,6 +496,20 @@ export class AlumnosListaComponent implements OnInit {
     this.cargar();
   }
 
+  onActorVialPick(opt: EnumBuscarOption) {
+    const v = String(opt?.value || '').trim();
+    if (!v) return;
+    this.actorVialFiltro.set(v);
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onActorVialLimpiar() {
+    this.actorVialFiltro.set('');
+    this.page.set(0);
+    this.cargar();
+  }
+
   limpiarFiltrosJornada() {
     this.fechaJornadaCap.set('');
     this.idJornadaCap.set('');
@@ -503,6 +524,7 @@ export class AlumnosListaComponent implements OnInit {
     this.empresaFiltroNombre.set('');
     this.origenFiltro.set('');
     this.jornadaCatFiltro.set('');
+    this.actorVialFiltro.set('');
     this.fechaJornadaCap.set('');
     this.idJornadaCap.set('');
     this.certJornadaFiltro.set('');
@@ -533,6 +555,7 @@ export class AlumnosListaComponent implements OnInit {
       empresaId: this.empresaFiltroId().trim(),
       origen: this.origenFiltro().trim(),
       jornada: this.jornadaCatFiltro().trim(),
+      actorVial: this.actorVialFiltro().trim(),
     });
   }
 
@@ -901,6 +924,29 @@ export class AlumnosListaComponent implements OnInit {
     if (r.jornadaLabel) return r.jornadaLabel;
     const t = catalogoLabel(this.jornadaLabels, r.jornada);
     return t || '—';
+  }
+
+  labelActorVial(r: AlumnoListItem): string {
+    this.catalogosReady();
+    if (r.actorVialLabel) return r.actorVialLabel;
+    const t = catalogoLabel(this.actorVialLabels, r.actorVial);
+    return t || '—';
+  }
+
+  private opcionesDesdeCatalogo(
+    items: Record<string, unknown>[] | null | undefined,
+    fallback: Record<string, unknown>[],
+  ): EnumBuscarOption[] {
+    const pool = items?.length ? items : fallback;
+    const opts: EnumBuscarOption[] = [];
+    const seen = new Set<string>();
+    for (const raw of pool) {
+      const value = catValor(raw);
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      opts.push({ value, label: catEtiqueta(raw) });
+    }
+    return opts;
   }
 
   labelEstadoCivil(r: AlumnoListItem): string {

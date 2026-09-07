@@ -19,12 +19,14 @@ function normalizeIdProgramasContrato(raw) {
 
 function idProgramaCanonico(prog) {
   if (!prog) return '';
-  const id = prog.idPrograma != null && String(prog.idPrograma).trim() !== ''
-    ? String(prog.idPrograma).trim()
-    : prog._id != null
-      ? String(prog._id)
-      : '';
-  return id;
+  const raw = prog.idPrograma != null && String(prog.idPrograma).trim() !== ''
+    ? prog.idPrograma
+    : prog.idProg != null && String(prog.idProg).trim() !== ''
+      ? prog.idProg
+      : prog._id != null
+        ? prog._id
+        : '';
+  return raw != null && String(raw).trim() !== '' ? String(raw).trim() : '';
 }
 
 /** Reparto equitativo en orden (A, B, C, A, B, C…). */
@@ -84,6 +86,73 @@ async function resolverProgramaAutogeneracion(idPrograma) {
   };
 }
 
+async function programaEstaEnListaPermitida(idPrograma, lista) {
+  const raw = String(idPrograma ?? '').trim();
+  const allowed = normalizeIdProgramasContrato(lista);
+  if (!raw || !allowed.length) return false;
+  if (allowed.some((x) => x === raw)) return true;
+  const prog = await buscarPrograma(raw);
+  const canon = idProgramaCanonico(prog);
+  if (canon && allowed.some((x) => x === canon)) return true;
+  for (const id of allowed) {
+    if (id === raw || (canon && id === canon)) continue;
+    const p = await buscarPrograma(id);
+    const c = idProgramaCanonico(p);
+    if (c && (c === raw || c === canon)) return true;
+  }
+  return false;
+}
+
+/**
+ * En origen por_clase el programa de la clase debe estar en la lista de ese origen.
+ * Origen global: cualquier programa de Jornadas (ya validado por el caller).
+ */
+async function assertProgramaPermitidoEnOrigen(contrato, origenOperacion, idPrograma) {
+  const id = String(idPrograma ?? '').trim();
+  if (!id) return;
+  const {
+    origenEsCertPorClase,
+    idsProgramasPorClaseOrigen,
+    ORIGEN_JORNADA_LABELS,
+    normalizarOrigenJornadaCap,
+  } = require('../constants/origenJornadaCap');
+  const origen = normalizarOrigenJornadaCap(origenOperacion);
+  if (!origen || !origenEsCertPorClase(contrato, origen)) return;
+  const permitidos = idsProgramasPorClaseOrigen(contrato, origen);
+  const label = ORIGEN_JORNADA_LABELS[origen] || origen;
+  if (!permitidos.length) {
+    const err = new Error(
+      `El origen «${label}» está en certificación por clase y no tiene programas configurados en el contrato.`,
+    );
+    err.status = 400;
+    err.codigo = 'programas_origen_vacios';
+    throw err;
+  }
+  if (!(await programaEstaEnListaPermitida(id, permitidos))) {
+    const err = new Error(
+      `El programa no está permitido para el origen «${label}». Elija uno de los programas configurados en el contrato.`,
+    );
+    err.status = 400;
+    err.codigo = 'programa_no_permitido_origen';
+    throw err;
+  }
+}
+
+async function normalizarYValidarCertificacionOrigenProgramas(certificacionOrigen) {
+  const { ORIGENES_JORNADA_CAP, normalizarTipoCertContrato } = require('../constants/origenJornadaCap');
+  if (!certificacionOrigen || typeof certificacionOrigen !== 'object') return certificacionOrigen;
+  for (const k of ORIGENES_JORNADA_CAP) {
+    const row = certificacionOrigen[k];
+    if (!row || typeof row !== 'object') continue;
+    if (normalizarTipoCertContrato(row.tipoCertificado) !== 'por_clase') {
+      row.idProgramas = normalizeIdProgramasContrato(row.idProgramas);
+      continue;
+    }
+    row.idProgramas = await normalizarYValidarProgramasContrato(row.idProgramas);
+  }
+  return certificacionOrigen;
+}
+
 module.exports = {
   normalizeIdProgramasContrato,
   programaRoundRobin,
@@ -91,4 +160,7 @@ module.exports = {
   contarClasesContrato,
   resolverProgramaAutogeneracion,
   idProgramaCanonico,
+  programaEstaEnListaPermitida,
+  assertProgramaPermitidoEnOrigen,
+  normalizarYValidarCertificacionOrigenProgramas,
 };

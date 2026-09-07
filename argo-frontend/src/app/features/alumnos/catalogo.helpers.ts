@@ -8,6 +8,7 @@ export function catValor(item: Record<string, unknown>): string {
     item['idEstrato'] ??
     item['idNivel'] ??
     item['idOcupacion'] ??
+    item['idActorVial'] ??
     item['idDiscapacidad'] ??
     item['idEstadoCivil'] ??
     item['idGenero'] ??
@@ -146,6 +147,7 @@ export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
   'idEmpleado',
   'duracionSesionPracticaCea',
   'edad',
+  'grupoEdad',
   'origenJornadaCap',
   'tipoInstitucionEducativa',
   'colegioCodigo',
@@ -359,6 +361,14 @@ export const OCUPACIONES_DEF = [
   { idOcupacion: '3', descripcion: '3) ESTUDIANTE SUPERIOR' },
   { idOcupacion: '4', descripcion: '4) DESEMPLEADO' },
   { idOcupacion: '5', descripcion: '5) INDEPENDIENTE' },
+];
+
+export const ACTOR_VIAL_DEF = [
+  { idActorVial: '1', descripcion: '1) PEATÓN' },
+  { idActorVial: '2', descripcion: '2) CONDUCTOR' },
+  { idActorVial: '3', descripcion: '3) CICLISTA' },
+  { idActorVial: '4', descripcion: '4) MOTOCICLISTA' },
+  { idActorVial: '5', descripcion: '5) PASAJERO' },
 ];
 
 export const DISCAPACIDADES_DEF = [

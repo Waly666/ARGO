@@ -20,6 +20,137 @@ async function cargoNombre(cargoId) {
   return String(c?.nombre || '').trim();
 }
 
+function esCargoAuxiliarCarpa(nombre) {
+  return /auxiliar\s*(de\s*)?carpa/i.test(String(nombre || ''));
+}
+
+function esRolUsuarioInstructor(u) {
+  if (!u) return false;
+  const n = normalizarRol(u.rol);
+  if (n === 'instructor') return true;
+  const raw = String(u.rol || '')
+    .trim()
+    .toLowerCase();
+  return raw === 'instructor' || raw.startsWith('instructor');
+}
+
+async function usuarioDeEmpleado(emp) {
+  if (!emp?.idUsuario) return null;
+  try {
+    const u = await Usuario.findById(emp.idUsuario).lean();
+    if (u) return u;
+  } catch {
+    /* idUsuario no es ObjectId */
+  }
+  try {
+    return await Usuario.findById(String(emp.idUsuario)).lean();
+  } catch {
+    return null;
+  }
+}
+
+function nombreDesdeUsuario(u) {
+  return [u?.nombres, u?.apellidos].filter(Boolean).join(' ').trim();
+}
+
+function partesNombreUsuario(u) {
+  const noms = String(u?.nombres || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const apes = String(u?.apellidos || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  return {
+    primerNombre: (noms[0] || 'INSTRUCTOR').toUpperCase(),
+    segundoNombre: noms.slice(1).join(' ').toUpperCase(),
+    primerApellido: (apes[0] || String(u?.username || 'USUARIO').toUpperCase()).toUpperCase(),
+    segundoApellido: apes.slice(1).join(' ').toUpperCase(),
+  };
+}
+
+async function siguienteIdEmpleado() {
+  const [maxEmp, maxUser] = await Promise.all([
+    Empleado.findOne().sort({ idEmpleado: -1 }).select('idEmpleado').lean(),
+    Usuario.findOne().sort({ idEmpleado: -1 }).select('idEmpleado').lean(),
+  ]);
+  return Math.max(Number(maxEmp?.idEmpleado) || 0, Number(maxUser?.idEmpleado) || 0, 0) + 1;
+}
+
+async function idCargoInstructor() {
+  const c = await Cargo.findOne({ nombre: /\binstructor/i }).select('idCargo').lean();
+  return c?.idCargo ?? 1;
+}
+
+function empleadoReclamadoPorOtro(emp, userId) {
+  const uid = String(userId || '').trim();
+  const claimed = emp?.idUsuario != null ? String(emp.idUsuario).trim() : '';
+  return !!(claimed && uid && claimed !== uid);
+}
+
+/**
+ * Usuario con rol instructor sin ficha RRHH propia (p. ej. creado solo en Usuarios)
+ * obtiene empleado para poder asignarlo en el contrato y en las clases.
+ */
+async function asegurarEmpleadoDeUsuarioInstructor(u) {
+  if (!u?._id || u.activo === false) return null;
+  if (!esRolUsuarioInstructor(u)) return null;
+
+  let emp = await Empleado.findOne({
+    idUsuario: u._id,
+    estado: { $not: /^inactivo$/i },
+  }).lean();
+  if (emp) return emp;
+  emp = await Empleado.findOne({
+    idUsuario: String(u._id),
+    estado: { $not: /^inactivo$/i },
+  }).lean();
+  if (emp) return emp;
+
+  if (u.idEmpleado != null && Number.isFinite(Number(u.idEmpleado))) {
+    const cand = await Empleado.findOne({
+      idEmpleado: Number(u.idEmpleado),
+      estado: { $not: /^inactivo$/i },
+    }).lean();
+    if (cand && !empleadoReclamadoPorOtro(cand, u._id)) {
+      await Empleado.updateOne(
+        { _id: cand._id },
+        { $set: { idUsuario: u._id, updatedAt: new Date() } },
+      );
+      return { ...cand, idUsuario: u._id };
+    }
+  }
+
+  const doc = String(u.numeroDocumento || u.numero || '').trim();
+  if (doc) {
+    const porDoc = await Empleado.findOne({ numeroDocumento: doc, estado: { $not: /^inactivo$/i } }).lean();
+    if (porDoc && !empleadoReclamadoPorOtro(porDoc, u._id)) {
+      await Empleado.updateOne(
+        { _id: porDoc._id },
+        { $set: { idUsuario: u._id, updatedAt: new Date() } },
+      );
+      await Usuario.updateOne({ _id: u._id }, { $set: { idEmpleado: porDoc.idEmpleado } });
+      return { ...porDoc, idUsuario: u._id };
+    }
+  }
+
+  const idEmpleado = await siguienteIdEmpleado();
+  const created = await Empleado.create({
+    idEmpleado,
+    tipoDocumento: 'CC',
+    numeroDocumento: doc || String(idEmpleado),
+    ...partesNombreUsuario(u),
+    cargoId: await idCargoInstructor(),
+    idUsuario: u._id,
+    estado: 'activo',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  await Usuario.updateOne({ _id: u._id }, { $set: { idEmpleado } });
+  return created.toObject ? created.toObject() : created;
+}
+
 async function esEmpleadoInstructor(emp) {
   if (!emp) return false;
   const nom = await cargoNombre(emp.cargoId);
@@ -126,37 +257,86 @@ async function resolverInstructorParaClase(req, body = {}) {
   };
 }
 
-async function listarInstructoresConUsuario() {
+async function listarInstructoresConUsuario(opts = {}) {
+  const soloCargo = !!opts.soloCargo;
+  const seenUsuario = new Set();
+  const seenEmpleado = new Set();
+  const out = [];
+
+  const push = (row) => {
+    const uid = String(row?.idUsuario || '').trim();
+    const idEmp = Number(row?.idEmpleado);
+    if (!uid || seenUsuario.has(uid)) return;
+    if (!Number.isFinite(idEmp) || idEmp < 1 || seenEmpleado.has(idEmp)) return;
+    if (esCargoAuxiliarCarpa(row.cargo)) return;
+    seenUsuario.add(uid);
+    seenEmpleado.add(idEmp);
+    out.push({
+      idEmpleado: row.idEmpleado,
+      idUsuario: uid,
+      nombreCompleto: row.nombreCompleto,
+      numeroDocumento: row.numeroDocumento,
+      cargo: row.cargo || '',
+    });
+  };
+
+  const usuariosInst = await Usuario.find({ activo: { $ne: false } }).lean();
+  for (const u of usuariosInst) {
+    if (!esRolUsuarioInstructor(u)) continue;
+    let emp = null;
+    try {
+      emp = await asegurarEmpleadoDeUsuarioInstructor(u);
+    } catch {
+      emp = null;
+    }
+    if (!emp) continue;
+    const cargo = await cargoNombre(emp.cargoId);
+    push({
+      idEmpleado: emp.idEmpleado,
+      idUsuario: String(u._id),
+      nombreCompleto: nombreEmpleado(emp) || nombreDesdeUsuario(u),
+      numeroDocumento: emp.numeroDocumento || u.numeroDocumento,
+      cargo: cargo || 'Instructor',
+    });
+  }
+
   const empleados = await Empleado.find({
     idUsuario: { $exists: true, $ne: null },
     estado: { $not: /^inactivo$/i },
   }).lean();
 
-  const out = [];
   for (const e of empleados) {
     const cargo = await cargoNombre(e.cargoId);
     const porCargo = /\binstructor/i.test(cargo);
+    const u = e.idUsuario ? await usuarioDeEmpleado(e) : null;
+    if (u && u.activo === false) continue;
+    const porRol = esRolUsuarioInstructor(u);
     let porPermiso = false;
-    if (!porCargo && e.idUsuario) {
+    if (!soloCargo && !porCargo && !porRol && u) {
       try {
-        const u = await Usuario.findById(e.idUsuario).lean();
-        if (u) {
-          const perms = await permisosParaRol(u.rol);
-          porPermiso = permisosOperarComoInstructor(perms);
-        }
+        const perms = await permisosParaRol(u.rol);
+        porPermiso = permisosOperarComoInstructor(perms);
       } catch {
         porPermiso = false;
       }
     }
-    if (!porCargo && !porPermiso) continue;
-    out.push({
+    if (soloCargo) {
+      if (!porCargo && !porRol) continue;
+    } else if (!porCargo && !porRol && !porPermiso) {
+      continue;
+    }
+    const uid = u?._id ? String(u._id) : String(e.idUsuario);
+    push({
       idEmpleado: e.idEmpleado,
-      idUsuario: String(e.idUsuario),
-      nombreCompleto: nombreEmpleado(e),
+      idUsuario: uid,
+      nombreCompleto: nombreEmpleado(e) || nombreDesdeUsuario(u),
       numeroDocumento: e.numeroDocumento,
-      cargo: cargo || (porPermiso ? 'Instructor (por permiso)' : ''),
+      cargo:
+        cargo ||
+        (porRol && !porCargo ? 'Instructor (usuario)' : porPermiso ? 'Instructor (por permiso)' : ''),
     });
   }
+
   return out.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es'));
 }
 
@@ -423,6 +603,39 @@ async function enriquecerClases(rows) {
     if (idCarpaProg != null) carpaIds.push(idCarpaProg);
   }
 
+  const {
+    normalizarCertificacionOrigen,
+    normalizarOrigenesContrato,
+  } = require('../constants/origenJornadaCap');
+  const Contratacion = require('../models/Contratacion');
+  const contratoIdsNeed = [
+    ...new Set(
+      rows
+        .filter(
+          (r) =>
+            r.idContrato &&
+            (r.certificacionOrigen == null || r.instructoresPlan == null),
+        )
+        .map((r) => String(r.idContrato)),
+    ),
+  ];
+  const certMap = new Map();
+  if (contratoIdsNeed.length) {
+    const { normalizarInstructoresPlan } = require('./instructoresPlanContrato');
+    const cs = await Contratacion.find({ _id: { $in: contratoIdsNeed } })
+      .select(
+        'certificacionOrigen origenesAlumnos idProgramas numSesCert tipoCertificado idProgramaCertificacion instructoresPlan',
+      )
+      .lean();
+    for (const c of cs) {
+      certMap.set(String(c._id), {
+        certificacionOrigen: normalizarCertificacionOrigen(c.certificacionOrigen, c),
+        origenesAlumnos: normalizarOrigenesContrato(c.origenesAlumnos),
+        instructoresPlan: normalizarInstructoresPlan(c.instructoresPlan),
+      });
+    }
+  }
+
   const carpaNombres = await mapaNombresCarpas(carpaIds);
   const out = [];
   for (const c of rows) {
@@ -440,6 +653,7 @@ async function enriquecerClases(rows) {
     const origenGuardado = normalizarOrigenJornadaCap(c.origenOperacion);
     const origenInscritos = origenPorClase.get(String(c._id)) || '';
     const origenOperacion = origenGuardado || origenInscritos || null;
+    const extra = certMap.get(String(c.idContrato)) || {};
     out.push({
       ...c,
       instructorNombre,
@@ -450,6 +664,11 @@ async function enriquecerClases(rows) {
       idUsuarioInstructor: c.idUsuarioInstructor || '',
       alumnosInscritos,
       origenOperacion,
+      certificacionOrigen: c.certificacionOrigen || extra.certificacionOrigen || null,
+      origenesAlumnos: c.origenesAlumnos || extra.origenesAlumnos || c.origenesAlumnos || null,
+      instructoresPlan: Array.isArray(c.instructoresPlan)
+        ? c.instructoresPlan
+        : extra.instructoresPlan || null,
     });
   }
   return out;

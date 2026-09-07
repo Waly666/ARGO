@@ -4,6 +4,7 @@ const { models } = require('../models/catalogos');
 const divipola = models.divipola;
 const jornadaModel = models.jornada;
 const estadoCivilModel = models.estadoCivil;
+const actorVialModel = models.actorVial;
 const upload = require('../middleware/upload');
 const { procesarCedulaImagen } = require('../services/cedulaOcr');
 const { procesarCedulaMrz } = require('../services/cedulaMrz');
@@ -36,8 +37,10 @@ const {
   TIPO_JORNADAS_CAPACITACION,
   normalizarTipoAlumno,
 } = require('../constants/tipoAlumno');
-const { calcularEdad } = require('../utils/edad');
+const { calcularEdad, rangoEdadLabel } = require('../utils/edad');
 const { ORIGEN_SISTEMA, ORIGEN_WEB, normalizarOrigenAlumno } = require('../constants/origenAlumno');
+const { ACTOR_VIAL_DEF } = require('../constants/actorVialCatalogo');
+const { ensureActorVialCatalogo } = require('../services/actorVialCatalogo');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const {
@@ -88,6 +91,7 @@ const DEFAULT_ESTADOS_CIVIL = [
 
 let cacheJornadaLabels = null;
 let cacheEstadoCivilLabels = null;
+let cacheActorVialLabels = null;
 
 function codigoDesdeDoc(doc, codeFields) {
   for (const f of codeFields) {
@@ -145,6 +149,14 @@ async function getEstadoCivilLabels() {
   return cacheEstadoCivilLabels;
 }
 
+async function getActorVialLabels() {
+  if (!cacheActorVialLabels) {
+    await ensureActorVialCatalogo();
+    cacheActorVialLabels = await buildLabelMap(actorVialModel, ['idActorVial', 'id', 'codigo'], ACTOR_VIAL_DEF);
+  }
+  return cacheActorVialLabels;
+}
+
 function labelCatalogo(map, valor) {
   if (valor == null || valor === '') return '';
   const v = String(valor).trim();
@@ -184,6 +196,7 @@ const SORT_ALUMNOS_KEYS = {
   fechaNac: ['fechaNac'],
   jornada: ['jornada'],
   estadoCivil: ['estadoCivil'],
+  actorVial: ['actorVial'],
   correo: ['correo'],
   celular: ['celular'],
   direccion: ['direccion'],
@@ -205,6 +218,7 @@ function resolveSortAlumnos(sortRaw, dirRaw) {
 function mapListaItem(doc) {
   const extra = nombreCompleto(doc);
   const codMun = doc.codMunicipio || doc.munOrigen || '';
+  const edad = calcularEdad(doc.fechaNac);
   return {
     _id: doc._id,
     numDoc: doc.numDoc,
@@ -221,10 +235,12 @@ function mapListaItem(doc) {
     nombreCompleto: extra.nombreCompleto,
     genero: doc.genero,
     fechaNac: doc.fechaNac,
-    edad: calcularEdad(doc.fechaNac),
+    edad,
+    grupoEdad: edad == null ? null : rangoEdadLabel(edad),
     tipoSangre: doc.tipoSangre,
     jornada: doc.jornada,
     estadoCivil: doc.estadoCivil,
+    actorVial: doc.actorVial,
     estrato: doc.estrato,
     celular: doc.celular,
     correo: doc.correo,
@@ -270,11 +286,16 @@ async function enriquecerEmpresas(items) {
 }
 
 async function enriquecerCatalogos(items) {
-  const [jMap, eMap] = await Promise.all([getJornadaLabels(), getEstadoCivilLabels()]);
+  const [jMap, eMap, aMap] = await Promise.all([
+    getJornadaLabels(),
+    getEstadoCivilLabels(),
+    getActorVialLabels(),
+  ]);
   return items.map((it) => ({
     ...it,
     jornadaLabel: labelCatalogo(jMap, it.jornada) || it.jornada,
     estadoCivilLabel: labelCatalogo(eMap, it.estadoCivil) || it.estadoCivil,
+    actorVialLabel: labelCatalogo(aMap, it.actorVial) || it.actorVial,
   }));
 }
 
@@ -317,6 +338,7 @@ exports.listar = async (req, res, next) => {
     const empresaId = (req.query.empresaId || '').toString().trim();
     const origenQ = (req.query.origen || '').toString().trim();
     const jornadaCat = (req.query.jornada || '').toString().trim();
+    const actorVialCat = (req.query.actorVial || '').toString().trim();
     const limit = Math.min(parseInt(req.query.limit, 10) || 25, 100);
     const skip = Math.max(parseInt(req.query.skip, 10) || 0, 0);
     const condiciones = [];
@@ -350,6 +372,15 @@ exports.listar = async (req, res, next) => {
         $or: [
           { jornada: jornadaCat },
           { jornada: new RegExp(`^${esc}(\\D|$)`, 'i') },
+        ],
+      });
+    }
+    if (actorVialCat) {
+      const esc = actorVialCat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      condiciones.push({
+        $or: [
+          { actorVial: actorVialCat },
+          { actorVial: new RegExp(`^${esc}(\\D|$)`, 'i') },
         ],
       });
     }
@@ -679,7 +710,7 @@ const { aplicarReferidorGestorUsuario } = require('../services/gestorUsuarioRefe
 const CAMPOS_ALUMNO = [
   'tipoAlumno', 'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
-  'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
+  'regimenSalud', 'nivelFormacion', 'ocupacion', 'actorVial', 'discapacidad', 'munOrigen', 'codMunicipio',
   'codDepartamento', 'nombreDepartamento', 'nombreMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
   'duracionSesionPracticaCea', 'empresaId', 'alertaPago', 'alertaPagoFrecuencia',
@@ -879,6 +910,17 @@ function pickAlumno(body) {
   return dto;
 }
 
+function exigirFechaNacimiento(raw) {
+  if (raw == null || raw === '') {
+    return { error: 'La fecha de nacimiento es obligatoria' };
+  }
+  const d = raw instanceof Date ? raw : new Date(raw);
+  if (Number.isNaN(d.getTime()) || calcularEdad(d) == null) {
+    return { error: 'La fecha de nacimiento no es válida' };
+  }
+  return { value: d };
+}
+
 /** Completa cod/nombre de departamento y municipio desde DIVIPOLA. */
 async function completarGeoOrigenAlumno(dto) {
   if (!dto || typeof dto !== 'object') return dto;
@@ -911,6 +953,9 @@ exports.crear = async (req, res, next) => {
     if (dto.numDoc == null) {
       return res.status(400).json({ message: numDocInvalidMessage() });
     }
+    const fechaNac = exigirFechaNacimiento(dto.fechaNac);
+    if (fechaNac.error) return res.status(400).json({ message: fechaNac.error });
+    dto.fechaNac = fechaNac.value;
     const existe = await alumnoConMismoNumDoc(dto.numDoc);
     if (existe) return respuestaDuplicado(res, existe);
 
@@ -920,7 +965,6 @@ exports.crear = async (req, res, next) => {
     dto.fechaAudi = now;
     dto.fechaMod = now;
     dto.userAddReg = dto.userAddReg || req.user?.username || req.user?.sub || 'sistema';
-    if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
     const esJornadaCap =
       body.esJornadaCap === true ||
       body.esJornadaCap === 'true' ||
@@ -991,7 +1035,11 @@ exports.actualizar = async (req, res, next) => {
     await aplicarArchivos(dto, req.files, prev);
     dto.fechaMod = new Date();
     dto.userChangeRecord = dto.userChangeRecord || req.user?.username || req.user?.sub || 'sistema';
-    if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
+    const fechaNac = exigirFechaNacimiento(
+      dto.fechaNac !== undefined ? dto.fechaNac : prev.fechaNac,
+    );
+    if (fechaNac.error) return res.status(400).json({ message: fechaNac.error });
+    dto.fechaNac = fechaNac.value;
     await completarGeoOrigenAlumno(dto);
     await aplicarReferidorGestorUsuario(dto, req.user, {
       forzarPropioGestor: esPerfilGestor(req.user?.rol),

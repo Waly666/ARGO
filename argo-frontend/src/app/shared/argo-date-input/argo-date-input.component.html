@@ -11,6 +11,8 @@
       [id]="inputId || null"
       [placeholder]="placeholder"
       [disabled]="disabled"
+      [attr.required]="required ? true : null"
+      [attr.aria-required]="required ? true : null"
       [ngModel]="displayText"
       (ngModelChange)="onTextInput($event)"
       (blur)="onTextBlur()"
@@ -109,7 +111,9 @@
         }
 
         <footer class="argo-date-panel-foot">
-          <button type="button" class="foot-btn" (click)="clear()">Limpiar</button>
+          @if (!required) {
+            <button type="button" class="foot-btn" (click)="clear()">Limpiar</button>
+          }
           <button type="button" class="foot-btn primary" (click)="pickToday()">Hoy</button>
         </footer>
       </div>

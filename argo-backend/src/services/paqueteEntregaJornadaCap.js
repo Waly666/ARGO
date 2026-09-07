@@ -117,6 +117,33 @@ async function appendImagenesClasesAlArchivo(archive, carpeta, idJornada) {
   return count;
 }
 
+/** Fotos JPG/PNG de la ficha Evidencia fotográfica adicional (carpeta propia en el ZIP). */
+function appendFotosAdicionalAlArchivo(archive, carpeta, jornada) {
+  const fotos = Array.isArray(jornada?.fotosEvidenciaAdicional) ? jornada.fotosEvidenciaAdicional : [];
+  const base = carpeta.endsWith('/') ? carpeta : `${carpeta}/`;
+  let count = 0;
+  const usados = new Set();
+  for (let i = 0; i < fotos.length; i++) {
+    const rel = String(fotos[i]?.url || '').trim();
+    if (!rel) continue;
+    const abs = upload.resolvePath(rel);
+    if (!abs || !fs.existsSync(abs)) continue;
+    const original = sanitizarNombreArchivo(fotos[i]?.nombre || path.basename(abs)) || `foto-${i + 1}.jpg`;
+    let ext = (path.extname(abs) || path.extname(original) || '.jpg').toLowerCase();
+    if (ext === '.jpeg') ext = '.jpg';
+    if (ext !== '.jpg' && ext !== '.png') ext = '.jpg';
+    const stem = path.basename(original, path.extname(original)) || `foto-${i + 1}`;
+    let name = `${String(i + 1).padStart(2, '0')}_${stem}${ext}`;
+    if (usados.has(name.toLowerCase())) {
+      name = `${String(i + 1).padStart(2, '0')}_${stem}_${count + 1}${ext}`;
+    }
+    usados.add(name.toLowerCase());
+    archive.file(abs, { name: `${base}evidencia-fotografica-adicional/${name}` });
+    count++;
+  }
+  return count;
+}
+
 function truncarSlug(s, max = 48) {
   const t = sanitizarNombreArchivo(s);
   if (!t) return '';
@@ -153,8 +180,10 @@ function leemeJornada({
   incluyeCerts,
   incluyeEvidencia,
   incluyeImagenes,
+  incluyeFotosAdicional,
   totalCerts,
   totalImagenes,
+  totalFotosAdicional,
 }) {
   const lineas = [
     'PAQUETE DE ENTREGA — JORNADA',
@@ -169,13 +198,32 @@ function leemeJornada({
   if (incluyeCerts) lineas.push(`  • certificados/ (${totalCerts} certificado(s))`);
   if (incluyeEvidencia) lineas.push('  • evidencia/evidencia-consolidada.*');
   if (incluyeImagenes) lineas.push(`  • imagenes/ (${totalImagenes} foto(s) de clases)`);
-  if (!incluyeInforme && !incluyeCerts && !incluyeEvidencia && !incluyeImagenes) {
+  if (incluyeFotosAdicional) {
+    lineas.push(
+      `  • evidencia-fotografica-adicional/ (${totalFotosAdicional} foto(s) JPG/PNG de la ficha)`,
+    );
+  }
+  if (
+    !incluyeInforme &&
+    !incluyeCerts &&
+    !incluyeEvidencia &&
+    !incluyeImagenes &&
+    !incluyeFotosAdicional
+  ) {
     lineas.push('  (sin archivos — verifique jornada)');
   }
   return `${lineas.join('\n')}\n`;
 }
 
-function leemeContrato({ codigo, empresaContratante, totalJornadas, jornadasConEvidencia, totalCerts, totalImagenes }) {
+function leemeContrato({
+  codigo,
+  empresaContratante,
+  totalJornadas,
+  jornadasConEvidencia,
+  totalCerts,
+  totalImagenes,
+  totalFotosAdicional,
+}) {
   const lineas = [
     'PAQUETE DE ENTREGA — CONTRATO',
     '=============================',
@@ -186,6 +234,7 @@ function leemeContrato({ codigo, empresaContratante, totalJornadas, jornadasConE
     `Jornadas con evidencia PDF: ${jornadasConEvidencia}`,
     `Certificados totales (aprox.): ${totalCerts}`,
     `Fotos de clases incluidas: ${totalImagenes}`,
+    `Evidencia fotográfica adicional: ${totalFotosAdicional}`,
     '',
     'Estructura:',
     '  • informes/informe-contrato.pdf',
@@ -193,8 +242,9 @@ function leemeContrato({ codigo, empresaContratante, totalJornadas, jornadasConE
     '  • informes/encuesta-satisfaccion.pdf (si hay encuesta publicada o cerrada)',
     '  • jornadas/{codigo-jornada}/informe/',
     '  • jornadas/{codigo-jornada}/certificados/',
-    '  • jornadas/{codigo-jornada}/evidencia/ (si aplica)',
+    '  • jornadas/{codigo-jornada}/evidencia/ (PDF consolidado de planillas)',
     '  • jornadas/{codigo-jornada}/imagenes/ (fotos de clases)',
+    '  • jornadas/{codigo-jornada}/evidencia-fotografica-adicional/ (JPG/PNG de la ficha)',
   ];
   return `${lineas.join('\n')}\n`;
 }
@@ -267,8 +317,10 @@ async function agregarContenidoJornadaAlArchivo({
     jornada.urlEvidenciaConsolidada,
   );
 
-  report(`Imágenes de clases ${codJ}…`, 92);
+  report(`Imágenes de clases ${codJ}…`, 90);
   const totalImagenes = await appendImagenesClasesAlArchivo(archive, jRoot, jornada._id);
+  report(`Evidencia fotográfica adicional ${codJ}…`, 94);
+  const totalFotosAdicional = appendFotosAdicionalAlArchivo(archive, jRoot, jornada);
 
   archive.append(
     leemeJornada({
@@ -278,13 +330,20 @@ async function agregarContenidoJornadaAlArchivo({
       incluyeCerts: totalCerts > 0,
       incluyeEvidencia: tieneEvidencia,
       incluyeImagenes: totalImagenes > 0,
+      incluyeFotosAdicional: totalFotosAdicional > 0,
       totalCerts,
       totalImagenes,
+      totalFotosAdicional,
     }),
     { name: `${jRoot}LEEME.txt` },
   );
 
-  return { totalCerts, tieneEvidencia: tieneEvidencia ? 1 : 0, totalImagenes };
+  return {
+    totalCerts,
+    tieneEvidencia: tieneEvidencia ? 1 : 0,
+    totalImagenes,
+    totalFotosAdicional,
+  };
 }
 
 async function buildPaqueteJornadaToFile({ jornadaId, publicOrigin, onProgress }) {
@@ -310,8 +369,10 @@ async function buildPaqueteJornadaToFile({ jornadaId, publicOrigin, onProgress }
   let incluyeCerts = false;
   let incluyeEvidencia = false;
   let incluyeImagenes = false;
+  let incluyeFotosAdicional = false;
   let totalCerts = 0;
   let totalImagenes = 0;
+  let totalFotosAdicional = 0;
 
   await new Promise((resolve, reject) => {
     const output = fs.createWriteStream(filePath);
@@ -376,10 +437,21 @@ async function buildPaqueteJornadaToFile({ jornadaId, publicOrigin, onProgress }
         );
 
         if (typeof onProgress === 'function') {
-          onProgress({ fase: 'Agregando imágenes de clases…', porcentaje: 90, hecho: 1, total: 1 });
+          onProgress({ fase: 'Agregando imágenes de clases…', porcentaje: 88, hecho: 1, total: 1 });
         }
         totalImagenes = await appendImagenesClasesAlArchivo(archive, root, jornada._id);
         incluyeImagenes = totalImagenes > 0;
+
+        if (typeof onProgress === 'function') {
+          onProgress({
+            fase: 'Agregando evidencia fotográfica adicional…',
+            porcentaje: 93,
+            hecho: 1,
+            total: 1,
+          });
+        }
+        totalFotosAdicional = appendFotosAdicionalAlArchivo(archive, root, jornada);
+        incluyeFotosAdicional = totalFotosAdicional > 0;
 
         archive.append(
           leemeJornada({
@@ -389,8 +461,10 @@ async function buildPaqueteJornadaToFile({ jornadaId, publicOrigin, onProgress }
             incluyeCerts,
             incluyeEvidencia,
             incluyeImagenes,
+            incluyeFotosAdicional,
             totalCerts,
             totalImagenes,
+            totalFotosAdicional,
           }),
           { name: `${root}LEEME.txt` },
         );
@@ -429,6 +503,7 @@ async function buildPaqueteContratoToFile({ idContrato, publicOrigin, onProgress
   let totalCerts = 0;
   let jornadasConEvidencia = 0;
   let totalImagenes = 0;
+  let totalFotosAdicional = 0;
 
   await new Promise((resolve, reject) => {
     const output = fs.createWriteStream(filePath);
@@ -500,6 +575,7 @@ async function buildPaqueteContratoToFile({ idContrato, publicOrigin, onProgress
           totalCerts += res.totalCerts;
           jornadasConEvidencia += res.tieneEvidencia;
           totalImagenes += res.totalImagenes || 0;
+          totalFotosAdicional += res.totalFotosAdicional || 0;
         }
 
         archive.append(
@@ -510,6 +586,7 @@ async function buildPaqueteContratoToFile({ idContrato, publicOrigin, onProgress
             jornadasConEvidencia,
             totalCerts,
             totalImagenes,
+            totalFotosAdicional,
           }),
           { name: `${root}LEEME.txt` },
         );

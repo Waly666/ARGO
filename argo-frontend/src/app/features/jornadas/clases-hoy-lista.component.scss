@@ -164,4 +164,25 @@
       color: inherit;
     }
   }
+
+  .origen-filtro-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    button.mini {
+      border: 1px solid var(--line, rgba(120, 160, 255, 0.28));
+      background: transparent;
+      color: var(--text, #e8eefc);
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem;
+      cursor: pointer;
+
+      &.primary {
+        background: var(--accent, #3b82f6);
+        border-color: var(--accent, #3b82f6);
+        color: #fff;
+      }
+    }
+  }
 }

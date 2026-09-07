@@ -10,12 +10,13 @@ const { enriquecerClases } = require('./instructorJornada');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { fmtFechaSolo } = require('../utils/timezoneColombia');
 const { parseFechaCalendario } = require('../utils/fechaCalendario');
-const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
 const {
   caracterizarDesdeDocs,
   textoOrigenAlumnoInforme,
   textoPerfilAlumnoInforme,
   textoCaracterizacionAlumnoInforme,
+  mapaEtiquetasActorVial,
+  textoActorVialAlumnoInforme,
 } = require('./caracterizacionPoblacion');
 
 function toObjectId(raw) {
@@ -25,6 +26,60 @@ function toObjectId(raw) {
   } catch {
     return null;
   }
+}
+
+function idCertStr(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  return s || null;
+}
+
+/**
+ * Atribuye certificados vigentes a jornada y clase (idJornada / idClaseJornada),
+ * igual que el listado de jornadas del ERP.
+ */
+function mapasCertificadosInforme(certificados, claseJornadaById) {
+  const certPorClase = new Map();
+  const certPorJornada = new Map();
+  const certCountPorJornada = new Map();
+  const certPorAlumno = new Map();
+
+  const addSet = (map, key, nd) => {
+    if (!key) return;
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(nd);
+  };
+
+  for (const c of certificados) {
+    const nd = parseNumDoc(c.numDoc);
+    if (nd == null) continue;
+    const cid = idCertStr(c.idClaseJornada);
+    let jid = idCertStr(c.idJornada);
+    if (!jid && cid) jid = claseJornadaById.get(cid) || null;
+    if (cid) addSet(certPorClase, cid, nd);
+    if (jid) {
+      addSet(certPorJornada, jid, nd);
+      certCountPorJornada.set(jid, (certCountPorJornada.get(jid) || 0) + 1);
+    }
+    if (!certPorAlumno.has(nd)) certPorAlumno.set(nd, []);
+    certPorAlumno.get(nd).push({
+      codigoCert: c.codigoCert || '',
+      idClaseJornada: cid,
+      idJornada: jid,
+      fechaEmision: c.fechaEmision,
+    });
+  }
+
+  return { certPorClase, certPorJornada, certCountPorJornada, certPorAlumno };
+}
+
+function alumnoCertificadoEnClase(numDoc, idClase, idJornada, certPorAlumno) {
+  const certs = certPorAlumno.get(numDoc) || [];
+  return certs.some(
+    (x) =>
+      (x.idClaseJornada && x.idClaseJornada === idClase) ||
+      (!x.idClaseJornada && x.idJornada && x.idJornada === idJornada),
+  );
 }
 
 function nombreAlumno(a) {
@@ -71,13 +126,13 @@ function fmtDuracionInforme(segundos) {
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
-function buildChartsJornada(clasesJ) {
+function buildChartsJornada(clasesJ, certDocsJornada) {
   const clasesFinalizadas = clasesJ.filter((c) => String(c.estado).toUpperCase() === 'FINALIZADO').length;
   const clasesEnProceso = clasesJ.filter((c) => String(c.estado).toUpperCase() === 'EN PROCESO').length;
   const progMap = new Map();
   const instMap = new Map();
   const alumnosSet = new Set();
-  const certSet = new Set();
+  const certSet = certDocsJornada instanceof Set ? new Set(certDocsJornada) : new Set();
 
   for (const c of clasesJ) {
     const progKey = c.idPrograma || c.programaNombre || '_sin_';
@@ -105,7 +160,7 @@ function buildChartsJornada(clasesJ) {
     c.alumnos.forEach((a) => {
       alumnosSet.add(a.numDoc);
       progMap.get(progKey).alumnos.add(a.numDoc);
-      if (a.certificado) certSet.add(a.numDoc);
+      if (!certDocsJornada && a.certificado) certSet.add(a.numDoc);
     });
   }
 
@@ -135,6 +190,7 @@ function buildChartsJornada(clasesJ) {
 function chartsDesdeCaracterizacion(caract) {
   const c = caract || {};
   return {
+    porActorVial: c.porActorVial || [],
     porEdad: c.porEdad || [],
     porGenero: c.porGenero || [],
     porEstadoCivil: c.porEstadoCivil || [],
@@ -222,10 +278,7 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
   const certQuery = {
     idContrato,
     estado: { $ne: 'anulado' },
-    generadoAutoJornada: true,
   };
-  if (idJornadaF) certQuery.idJornada = idJornadaF;
-  if (idClaseF) certQuery.idClaseJornada = idClaseF;
   const certificados = await Certificado.find(certQuery)
     .select('numDoc idJornada idClaseJornada codigoCert fechaEmision')
     .lean();
@@ -246,6 +299,29 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
     const nd = parseNumDoc(a.numDoc);
     if (nd != null) alumnoMap.set(nd, a);
   }
+  const actorVialMap = await mapaEtiquetasActorVial();
+
+  const claseJornadaById = new Map(enriched.map((c) => [String(c._id), String(c.idJornada)]));
+  const claseIdsSinJornadaCert = [
+    ...new Set(
+      certificados
+        .filter((c) => c.idClaseJornada && !c.idJornada)
+        .map((c) => String(c.idClaseJornada)),
+    ),
+  ].filter((cid) => !claseJornadaById.has(cid));
+  if (claseIdsSinJornadaCert.length) {
+    const extraClases = await ClaseJornadaCap.find({
+      _id: { $in: claseIdsSinJornadaCert.map((id) => toObjectId(id)).filter(Boolean) },
+    })
+      .select('_id idJornada')
+      .lean();
+    for (const cl of extraClases) {
+      if (cl.idJornada) claseJornadaById.set(String(cl._id), String(cl.idJornada));
+    }
+  }
+
+  const { certPorClase, certPorJornada, certCountPorJornada, certPorAlumno } =
+    mapasCertificadosInforme(certificados, claseJornadaById);
 
   const asistPorClase = new Map();
   for (const a of asistencias) {
@@ -259,55 +335,25 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       nombreCompleto: nombreAlumno(doc) || `Doc. ${nd}`,
       origenLabel: textoOrigenAlumnoInforme(doc),
       perfilLabel: textoPerfilAlumnoInforme(doc),
+      actorVialLabel: textoActorVialAlumnoInforme(doc, actorVialMap),
       caracterizacion: textoCaracterizacionAlumnoInforme(doc),
     });
   }
 
-  const certPorClase = new Map();
-  const certPorAlumno = new Map();
-  for (const c of certificados) {
-    const nd = parseNumDoc(c.numDoc);
-    if (nd == null) continue;
-    if (c.idClaseJornada) {
-      const cid = String(c.idClaseJornada);
-      if (!certPorClase.has(cid)) certPorClase.set(cid, new Set());
-      certPorClase.get(cid).add(nd);
-    }
-    if (!certPorAlumno.has(nd)) certPorAlumno.set(nd, []);
-    certPorAlumno.get(nd).push({
-      codigoCert: c.codigoCert || '',
-      idClaseJornada: c.idClaseJornada ? String(c.idClaseJornada) : null,
-      fechaEmision: c.fechaEmision,
-    });
-  }
-
-  const esPorClase = contrato.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
   const jornadaById = new Map(jornadas.map((j) => [String(j._id), j]));
   const alumnosUnicos = new Set();
-  const alumnosCertificados = new Set();
 
   const porClase = [];
   for (const cl of enriched) {
     const cid = String(cl._id);
+    const jid = String(cl.idJornada);
     const alumnos = asistPorClase.get(cid) || [];
     alumnos.forEach((a) => alumnosUnicos.add(a.numDoc));
-    const certDocs = certPorClase.get(cid) || new Set();
-    certDocs.forEach((nd) => alumnosCertificados.add(nd));
     const alumnosConFlag = alumnos.map((a) => ({
       ...a,
-      certificado: esPorClase
-        ? certDocs.has(a.numDoc)
-        : (certPorAlumno.get(a.numDoc) || []).some((x) => !x.idClaseJornada),
+      certificado: alumnoCertificadoEnClase(a.numDoc, cid, jid, certPorAlumno),
     }));
-    if (!esPorClase) {
-      alumnosConFlag.forEach((a) => {
-        if ((certPorAlumno.get(a.numDoc) || []).some((x) => !x.idClaseJornada)) {
-          a.certificado = true;
-          alumnosCertificados.add(a.numDoc);
-        }
-      });
-    }
-    const jornadaClase = jornadaById.get(String(cl.idJornada));
+    const jornadaClase = jornadaById.get(jid);
     const duracionSegundos = duracionClaseSegundos(cl);
     porClase.push({
       _id: cid,
@@ -349,15 +395,14 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       const jid = String(j._id);
       const clasesJ = porClase.filter((c) => c.idJornada === jid);
       const alumnosSet = new Set();
-      const certSet = new Set();
       const programasMap = new Map();
       for (const c of clasesJ) {
         programasMap.set(c.idPrograma || c.programaNombre, c.programaNombre || 'Sin programa');
         c.alumnos.forEach((a) => {
           alumnosSet.add(a.numDoc);
-          if (a.certificado) certSet.add(a.numDoc);
         });
       }
+      const certSet = certPorJornada.get(jid) || new Set();
       const docsJornada = [...alumnosSet].map((nd) => alumnoMap.get(nd)).filter(Boolean);
       const caracterizacionPoblacion = await caracterizarDesdeDocs(docsJornada);
       return {
@@ -373,10 +418,11 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
           .length,
         alumnosCapacitados: alumnosSet.size,
         alumnosCertificados: certSet.size,
+        certificadosEmitidos: certCountPorJornada.get(jid) || 0,
         numProgramas: programasMap.size,
         programas: [...programasMap.values()].sort((a, b) => a.localeCompare(b, 'es')),
         charts: {
-          ...buildChartsJornada(clasesJ),
+          ...buildChartsJornada(clasesJ, certSet),
           ...chartsDesdeCaracterizacion(caracterizacionPoblacion),
         },
         caracterizacionPoblacion,
@@ -461,6 +507,25 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
   const clasesDictadas = porClase.filter((c) => String(c.estado).toUpperCase() === 'FINALIZADO').length;
   const clasesEnProceso = porClase.filter((c) => String(c.estado).toUpperCase() === 'EN PROCESO').length;
 
+  const alumnosCertificados = new Set();
+  let certificadosEmitidos = 0;
+  for (const j of porJornada) {
+    for (const nd of certPorJornada.get(j._id) || []) alumnosCertificados.add(nd);
+    certificadosEmitidos += Number(j.certificadosEmitidos) || 0;
+  }
+  if (!idJornadaF && !idClaseF) {
+    for (const c of certificados) {
+      const nd = parseNumDoc(c.numDoc);
+      if (nd == null) continue;
+      const cid = idCertStr(c.idClaseJornada);
+      const jid = idCertStr(c.idJornada) || (cid ? claseJornadaById.get(cid) : null);
+      if (!jid) {
+        alumnosCertificados.add(nd);
+        certificadosEmitidos += 1;
+      }
+    }
+  }
+
   // Opciones de filtro (catálogo del contrato sin restringir por filtro actual)
   const todasJornadas = await JornadaCap.find({ idContrato })
     .select('fechaProgramacion municipio estado indiceEnDia')
@@ -537,7 +602,7 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       clasesEnProceso,
       alumnosCapacitados: alumnosUnicos.size,
       alumnosCertificados: alumnosCertificados.size,
-      certificadosEmitidos: certificados.length,
+      certificadosEmitidos,
       metaAlumnos: Math.max(0, parseInt(contrato.numeroAlumnos, 10) || 0),
       metaJornadas: Math.max(0, parseInt(contrato.numerojornadas, 10) || 0),
     },
@@ -693,9 +758,23 @@ function htmlEncabezadoInformeFormal({
   kpis,
   valorDestacado,
   etiquetaDestacado = 'Alumnos certificados',
+  instructores,
+  duracionLabel,
 }) {
   const c = contrato || {};
   const k = kpis || {};
+  const certUnicos = Number(k.alumnosCertificados) || 0;
+  const certEmitidos = Number(k.certificadosEmitidos) || 0;
+  const metaExtra = [
+    duracionLabel
+      ? `<tr><td>Duración total</td><td>${esc(duracionLabel)}</td></tr>`
+      : '',
+    certEmitidos > 0 && certEmitidos !== certUnicos
+      ? `<tr><td>Certificados emitidos</td><td>${esc(certEmitidos)} documento(s) vigentes</td></tr>`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('');
 
   return `${htmlEncabezadoEmpresa(emp, esc)}
 
@@ -720,13 +799,14 @@ function htmlEncabezadoInformeFormal({
     <tr><td>Alcance</td><td>${esc(resumenTitulo)}</td></tr>
     <tr><td>Generado</td><td>${esc(generado)}</td></tr>
     ${c.ciudad ? `<tr><td>Ciudad</td><td>${esc(c.ciudad)}</td></tr>` : ''}
+    ${metaExtra}
   </table>
 
   <div class="stats">
     <div class="stat"><span>Jornadas</span><strong>${k.jornadas || 0}</strong></div>
     <div class="stat"><span>Clases dictadas</span><strong>${k.clasesDictadas || 0}/${k.clasesTotales || 0}</strong></div>
     <div class="stat"><span>Alumnos capacitados</span><strong>${k.alumnosCapacitados || 0}</strong></div>
-    <div class="stat"><span>Alumnos certificados</span><strong>${k.alumnosCertificados || 0}</strong></div>
+    <div class="stat"><span>Instructores</span><strong>${esc(instructores != null ? instructores : '—')}</strong></div>
   </div>`;
 }
 
@@ -809,7 +889,7 @@ function htmlBarChart(items, opts = {}) {
         </div>`,
     )
     .join('');
-  return `<div class="bars">${bars}</div>${htmlChartDataTable(enriched, colLabel, colValue)}`;
+  return `<div class="bars">${bars}</div>`;
 }
 
 function htmlHBarChart(items, opts = {}) {
@@ -839,7 +919,7 @@ function htmlHBarChart(items, opts = {}) {
         </div>`,
     )
     .join('');
-  return `<div class="hbars">${rows}</div>${htmlChartDataTable(enriched, colLabel, colValue)}`;
+  return `<div class="hbars">${rows}</div>`;
 }
 
 function htmlStackChart(items, opts = {}) {
@@ -872,7 +952,7 @@ function htmlStackChart(items, opts = {}) {
     <div class="stack-bar">${segs}</div>
     <ul class="pie-legend">${legend}</ul>
     <p class="muted">Total ${esc(total)} ${esc(unit)}</p>
-  </div>${htmlChartDataTable(enriched, colLabel, colValue)}`;
+  </div>`;
 }
 
 function htmlRankChart(items, opts = {}) {
@@ -905,79 +985,49 @@ function htmlRankChart(items, opts = {}) {
         </div>`,
     )
     .join('');
-  return `<div class="ranks">${rows}</div>${htmlChartDataTable(enriched, colLabel, colValue)}`;
+  return `<div class="ranks">${rows}</div>`;
 }
 
 function htmlCruceJornadas(jornadas) {
   const list = jornadas || [];
-  if (!list.length) return '';
+  if (list.length < 2) return '';
   const programasContrato = new Set();
   let totalAlumnosJornada = 0;
   let totalClases = 0;
+  let totalCertificados = 0;
   const rows = list
     .map((j) => {
       const programas = j.programas || [];
       programas.forEach((p) => programasContrato.add(p));
       totalAlumnosJornada += Number(j.alumnosCapacitados) || 0;
       totalClases += Number(j.numClases) || 0;
+      totalCertificados += Number(j.alumnosCertificados) || 0;
       return `<tr>
         <td>${esc(referenciaJornada(j))}</td>
         <td class="num">${esc(j.alumnosCapacitados || 0)}</td>
         <td class="num">${esc(j.numClases || 0)}</td>
+        <td class="num">${esc(j.alumnosCertificados || 0)}</td>
         <td class="num">${esc(j.numProgramas || 0)}</td>
         <td>${esc(programas.join(', ') || 'Sin programas')}</td>
       </tr>`;
     })
     .join('');
 
-  const maxValor = Math.max(
-    1,
-    ...list.flatMap((j) => [
-      Number(j.alumnosCapacitados) || 0,
-      Number(j.numClases) || 0,
-      Number(j.numProgramas) || 0,
-    ]),
-  );
-  const chart = list
-    .map((j) => {
-      const series = [
-        ['Alumnos', Number(j.alumnosCapacitados) || 0, 'cruce-bar--alumnos'],
-        ['Clases', Number(j.numClases) || 0, 'cruce-bar--clases'],
-        ['Programas', Number(j.numProgramas) || 0, 'cruce-bar--programas'],
-      ];
-      return `<div class="cruce-chart-row">
-        <strong>${esc(referenciaJornada(j))}</strong>
-        <div class="cruce-series">
-          ${series
-            .map(
-              ([label, value, clase]) => `<div class="cruce-serie">
-                <span>${esc(label)}</span>
-                <div class="cruce-track"><i class="${clase}" style="width:${Math.max(value ? 4 : 0, Math.round((value / maxValor) * 100))}%"></i></div>
-                <b>${esc(value)}</b>
-              </div>`,
-            )
-            .join('')}
-        </div>
-      </div>`;
-    })
-    .join('');
-
   return `<section class="cruce-jornadas">
-    <h3 class="chart-section-title">Cuadro de referencias cruzadas por jornada</h3>
-    <p class="chart-hint">Relación entre alumnos capacitados, clases realizadas y programas impartidos en cada jornada.</p>
+    <h3 class="chart-section-title">Resumen por jornada</h3>
+    <p class="chart-hint">Capacitados, clases, certificados y programas de cada jornada (sin repetir los gráficos generales).</p>
     <table class="t cruce-table">
-      <thead><tr><th>Jornada</th><th class="num">Alumnos</th><th class="num">Clases</th><th class="num">Programas</th><th>Programas impartidos</th></tr></thead>
+      <thead><tr><th>Jornada</th><th class="num">Capacitados</th><th class="num">Clases</th><th class="num">Certificados</th><th class="num">Programas</th><th>Programas impartidos</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
         <td><strong>Totales</strong></td>
         <td class="num"><strong>${esc(totalAlumnosJornada)}</strong></td>
         <td class="num"><strong>${esc(totalClases)}</strong></td>
+        <td class="num"><strong>${esc(totalCertificados)}</strong></td>
         <td class="num"><strong>${esc(programasContrato.size)}</strong></td>
         <td><strong>${esc([...programasContrato].sort((a, b) => a.localeCompare(b, 'es')).join(', ') || 'Sin programas')}</strong></td>
       </tr></tfoot>
     </table>
-    <h3 class="chart-section-title chart-section-title--sub">Gráfico comparativo por jornada</h3>
-    <div class="cruce-chart">${chart}</div>
   </section>`;
 }
 
@@ -1073,96 +1123,167 @@ function htmlPieChart(items, opts = {}) {
       <div class="pie-center"><strong>${esc(totalRaw)}</strong><span>${esc(unit)}</span></div>
     </div>
     <ul class="pie-legend">${legend}</ul>
-  </div>${htmlChartDataTable(slices, colLabel, colValue)}`;
+  </div>`;
+}
+
+function chartTieneDatos(items) {
+  return (items || []).some((x) => Number(x.value) > 0);
+}
+
+function htmlChartCard(titulo, innerHtml, items) {
+  if (!chartTieneDatos(items)) return '';
+  return `<section class="chart-card">
+    <h3 class="sec">${esc(titulo)}</h3>
+    ${innerHtml}
+  </section>`;
+}
+
+function htmlGridCharts(titulo, cards) {
+  const body = (cards || []).filter(Boolean).join('\n');
+  if (!body.trim()) return '';
+  const head = titulo
+    ? `<h3 class="chart-section-title chart-section-title--sub">${esc(titulo)}</h3>`
+    : '';
+  return `${head}<div class="charts-grid charts-grid--compact">${body}</div>`;
+}
+
+function htmlStatsActorVial(items) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) return '<p class="muted">Sin dato de actor vial en los alumnos capacitados.</p>';
+  const total = list.reduce((s, it) => s + (Number(it.value) || 0), 0) || 1;
+  const chips = list
+    .map((it) => {
+      const value = Number(it.value) || 0;
+      const pct = Math.round((value / total) * 1000) / 10;
+      return `<div class="stat stat--vial"><span>${esc(it.label)}</span><strong>${esc(value)}</strong><em>${esc(formatPct(pct))}</em></div>`;
+    })
+    .join('');
+  return `<div class="stats stats--actor-vial">${chips}</div>`;
+}
+
+function htmlActorVialDestacado(charts) {
+  const c = charts || {};
+  if (!chartTieneDatos(c.porActorVial)) return '';
+  return `<h3 class="chart-section-title chart-section-title--vial">Actor vial</h3>
+  <p class="chart-hint chart-hint--section">
+    Tipo de alumno en la vía: peatón, conductor, ciclista, motociclista o pasajero.
+  </p>
+  ${htmlStatsActorVial(c.porActorVial || [])}
+  <div class="charts-grid charts-grid--featured">
+    <section class="chart-card chart-card--featured">
+      <h3 class="sec">Distribución por actor vial</h3>
+      ${htmlPieChart(c.porActorVial || [], {
+        kind: 'programa',
+        colLabel: 'Actor vial',
+        colValue: 'Alumnos',
+        unit: 'alumnos',
+      })}
+    </section>
+  </div>`;
 }
 
 function htmlChartsOrigenYCaracterizacion(charts) {
   const c = charts || {};
-  return `<h3 class="chart-section-title chart-section-title--sub">Origen de alumnos en jornada</h3>
-  <p class="chart-hint chart-hint--section">
-    Clasificación de participantes (institución educativa, estamento, empresa u operativo / calle) y detalle asociado.
-  </p>
-  <div class="charts-grid charts-grid--compact">
-    <section class="chart-card">
-      <h3 class="sec">Por origen en jornada</h3>
-      ${htmlStackChart(c.porOrigenJornada || [], { colLabel: 'Origen', colValue: 'Alumnos', colorOffset: 0 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Tipo de institución</h3>
-      ${htmlPieChart(c.porTipoInstitucion || [], { kind: 'programa', colLabel: 'Tipo', colValue: 'Alumnos', unit: 'alumnos' })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Estudiante / profesor</h3>
-      ${htmlPieChart(c.porPerfilInstitucion || [], { kind: 'programa', colLabel: 'Perfil', colValue: 'Alumnos', unit: 'alumnos' })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Institución educativa / colegio</h3>
-      ${htmlRankChart(c.porColegio || [], { colLabel: 'Institución', colValue: 'Alumnos', colorOffset: 1 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Grado / programa</h3>
-      ${htmlBarChart(c.porGradoColegio || [], { colLabel: 'Grado o programa', colValue: 'Alumnos', colorOffset: 2 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Área que imparte (profesores)</h3>
-      ${htmlBarChart(c.porAreaProfesor || [], { colLabel: 'Área', colValue: 'Profesores', colorOffset: 6 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Estamento público</h3>
-      ${htmlHBarChart(c.porEstamento || [], { colLabel: 'Estamento', colValue: 'Alumnos', colorOffset: 3 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Cargo (estamento)</h3>
-      ${htmlHBarChart(c.porCargoEstamento || [], { colLabel: 'Cargo', colValue: 'Alumnos', colorOffset: 4 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Dependencia (estamento)</h3>
-      ${htmlRankChart(c.porDependenciaEstamento || [], { colLabel: 'Dependencia', colValue: 'Alumnos', colorOffset: 5 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Empresa</h3>
-      ${htmlHBarChart(c.porEmpresa || [], { colLabel: 'Empresa', colValue: 'Alumnos', colorOffset: 1 })}
-    </section>
-  </div>
-  <h3 class="chart-section-title chart-section-title--sub">Caracterización de población</h3>
-  <div class="charts-grid charts-grid--compact">
-    <section class="chart-card">
-      <h3 class="sec">Por edad</h3>
-      ${htmlBarChart(c.porEdad || [], { colLabel: 'Rango', colValue: 'Alumnos', colorOffset: 0 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Por género</h3>
-      ${htmlPieChart(c.porGenero || [], { kind: 'programa', colLabel: 'Género', colValue: 'Alumnos', unit: 'alumnos' })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Estado civil</h3>
-      ${htmlHBarChart(c.porEstadoCivil || [], { colLabel: 'Estado civil', colValue: 'Alumnos', colorOffset: 2 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Estrato socioeconómico</h3>
-      ${htmlBarChart(c.porEstrato || [], { colLabel: 'Estrato', colValue: 'Alumnos', colorOffset: 2 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Régimen de salud</h3>
-      ${htmlStackChart(c.porRegimenSalud || [], { colLabel: 'Régimen', colValue: 'Alumnos', colorOffset: 3 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Nivel de formación</h3>
-      ${htmlHBarChart(c.porNivelFormacion || [], { colLabel: 'Nivel', colValue: 'Alumnos', colorOffset: 3 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Ocupación</h3>
-      ${htmlRankChart(c.porOcupacion || [], { colLabel: 'Ocupación', colValue: 'Alumnos', colorOffset: 5 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Discapacidad</h3>
-      ${htmlHBarChart(c.porDiscapacidad || [], { colLabel: 'Discapacidad', colValue: 'Alumnos', colorOffset: 4 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Multiculturalidad</h3>
-      ${htmlRankChart(c.porMultiCulturalidad || [], { colLabel: 'Grupo', colValue: 'Alumnos', colorOffset: 1 })}
-    </section>
-  </div>`;
+  const origen = htmlGridCharts('Origen de alumnos', [
+    htmlChartCard(
+      'Por origen en jornada',
+      htmlStackChart(c.porOrigenJornada || [], { colLabel: 'Origen', colValue: 'Alumnos', colorOffset: 0 }),
+      c.porOrigenJornada,
+    ),
+    htmlChartCard(
+      'Tipo de institución',
+      htmlPieChart(c.porTipoInstitucion || [], { kind: 'programa', colLabel: 'Tipo', colValue: 'Alumnos', unit: 'alumnos' }),
+      c.porTipoInstitucion,
+    ),
+    htmlChartCard(
+      'Estudiante / profesor',
+      htmlPieChart(c.porPerfilInstitucion || [], { kind: 'programa', colLabel: 'Perfil', colValue: 'Alumnos', unit: 'alumnos' }),
+      c.porPerfilInstitucion,
+    ),
+    htmlChartCard(
+      'Institución educativa',
+      htmlRankChart(c.porColegio || [], { colLabel: 'Institución', colValue: 'Alumnos', colorOffset: 1 }),
+      c.porColegio,
+    ),
+    htmlChartCard(
+      'Grado / programa',
+      htmlBarChart(c.porGradoColegio || [], { colLabel: 'Grado o programa', colValue: 'Alumnos', colorOffset: 2 }),
+      c.porGradoColegio,
+    ),
+    htmlChartCard(
+      'Área que imparte (profesores)',
+      htmlBarChart(c.porAreaProfesor || [], { colLabel: 'Área', colValue: 'Profesores', colorOffset: 6 }),
+      c.porAreaProfesor,
+    ),
+    htmlChartCard(
+      'Estamento público',
+      htmlHBarChart(c.porEstamento || [], { colLabel: 'Estamento', colValue: 'Alumnos', colorOffset: 3 }),
+      c.porEstamento,
+    ),
+    htmlChartCard(
+      'Cargo (estamento)',
+      htmlHBarChart(c.porCargoEstamento || [], { colLabel: 'Cargo', colValue: 'Alumnos', colorOffset: 4 }),
+      c.porCargoEstamento,
+    ),
+    htmlChartCard(
+      'Dependencia (estamento)',
+      htmlRankChart(c.porDependenciaEstamento || [], { colLabel: 'Dependencia', colValue: 'Alumnos', colorOffset: 5 }),
+      c.porDependenciaEstamento,
+    ),
+    htmlChartCard(
+      'Empresa',
+      htmlHBarChart(c.porEmpresa || [], { colLabel: 'Empresa', colValue: 'Alumnos', colorOffset: 1 }),
+      c.porEmpresa,
+    ),
+  ]);
+  const caract = htmlGridCharts('Caracterización de población', [
+    htmlChartCard(
+      'Por edad',
+      htmlBarChart(c.porEdad || [], { colLabel: 'Rango', colValue: 'Alumnos', colorOffset: 0 }),
+      c.porEdad,
+    ),
+    htmlChartCard(
+      'Por género',
+      htmlPieChart(c.porGenero || [], { kind: 'programa', colLabel: 'Género', colValue: 'Alumnos', unit: 'alumnos' }),
+      c.porGenero,
+    ),
+    htmlChartCard(
+      'Estado civil',
+      htmlHBarChart(c.porEstadoCivil || [], { colLabel: 'Estado civil', colValue: 'Alumnos', colorOffset: 2 }),
+      c.porEstadoCivil,
+    ),
+    htmlChartCard(
+      'Estrato socioeconómico',
+      htmlBarChart(c.porEstrato || [], { colLabel: 'Estrato', colValue: 'Alumnos', colorOffset: 2 }),
+      c.porEstrato,
+    ),
+    htmlChartCard(
+      'Régimen de salud',
+      htmlStackChart(c.porRegimenSalud || [], { colLabel: 'Régimen', colValue: 'Alumnos', colorOffset: 3 }),
+      c.porRegimenSalud,
+    ),
+    htmlChartCard(
+      'Nivel de formación',
+      htmlHBarChart(c.porNivelFormacion || [], { colLabel: 'Nivel', colValue: 'Alumnos', colorOffset: 3 }),
+      c.porNivelFormacion,
+    ),
+    htmlChartCard(
+      'Ocupación',
+      htmlRankChart(c.porOcupacion || [], { colLabel: 'Ocupación', colValue: 'Alumnos', colorOffset: 5 }),
+      c.porOcupacion,
+    ),
+    htmlChartCard(
+      'Discapacidad',
+      htmlHBarChart(c.porDiscapacidad || [], { colLabel: 'Discapacidad', colValue: 'Alumnos', colorOffset: 4 }),
+      c.porDiscapacidad,
+    ),
+    htmlChartCard(
+      'Multiculturalidad',
+      htmlRankChart(c.porMultiCulturalidad || [], { colLabel: 'Grupo', colValue: 'Alumnos', colorOffset: 1 }),
+      c.porMultiCulturalidad,
+    ),
+  ]);
+  return `${htmlActorVialDestacado(c)}${origen}${caract}`;
 }
 
 function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del contrato', opts = {}) {
@@ -1171,57 +1292,47 @@ function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del cont
   const tituloHtml = tituloGrande
     ? `<div class="sec-grande">${esc(titulo)}</div>`
     : `<h3 class="chart-section-title">${esc(titulo)}</h3>`;
-  return `${tituloHtml}
-  <div class="charts-grid charts-grid--compact">
-    <section class="chart-card">
-      <h3 class="sec">Alumnos por jornada</h3>
-      <p class="chart-hint">Participación sobre el total de alumnos capacitados del gráfico.</p>
-      ${htmlBarChart(c.alumnosPorJornada || [], { colLabel: 'Jornada', colValue: 'Alumnos', colorOffset: 0 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Clases por estado</h3>
-      <p class="chart-hint">Participación sobre el total de clases del gráfico.</p>
-      ${htmlPieChart(c.clasesPorEstado || [], { kind: 'estado', colLabel: 'Estado', colValue: 'Clases', unit: 'clases' })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Alumnos por programa</h3>
-      <p class="chart-hint">Participación sobre el total de alumnos del gráfico.</p>
-      ${htmlHBarChart(c.alumnosPorPrograma || [], { colLabel: 'Programa', colValue: 'Alumnos', colorOffset: 2 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Clases dictadas por instructor</h3>
-      <p class="chart-hint">Participación sobre el total de clases dictadas del gráfico.</p>
-      ${htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 })}
-    </section>
-  </div>
-  ${htmlChartsOrigenYCaracterizacion(c)}`;
+  const operativos = htmlGridCharts('', [
+    htmlChartCard(
+      'Alumnos por jornada',
+      htmlBarChart(c.alumnosPorJornada || [], { colLabel: 'Jornada', colValue: 'Alumnos', colorOffset: 0 }),
+      c.alumnosPorJornada,
+    ),
+    htmlChartCard(
+      'Clases por estado',
+      htmlPieChart(c.clasesPorEstado || [], { kind: 'estado', colLabel: 'Estado', colValue: 'Clases', unit: 'clases' }),
+      c.clasesPorEstado,
+    ),
+    htmlChartCard(
+      'Alumnos por programa',
+      htmlHBarChart(c.alumnosPorPrograma || [], { colLabel: 'Programa', colValue: 'Alumnos', colorOffset: 2 }),
+      c.alumnosPorPrograma,
+    ),
+    htmlChartCard(
+      'Clases dictadas por instructor',
+      htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 }),
+      c.clasesPorInstructor,
+    ),
+  ]);
+  const perfil = htmlChartsOrigenYCaracterizacion(c);
+  if (!operativos && !perfil) return '';
+  return `${tituloHtml}${operativos}${perfil}`;
 }
 
 const TITULO_GRAFICO_GENERAL = 'Resumen gráfico general del contrato';
 
 /** Gráficos principales: siempre primero tras cabecera y KPIs. */
 function buildChartsBlock(data, alcance) {
-  const parts = [];
-  const muestraGeneral = [
-    'contrato',
-    'desarrollo-general',
-    'instructor',
-    'programa',
-    'clase',
-    'jornada',
-  ].includes(alcance);
-
-  if (muestraGeneral) {
-    parts.push(
-      htmlChartsDashboard(data.charts, TITULO_GRAFICO_GENERAL, { tituloGrande: true }),
-    );
-  }
   if (alcance === 'jornada' && data.porJornada?.[0]) {
-    parts.push(
-      htmlChartsJornada(data.porJornada[0], alcanceResumenTitulo(alcance), true),
-    );
+    return htmlChartsJornada(data.porJornada[0], 'Indicadores de la jornada');
   }
-  return parts.join('\n');
+  if (alcance === 'contrato') {
+    return htmlChartsDashboard(data.charts, TITULO_GRAFICO_GENERAL, { tituloGrande: true });
+  }
+  if (['desarrollo-general', 'instructor', 'programa', 'clase'].includes(alcance)) {
+    return htmlChartsDashboard(data.charts, TITULO_GRAFICO_GENERAL, { tituloGrande: true });
+  }
+  return '';
 }
 
 function htmlResumenFinalContrato(data, kpis, duracionTotalSegundos) {
@@ -1232,36 +1343,38 @@ function htmlResumenFinalContrato(data, kpis, duracionTotalSegundos) {
     <div class="stat"><span>Clases dictadas</span><strong>${esc(k.clasesDictadas || 0)}/${esc(k.clasesTotales || 0)}</strong></div>
     <div class="stat"><span>Duración total</span><strong>${esc(fmtDuracionInforme(duracionTotalSegundos))}</strong></div>
     <div class="stat"><span>Capacitados únicos</span><strong>${esc(k.alumnosCapacitados || 0)}</strong></div>
-    <div class="stat"><span>Certificados únicos</span><strong>${esc(k.alumnosCertificados || 0)}</strong></div>
-  </div>`;
+    <div class="stat"><span>Certificados</span><strong>${esc(k.alumnosCertificados || 0)}</strong></div>
+  </div>
+  <p class="sub">Certificados emitidos (documentos vigentes): <strong>${esc(k.certificadosEmitidos || 0)}</strong>.</p>`;
 }
 
-function htmlChartsJornada(jornada, titulo = 'Resumen gráfico', compact = false) {
+function htmlChartsJornada(jornada, titulo = 'Indicadores de la jornada') {
   const c = jornada?.charts || {};
-  return `<h3 class="chart-section-title chart-section-title--sub">${esc(titulo)}</h3>
-  <div class="charts-grid charts-grid--jornada${compact ? ' charts-grid--compact' : ''}">
-    <section class="chart-card">
-      <h3 class="sec">Certificación de alumnos</h3>
-      <p class="chart-hint">Estado de certificación de los alumnos capacitados en esta jornada.</p>
-      ${htmlBarChart(c.certificacionAlumnos || [], { colLabel: 'Indicador', colValue: 'Alumnos', colorOffset: 1 })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Clases por estado</h3>
-      <p class="chart-hint">Distribución del avance de clases de esta jornada.</p>
-      ${htmlPieChart(c.clasesPorEstado || [], { kind: 'estado', colLabel: 'Estado', colValue: 'Clases', unit: 'clases' })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Alumnos por programa</h3>
-      <p class="chart-hint">Participación de alumnos capacitados por programa en esta jornada.</p>
-      ${htmlPieChart(c.alumnosPorPrograma || [], { kind: 'programa', colLabel: 'Programa', colValue: 'Alumnos', unit: 'alumnos' })}
-    </section>
-    <section class="chart-card">
-      <h3 class="sec">Clases dictadas por instructor</h3>
-      <p class="chart-hint">Clases finalizadas por instructor dentro de esta jornada.</p>
-      ${htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 })}
-    </section>
-  </div>
-  ${htmlChartsOrigenYCaracterizacion(c)}`;
+  const operativos = htmlGridCharts('', [
+    htmlChartCard(
+      'Certificación de alumnos',
+      htmlBarChart(c.certificacionAlumnos || [], { colLabel: 'Indicador', colValue: 'Alumnos', colorOffset: 1 }),
+      c.certificacionAlumnos,
+    ),
+    htmlChartCard(
+      'Clases por estado',
+      htmlPieChart(c.clasesPorEstado || [], { kind: 'estado', colLabel: 'Estado', colValue: 'Clases', unit: 'clases' }),
+      c.clasesPorEstado,
+    ),
+    htmlChartCard(
+      'Alumnos por programa',
+      htmlPieChart(c.alumnosPorPrograma || [], { kind: 'programa', colLabel: 'Programa', colValue: 'Alumnos', unit: 'alumnos' }),
+      c.alumnosPorPrograma,
+    ),
+    htmlChartCard(
+      'Clases dictadas por instructor',
+      htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 }),
+      c.clasesPorInstructor,
+    ),
+  ]);
+  const perfil = htmlChartsOrigenYCaracterizacion(c);
+  if (!operativos && !perfil) return '';
+  return `<h3 class="chart-section-title">${esc(titulo)}</h3>${operativos}${perfil}`;
 }
 
 function htmlTablaAlumnos(alumnos) {
@@ -1274,13 +1387,14 @@ function htmlTablaAlumnos(alumnos) {
           <td>${esc(a.nombreCompleto)}</td>
           <td class="col-origen">${esc(a.origenLabel || '—')}</td>
           <td class="col-perfil">${esc(a.perfilLabel || '—')}</td>
+          <td class="col-vial">${esc(a.actorVialLabel || '—')}</td>
           <td class="col-car">${esc(a.caracterizacion || '—')}</td>
           <td class="num">${a.certificado ? 'Sí' : 'No'}</td>
         </tr>`,
     )
     .join('');
   return `<table class="t t-alumnos"><thead><tr>
-    <th>Documento</th><th>Alumno</th><th>Origen</th><th>Perfil</th><th>Caracterización</th><th>Certificado</th>
+    <th>Documento</th><th>Alumno</th><th>Origen</th><th>Perfil</th><th>Actor vial</th><th>Caracterización</th><th>Certificado</th>
   </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
@@ -1424,10 +1538,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     }
     for (const [indiceJornada, j] of jornadasInforme.entries()) {
       cuerpo += htmlEncabezadoJornada(j);
-      if (alcance === 'contrato') {
-        cuerpo += htmlChartsJornada(j);
-      }
-      cuerpo += `<h3 class="chart-section-title chart-section-title--sub">Detalle de clases y alumnos</h3>`;
+      cuerpo += `<h3 class="chart-section-title chart-section-title--sub">Clases y alumnos</h3>`;
       for (const cl of j.clases || []) {
         cuerpo += htmlEncabezadoClase(cl);
         cuerpo += htmlTablaAlumnos(cl.alumnos);
@@ -1453,6 +1564,11 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     alcance === 'instructor' || alcance === 'desarrollo-general'
       ? 'Clases dictadas'
       : 'Alumnos certificados';
+  const duracionTotalInforme = (data.porClase || []).reduce(
+    (total, cl) =>
+      total + (Number.isFinite(Number(cl.duracionSegundos)) ? Number(cl.duracionSegundos) : 0),
+    0,
+  );
   const encabezadoFormal = htmlEncabezadoInformeFormal({
     emp,
     contrato: c,
@@ -1463,12 +1579,9 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     kpis: k,
     valorDestacado,
     etiquetaDestacado,
+    instructores: (data.porInstructor || []).length,
+    duracionLabel: fmtDuracionInforme(duracionTotalInforme),
   });
-  const duracionTotalInforme = (data.porClase || []).reduce(
-    (total, cl) =>
-      total + (Number.isFinite(Number(cl.duracionSegundos)) ? Number(cl.duracionSegundos) : 0),
-    0,
-  );
   const resumenComplementario =
     alcance === 'instructor' || alcance === 'desarrollo-general'
       ? htmlResumenFinalContrato(data, k, duracionTotalInforme)
@@ -1551,7 +1664,8 @@ ${informeGoogleFontsLinkHtml()}
   .t th { background: #e2e8f0; }
   .t-alumnos { font-size: 8pt; }
   .t-alumnos .col-origen,
-  .t-alumnos .col-perfil { white-space: nowrap; }
+  .t-alumnos .col-perfil,
+  .t-alumnos .col-vial { white-space: nowrap; }
   .t-alumnos .col-car { word-break: break-word; }
   .t .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .desarrollo-inst { font-size: 7.5pt; }
@@ -1566,18 +1680,26 @@ ${informeGoogleFontsLinkHtml()}
   .cruce-chart-row { break-inside: avoid; page-break-inside: avoid; }
   .cruce-chart-row > strong { display: block; margin-bottom: 3px; color: #334155; font-size: 8pt; }
   .cruce-series { display: grid; gap: 2px; }
-  .cruce-serie { display: grid; grid-template-columns: 54px 1fr 28px; gap: 5px; align-items: center; font-size: 7pt; }
+  .cruce-serie { display: grid; grid-template-columns: 72px 1fr 28px; gap: 5px; align-items: center; font-size: 7pt; }
   .cruce-serie span { color: #64748b; }
   .cruce-serie b { text-align: right; font-variant-numeric: tabular-nums; }
   .cruce-track { height: 9px; overflow: hidden; border-radius: 5px; background: #e2e8f0; }
   .cruce-track i { display: block; height: 100%; border-radius: inherit; }
   .cruce-bar--alumnos { background: #0284c7; }
   .cruce-bar--clases { background: #0f766e; }
+  .cruce-bar--certificados { background: #ca8a04; }
   .cruce-bar--programas { background: #7c3aed; }
+  .stats--jornada-kpis { grid-template-columns: repeat(3, 1fr); margin: 6px 0 12px; }
   .chart-t { margin-top: 6px; font-size: 8pt; }
   .chart-t tfoot td { font-weight: 700; background: #f1f5f9; }
   .chart-section-title { margin: 12px 0 6px; padding: 6px 10px; border-left: 4px solid #1e3a5f; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #e2eaf5, #f4f7fb); color: #1e3a5f; font-size: 11pt; text-transform: uppercase; letter-spacing: .03em; break-after: avoid; page-break-after: avoid; }
   .chart-section-title--sub { margin-top: 10px; font-size: 10pt; border-left-width: 3px; background: linear-gradient(90deg, #eef2f7, #fafbfc); color: #334155; }
+  .chart-section-title--vial { border-left-color: #b45309; background: linear-gradient(90deg, #fdecd7, #fff8ef); color: #9a3412; }
+  .stats--actor-vial { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); margin: 6px 0 10px; }
+  .stat--vial em { display: block; font-style: normal; font-size: 7.5pt; color: #9a3412; font-weight: 700; }
+  .charts-grid--featured { grid-template-columns: 1fr; }
+  .charts-grid--featured .pie-wrap { grid-template-columns: 120px 1fr; }
+  .charts-grid--featured .pie-visual { width: 120px; height: 120px; }
   .jornada-section-title { margin: 18px 0 4px; padding: 10px 12px; border-left: 5px solid #0f766e; border-radius: 0 8px 8px 0; background: linear-gradient(90deg, #d7efe9, #eefaf7); color: #134e4a; font-size: 12pt; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; box-shadow: 0 1px 3px rgba(15,23,42,.08); break-after: avoid; page-break-after: avoid; }
   .jornada-section-sub { margin: 0 0 10px 12px; font-size: 9pt; color: #475569; }
   .programa-section-title { margin: 18px 0 4px; padding: 10px 12px; border-left: 5px solid #7c3aed; border-radius: 0 8px 8px 0; background: linear-gradient(90deg, #ede9fe, #f7f5ff); color: #5b21b6; font-size: 12pt; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; box-shadow: 0 1px 3px rgba(15,23,42,.08); break-after: avoid; page-break-after: avoid; }

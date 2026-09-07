@@ -2,6 +2,7 @@ const { CATALOGOS, models } = require('../models/catalogos');
 const { listarMeta, nombreValido } = require('../services/catalogoMeta');
 const catalogoAdmin = require('../services/catalogoAdmin');
 const { recargarDesdeExcel } = require('../services/catalogoCarga');
+const { ensureActorVialCatalogo } = require('../services/actorVialCatalogo');
 
 /** Regex que tolera tildes (medellin → MEDELLÍN) */
 function regexSinTildes(q) {
@@ -34,6 +35,10 @@ exports.listar = async (req, res, next) => {
     const { nombre } = req.params;
     if (!CATALOGOS[nombre]) {
       return res.status(404).json({ message: `Catálogo desconocido: ${nombre}` });
+    }
+
+    if (nombre === 'actorVial') {
+      await ensureActorVialCatalogo();
     }
 
     const admin = req.query.admin === 'true' && nombreValido(nombre);

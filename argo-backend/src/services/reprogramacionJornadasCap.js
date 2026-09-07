@@ -5,7 +5,6 @@ const AsisClasJorCap = require('../models/AsisClasJorCap');
 const { esDiaProgramable } = require('../constants/jornadaCapacitacion');
 const { normalizarMunicipiosPlan } = require('../constants/municipiosPlanContrato');
 const { slotKey } = require('./programacionJornadas');
-const { horariosClasesJornada } = require('./programacionClasesJornada');
 const { sincronizarEstadoJornada, inicioDia } = require('./estadoJornadaCap');
 const {
   parseFechaCalendario,
@@ -353,7 +352,6 @@ function calcularAsignaciones(ctx, opts) {
 
 async function aplicarReprogramacion(ctx, plan, userLogin = '') {
   const { contrato, clasesPorJornada, asistenciasPorClase } = ctx;
-  const metaClases = Math.max(0, parseInt(contrato.clasesPorJornada, 10) || 0);
 
   for (const row of plan.assignments) {
     if (!row.cambiaFecha) continue;
@@ -378,12 +376,6 @@ async function aplicarReprogramacion(ctx, plan, userLogin = '') {
       (c) => !ESTADOS_CLASE_DICTADA.has(String(c.estado || '').trim().toUpperCase()),
     );
 
-    const horarios =
-      metaClases > 0 ? horariosClasesJornada(nuevaFecha, metaClases) : [];
-    const horarioPorIndice = new Map(
-      horarios.map((h) => [h.indiceClaseEnJornada, h]),
-    );
-
     for (const c of clases) {
       const dictada = await claseEstaDictada(c, asistenciasPorClase);
       if (dictada) continue;
@@ -393,11 +385,8 @@ async function aplicarReprogramacion(ctx, plan, userLogin = '') {
         userChangeRecord: userLogin,
       };
       if (String(c.estado || '').toUpperCase() === 'PROGRAMADA' && !c.horarioManual) {
-        const slot = horarioPorIndice.get(parseInt(c.indiceClaseEnJornada, 10) || 1);
-        if (slot) {
-          upd.horaInicio = slot.horaInicio;
-          upd.horaFin = slot.horaFin;
-        }
+        upd.horaInicio = null;
+        upd.horaFin = null;
       }
       await ClaseJornadaCap.updateOne({ _id: c._id }, { $set: upd });
     }

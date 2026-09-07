@@ -15,7 +15,7 @@ export const JORNADAS_VERDE_CLARO = ARGO_AZUL_REY_CLARO;
 
 export const APP_BRANDING = {
   tituloApp: 'ARGO Jornadas',
-  nombreEmpresaFallback: 'FINSTRUVIAL',
+  nombreEmpresaFallback: 'FUNDACION FINSTRUVIAL',
   logo: require('../../assets/branding/logo.png') as ImageSourcePropType,
 } as const;
 

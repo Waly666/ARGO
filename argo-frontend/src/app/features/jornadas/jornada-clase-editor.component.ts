@@ -46,6 +46,14 @@ import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
+import {
+  filtrarProgramasParaElegirClase,
+  idsProgramasElegiblesClase,
+  mensajeSinProgramasElegiblesClase,
+  programaIdEnLista,
+  type OptsProgramasElegiblesClase,
+  type UsuarioParaPlanInstructor,
+} from './programas-origen-clase.util';
 import { duracionSegundosDesdeHHmm, esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
 import { JornadaEtiquetaQrService } from './jornada-etiqueta-qr.service';
 import { JornadaAlumnoQrData } from './jornada-alumno-qr.util';
@@ -232,6 +240,10 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   puedeEliminarClaseActiva = computed(
     () => this.puedeEliminarClase() && claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
   );
+  puedeBorrarVacios = computed(
+    () => this.puedeEliminarClase() && !!this.idContratoParaClaseModal(),
+  );
+  purgandoVacios = signal(false);
 
   instructorSesionNombre = computed(
     () => this.auth.user()?.empleado?.nombreCompleto || this.auth.user()?.username || '—',
@@ -254,8 +266,16 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   /** Alumnos de la clase anterior que aún no están matriculados en la clase actual. */
   alumnosClaseAnteriorDisponibles = computed(() => {
     const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
-    return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
+    return this.alumnosClaseAnterior().filter((a) => {
+      if (inscritosDocs.has(Number(a.numDoc))) return false;
+      if (a.yaInscritoEnEstaClase) return false;
+      if (a.puedeMatricular === false) return false;
+      return true;
+    });
   });
+  alumnosClaseAnteriorOmitidosPrograma = computed(() =>
+    this.alumnosClaseAnterior().filter((a) => a.yaTomoProgramaContrato),
+  );
   claseAnteriorSinPrevia = signal(false);
   opcionesClasesCopiarContrato = computed<EnumBuscarOption[]>(() => {
     const actual = String(this.claseSel() || '');
@@ -273,6 +293,10 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       return this.claseAnteriorInfo()
         ? 'La clase elegida no tiene alumnos inscritos.'
         : 'No hay alumnos para copiar de esa clase. Elija otra del listado.';
+    }
+    const omitidos = this.alumnosClaseAnteriorOmitidosPrograma().length;
+    if (omitidos > 0 && this.alumnosClaseAnteriorDisponibles().length === 0) {
+      return `${omitidos} alumno(s) ya tomaron este programa en el contrato. No se copian.`;
     }
     return 'Los alumnos de esa clase ya están matriculados en la clase actual.';
   });
@@ -299,16 +323,92 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   });
 
   opcionesProgramasModal = computed<EnumBuscarOption[]>(() => {
-    const base = this.programasJornada().map((p) => ({
+    const opts = this.optsProgramasClase();
+    const permitidos = idsProgramasElegiblesClase(opts);
+    const catalogo = filtrarProgramasParaElegirClase(this.programasJornada(), opts);
+    const base = catalogo.map((p) => ({
       value: this.programaOptionValue(p),
       label: String(p.nombreProg || p.codigoProg || ''),
     }));
     const v = this.nuevaClaseProg();
-    if (v && !this.buscarProgramaEnLista(v)) {
+    if (!v || catalogo.some((p) => this.programaOptionValue(p) === v)) return base;
+    const hit = this.buscarProgramaEnLista(v);
+    const permitido =
+      permitidos == null ||
+      programaIdEnLista(v, permitidos) ||
+      (hit &&
+        [hit.idPrograma, hit._id, hit.idProg]
+          .filter(Boolean)
+          .some((x) => programaIdEnLista(String(x), permitidos)));
+    if (!permitido) return base;
+    if (!hit) {
       return [{ value: v, label: this.etiquetaProgramaModal() }, ...base];
     }
     return base;
   });
+
+  origenPorClaseSinProgramas = computed(() => {
+    const permitidos = idsProgramasElegiblesClase(this.optsProgramasClase());
+    return permitidos != null && permitidos.length === 0;
+  });
+
+  mensajeSinProgramasClase = computed(() =>
+    mensajeSinProgramasElegiblesClase(this.optsProgramasClase()),
+  );
+
+  private identInstructorParaPrograma(): UsuarioParaPlanInstructor {
+    const sel = this.modalClaseInstructorId();
+    if (sel) {
+      const inst = this.instructores().find((x) => Number(x.idEmpleado) === Number(sel));
+      return {
+        idEmpleado: Number(sel),
+        idUsuario: inst?.idUsuario,
+        _id: inst?.idUsuario,
+      };
+    }
+    const cl = this.claseActiva();
+    if (cl?.idEmpleadoInstructor || cl?.idUsuarioInstructor) {
+      return {
+        idEmpleado: cl.idEmpleadoInstructor,
+        idUsuario: cl.idUsuarioInstructor,
+        _id: cl.idUsuarioInstructor,
+      };
+    }
+    const u = this.auth.user();
+    return {
+      _id: u?._id,
+      idEmpleado: u?.empleado?.idEmpleado ?? u?.idEmpleado,
+      empleado: u?.empleado,
+      idUsuario: u?._id,
+    };
+  }
+
+  private optsProgramasClase(): OptsProgramasElegiblesClase {
+    const cl = this.claseActiva();
+    return {
+      certificacionOrigen: cl?.certificacionOrigen,
+      origen: cl?.origenOperacion,
+      instructoresPlan: cl?.instructoresPlan || [],
+      user: this.identInstructorParaPrograma(),
+      esAdmin: this.puedeAsignarInstructor(),
+    };
+  }
+
+  private limpiarProgramaSiNoPermitido(): void {
+    const v = this.nuevaClaseProg();
+    if (!v) return;
+    const permitidos = idsProgramasElegiblesClase(this.optsProgramasClase());
+    if (permitidos == null) return;
+    const hit = this.buscarProgramaEnLista(v);
+    const id = hit ? this.programaOptionValue(hit) : v;
+    const ok =
+      programaIdEnLista(id, permitidos) ||
+      (hit &&
+        [hit.idPrograma, hit._id, hit.idProg]
+          .filter(Boolean)
+          .some((x) => programaIdEnLista(String(x), permitidos)));
+    if (!ok) this.nuevaClaseProg.set('');
+  }
 
   textoProgramaModalCombo = computed(() => {
     const v = this.nuevaClaseProg();
@@ -1181,6 +1281,78 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     });
   }
 
+  async borrarVaciosContrato(): Promise<void> {
+    if (!this.puedeBorrarVacios()) {
+      this.mostrarMsg('Solo el administrador puede borrar clases vacías.', 'warn', 'Sin permiso');
+      return;
+    }
+    const id = this.idContratoParaClaseModal();
+    if (!id) {
+      this.mostrarMsg('No se pudo determinar el contrato de esta clase.', 'warn', 'Sin contrato');
+      return;
+    }
+    this.purgandoVacios.set(true);
+    this.jornadaSvc.previewPurgaVacios(id, 'clases').subscribe({
+      next: async (p) => {
+        this.purgandoVacios.set(false);
+        const clasesVacias = p.clasesSinAlumnos || 0;
+        if (!clasesVacias) {
+          await this.confirmSvc.open({
+            title: 'Nada que borrar',
+            message:
+              'No hay clases sin alumnos, asistencias o certificado vigente en este contrato.',
+            variant: 'primary',
+            confirmLabel: 'Entendido',
+            hideCancel: true,
+          });
+          return;
+        }
+        const ok = await this.confirmSvc.open({
+          title: 'Borrar clases vacías',
+          message:
+            `Se eliminarán ${clasesVacias} clase(s) sin alumnos, asistencias ni certificado vigente. Las jornadas no se tocan.\n\n` +
+            `Se conservan ${p.clasesConMovimiento || 0} clase(s) con movimiento.\n\n` +
+            `Esta acción no se puede deshacer.`,
+          variant: 'danger',
+          confirmLabel: 'Sí, borrar vacíos',
+          cancelLabel: 'Cancelar',
+        });
+        if (!ok) return;
+        this.purgandoVacios.set(true);
+        this.jornadaSvc.purgarVacios(id, 'clases').subscribe({
+          next: async (r) => {
+            this.purgandoVacios.set(false);
+            const claseAbiertaVacia = !this.inscritos().length;
+            if (claseAbiertaVacia) {
+              this.detenerCronometro();
+              this.claseSel.set('');
+              this.claseActiva.set(null);
+              this.modalOpen.set(false);
+              this.limpiarMsgModal();
+            }
+            this.emitClaseGuardada();
+            await this.confirmSvc.open({
+              title: 'Clases vacías borradas',
+              message:
+                r.message || `Se eliminaron ${r.clasesEliminadas} clase(s) sin alumnos.`,
+              variant: 'success',
+              confirmLabel: 'Entendido',
+              hideCancel: true,
+            });
+          },
+          error: (e) => {
+            this.purgandoVacios.set(false);
+            this.mostrarMsg(e?.error?.message || 'No se pudieron borrar las clases vacías.', 'error', 'Error');
+          },
+        });
+      },
+      error: (e) => {
+        this.purgandoVacios.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo consultar las clases vacías.', 'error', 'Error');
+      },
+    });
+  }
+
   sincronizarAsistenciasClaseModal(): void {
     const id = this.claseSel();
     if (!id) return;
@@ -1312,13 +1484,26 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   agregarAlumnoMatricula(a: AlumnoListItem): void {
     const idContrato = this.idContratoParaClaseModal();
     if (idContrato) {
-      this.jornadaSvc.progresoCertificacion(a.numDoc, idContrato).subscribe({
+      this.jornadaSvc.progresoCertificacion(a.numDoc, idContrato, this.nuevaClaseProg(), this.claseSel()).subscribe({
         next: (p) => {
           if (p.certificado) {
             void this.certBloqueoSvc.mostrarAlumnoCertificado({
               nombreAlumno: this.nombreAlumnoItem(a),
               certificado: p.certificado,
             });
+            return;
+          }
+          if (p.yaTomoProgramaContrato) {
+            void this.certBloqueoSvc.mostrarDesdeError(
+              {
+                codigo: 'ya_tomo_programa_contrato',
+                message:
+                  p.mensajeYaTomoPrograma ||
+                  `${this.nombreAlumnoItem(a)} ya tomó esta clase en el contrato. No se puede inscribir de nuevo.`,
+                programaNombre: p.programaNombre,
+              },
+              this.nombreAlumnoItem(a),
+            );
             return;
           }
           this.ejecutarAgregarAlumnoMatricula(a);
@@ -1373,7 +1558,11 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       },
       error: (e) => {
         this.guardandoInscripcion.set(false);
-        if (e?.status === 409 && e?.error?.codigo === 'ya_certificado_contrato') {
+        if (
+          e?.status === 409 &&
+          (e?.error?.codigo === 'ya_certificado_contrato' ||
+            e?.error?.codigo === 'ya_tomo_programa_contrato')
+        ) {
           void this.certBloqueoSvc.mostrarDesdeError(e.error, this.nombreAlumnoItem(a));
           return;
         }
@@ -1559,6 +1748,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   onModalClaseInstructorChange(id: string): void {
     this.modalClaseInstructorId.set(id ? Number(id) : '');
+    this.limpiarProgramaSiNoPermitido();
   }
 
   onUbicacionClasePick(opt: EnumBuscarOption): void {

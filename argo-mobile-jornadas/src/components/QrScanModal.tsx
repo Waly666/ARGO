@@ -97,7 +97,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', padding: 24 },
   camWrap: { flex: 1, margin: 16, borderRadius: 16, overflow: 'hidden' },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },

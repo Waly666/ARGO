@@ -58,8 +58,10 @@ export interface AlumnoDto {
   nombre1: string;
   nombre2?: string;
   fechaNac?: string | null;
-  /** Edad en años (calculada en servidor desde fechaNac). */
+  /** Edad en años (calculada desde fechaNac). */
   edad?: number | null;
+  /** Grupo de edad Colombia (calculado desde la edad). */
+  grupoEdad?: string | null;
   observaciones?: string;
   genero?: string;
   tipoSangre?: string;
@@ -69,6 +71,7 @@ export interface AlumnoDto {
   regimenSalud?: string;
   nivelFormacion?: string;
   ocupacion?: string;
+  actorVial?: string;
   discapacidad?: string;
   munOrigen?: string;
   /** Código divipola; debe coincidir con munOrigen */
@@ -151,10 +154,13 @@ export interface AlumnoListItem {
   fechaNac?: string | Date | null;
   /** Edad en años (servidor). */
   edad?: number | null;
+  grupoEdad?: string | null;
   genero?: string;
   tipoSangre?: string;
   jornada?: string;
   jornadaLabel?: string;
+  actorVial?: string;
+  actorVialLabel?: string;
   estadoCivil?: string;
   estadoCivilLabel?: string;
   estrato?: string;
@@ -266,6 +272,7 @@ export class AlumnoService {
       empresaId?: string;
       origen?: string;
       jornada?: string;
+      actorVial?: string;
     } = {},
   ): Observable<AlumnoListResponse> {
     let params = new HttpParams();
@@ -283,6 +290,7 @@ export class AlumnoService {
     if (opts.empresaId) params = params.set('empresaId', opts.empresaId);
     if (opts.origen) params = params.set('origen', opts.origen);
     if (opts.jornada) params = params.set('jornada', opts.jornada);
+    if (opts.actorVial) params = params.set('actorVial', opts.actorVial);
     return this.http.get<AlumnoListResponse>(this.base, { params });
   }
 

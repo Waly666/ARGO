@@ -25,6 +25,7 @@ const CATALOGOS = {
   estrato: 'estrato',
   nivelFormacion: 'nivelFormacion',
   ocupacion: 'ocupacion',
+  actorVial: 'actorVial',
   discapacidad: 'discapacidad',
   estadoCivil: 'estadoCivil',
   genero: 'genero',

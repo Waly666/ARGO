@@ -634,6 +634,12 @@
       rgba(10, 24, 46, 0.55);
   }
 
+  &--vial {
+    background:
+      linear-gradient(100deg, rgba(251, 146, 60, 0.16), transparent 55%),
+      rgba(10, 24, 46, 0.55);
+  }
+
   &--demo {
     background:
       linear-gradient(100deg, rgba(251, 191, 36, 0.1), transparent 55%),
@@ -652,6 +658,10 @@
 
 .inf-band--origen .inf-band-kicker {
   color: var(--inf-teal);
+}
+
+.inf-band--vial .inf-band-kicker {
+  color: #fb923c;
 }
 
 .inf-band--demo .inf-band-kicker {
@@ -694,6 +704,80 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
+}
+
+.inf-charts--vial {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr);
+  gap: 12px;
+}
+
+.inf-chart-card--featured {
+  border-color: rgba(251, 146, 60, 0.35);
+  background:
+    linear-gradient(165deg, rgba(251, 146, 60, 0.08), transparent 42%),
+    var(--inf-surface);
+
+  .inf-pie {
+    grid-template-columns: minmax(9rem, 12rem) 1fr;
+  }
+
+  .inf-pie-visual {
+    max-width: 12rem;
+  }
+}
+
+.inf-vial-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 10px;
+}
+
+.inf-vial-stats--compact {
+  margin-bottom: 8px;
+}
+
+.inf-vial-stat {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 8px;
+  row-gap: 0.1rem;
+  align-items: start;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid rgba(251, 146, 60, 0.28);
+  background: rgba(18, 40, 72, 0.72);
+}
+
+.inf-vial-stat-dot {
+  grid-row: 1 / span 3;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+}
+
+.inf-vial-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fed7aa;
+  line-height: 1.25;
+}
+
+.inf-vial-stat-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff7ed;
+  line-height: 1.1;
+}
+
+.inf-vial-stat-pct {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fb923c;
 }
 
 .inf-vbars--compact {

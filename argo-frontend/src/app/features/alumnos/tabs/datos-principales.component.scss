@@ -628,6 +628,14 @@ input.readonly,
   border-style: dashed;
 }
 
+.section-body > .row > .col-3 > .hint,
+.section-body > .row > .col-6 > .hint {
+  margin: 0.28rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-soft, #9bb0c9);
+}
+
 textarea.observaciones-field {
   width: 100%;
   min-height: 120px;

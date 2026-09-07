@@ -161,13 +161,34 @@
             <select
               id="jornada-crear"
               [ngModel]="jornadaCrearSel()"
-              (ngModelChange)="jornadaCrearSel.set($event)">
+              (ngModelChange)="onJornadaCrearChange($event)">
               <option value="">Seleccione jornada…</option>
               @for (j of jornadasOperablesHoy(); track j._id) {
                 <option [value]="j._id">{{ labelJornadaCrear(j) }}</option>
               }
             </select>
           </div>
+          @if (jornadaCrearSel() && origenesCrearActivos().length) {
+            <div class="crear-field">
+              <label>Origen de la clase</label>
+              <div class="origen-filtro-chips">
+                @for (o of origenesCrearActivos(); track o.key) {
+                  <button
+                    type="button"
+                    class="mini"
+                    [class.primary]="origenCrearSel() === o.key"
+                    (click)="setOrigenCrear(o.key)">
+                    {{ o.label }}
+                  </button>
+                }
+              </div>
+              @if (origenPorClaseSinProgramasCrear()) {
+                <p class="hint hint-warn">
+                  {{ mensajeSinProgramasCrear() }}
+                </p>
+              }
+            </div>
+          }
           <div class="crear-field">
             <argo-catalogo-enum-buscar
               label="Programa"

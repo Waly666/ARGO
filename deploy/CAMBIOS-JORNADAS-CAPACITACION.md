@@ -307,6 +307,35 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 
 ## Historial de cambios
 
+### JOR-034 — Programas por origen (certificación por clase)
+
+- **Fecha:** 2026-09-06
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend + móvil
+- **Commit ARGO:** —
+- **Replica en otro repo:** Sí
+
+#### Qué pide el cliente / problema
+- El bloque único «Programas del contrato» no servía para operar: al crear/editar clase se veía todo el catálogo.
+- Si un origen del contrato es **por clase**, debe tener **su propia lista** de programas (institución, estamento, empresa u operativo).
+- Certificación **global** no cambia: un programa de encabezado/horas por origen.
+- Al operar la clase, tras elegir el origen, el combo de programa solo muestra los de ese origen (si es por clase).
+
+#### Qué se hizo
+- `certificacionOrigen[origen].idProgramas[]` es la fuente de verdad en por_clase. El `idProgramas` top-level queda como unión (legado).
+- Contratos antiguos: si un origen por_clase no tiene lista, se copia el `idProgramas` del contrato.
+- Autogenerar clases: round-robin solo si hay **un** origen activo por_clase; si hay varios, la clase nace sin programa.
+- Crear/actualizar clase: el programa debe pertenecer a la lista del origen cuando es por_clase.
+- Hub: lista de programas **dentro de cada origen** por_clase; se quitó el bloque global. Combo de clase filtrado por origen.
+- Clases de hoy y app móvil: mismo filtro por origen.
+
+#### Verificación
+- [ ] Contrato mixto: un origen global + otro por_clase → lista de programas solo bajo el por_clase.
+- [ ] Crear clase: cambiar origen filtra el combo; backend rechaza un programa de otro origen.
+- [ ] Origen global: el combo sigue mostrando el catálogo de jornadas.
+
+---
+
 ### JOR-033 — Etiqueta QR: código de contrato antes de la jornada
 
 - **Fecha:** 2026-07-13
@@ -533,6 +562,7 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
+| JOR-034 | 2026-09-06 | Programas por origen en certificación por clase | — | backend + frontend + móvil |
 | JOR-033 | 2026-07-13 | Etiqueta QR: código contrato antes de jornada | `3bd066c` | backend + frontend |
 | JOR-032 | 2026-07-13 | Copiar alumnos desde cualquier clase del contrato | `a282abd` | backend + frontend |
 | JOR-031 | 2026-07-13 | Alarma cabecera certificados por `createdAt` + recientes | `9f6e822` | backend + frontend |

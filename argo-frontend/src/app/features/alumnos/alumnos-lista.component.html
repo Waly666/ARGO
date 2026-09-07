@@ -108,6 +108,19 @@
             (limpiado)="onJornadaCatLimpiar()"
           />
         </div>
+        <div class="field-filtro field-actor-vial">
+          <argo-catalogo-enum-buscar
+            label="Actor vial"
+            placeholder="Todos los actores viales…"
+            [textoInicial]="textoActorVialSel()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="0"
+            [opcionesLocales]="opcionesActorVial()"
+            (seleccionado)="onActorVialPick($event)"
+            (limpiado)="onActorVialLimpiar()"
+          />
+        </div>
 
         <ng-container *ngIf="esJornadas()">
           <div class="field-fecha">
@@ -228,6 +241,17 @@
               <button
                 type="button"
                 class="th-sort"
+                [class.active]="sortCol() === 'actorVial'"
+                [attr.aria-sort]="sortAria('actorVial')"
+                (click)="toggleSort('actorVial')"
+              >
+                Actor vial <span class="sort-icon">{{ sortIcon('actorVial') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
                 [class.active]="sortCol() === 'correo'"
                 [attr.aria-sort]="sortAria('correo')"
                 (click)="toggleSort('correo')"
@@ -297,6 +321,11 @@
             <td>
               <span *ngIf="r.jornada; else vacio" [ngClass]="capJornada(r.jornada)" [title]="labelJornada(r)">
                 {{ labelJornada(r) }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="r.actorVial; else vacio" [ngClass]="capEstadoCivil(r.actorVial)" [title]="labelActorVial(r)">
+                {{ labelActorVial(r) }}
               </span>
             </td>
             <td class="col-text">
@@ -370,6 +399,9 @@
             <div class="card-tags">
               <span *ngIf="r.jornada; else tagVacio" [ngClass]="capJornada(r.jornada)" [title]="labelJornada(r)">
                 {{ labelJornada(r) }}
+              </span>
+              <span *ngIf="r.actorVial; else tagVacio" [ngClass]="capEstadoCivil(r.actorVial)" [title]="labelActorVial(r)">
+                {{ labelActorVial(r) }}
               </span>
               <span *ngIf="textoMunicipio(r) !== '—'; else tagVacio" [ngClass]="capMunicipio(textoMunicipio(r))">
                 {{ textoMunicipio(r) }}

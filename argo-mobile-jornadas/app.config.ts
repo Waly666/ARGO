@@ -30,8 +30,8 @@ const splashPlugin = {
   },
 };
 
-const config: ExpoConfig = {
-  name: 'ARGO Jornadas',
+const config = {
+  name: 'ARGO Jornadas Finstruvial',
   slug: 'argo-jornadas',
   owner: 'nis00227',
   version: '0.1.0',
@@ -40,35 +40,20 @@ const config: ExpoConfig = {
   backgroundColor: AZUL,
   primaryColor: AZUL,
   userInterfaceStyle: 'light',
-  scheme: 'argojornadas',
-  splash: {
-    image: LOGO,
-    resizeMode: 'contain',
-    backgroundColor: SPLASH_BG,
-  },
+  scheme: 'finstruvialjornadas',
   android: {
     icon: ICON,
-    splash: {
-      image: LOGO,
-      resizeMode: 'contain',
-      backgroundColor: SPLASH_BG,
-    },
     adaptiveIcon: {
       foregroundImage: ICON,
       backgroundColor: SPLASH_BG,
     },
-    package: 'co.argo.jornadas',
+    package: 'co.finstruvial.jornadas',
   },
   androidNavigationBar: {
     backgroundColor: AZUL,
   },
   ios: {
     icon: ICON,
-    splash: {
-      image: SPLASH_IOS,
-      resizeMode: 'cover',
-      backgroundColor: SPLASH_BG,
-    },
   },
   plugins: [
     'expo-font',
@@ -128,4 +113,4 @@ const config: ExpoConfig = {
   },
 };
 
-export default config;
+export default config as ExpoConfig;

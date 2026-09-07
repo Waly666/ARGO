@@ -6,11 +6,7 @@ type SpeechModule = typeof import('expo-speech-recognition');
 /** Solo APK / dev build nativo. En Expo Go nunca cargar el módulo de voz. */
 export function isNativeAppBuild(): boolean {
   const env = Constants.executionEnvironment;
-  if (env === ExecutionEnvironment.Standalone || env === ExecutionEnvironment.Bare) {
-    return true;
-  }
-  if (env === ExecutionEnvironment.StoreClient) return false;
-  return Constants.appOwnership === 'standalone';
+  return env === ExecutionEnvironment.Standalone || env === ExecutionEnvironment.Bare;
 }
 
 export function isExpoGoClient(): boolean {

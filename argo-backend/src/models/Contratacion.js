@@ -63,6 +63,11 @@ const ContratacionSchema = new mongoose.Schema(
     incluiSab: { type: Boolean, default: false },
     incluiDom: { type: Boolean, default: false },
     incluiFest: { type: Boolean, default: false },
+    /**
+     * Cómo se programan las jornadas: 'global' (fechas del contrato) o 'municipio'
+     * (cada fila del plan tiene su propio inicio y fin; las fechas del contrato son el marco).
+     */
+    programacionJornadasModo: { type: String, trim: true, default: 'global' },
     fechaInicJornadas: { type: Date, default: null },
     numSesCert: { type: Number, default: 1 },
     jornadasGeneradas: { type: Boolean, default: false },
@@ -97,6 +102,22 @@ const ContratacionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: undefined,
     },
+    /**
+     * Instructores del contrato (solo cargo instructor) y programas que dictan.
+     * Al generar clases: un cupo por programa de cada instructor, intercalados.
+     */
+    instructoresPlan: {
+      type: [
+        {
+          orden: { type: Number, default: 1 },
+          idEmpleado: { type: Number, required: true },
+          idUsuario: { type: String, trim: true, default: '' },
+          nombre: { type: String, trim: true, default: '' },
+          idProgramas: { type: [String], default: [] },
+        },
+      ],
+      default: [],
+    },
     /** Plan ordenado de municipios + jornadas por municipio (generación de jornadas). */
     municipiosPlan: {
       type: [
@@ -108,6 +129,10 @@ const ContratacionSchema = new mongoose.Schema(
           numJornadas: { type: Number, default: 1 },
           /** Cuántas jornadas de este municipio el mismo día al generar. */
           jornadasPorDia: { type: Number, default: 1, min: 1, max: 20 },
+          /** Clases autogeneradas en cada jornada de este municipio. */
+          clasesPorJornada: { type: Number, default: 1, min: 0, max: 20 },
+          fechaInicJornadas: { type: Date, default: null },
+          fechaFinJornadas: { type: Date, default: null },
         },
       ],
       default: [],

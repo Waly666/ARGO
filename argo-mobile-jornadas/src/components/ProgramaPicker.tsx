@@ -16,7 +16,7 @@ import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 
 export function programaId(p: ProgramaJornada): string {
-  return String(p.idPrograma ?? p._id ?? '').trim();
+  return String(p.idPrograma ?? p.idProg ?? p._id ?? '').trim();
 }
 
 export function programaLabel(p: ProgramaJornada): string {
@@ -28,7 +28,10 @@ export function mismoProgramaId(a?: string | number | null, b?: string | number 
   const x = String(a ?? '').trim();
   const y = String(b ?? '').trim();
   if (!x || !y) return false;
-  return x === y;
+  if (x === y) return true;
+  const nx = Number(x);
+  const ny = Number(y);
+  return Number.isFinite(nx) && Number.isFinite(ny) && nx === ny;
 }
 
 type Props = {
@@ -112,7 +115,7 @@ export function ProgramaPicker({
               Elegir programa
             </ScaledText>
             <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
-              {programas.length} programa(s) de jornadas de capacitación
+              {programas.length} programa(s) que dicta en este contrato
             </ScaledText>
             <TextInput
               value={q}

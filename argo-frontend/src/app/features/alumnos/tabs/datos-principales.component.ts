@@ -76,6 +76,8 @@ import {
 
   OCUPACIONES_DEF,
 
+  ACTOR_VIAL_DEF,
+
   REGIMEN_SALUD_DEF,
 
   TIPOS_ALUMNO_DEF,
@@ -127,6 +129,7 @@ import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 import { AlumnoJornadaQrPanelComponent } from '../alumno-jornada-qr-panel.component';
 import { CelularInputComponent } from '../../../shared/celular-input/celular-input.component';
 import { mensajeErrorCelularAlmacenado } from '../../../core/utils/celular.util';
+import { calcularEdad, grupoEdadLabel } from '../../../core/utils/edad.helpers';
 import { CedulaPdf417ScannerComponent } from '../cedula-pdf417-scanner.component';
 import { CedulaMrzScannerComponent } from '../cedula-mrz-scanner.component';
 import {
@@ -224,6 +227,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   ocupaciones = signal<Record<string, unknown>[]>(OCUPACIONES_DEF);
 
+  actoresViales = signal<Record<string, unknown>[]>(ACTOR_VIAL_DEF);
+
   discapacidades = signal<Record<string, unknown>[]>(DISCAPACIDADES_DEF);
 
   multiCulturalidades = signal<Record<string, unknown>[]>(MULTICULTURALIDAD_DEF);
@@ -240,6 +245,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   opcionesRegimenSalud = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.regimenesSalud()));
   opcionesNivelFormacion = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.nivelesFormacion()));
   opcionesOcupaciones = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.ocupaciones()));
+  opcionesActoresViales = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.actoresViales()));
   opcionesDiscapacidades = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.discapacidades()));
   opcionesMultiCulturalidad = computed<EnumBuscarOption[]>(() =>
     this.mapOpcionesCatalogo(this.multiCulturalidades()),
@@ -424,6 +430,20 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   codContratoParaQr = computed(() => this.codContratoResuelto() || this.qpCodContrato());
 
   fechaJornadaParaQr = computed(() => this.qpFechaJornada());
+
+  /** Años cumplidos según fecha de nacimiento (no se edita ni se guarda). */
+  edadCalculada = computed(() => calcularEdad(this.form().fechaNac));
+
+  edadCalculadaTexto = computed(() => {
+    const n = this.edadCalculada();
+    return n == null ? '—' : `${n} ${n === 1 ? 'año' : 'años'}`;
+  });
+
+  /** Ciclo de vida Colombia según la edad calculada. */
+  grupoEdadCalculadoTexto = computed(() => {
+    const label = grupoEdadLabel(this.edadCalculada());
+    return label || '—';
+  });
 
   /** Alta desde Jornadas Cap. (query esJornadaCap / tipoAlumno). */
   private altaJornadaCap = signal(
@@ -749,6 +769,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.cargarCatalogo('catRegimenSalud', this.regimenesSalud, REGIMEN_SALUD_DEF);
     this.cargarCatalogo('nivelFormacion', this.nivelesFormacion, NIVEL_FORMACION_DEF);
     this.cargarCatalogo('ocupacion', this.ocupaciones, OCUPACIONES_DEF);
+    this.cargarCatalogo('actorVial', this.actoresViales, ACTOR_VIAL_DEF);
     this.cargarCatalogo('discapacidad', this.discapacidades, DISCAPACIDADES_DEF);
     this.cargarCatalogo('multiCulturalidad', this.multiCulturalidades, MULTICULTURALIDAD_DEF);
 
@@ -1503,7 +1524,12 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     falta(vacio(f.apellido2), 'apellido2', 'segundo apellido', identificacion);
     falta(vacio(f.nombre1), 'nombre1', 'primer nombre', identificacion);
     falta(vacio(f.nombre2), 'nombre2', 'segundo nombre', identificacion);
-    falta(vacio(f.fechaNac), 'fechaNac', 'fecha de nacimiento', identificacion);
+    falta(
+      calcularEdad(f.fechaNac) == null,
+      'fechaNac',
+      'fecha de nacimiento',
+      identificacion,
+    );
 
     falta(vacio(f.genero), 'genero', 'género', personales);
     falta(vacio(f.tipoSangre), 'tipoSangre', 'tipo de sangre', personales);
@@ -1513,6 +1539,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     falta(vacio(f.regimenSalud), 'regimenSalud', 'régimen de salud', personales);
     falta(vacio(f.nivelFormacion), 'nivelFormacion', 'nivel de formación', personales);
     falta(vacio(f.ocupacion), 'ocupacion', 'ocupación', personales);
+    falta(vacio(f.actorVial), 'actorVial', 'actor vial', personales);
 
     falta(vacio(f.correo), 'correo', 'correo', contacto);
     falta(vacio(f.celular), 'celular', 'celular', contacto);
@@ -1888,6 +1915,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       ocupacion: f.ocupacion,
 
+      actorVial: f.actorVial,
+
       discapacidad: f.discapacidad,
       munOrigen: f.munOrigen || f.codMunicipio,
       codMunicipio: f.codMunicipio || f.munOrigen,
@@ -2087,6 +2116,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       ocupacion: normalizarEnum(String(raw.ocupacion || '')),
 
+      actorVial: normalizarEnum(String(raw.actorVial || '')),
+
       discapacidad: normalizarEnum(String(raw.discapacidad || '9')),
       munOrigen: String(raw.munOrigen || raw.codMunicipio || ''),
       codMunicipio: String(raw.codMunicipio || raw.munOrigen || ''),
@@ -2241,6 +2272,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       nivelFormacion: '',
 
       ocupacion: '',
+
+      actorVial: '',
 
       discapacidad: '',
       munOrigen: '',

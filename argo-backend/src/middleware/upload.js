@@ -97,6 +97,43 @@ function buildEvidenciaCap() {
   });
 }
 
+/** Fotos JPG/PNG adicionales de la jornada: evidenciascap/{cod}/jornadas/{id}/fotos-adicional/ */
+function buildEvidenciaCapJornadaAdicional() {
+  const storage = multer.diskStorage({
+    destination: (req, _file, cb) => {
+      const cod = req.evidenciaCapCodContrato || 'sin-contrato';
+      const id = req.jornadaEvidencia?._id ? String(req.jornadaEvidencia._id) : 'jornada';
+      const dest = path.join(BASE, 'evidenciascap', cod, 'jornadas', id, 'fotos-adicional');
+      ensureDir(dest);
+      cb(null, dest);
+    },
+    filename: (_req, file, cb) => {
+      let ext = path.extname(file.originalname || '').toLowerCase();
+      if (ext === '.jpeg') ext = '.jpg';
+      if (ext !== '.jpg' && ext !== '.png') ext = '.jpg';
+      const stem = path.basename(file.originalname || 'foto', path.extname(file.originalname || ''));
+      const safe = String(stem || 'foto').replace(/[^\w.\-]+/g, '_').slice(0, 40) || 'foto';
+      cb(null, `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}${ext}`);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const okExt = ext === '.jpg' || ext === '.jpeg' || ext === '.png';
+      const okMime = mime === 'image/jpeg' || mime === 'image/jpg' || mime === 'image/png';
+      if (!okExt && !okMime) {
+        const err = new Error('Solo se permiten fotos JPG o PNG');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
 function buildVideo(subdir, maxMb = 50) {
   const dest = path.join(BASE, subdir);
   ensureDir(dest);
@@ -351,6 +388,7 @@ module.exports = {
   pagoConsignacionQr: buildImagen('pago-consignacion-qr', 5),
   pagoConsignacionComprobante: buildImagen('pago-consignacion-comprobantes', 8),
   evidenciasCap: buildEvidenciaCap(),
+  evidenciasCapJornadaAdicional: buildEvidenciaCapJornadaAdicional(),
   evidenciaJornadaMemoria: buildEvidenciaJornadaMemoria(),
   memory,
   baseDir: BASE,

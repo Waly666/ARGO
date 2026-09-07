@@ -27,6 +27,7 @@ const ETIQUETAS = {
   estrato: 'Estratos',
   nivelFormacion: 'Nivel de formación',
   ocupacion: 'Ocupaciones',
+  actorVial: 'Actor vial',
   discapacidad: 'Discapacidades',
   estadoCivil: 'Estado civil',
   genero: 'Género',
@@ -69,6 +70,7 @@ const ID_FIELDS_HINT = {
   estrato: ['idEstrato'],
   nivelFormacion: ['idNivel'],
   ocupacion: ['idOcupacion'],
+  actorVial: ['idActorVial'],
   discapacidad: ['idDiscapacidad'],
   estadoCivil: ['idEstadoCivil'],
   genero: ['idGenero'],
@@ -150,6 +152,7 @@ const CAMPOS_ESQUEMA = {
   catTipServicio: ['idTipoServ', 'tipoServ', 'descTipoServ', 'claseServ'],
   categoriasVirtual: ['idCategoria', 'nombre', 'orden', 'activo'],
   modalidades: ['idModalidad', 'codigo', 'descripcion', 'activo'],
+  actorVial: ['idActorVial', 'descripcion'],
 };
 
 function validarClaseServCatalogo(doc) {

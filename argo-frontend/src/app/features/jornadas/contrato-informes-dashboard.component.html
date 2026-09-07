@@ -41,7 +41,7 @@
             class="inf-btn inf-btn--danger"
             (click)="descargarPaqueteEntregaContrato()"
             [disabled]="loading() || descargandoPaqueteEntregaContrato() || !data()"
-            title="Informes generales + encuesta de satisfacción + por jornada (informe, certificados, evidencia e imágenes) en un ZIP">
+            title="Informes generales + por jornada (informe, certificados, evidencia PDF, fotos de clases y evidencia fotográfica adicional) en un ZIP">
             {{
               descargandoPaqueteEntregaContrato()
                 ? 'Generando paquete…'
@@ -447,6 +447,72 @@
           </section>
         </div>
 
+        <header class="inf-band inf-band--vial">
+          <div>
+            <p class="inf-band-kicker">Seguridad vial</p>
+            <h3 class="inf-band-title">Actor vial</h3>
+          </div>
+          <p class="inf-band-lead">
+            Tipo de alumno capacitado: peatón, conductor, ciclista, motociclista o pasajero.
+            Indicador principal de esta capacitación.
+          </p>
+        </header>
+        @if (actorVialItems().length) {
+          <div class="inf-vial-stats" role="list">
+            @for (it of actorVialItems(); track it.trackKey) {
+              <article class="inf-vial-stat" role="listitem">
+                <span class="inf-vial-stat-dot" [style.background]="it.color"></span>
+                <span class="inf-vial-stat-label">{{ it.label }}</span>
+                <strong class="inf-vial-stat-val">{{ it.value }}</strong>
+                <em class="inf-vial-stat-pct">{{ formatPct(it.pct) }}</em>
+              </article>
+            }
+          </div>
+        }
+        <div class="inf-charts inf-charts--vial">
+          @if (actorVialChart(); as vial) {
+            <section class="inf-card inf-chart-card inf-chart-card--featured">
+              <h3>{{ vial.title }}</h3>
+              <p class="inf-chart-hint">
+                Participación de cada actor vial sobre el total de alumnos capacitados.
+              </p>
+              <ng-container *ngTemplateOutlet="infViz; context: { $implicit: vial }" />
+              @if (vial.pie; as pie) {
+                @if (pie.slices.length) {
+                  <table class="inf-chart-table">
+                    <thead>
+                      <tr>
+                        <th>Actor vial</th>
+                        <th>Alumnos</th>
+                        <th>% del total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (s of pie.slices; track s.trackKey) {
+                        <tr>
+                          <td>
+                            <span class="inf-chart-dot" [style.background]="s.color"></span>
+                            {{ s.label }}
+                          </td>
+                          <td>{{ s.value }}</td>
+                          <td>{{ formatPct(s.pct) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td>Total</td>
+                        <td>{{ pie.total }}</td>
+                        <td>100%</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                }
+              }
+            </section>
+          }
+        </div>
+
         <header class="inf-band inf-band--origen">
           <div>
             <p class="inf-band-kicker">Clasificación</p>
@@ -494,7 +560,7 @@
             <p class="inf-card-kicker">Detalle por jornada</p>
             <h3>Por jornada</h3>
             <p class="inf-muted">
-              Capacitados, certificados, origen y caracterización en cada jornada.
+              Capacitados, certificados, actor vial, origen y caracterización en cada jornada.
               Pulse una jornada para ver su dashboard.
             </p>
           </div>
@@ -537,7 +603,10 @@
                 <div class="inf-jornada-panel-stats">
                   <div><em>Clases</em><strong>{{ j.numClases }}</strong></div>
                   <div><em>Capacitados</em><strong>{{ j.alumnosCapacitados }}</strong></div>
-                  <div><em>Certificados</em><strong>{{ j.alumnosCertificados }}</strong></div>
+                  <div>
+                    <em>Certificados</em>
+                    <strong>{{ j.alumnosCertificados }}</strong>
+                  </div>
                   <button
                     type="button"
                     class="inf-btn inf-btn--primary inf-btn--sm"
@@ -549,6 +618,25 @@
               </div>
               @if (jornadaPanelAbierta(j._id)) {
                 <div class="inf-jornada-charts" [id]="'inf-jornada-body-' + j._id">
+                  <h5 class="inf-jornada-charts-title">Actor vial</h5>
+                  @if (j.actorVialItems.length) {
+                    <div class="inf-vial-stats inf-vial-stats--compact" role="list">
+                      @for (it of j.actorVialItems; track it.trackKey) {
+                        <article class="inf-vial-stat" role="listitem">
+                          <span class="inf-vial-stat-dot" [style.background]="it.color"></span>
+                          <span class="inf-vial-stat-label">{{ it.label }}</span>
+                          <strong class="inf-vial-stat-val">{{ it.value }}</strong>
+                          <em class="inf-vial-stat-pct">{{ formatPct(it.pct) }}</em>
+                        </article>
+                      }
+                    </div>
+                  }
+                  <div class="inf-charts inf-charts--vial">
+                    <section class="inf-card inf-chart-card inf-chart-card--featured">
+                      <h3>{{ j.actorVialChart.title }}</h3>
+                      <ng-container *ngTemplateOutlet="infViz; context: { $implicit: j.actorVialChart }" />
+                    </section>
+                  </div>
                   <h5 class="inf-jornada-charts-title">Origen de alumnos</h5>
                   <div class="inf-charts inf-charts--caract">
                     @for (block of j.origenCharts; track block.title) {

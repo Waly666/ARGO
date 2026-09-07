@@ -176,6 +176,35 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     ];
   }
 
+  actorVialItemsDesde(c?: { porActorVial?: InformeDashboardChartItem[] } | null): Array<{
+    label: string;
+    value: number;
+    pct: number;
+    color: string;
+    trackKey: string;
+  }> {
+    const list = (c?.porActorVial || []).map((x) => ({
+      label: x.label,
+      value: Number(x.value) || 0,
+    }));
+    const total = list.reduce((s, it) => s + it.value, 0);
+    return list.map((it, i) => ({
+      label: it.label,
+      value: it.value,
+      pct: total > 0 ? Math.round((it.value / total) * 1000) / 10 : 0,
+      color: this.palette[i % this.palette.length],
+      trackKey: `${it.label || 'vial'}::${i}`,
+    }));
+  }
+
+  bloqueActorVialDesde(c?: { porActorVial?: InformeDashboardChartItem[] } | null) {
+    return {
+      title: 'Distribución por actor vial',
+      kind: 'pie' as const,
+      pie: this.buildTortaCaract(c?.porActorVial),
+    };
+  }
+
   /** Demografía: barras y ranking predominan; pie solo en género. */
   bloquesCaractDesde(c?: {
     porEdad?: InformeDashboardChartItem[];
@@ -297,13 +326,17 @@ export class ContratoInformesDashboardComponent implements OnChanges {
 
   origenCharts = computed(() => this.bloquesOrigenDesde(this.charts()));
   caractCharts = computed(() => this.bloquesCaractDesde(this.charts()));
+  actorVialChart = computed(() => this.bloqueActorVialDesde(this.charts()));
+  actorVialItems = computed(() => this.actorVialItemsDesde(this.charts()));
 
-  /** Cada jornada con sus gráficos de origen y caracterización. */
+  /** Cada jornada con sus gráficos de origen, actor vial y caracterización. */
   jornadasConGraficos = computed(() =>
     this.porJornada().map((j) => ({
       ...j,
       origenCharts: this.bloquesOrigenDesde(j.charts),
       caractCharts: this.bloquesCaractDesde(j.charts),
+      actorVialChart: this.bloqueActorVialDesde(j.charts),
+      actorVialItems: this.actorVialItemsDesde(j.charts),
     })),
   );
 
@@ -740,7 +773,9 @@ export class ContratoInformesDashboardComponent implements OnChanges {
         this.nombreFallbackPaqueteContrato(),
       );
       this.emitirProgresoEntrega(false);
-      this.msg.set('Paquete de entrega del contrato descargado.');
+      this.msg.set(
+        'Paquete de entrega del contrato descargado. En cada jornada verá evidencia/ e evidencia-fotografica-adicional/.',
+      );
     } catch (e: unknown) {
       const texto = e instanceof Error ? e.message : 'No se pudo generar el paquete de entrega.';
       const err: CertZipProgreso = {

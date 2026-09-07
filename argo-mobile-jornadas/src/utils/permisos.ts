@@ -20,7 +20,7 @@ export const JORNADAS_APP_PERMISO: Record<JornadasAppPantalla, string> = {
   informes: 'jornadas.app.informes',
 };
 
-/** Permisos ERP amplios que conceden pantallas de la app (roles ya guardados). */
+/** Permisos ERP amplios que conceden pantallas de la app (roles ya guardados, sin jornadas.app.*). */
 const JORNADAS_APP_LEGACY: Record<string, string[]> = {
   'jornadas.operar': [
     JORNADAS_APP_PERMISO.hoy,
@@ -29,11 +29,17 @@ const JORNADAS_APP_LEGACY: Record<string, string[]> = {
   ],
   'jornadas.gestionar': Object.values(JORNADAS_APP_PERMISO),
   'jornadas.registrar_alumnos': [JORNADAS_APP_PERMISO.registrar_alumno],
-  'jornadas.ver': [JORNADAS_APP_PERMISO.informes],
   'alumnos.certificados': [JORNADAS_APP_PERMISO.certificados],
 };
 
+function tienePantallasAppExplicitas(permisos: string[]): boolean {
+  return permisos.some((p) => String(p).startsWith('jornadas.app.'));
+}
+
 function concedidoPorLegacy(permisos: string[], clave: string): boolean {
+  if (String(clave).startsWith('jornadas.app.') && tienePantallasAppExplicitas(permisos)) {
+    return false;
+  }
   for (const [legacy, concedidos] of Object.entries(JORNADAS_APP_LEGACY)) {
     if (permisos.includes(legacy) && concedidos.includes(clave)) return true;
   }

@@ -13,6 +13,29 @@ export function calcularEdad(
   return edad;
 }
 
+/**
+ * Grupos de edad (Colombia), rangos exclusivos:
+ * primera infancia 0–5, infancia/niñez 6–13, juventud 14–28 (Ley 1622),
+ * adultez 29–59, personas mayores 60+.
+ */
+export const RANGOS_EDAD = [
+  { key: 'primera_infancia', label: 'Primera infancia (0–5)', min: 0, max: 5 },
+  { key: 'infancia', label: 'Infancia / niñez (6–13)', min: 6, max: 13 },
+  { key: 'juventud', label: 'Juventud (14–28)', min: 14, max: 28 },
+  { key: 'adultez', label: 'Adultez (29–59)', min: 29, max: 59 },
+  { key: 'vejez', label: 'Personas mayores (60+)', min: 60, max: 200 },
+] as const;
+
+export function grupoEdadDef(edad: number | null | undefined) {
+  if (edad == null || !Number.isFinite(edad)) return null;
+  return RANGOS_EDAD.find((x) => edad >= x.min && edad <= x.max) || null;
+}
+
+export function grupoEdadLabel(edad: number | null | undefined): string {
+  const r = grupoEdadDef(edad);
+  return r ? r.label : '';
+}
+
 /** Etiqueta corta para listados (ej. "34 a."). */
 export function etiquetaEdad(fechaNac?: string | Date | null): string {
   const e = calcularEdad(fechaNac);

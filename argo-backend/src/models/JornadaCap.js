@@ -29,6 +29,14 @@ const JornadaCapSchema = new mongoose.Schema(
     estadoOperacionManual: { type: Boolean, default: false },
     /** PDF único con evidencias consolidadas (imágenes + PDFs). */
     urlEvidenciaConsolidada: { type: String, trim: true, default: '' },
+    /** Fotos JPG/PNG extra de la jornada (no se consolidan en el PDF). */
+    fotosEvidenciaAdicional: [
+      {
+        url: { type: String, trim: true, required: true },
+        nombre: { type: String, trim: true, default: '' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
   },

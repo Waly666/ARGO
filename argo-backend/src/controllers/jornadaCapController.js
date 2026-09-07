@@ -29,6 +29,10 @@ const {
 const { obtenerAvanceContratoJornada } = require('../services/avanceContratoJornada');
 const { syncContadoresContrato, siguienteIndiceEnDia } = require('../services/contratoJornadaSync');
 const {
+  previewPurgaVaciosContrato,
+  ejecutarPurgaVaciosContrato,
+} = require('../services/purgarVaciosJornada');
+const {
   TIPOS_CERTIFICADO_CONTRATO,
   TIPO_CERTIFICADO_GLOBAL,
   TIPO_CERTIFICADO_POR_CLASE,
@@ -128,10 +132,11 @@ async function dtoClaseConJornada(claseDoc) {
   let clienteNombre = '';
   let origenesAlumnos = null;
   let certificacionOrigen = null;
+  let instructoresPlan = null;
   let idClienteFacturacion = null;
   if (j?.idContrato) {
     const contrato = await Contratacion.findById(j.idContrato)
-      .select('codContrato nombreComercial razoSocial origenesAlumnos idClienteFacturacion certificacionOrigen numSesCert tipoCertificado')
+      .select('codContrato nombreComercial razoSocial origenesAlumnos idClienteFacturacion certificacionOrigen numSesCert tipoCertificado instructoresPlan')
       .lean();
     if (contrato) {
       codContrato = String(contrato.codContrato || '').trim();
@@ -146,6 +151,9 @@ async function dtoClaseConJornada(claseDoc) {
       } = require('../constants/origenJornadaCap');
       origenesAlumnos = normalizarOrigenesContrato(contrato.origenesAlumnos);
       certificacionOrigen = normalizarCertificacionOrigen(contrato.certificacionOrigen, contrato);
+      instructoresPlan = require('../services/instructoresPlanContrato').normalizarInstructoresPlan(
+        contrato.instructoresPlan,
+      );
       if (contrato.idClienteFacturacion) {
         idClienteFacturacion = String(contrato.idClienteFacturacion);
       }
@@ -167,6 +175,7 @@ async function dtoClaseConJornada(claseDoc) {
       clienteNombre,
       origenesAlumnos,
       certificacionOrigen,
+      instructoresPlan,
       idClienteFacturacion,
     },
   ]);
@@ -257,9 +266,12 @@ function enrichContratoRespuesta(c, clienteMap) {
   const {
     normalizarMunicipiosPlan,
     totalJornadasDesdePlan,
+    clasesPorJornadaDesdePlan,
   } = require('../constants/municipiosPlanContrato');
-  const plan = normalizarMunicipiosPlan(c.municipiosPlan);
+  const { inferirModoProgramacionJornadas } = require('../services/capacidadProgramacionJornadas');
+  const plan = normalizarMunicipiosPlan(c.municipiosPlan, c.clasesPorJornada);
   const totalPlan = totalJornadasDesdePlan(plan);
+  const clasesRep = clasesPorJornadaDesdePlan(plan);
   const base = {
     ...c,
     estado: normalizarEstadoContrato(c.estado),
@@ -269,7 +281,12 @@ function enrichContratoRespuesta(c, clienteMap) {
     origenesAlumnos: normalizarOrigenesContrato(c.origenesAlumnos),
     certificacionOrigen: normalizarCertificacionOrigen(c.certificacionOrigen, c),
     municipiosPlan: plan,
+    instructoresPlan: require('../services/instructoresPlanContrato').normalizarInstructoresPlan(
+      c.instructoresPlan,
+    ),
     numerojornadas: totalPlan > 0 ? totalPlan : c.numerojornadas,
+    clasesPorJornada: clasesRep != null ? clasesRep : c.clasesPorJornada,
+    programacionJornadasModo: inferirModoProgramacionJornadas({ ...c, municipiosPlan: plan }),
   };
   if (!cli) return base;
   const nombre = String(cli.nombreComercial || cli.razonSocial || cli.nombres || '').trim();
@@ -338,6 +355,8 @@ function pickContrato(body) {
     'origenesAlumnos',
     'certificacionOrigen',
     'municipiosPlan',
+    'programacionJornadasModo',
+    'instructoresPlan',
   ];
   const dto = {};
   for (const k of fields) {
@@ -361,6 +380,7 @@ function pickContrato(body) {
         dto.idProgramaCertificacion !== undefined
           ? dto.idProgramaCertificacion
           : body.idProgramaCertificacion,
+      idProgramas: dto.idProgramas !== undefined ? dto.idProgramas : body.idProgramas,
     });
     // Mantener top-level alineado con operativo (compat / listados).
     const op = dto.certificacionOrigen.operativo;
@@ -371,15 +391,31 @@ function pickContrato(body) {
         dto.idProgramaCertificacion = String(op.idProgramaCertificacion || '').trim();
       }
     }
+    const { unionIdProgramasPorClase } = require('../constants/origenJornadaCap');
+    dto.idProgramas = unionIdProgramasPorClase(dto.certificacionOrigen);
+  }
+  if (dto.programacionJornadasModo != null) {
+    const t = String(dto.programacionJornadasModo).trim().toLowerCase();
+    dto.programacionJornadasModo = t === 'municipio' ? 'municipio' : 'global';
   }
   if (dto.municipiosPlan !== undefined) {
     const {
       normalizarMunicipiosPlan,
       totalJornadasDesdePlan,
+      clasesPorJornadaDesdePlan,
     } = require('../constants/municipiosPlanContrato');
-    dto.municipiosPlan = normalizarMunicipiosPlan(dto.municipiosPlan);
+    dto.municipiosPlan = normalizarMunicipiosPlan(
+      dto.municipiosPlan,
+      dto.clasesPorJornada ?? body.clasesPorJornada,
+    );
     const totalPlan = totalJornadasDesdePlan(dto.municipiosPlan);
     if (totalPlan > 0) dto.numerojornadas = totalPlan;
+    const clasesRep = clasesPorJornadaDesdePlan(dto.municipiosPlan);
+    if (clasesRep != null) dto.clasesPorJornada = clasesRep;
+  }
+  if (dto.instructoresPlan !== undefined) {
+    const { normalizarInstructoresPlan } = require('../services/instructoresPlanContrato');
+    dto.instructoresPlan = normalizarInstructoresPlan(dto.instructoresPlan);
   }
   if (dto.codContrato != null) dto.codContrato = String(dto.codContrato).trim();
   if (dto.estado != null) dto.estado = normalizarEstadoContrato(dto.estado);
@@ -442,7 +478,14 @@ async function enrichContratoDto(dto, prev = null) {
     const sup = await Supervisor.findById(dto.idSupervisor).lean();
     if (sup?.nombre) dto.supervisor = sup.nombre;
   }
-  if (dto.idProgramas !== undefined) {
+  if (dto.certificacionOrigen !== undefined) {
+    const { normalizarYValidarCertificacionOrigenProgramas } = require('../services/programasContratoJornada');
+    dto.certificacionOrigen = await normalizarYValidarCertificacionOrigenProgramas(
+      dto.certificacionOrigen,
+    );
+    const { unionIdProgramasPorClase } = require('../constants/origenJornadaCap');
+    dto.idProgramas = unionIdProgramasPorClase(dto.certificacionOrigen);
+  } else if (dto.idProgramas !== undefined) {
     const { normalizarYValidarProgramasContrato } = require('../services/programasContratoJornada');
     dto.idProgramas = await normalizarYValidarProgramasContrato(dto.idProgramas);
   }
@@ -453,6 +496,68 @@ async function enrichContratoDto(dto, prev = null) {
       const err = new Error('La fecha fin de jornadas debe ser igual o posterior al inicio.');
       err.status = 400;
       throw err;
+    }
+  }
+  {
+    const {
+      inferirModoProgramacionJornadas,
+      validarProgramacionContrato,
+      camposProgramacionEnDto,
+      marcoFechasDesdePlan,
+      MODO_MUNICIPIO,
+    } = require('../services/capacidadProgramacionJornadas');
+    const {
+      normalizarMunicipiosPlan,
+      clasesPorJornadaDesdePlan,
+    } = require('../constants/municipiosPlanContrato');
+    if (!prev || camposProgramacionEnDto(dto)) {
+      const prevPlain = prev
+        ? typeof prev.toObject === 'function'
+          ? prev.toObject()
+          : { ...prev }
+        : {};
+      const merged = { ...prevPlain, ...dto };
+      const modo = inferirModoProgramacionJornadas(merged);
+      dto.programacionJornadasModo = modo;
+
+      if (dto.municipiosPlan !== undefined || dto.programacionJornadasModo !== undefined) {
+        let plan = normalizarMunicipiosPlan(
+          merged.municipiosPlan,
+          merged.clasesPorJornada,
+        );
+        if (modo === MODO_MUNICIPIO) {
+          const marco = marcoFechasDesdePlan(plan);
+          if (marco.fechaInicJornadas) {
+            dto.fechaInicJornadas = fechaCalendarioParaGuardar(marco.fechaInicJornadas);
+          }
+          if (marco.fechaFinJornadas) {
+            dto.fechaFinJornadas = fechaCalendarioParaGuardar(marco.fechaFinJornadas);
+          }
+          plan = plan.map((r) => ({
+            ...r,
+            fechaInicJornadas: r.fechaInicJornadas
+              ? fechaCalendarioParaGuardar(r.fechaInicJornadas)
+              : null,
+            fechaFinJornadas: r.fechaFinJornadas
+              ? fechaCalendarioParaGuardar(r.fechaFinJornadas)
+              : null,
+          }));
+        } else {
+          plan = plan.map((r) => {
+            const { fechaInicJornadas: _i, fechaFinJornadas: _f, ...rest } = r;
+            return rest;
+          });
+        }
+        dto.municipiosPlan = plan;
+        const clasesRep = clasesPorJornadaDesdePlan(plan);
+        if (clasesRep != null) dto.clasesPorJornada = clasesRep;
+      }
+
+      const toValidate = { ...merged, ...dto };
+      const modoV = inferirModoProgramacionJornadas(toValidate);
+      const planV = normalizarMunicipiosPlan(toValidate.municipiosPlan);
+      const exigirFechas = modoV === MODO_MUNICIPIO || planV.length > 0;
+      validarProgramacionContrato(toValidate, { exigirFechas });
     }
   }
   const valorRef =
@@ -478,6 +583,56 @@ exports.obtenerContrato = async (req, res, next) => {
     if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
     const [enriched] = await enrichContratosRespuesta([c]);
     res.json(enriched);
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Programas que el usuario logueado puede elegir al crear/editar clase en este contrato. */
+exports.programasInstructorContrato = async (req, res, next) => {
+  try {
+    const c = await Contratacion.findById(req.params.id).select('instructoresPlan').lean();
+    if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
+    const {
+      normalizarInstructoresPlan,
+      filaInstructorEnPlan,
+    } = require('../services/instructoresPlanContrato');
+    const { empleadoPorUsuarioId } = require('../services/instructorJornada');
+    const plan = normalizarInstructoresPlan(c.instructoresPlan);
+    if (!plan.length) return res.json({ enPlan: false, idProgramas: null });
+
+    const emp = await empleadoPorUsuarioId(req.user?.sub);
+    const { row } = filaInstructorEnPlan(plan, {
+      idEmpleado: emp?.idEmpleado,
+      idUsuario: req.user?.sub,
+    });
+    if (row) {
+      return res.json({ enPlan: true, idProgramas: [...(row.idProgramas || [])] });
+    }
+
+    const { esEmpleadoInstructor } = require('../services/instructorJornada');
+    if (emp && (await esEmpleadoInstructor(emp))) {
+      return res.json({ enPlan: false, idProgramas: [] });
+    }
+
+    const permisos = req.permisos || [];
+    const esAdmin =
+      (Array.isArray(permisos) && (permisos.includes('*') || permisos.includes('jornadas.gestionar'))) ||
+      false;
+    if (esAdmin) {
+      const union = [];
+      const seen = new Set();
+      for (const r of plan) {
+        for (const id of r.idProgramas || []) {
+          const s = String(id || '').trim();
+          if (!s || seen.has(s)) continue;
+          seen.add(s);
+          union.push(s);
+        }
+      }
+      return res.json({ enPlan: false, idProgramas: union });
+    }
+    return res.json({ enPlan: false, idProgramas: [] });
   } catch (e) {
     next(e);
   }
@@ -710,6 +865,43 @@ exports.generarJornadas = async (req, res, next) => {
   }
 };
 
+exports.previewPurgaVacios = async (req, res, next) => {
+  try {
+    const c = await Contratacion.findById(req.params.id).select('_id').lean();
+    if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
+    const alcance = req.query.alcance || req.body?.alcance;
+    res.json(await previewPurgaVaciosContrato(c._id, alcance));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.purgarVacios = async (req, res, next) => {
+  try {
+    const c = await Contratacion.findById(req.params.id).select('_id').lean();
+    if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
+    const alcance = req.body?.alcance || req.query.alcance;
+    const result = await ejecutarPurgaVaciosContrato(c._id, alcance);
+    const mensaje =
+      result.alcance === 'clases'
+        ? result.clasesEliminadas
+          ? `Se eliminaron ${result.clasesEliminadas} clase(s) sin alumnos. Las jornadas no se tocaron.`
+          : 'No había clases vacías para borrar.'
+        : result.jornadasEliminadas
+          ? `Se eliminaron ${result.jornadasEliminadas} jornada(s) vacía(s). Las clases de otras jornadas no se tocaron.`
+          : 'No había jornadas vacías para borrar.';
+    res.json({
+      ...result,
+      contrato: resumenContratoSync(result.contrato),
+      message: mensaje,
+    });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
 exports.opcionesReprogramacionJornadas = async (req, res, next) => {
   try {
     const data = await opcionesReprogramacion(req.params.id);
@@ -828,13 +1020,10 @@ exports.crearJornadaContrato = async (req, res, next) => {
     const generarClases = body.generarClases !== false;
     if (generarClases) {
       const refreshed = await Contratacion.findById(contrato._id).lean();
-      const meta = Math.max(0, parseInt(refreshed?.clasesPorJornada, 10) || 0);
-      if (meta > 0) {
-        const r = await generarClasesFaltantesJornada(
-          jornada.toObject ? jornada.toObject() : jornada,
-          refreshed,
-          userLogin,
-        );
+      const jornadaPlain = jornada.toObject ? jornada.toObject() : jornada;
+      const { clasesPorJornadaParaJornada } = require('../constants/municipiosPlanContrato');
+      if (clasesPorJornadaParaJornada(jornadaPlain, refreshed) > 0) {
+        const r = await generarClasesFaltantesJornada(jornadaPlain, refreshed, userLogin);
         clasesCreadas = r.creadas;
       }
     }
@@ -1226,6 +1415,7 @@ exports.listarClases = async (req, res, next) => {
         jornadaEstado: j?.estado,
         idContrato: j?.idContrato,
         municipioJornada: j?.municipio,
+        codigoJornada: j?.codigoJornada || '',
       });
     }
     const enriched = await enriquecerClases(out);
@@ -1331,9 +1521,10 @@ exports.clasesContratosEnEjecucion = async (req, res, next) => {
   try {
     const {
       normalizarOrigenesContrato,
+      normalizarCertificacionOrigen,
     } = require('../constants/origenJornadaCap');
     const contratos = await Contratacion.find({})
-      .select('_id estado codContrato nombreComercial razoSocial origenesAlumnos')
+      .select('_id estado codContrato nombreComercial razoSocial origenesAlumnos certificacionOrigen idProgramas numSesCert tipoCertificado idProgramaCertificacion')
       .lean();
     const enEjecucion = contratos.filter((c) => contratoEstaEnEjecucion(c.estado));
     if (!enEjecucion.length) return res.json([]);
@@ -1384,6 +1575,7 @@ exports.clasesContratosEnEjecucion = async (req, res, next) => {
           : cliente || String(contrato.codContrato || ''),
         clienteNombre: cliente,
         origenesAlumnos: normalizarOrigenesContrato(contrato.origenesAlumnos),
+        certificacionOrigen: normalizarCertificacionOrigen(contrato.certificacionOrigen, contrato),
       });
     }
 
@@ -1406,7 +1598,11 @@ exports.clasesContratosEnEjecucion = async (req, res, next) => {
 
 exports.listarInstructores = async (req, res, next) => {
   try {
-    res.json(await listarInstructoresConUsuario());
+    const raw = String(req.query.soloCargo || '')
+      .trim()
+      .toLowerCase();
+    const soloCargo = raw === '1' || raw === 'true' || raw === 'si';
+    res.json(await listarInstructoresConUsuario({ soloCargo }));
   } catch (e) {
     next(e);
   }
@@ -1478,32 +1674,54 @@ exports.crearClase = async (req, res, next) => {
       normalizarOrigenesContrato,
       ORIGEN_JORNADA_LABELS,
     } = require('../constants/origenJornadaCap');
+    const { assertProgramaPermitidoEnOrigen } = require('../services/programasContratoJornada');
     const origenRaw =
       req.body?.origenOperacion || req.body?.origenJornadaCap || req.body?.origen;
     let origenOperacion = normalizarOrigenJornadaCap(origenRaw);
-    if (origenOperacion && jornada.idContrato) {
-      const contratoOrigen = await Contratacion.findById(jornada.idContrato)
-        .select('origenesAlumnos')
+    let contratoOrigen = null;
+    if (jornada.idContrato) {
+      contratoOrigen = await Contratacion.findById(jornada.idContrato)
+        .select(
+          'origenesAlumnos certificacionOrigen idProgramas numSesCert tipoCertificado idProgramaCertificacion instructoresPlan',
+        )
         .lean();
       const permitidos = normalizarOrigenesContrato(contratoOrigen?.origenesAlumnos);
-      if (!permitidos[origenOperacion]) {
+      if (origenOperacion && !permitidos[origenOperacion]) {
         return res.status(400).json({
           message:
             `El origen «${ORIGEN_JORNADA_LABELS[origenOperacion] || origenOperacion}» no está habilitado en este contrato.`,
           codigo: 'origen_no_permitido',
         });
       }
-    }
-    if (!origenOperacion) {
-      // Si el contrato tiene un solo origen activo, usarlo por defecto.
-      if (jornada.idContrato) {
-        const contratoOrigen = await Contratacion.findById(jornada.idContrato)
-          .select('origenesAlumnos')
-          .lean();
-        const permitidos = normalizarOrigenesContrato(contratoOrigen?.origenesAlumnos);
+      if (!origenOperacion) {
         const activos = ['colegio', 'estamento', 'empresa', 'operativo'].filter((k) => !!permitidos[k]);
         if (activos.length === 1) origenOperacion = activos[0];
       }
+    }
+    if (idProg) {
+      const {
+        assertProgramaPermitidoInstructor,
+        filaInstructorEnPlan,
+        instructorElegibleParaPrograma,
+      } = require('../services/instructoresPlanContrato');
+      const { empleadoPorUsuarioId } = require('../services/instructorJornada');
+      const empOp = instructor.idEmpleadoInstructor
+        ? null
+        : await empleadoPorUsuarioId(req.user?.sub);
+      const identInst = {
+        idEmpleado: instructor.idEmpleadoInstructor || empOp?.idEmpleado,
+        idUsuario: instructor.idUsuarioInstructor || req.user?.sub,
+      };
+      const { hayPlan, row } = filaInstructorEnPlan(contratoOrigen?.instructoresPlan, identInst);
+      if (!(hayPlan && row && instructorElegibleParaPrograma(row, idProg))) {
+        await assertProgramaPermitidoEnOrigen(contratoOrigen, origenOperacion, idProg);
+      }
+      await assertProgramaPermitidoInstructor(
+        contratoOrigen,
+        identInst,
+        idProg,
+        { permitirSiNoEstaEnPlan: esAdminJornadas },
+      );
     }
 
     const clase = await ClaseJornadaCap.create({
@@ -1639,6 +1857,36 @@ exports.actualizarClase = async (req, res, next) => {
           dto.idPrograma = String(prog.idPrograma ?? prog._id ?? idPrograma);
           const carpa = await resolverCarpaDesdePrograma(prog);
           dto.idCarpa = carpa.idCarpa;
+          const jornadaClase = await JornadaCap.findById(clase.idJornada).select('idContrato').lean();
+          if (jornadaClase?.idContrato) {
+            const contratoProg = await Contratacion.findById(jornadaClase.idContrato)
+              .select(
+                'origenesAlumnos certificacionOrigen idProgramas numSesCert tipoCertificado idProgramaCertificacion instructoresPlan',
+              )
+              .lean();
+            const { assertProgramaPermitidoEnOrigen } = require('../services/programasContratoJornada');
+            const {
+              assertProgramaPermitidoInstructor,
+              filaInstructorEnPlan,
+              instructorElegibleParaPrograma,
+            } = require('../services/instructoresPlanContrato');
+            const origenClase = String(clase.origenOperacion || '').trim() || null;
+            const identInst = {
+              idEmpleado: dto.idEmpleadoInstructor ?? clase.idEmpleadoInstructor,
+              idUsuario:
+                dto.idUsuarioInstructor || clase.idUsuarioInstructor || req.user?.sub,
+            };
+            const { hayPlan, row } = filaInstructorEnPlan(contratoProg?.instructoresPlan, identInst);
+            if (!(hayPlan && row && instructorElegibleParaPrograma(row, dto.idPrograma))) {
+              await assertProgramaPermitidoEnOrigen(contratoProg, origenClase, dto.idPrograma);
+            }
+            await assertProgramaPermitidoInstructor(
+              contratoProg,
+              identInst,
+              dto.idPrograma,
+              { permitirSiNoEstaEnPlan: esAdminJornadas },
+            );
+          }
         }
       }
     }
@@ -2150,6 +2398,86 @@ exports.subirEvidenciaConsolidadaJornada = async (req, res, next) => {
   }
 };
 
+const MAX_FOTOS_EVIDENCIA_ADICIONAL = 30;
+
+function borrarArchivoEvidencia(rel) {
+  const prevPath = upload.resolvePath(rel);
+  if (prevPath && fs.existsSync(prevPath)) {
+    try {
+      fs.unlinkSync(prevPath);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+}
+
+/** Sube fotos JPG/PNG adicionales de la jornada (no se mezclan con el PDF consolidado). */
+exports.subirFotosEvidenciaAdicionalJornada = async (req, res, next) => {
+  const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+  try {
+    if (!files.length) {
+      return res.status(400).json({ message: 'Debe enviar al menos una foto JPG o PNG (campo fotos)' });
+    }
+    const jornada = req.jornadaEvidencia;
+    if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+
+    const actuales = Array.isArray(jornada.fotosEvidenciaAdicional)
+      ? jornada.fotosEvidenciaAdicional
+      : [];
+    if (actuales.length + files.length > MAX_FOTOS_EVIDENCIA_ADICIONAL) {
+      for (const f of files) borrarArchivoEvidencia(path.relative(upload.baseDir, f.path).replace(/\\/g, '/'));
+      return res.status(400).json({
+        message: `Máximo ${MAX_FOTOS_EVIDENCIA_ADICIONAL} fotos adicionales por jornada.`,
+      });
+    }
+
+    const nuevas = files.map((f) => ({
+      url: path.relative(upload.baseDir, f.path).replace(/\\/g, '/'),
+      nombre: String(f.originalname || '').trim() || path.basename(f.path),
+      createdAt: new Date(),
+    }));
+    jornada.fotosEvidenciaAdicional = [...actuales, ...nuevas];
+    jornada.userChangeRecord = auditoriaUsuario(req);
+    await jornada.save();
+
+    const synced = await sincronizarEstadoJornada(jornada.toObject());
+    res.json(await enrichJornadaConContrato(synced));
+  } catch (e) {
+    for (const f of files) {
+      if (f?.path && fs.existsSync(f.path)) {
+        try {
+          fs.unlinkSync(f.path);
+        } catch (_) {
+          /* ignore */
+        }
+      }
+    }
+    next(e);
+  }
+};
+
+exports.eliminarFotoEvidenciaAdicionalJornada = async (req, res, next) => {
+  try {
+    const jornada = await JornadaCap.findById(req.params.id);
+    if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+    const fotoId = String(req.params.fotoId || '').trim();
+    const fotos = Array.isArray(jornada.fotosEvidenciaAdicional)
+      ? jornada.fotosEvidenciaAdicional
+      : [];
+    const idx = fotos.findIndex((f) => String(f._id) === fotoId);
+    if (idx < 0) return res.status(404).json({ message: 'Foto no encontrada' });
+    const [quitada] = fotos.splice(idx, 1);
+    if (quitada?.url) borrarArchivoEvidencia(quitada.url);
+    jornada.fotosEvidenciaAdicional = fotos;
+    jornada.userChangeRecord = auditoriaUsuario(req);
+    await jornada.save();
+    const synced = await sincronizarEstadoJornada(jornada.toObject());
+    res.json(await enrichJornadaConContrato(synced));
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.registrarAsistencia = async (req, res, next) => {
   try {
     const { numDoc: numDocRaw } = req.body || {};
@@ -2434,6 +2762,8 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
 
   const jornadaDestino = await JornadaCap.findById(claseDestino.idJornada).lean();
   let mapCert = new Map();
+  let tomaronPrograma = new Set();
+  let programaDestinoNombre = '';
   if (jornadaDestino?.idContrato && docs.length) {
     const certs = await Certificado.find({
       numDoc: { $in: docs },
@@ -2441,6 +2771,20 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
       estado: { $ne: 'anulado' },
     }).lean();
     mapCert = new Map(certs.map((c) => [Number(c.numDoc), c]));
+    const destProg = String(claseDestino.idPrograma || '').trim();
+    if (destProg) {
+      const {
+        numDocsQueYaTomaronProgramaEnContrato,
+      } = require('../services/alumnoYaTomoProgramaContrato');
+      const r = await numDocsQueYaTomaronProgramaEnContrato({
+        idContrato: jornadaDestino.idContrato,
+        idPrograma: destProg,
+        exceptClaseId: claseDestino._id,
+        numDocs: docs,
+      });
+      tomaronPrograma = r.tomaron;
+      programaDestinoNombre = r.programaNombre || '';
+    }
   }
 
   const [claseFuenteInfo] = await enriquecerClases([claseFuente]);
@@ -2464,7 +2808,8 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
       const esPorClase = cfgOrig.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
       // Certificado global del origen: no más clases del mismo contrato.
       // por_clase del origen: solo se bloquea si ya tiene certificado de ESTA clase destino.
-      let puedeMatricular = !yaEnEstaClase.has(nd);
+      const yaTomoProgramaContrato = tomaronPrograma.has(nd);
+      let puedeMatricular = !yaEnEstaClase.has(nd) && !yaTomoProgramaContrato;
       if (puedeMatricular && jornadaDestino?.idContrato) {
         if (esPorClase) {
           const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
@@ -2482,10 +2827,12 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
           : '',
         yaInscritoEnEstaClase: yaEnEstaClase.has(nd),
         yaCertificadoContrato: !!cert,
+        yaTomoProgramaContrato,
         puedeMatricular,
         certificadoCodigo: cert?.codigoCert || null,
         origenJornadaCap: cfgOrig.origen || al?.origenJornadaCap || null,
         tipoCertificadoOrigen: cfgOrig.tipoCertificado,
+        programaYaTomadoNombre: yaTomoProgramaContrato ? programaDestinoNombre : '',
       };
     }),
   );
@@ -2746,7 +3093,7 @@ exports.descargarExportZipCertificadosJob = async (req, res, next) => {
   }
 };
 
-/** Inicia paquete de entrega (informe + certificados + evidencia) de una jornada. */
+/** Inicia paquete de entrega (informe + certificados + evidencia PDF + evidencia fotográfica adicional) de una jornada. */
 exports.iniciarPaqueteEntregaJornadaJob = async (req, res, next) => {
   try {
     const {
@@ -2971,6 +3318,26 @@ exports.progresoAlumnoContrato = async (req, res, next) => {
       return res.status(400).json({ message: 'numDoc e idContrato son obligatorios' });
     }
     const progreso = await progresoCertificacion(numDoc, idContrato);
+    const idPrograma = String(req.query.idPrograma || req.query.idProg || '').trim();
+    if (idPrograma) {
+      const {
+        alumnoYaTomoProgramaEnContrato,
+        mensajeYaTomoPrograma,
+      } = require('../services/alumnoYaTomoProgramaContrato');
+      const yaTomo = await alumnoYaTomoProgramaEnContrato({
+        numDoc,
+        idContrato,
+        idPrograma,
+        exceptClaseId: String(req.query.exceptClaseId || req.query.idClase || '').trim() || undefined,
+      });
+      progreso.yaTomoProgramaContrato = yaTomo.yaTomo;
+      progreso.programaNombre = yaTomo.programaNombre || '';
+      if (yaTomo.yaTomo) {
+        progreso.mensajeYaTomoPrograma = mensajeYaTomoPrograma({
+          programaNombre: yaTomo.programaNombre,
+        });
+      }
+    }
     res.json(progreso);
   } catch (e) {
     next(e);
@@ -3059,6 +3426,7 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
       regimenSalud: String(body.regimenSalud || '').trim() || undefined,
       nivelFormacion: String(body.nivelFormacion || '').trim() || undefined,
       ocupacion: String(body.ocupacion || '').trim() || undefined,
+      actorVial: String(body.actorVial || '').trim() || undefined,
       discapacidad: String(body.discapacidad || '9').trim() || '9',
       multiCulturalidad: String(body.multiCulturalidad || 'NO_APLICA').trim() || 'NO_APLICA',
       observaciones: String(body.observaciones || '').trim() || undefined,
@@ -3346,6 +3714,30 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
             message: bloqueoCert.message,
             codigo: 'ya_certificado_contrato',
             certificado: bloqueoCert.certificado,
+          });
+        }
+        const {
+          alumnoYaTomoProgramaEnContrato,
+          mensajeYaTomoPrograma,
+        } = require('../services/alumnoYaTomoProgramaContrato');
+        const yaTomo = await alumnoYaTomoProgramaEnContrato({
+          numDoc: nd,
+          idContrato: jornada.idContrato,
+          idPrograma: idProgramaVal,
+          exceptClaseId: clase._id,
+        });
+        if (yaTomo.yaTomo) {
+          const nombreAlumno = [alumno.nombre1, alumno.nombre2, alumno.apellido1, alumno.apellido2]
+            .filter(Boolean)
+            .join(' ')
+            .trim() || 'El alumno';
+          return res.status(409).json({
+            message: mensajeYaTomoPrograma({
+              nombreAlumno,
+              programaNombre: yaTomo.programaNombre,
+            }),
+            codigo: 'ya_tomo_programa_contrato',
+            programaNombre: yaTomo.programaNombre || '',
           });
         }
         empresaAsignada = await asignarEmpresaContratoAlumno(

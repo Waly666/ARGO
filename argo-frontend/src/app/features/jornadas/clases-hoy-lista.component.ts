@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } fro
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { ClaseJornadaDto, JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
+import { ClaseJornadaDto, ContratacionDto, JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import {
@@ -15,6 +15,13 @@ import { JornadasOperacionConfigService } from '../../core/services/jornadas-ope
 import { fmtFechaCalendario, ymdLocal } from './jornada-calendario.util';
 import { esInstructorJornadasRestringido } from './jornadas-acceso.util';
 import { JornadaClaseEditorComponent } from './jornada-clase-editor.component';
+import {
+  filtrarProgramasParaElegirClase,
+  idsProgramasElegiblesClase,
+  mensajeSinProgramasElegiblesClase,
+  type OptsProgramasElegiblesClase,
+  type UsuarioParaPlanInstructor,
+} from './programas-origen-clase.util';
 import {
   capCarpa,
   capCodContrato,
@@ -62,8 +69,10 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   jornadasHoy = signal<JornadaCapDto[]>([]);
   jornadaCrearSel = signal('');
   programasJornada = signal<any[]>([]);
+  contratos = signal<ContratacionDto[]>([]);
   nuevaClaseProg = signal('');
   nuevaClaseUbic = signal('Carpa');
+  origenCrearSel = signal<'colegio' | 'estamento' | 'empresa' | 'operativo'>('operativo');
 
   readonly ubicaciones = ['Carpa', 'Domo', 'Empresa', 'Colegio', 'Auditorio', 'Coliseo', 'Estadio', 'Otro'];
   readonly hoyKey = ymdLocal(new Date());
@@ -74,16 +83,63 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   jornadaCrearActiva = computed(() =>
     this.jornadasHoy().find((j) => j._id === this.jornadaCrearSel()),
   );
+  contratoCrearActivo = computed(() => {
+    const id = this.jornadaCrearActiva()?.idContrato;
+    if (!id) return undefined;
+    return this.contratos().find((c) => String(c._id) === String(id));
+  });
+  origenesCrearActivos = computed(() => {
+    const o = this.contratoCrearActivo()?.origenesAlumnos || { operativo: true };
+    const all: Array<{ key: 'colegio' | 'estamento' | 'empresa' | 'operativo'; label: string }> = [
+      { key: 'colegio', label: 'Institución educativa' },
+      { key: 'estamento', label: 'Estamento' },
+      { key: 'empresa', label: 'Empresa' },
+      { key: 'operativo', label: 'Operativo' },
+    ];
+    const act = all.filter((x) => !!(o as Record<string, boolean | undefined>)[x.key]);
+    return act.length ? act : [{ key: 'operativo' as const, label: 'Operativo' }];
+  });
+
+  private identInstructorCrear(): UsuarioParaPlanInstructor {
+    const u = this.auth.user();
+    return {
+      _id: u?._id,
+      idEmpleado: u?.empleado?.idEmpleado ?? u?.idEmpleado,
+      empleado: u?.empleado,
+      idUsuario: u?._id,
+    };
+  }
+
+  private optsProgramasCrear(): OptsProgramasElegiblesClase {
+    const c = this.contratoCrearActivo();
+    return {
+      certificacionOrigen: c?.certificacionOrigen,
+      origen: this.origenCrearSel(),
+      legadoIdProgramas: c?.idProgramas,
+      instructoresPlan: c?.instructoresPlan || [],
+      user: this.identInstructorCrear(),
+      esAdmin: this.puedeGestionar(),
+    };
+  }
+
+  opcionesProgramasCrear = computed<EnumBuscarOption[]>(() => {
+    const opts = this.optsProgramasCrear();
+    return filtrarProgramasParaElegirClase(this.programasJornada(), opts).map((p) => ({
+      value: String(p.idPrograma || p._id || ''),
+      label: String(p.nombreProg || p.codigoProg || ''),
+    }));
+  });
+  origenPorClaseSinProgramasCrear = computed(() => {
+    const permitidos = idsProgramasElegiblesClase(this.optsProgramasCrear());
+    return permitidos != null && permitidos.length === 0;
+  });
+  mensajeSinProgramasCrear = computed(() =>
+    mensajeSinProgramasElegiblesClase(this.optsProgramasCrear()),
+  );
   puedeCrearClaseHoy = computed(
     () => this.puedeOperar() && this.jornadasOperablesHoy().length > 0,
   );
 
-  opcionesProgramasCrear = computed<EnumBuscarOption[]>(() =>
-    this.programasJornada().map((p) => ({
-      value: String(p.idPrograma || p._id || ''),
-      label: String(p.nombreProg || p.codigoProg || ''),
-    })),
-  );
   textoProgramaCrear = computed(() => {
     const id = this.nuevaClaseProg();
     if (!id) return '';
@@ -249,10 +305,15 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
     this.nuevaClaseProg.set('');
     this.nuevaClaseUbic.set('Carpa');
     this.jornadaCrearSel.set('');
+    this.origenCrearSel.set('operativo');
     this.modalCrearOpen.set(true);
     this.jornadaSvc.programasJornadaCap().subscribe({
       next: (p) => this.programasJornada.set(p || []),
       error: () => this.programasJornada.set([]),
+    });
+    this.jornadaSvc.listarContratos().subscribe({
+      next: (rows) => this.contratos.set(rows || []),
+      error: () => this.contratos.set([]),
     });
     this.jornadaSvc.jornadasDelDia(this.hoyKey).subscribe({
       next: (rows) => {
@@ -262,6 +323,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
         );
         if (operables.length === 1) {
           this.jornadaCrearSel.set(String(operables[0]._id));
+          this.sincronizarOrigenCrear();
         }
       },
       error: () => this.jornadasHoy.set([]),
@@ -295,11 +357,34 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
     return `${contrato}${mun}`;
   }
 
+  onJornadaCrearChange(id: string): void {
+    this.jornadaCrearSel.set(id);
+    this.nuevaClaseProg.set('');
+    this.sincronizarOrigenCrear();
+  }
+
+  setOrigenCrear(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): void {
+    this.origenCrearSel.set(key);
+    this.nuevaClaseProg.set('');
+  }
+
+  private sincronizarOrigenCrear(): void {
+    const act = this.origenesCrearActivos();
+    const cur = this.origenCrearSel();
+    if (!act.some((o) => o.key === cur)) {
+      this.origenCrearSel.set(act[0]?.key || 'operativo');
+    }
+  }
+
   crearClaseHoy() {
     const idJ = this.jornadaCrearSel();
     const idP = this.nuevaClaseProg();
     if (!idJ || !idP) {
-      this.msg.set('Seleccione la jornada del día y el programa de capacitación.');
+      this.msg.set(
+        this.origenPorClaseSinProgramasCrear()
+          ? this.mensajeSinProgramasCrear()
+          : 'Seleccione la jornada del día y el programa de capacitación.',
+      );
       return;
     }
     if (!this.operacionEspecialActiva() && this.jornadaCrearActiva()?.estado !== 'EN PROCESO') {
@@ -308,7 +393,12 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
     }
     this.guardandoClase.set(true);
     this.jornadaSvc
-      .crearClase({ idJornada: idJ, idPrograma: idP, ubicacion: this.nuevaClaseUbic() })
+      .crearClase({
+        idJornada: idJ,
+        idPrograma: idP,
+        ubicacion: this.nuevaClaseUbic(),
+        origenOperacion: this.origenCrearSel(),
+      })
       .subscribe({
         next: (c) => {
           this.guardandoClase.set(false);

@@ -15,6 +15,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { AlumnoQrLabelModal } from '../components/AlumnoQrLabelModal';
 import { AsyncSearchField } from '../components/AsyncSearchField';
 import { CatalogPickerField } from '../components/CatalogPickerField';
+import { FechaPickerField } from '../components/FechaPickerField';
 import { IconInput } from '../components/IconInput';
 import { MunicipioBuscarField } from '../components/MunicipioBuscarField';
 import { Pdf417ScanModal } from '../components/Pdf417ScanModal';
@@ -50,6 +51,7 @@ import { useAuth } from '../context/AuthContext';
 import { themeColors } from '../theme/colors';
 import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
+import { ymdToday } from '../utils/fechaHelpers';
 import { VOICE_PHRASES, type VoiceCommandDef } from '../voice/commands';
 import { useVoiceScreen } from '../voice/VoiceContext';
 import {
@@ -300,7 +302,7 @@ export default function CrearAlumnoJornadaScreen() {
     if (!expedida.trim()) return 'Indique el municipio de expedición.';
     if (!apellido1.trim() || !apellido2.trim()) return 'Ambos apellidos son obligatorios.';
     if (!nombre1.trim() || !nombre2.trim()) return 'Ambos nombres son obligatorios.';
-    if (!fechaNac.trim()) return 'Indique la fecha de nacimiento (AAAA-MM-DD).';
+    if (!fechaNac.trim()) return 'Indique la fecha de nacimiento.';
     if (!genero) return 'Seleccione el género.';
     if (!tipoSangre) return 'Seleccione el tipo de sangre.';
     if (!jornada) return 'Seleccione la jornada.';
@@ -942,13 +944,15 @@ export default function CrearAlumnoJornadaScreen() {
               autoCapitalize="characters"
             />
             <View style={{ height: 8 }} />
-            <IconInput
-              label="Fecha nacimiento * (AAAA-MM-DD)"
-              icon="calendar-outline"
-              voiceFieldId="fechaNac"
+            <FechaPickerField
+              label="Fecha nacimiento"
               value={fechaNac}
-              onChangeText={setFechaNac}
-              placeholder="1990-01-15"
+              onChange={setFechaNac}
+              max={ymdToday()}
+              min={`${new Date().getFullYear() - 100}-01-01`}
+              inicioEnAnio
+              required
+              voiceFieldId="fechaNac"
             />
           </SurfaceCard>
 

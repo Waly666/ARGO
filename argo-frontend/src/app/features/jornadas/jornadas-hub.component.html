@@ -307,11 +307,53 @@
               </div>
             </div>
             <div class="field col-w-date">
-              <argo-date-input label="Inicio jornadas" [ngModel]="formContrato().fechaInicJornadas" (ngModelChange)="patchContrato('fechaInicJornadas', $event)" ></argo-date-input>
+              <argo-date-input
+                label="Inicio jornadas"
+                [ngModel]="formContrato().fechaInicJornadas"
+                (ngModelChange)="patchContrato('fechaInicJornadas', $event)"
+                [disabled]="modoProgramacionMunicipio() || contratoFormEjecutado()"
+                [required]="!modoProgramacionMunicipio()"
+              ></argo-date-input>
             </div>
             <div class="field col-w-date">
-              <argo-date-input label="Fin jornadas" [ngModel]="formContrato().fechaFinJornadas" (ngModelChange)="patchContrato('fechaFinJornadas', $event)" title="Último día calendario para programar jornadas"></argo-date-input>
+              <argo-date-input
+                label="Fin jornadas"
+                [ngModel]="formContrato().fechaFinJornadas"
+                (ngModelChange)="patchContrato('fechaFinJornadas', $event)"
+                [disabled]="modoProgramacionMunicipio() || contratoFormEjecutado()"
+                [required]="!modoProgramacionMunicipio()"
+                title="Último día calendario para programar jornadas"
+              ></argo-date-input>
             </div>
+          </div>
+          <div class="contrato-modo-prog" role="radiogroup" aria-label="Modo de programación de jornadas">
+            <label>
+              <input
+                type="radio"
+                name="modoProgJornadas"
+                [checked]="!modoProgramacionMunicipio()"
+                (change)="setModoProgramacionJornadas('global')"
+                [disabled]="contratoFormEjecutado()"
+              />
+              Fechas globales
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="modoProgJornadas"
+                [checked]="modoProgramacionMunicipio()"
+                (change)="setModoProgramacionJornadas('municipio')"
+                [disabled]="contratoFormEjecutado()"
+              />
+              Fechas por municipio
+            </label>
+            <p class="hint block-hint">
+              @if (modoProgramacionMunicipio()) {
+                Cada municipio tiene su propio inicio y fin. Las fechas del contrato son el marco (la más temprana y la más tardía del plan) y no se editan aquí.
+              } @else {
+                Un solo inicio y fin para todo el contrato. El plan solo indica municipio, jornadas, jornadas por día y clases por jornada.
+              }
+            </p>
           </div>
 
           <div class="contrato-kpi-strip" role="group" aria-label="Cupos de programación">
@@ -329,8 +371,18 @@
               />
             </div>
             <div class="contrato-kpi">
-              <span class="contrato-kpi-label">Clases / jornada</span>
-              <input type="number" min="0" max="20" class="contrato-kpi-input" [ngModel]="formContrato().clasesPorJornada" (ngModelChange)="patchContrato('clasesPorJornada', $event)" />
+              <span class="contrato-kpi-label">{{ tienePlanMunicipios() ? 'Nº clases' : 'Clases / jornada' }}</span>
+              <input
+                type="number"
+                min="0"
+                [attr.max]="tienePlanMunicipios() ? null : 20"
+                class="contrato-kpi-input"
+                [ngModel]="tienePlanMunicipios() ? totalClasesPlanContrato() : formContrato().clasesPorJornada"
+                (ngModelChange)="onKpiClasesPorJornadaChange($event)"
+                [readonly]="tienePlanMunicipios()"
+                [class.readonly]="tienePlanMunicipios()"
+                [title]="tituloClasesPorJornadaKpi()"
+              />
             </div>
             <div class="contrato-kpi">
               <span class="contrato-kpi-label">Nº alumnos</span>
@@ -344,7 +396,11 @@
               <div>
                 <label class="contrato-origenes-label">Plan de municipios</label>
                 <p class="hint block-hint">
-                  Uno o varios municipios, en orden. Por cada uno: total de jornadas y cuántas el mismo día.
+                  Uno o varios municipios, en orden. En fechas por municipio, el número de jornadas se calcula
+                  solo (días hábiles según sáb/dom/fest × por día) y usted puede editarlo.
+                  @if (modoProgramacionMunicipio()) {
+                    En este modo también va el inicio y el fin de cada municipio.
+                  }
                 </p>
               </div>
             </header>
@@ -359,14 +415,37 @@
                   (limpiado)="onMunicipioPlanLimpiar()"
                 />
               </div>
+              @if (modoProgramacionMunicipio()) {
+                <div class="field col-w-date col-w-date--plan">
+                  <argo-date-input
+                    class="plan-muni-date"
+                    label="Inicio"
+                    [ngModel]="planMuniFechaInic()"
+                    (ngModelChange)="onPlanMuniFechaInic($event)"
+                    [disabled]="contratoFormEjecutado()"
+                    [required]="true"
+                  ></argo-date-input>
+                </div>
+                <div class="field col-w-date col-w-date--plan">
+                  <argo-date-input
+                    class="plan-muni-date"
+                    label="Fin"
+                    [ngModel]="planMuniFechaFin()"
+                    (ngModelChange)="onPlanMuniFechaFin($event)"
+                    [disabled]="contratoFormEjecutado()"
+                    [required]="true"
+                  ></argo-date-input>
+                </div>
+              }
               <div class="field col-w-num">
                 <label>Jornadas</label>
                 <input
                   type="number"
                   min="1"
                   [ngModel]="planMuniJornadas()"
-                  (ngModelChange)="planMuniJornadas.set(+$event || 1)"
+                  (ngModelChange)="planMuniJornadas.set(+$event || 0)"
                   [disabled]="contratoFormEjecutado()"
+                  title="Se calcula con los días hábiles del rango × por día. Puede editarlo."
                 />
               </div>
               <div class="field col-w-num">
@@ -376,9 +455,21 @@
                   min="1"
                   max="20"
                   [ngModel]="planMuniPorDia()"
-                  (ngModelChange)="planMuniPorDia.set(+$event || 1)"
+                  (ngModelChange)="onPlanMuniPorDia($event)"
                   [disabled]="contratoFormEjecutado()"
                   title="Cuántas jornadas de este municipio el mismo día"
+                />
+              </div>
+              <div class="field col-w-num">
+                <label>Clases / jor.</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  [ngModel]="planMuniClases()"
+                  (ngModelChange)="planMuniClases.set(+$event || 0)"
+                  [disabled]="contratoFormEjecutado()"
+                  title="Clases autogeneradas en cada jornada de este municipio"
                 />
               </div>
               <div class="field field-plan-add-btn">
@@ -410,6 +501,28 @@
                       </span>
                     </div>
                     <div class="plan-muni-metrics">
+                      @if (modoProgramacionMunicipio()) {
+                        <div class="plan-muni-metric plan-muni-metric--date">
+                          <span class="plan-muni-metric-lbl">Inicio</span>
+                          <argo-date-input
+                            class="plan-muni-date"
+                            [ngModel]="row.fechaInicJornadas"
+                            (ngModelChange)="patchFechaPlan(i, 'fechaInicJornadas', $event)"
+                            [disabled]="contratoFormEjecutado()"
+                            [required]="true"
+                          ></argo-date-input>
+                        </div>
+                        <div class="plan-muni-metric plan-muni-metric--date">
+                          <span class="plan-muni-metric-lbl">Fin</span>
+                          <argo-date-input
+                            class="plan-muni-date"
+                            [ngModel]="row.fechaFinJornadas"
+                            (ngModelChange)="patchFechaPlan(i, 'fechaFinJornadas', $event)"
+                            [disabled]="contratoFormEjecutado()"
+                            [required]="true"
+                          ></argo-date-input>
+                        </div>
+                      }
                       <label class="plan-muni-metric">
                         <span class="plan-muni-metric-lbl">Jornadas</span>
                         <input
@@ -419,6 +532,7 @@
                           [ngModel]="row.numJornadas"
                           (ngModelChange)="patchNumJornadasPlan(i, $event)"
                           [disabled]="contratoFormEjecutado()"
+                          title="Se calcula con los días hábiles del rango × por día. Puede editarlo."
                         />
                       </label>
                       <label class="plan-muni-metric">
@@ -434,6 +548,28 @@
                           title="Jornadas de este municipio el mismo día"
                         />
                       </label>
+                      <label class="plan-muni-metric">
+                        <span class="plan-muni-metric-lbl">Clases / jor.</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="20"
+                          class="plan-muni-num"
+                          [ngModel]="row.clasesPorJornada ?? 1"
+                          (ngModelChange)="patchClasesPorJornadaPlan(i, $event)"
+                          [disabled]="contratoFormEjecutado()"
+                          title="Clases autogeneradas en cada jornada de este municipio"
+                        />
+                      </label>
+                      @if (modoProgramacionMunicipio()) {
+                        @if (badgeCapacidadFilaPlan(row); as cap) {
+                          <span
+                            class="plan-muni-capacidad"
+                            [class.plan-muni-capacidad--ok]="cap.ok"
+                            [class.plan-muni-capacidad--err]="!cap.ok"
+                          >{{ cap.texto }}</span>
+                        }
+                      }
                     </div>
                     <div class="plan-muni-acciones">
                       <button
@@ -466,7 +602,17 @@
               </ul>
               <p class="plan-muni-total">
                 Total plan: <strong>{{ totalJornadasPlanContrato() }}</strong> jornada(s)
+                · <strong>{{ totalClasesPlanContrato() }}</strong> clase(s)
               </p>
+              @if (avisoCapacidadProgramacion(); as aviso) {
+                <p
+                  class="plan-capacidad"
+                  [class.plan-capacidad--ok]="aviso.ok"
+                  [class.plan-capacidad--err]="!aviso.ok"
+                >
+                  {{ aviso.texto }}
+                </p>
+              }
             } @else {
               <div class="plan-muni-empty">
                 <span class="plan-muni-empty-ico" aria-hidden="true"></span>
@@ -488,7 +634,7 @@
                 <label class="contrato-origenes-label">Orígenes de alumnos y certificación</label>
                 <p class="hint block-hint">
                   Active los tipos de participantes. Cada origen tiene sesiones, tipo de certificado y, si es
-                  global, su propio programa.
+                  global, su propio programa; si es por clase, su propia lista de programas.
                 </p>
               </div>
             </header>
@@ -555,8 +701,64 @@
                     </div>
                   } @else {
                     <p class="hint block-hint origen-cert-hint">
-                      Por clase: encabezado y horas salen del programa de cada clase.
+                      Por clase: encabezado y horas salen del programa de cada clase. Elija aquí los
+                      programas que podrá usar al operar clases de este origen.
                     </p>
+                    @if (programasJornadaLoading()) {
+                      <p class="field-hint">Cargando catálogo de programas…</p>
+                    } @else if (programasJornada().length === 0) {
+                      <p class="field-hint">
+                        No hay programas de «Jornadas de Capacitación» en el catálogo. Créelos en
+                        <a routerLink="/app/programas" target="_blank">Programas</a>.
+                      </p>
+                    } @else {
+                      <input
+                        type="search"
+                        class="contrato-programas-buscar"
+                        placeholder="Buscar por código, nombre o ID…"
+                        [ngModel]="buscarProgramasOrigen()[o.key]"
+                        (ngModelChange)="setBuscarProgramasOrigen(o.key, $event)"
+                        [disabled]="programasOrigenDeshabilitados(o.key)" />
+                      @if (cantidadProgramasOrigen(o.key) > 0) {
+                        <div class="contrato-programas-chips">
+                          @for (pid of certOrigenRowIds(o.key); track pid) {
+                            <span class="contrato-programa-chip">{{ programaContratoLabel(pid) }}</span>
+                          }
+                          @if (!programasOrigenDeshabilitados(o.key)) {
+                            <button type="button" class="mini ghost" (click)="limpiarProgramasOrigen(o.key)">
+                              Quitar todos
+                            </button>
+                          }
+                        </div>
+                      }
+                      <div class="contrato-programas-list origen-cert-programas-list">
+                        @for (p of programasOrigenFiltrados(o.key); track programaOptionValue(p)) {
+                          <label
+                            class="contrato-programa-pick"
+                            [class.selected]="tieneProgramaOrigen(o.key, programaOptionValue(p))"
+                            [class.disabled]="programasOrigenDeshabilitados(o.key)">
+                            <input
+                              type="checkbox"
+                              [checked]="tieneProgramaOrigen(o.key, programaOptionValue(p))"
+                              [disabled]="programasOrigenDeshabilitados(o.key)"
+                              (change)="toggleProgramaOrigen(o.key, programaOptionValue(p), $any($event.target).checked)" />
+                            <span class="contrato-programa-code">{{ p.codigoProg || programaOptionValue(p) }}</span>
+                            <span class="contrato-programa-name">{{ p.nombreProg }}</span>
+                          </label>
+                        } @empty {
+                          <p class="field-hint">Sin coincidencias para la búsqueda.</p>
+                        }
+                      </div>
+                    }
+                    @if (cantidadProgramasOrigen(o.key) > 0) {
+                      <p class="hint block-hint">
+                        {{ cantidadProgramasOrigen(o.key) }} programa(s) de este origen.
+                      </p>
+                    } @else {
+                      <p class="hint block-hint">
+                        Sin programas en este origen, las clases quedan sin programa hasta que se elija al operar.
+                      </p>
+                    }
                   }
                 }
               </div>
@@ -566,106 +768,127 @@
             </p>
           </div>
 
+          <div class="contrato-instructores-plan">
+            <header class="contrato-plan-head">
+              <span class="contrato-block-icon contrato-block-icon--people" aria-hidden="true"></span>
+              <div>
+                <label class="contrato-origenes-label">Instructores y programas</label>
+                <p class="hint block-hint">
+                  Elija un instructor, marque los programas que dicta y pulse Agregar. Después puede agregar
+                  el siguiente. No entra auxiliar de carpa. Al generar faltantes, las clases se reparte en
+                  partes iguales entre quienes tienen ese programa.
+                </p>
+              </div>
+            </header>
+            <div class="plan-inst-add">
+              <div class="field col-w-md">
+                <argo-catalogo-enum-buscar
+                  #comboInstructorPlan
+                  label="Instructor"
+                  placeholder="Seleccione o escriba instructor…"
+                  [textoInicial]="planInstTexto()"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [disabled]="contratoFormEjecutado()"
+                  [opcionesLocales]="opcionesInstructoresPlan()"
+                  (seleccionado)="onInstructorPlanPick($event)"
+                  (limpiado)="onInstructorPlanLimpiar()"
+                />
+              </div>
+              <div class="field field-plan-add-btn">
+                <label>&nbsp;</label>
+                <button
+                  type="button"
+                  class="mini primary"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="agregarInstructorPlan()"
+                  [disabled]="contratoFormEjecutado()"
+                >
+                  + Agregar
+                </button>
+              </div>
+            </div>
+            @if (planInstError()) {
+              <p class="hint block-hint plan-inst-error">{{ planInstError() }}</p>
+            }
+            @if (programasParaInstructoresContrato().length) {
+              <div class="contrato-programas-list origen-cert-programas-list plan-inst-programas">
+                @for (pid of programasParaInstructoresContrato(); track pid) {
+                  <label
+                    class="contrato-programa-pick"
+                    [class.selected]="tieneProgramaInstructorBorrador(pid)"
+                    [class.disabled]="contratoFormEjecutado()">
+                    <input
+                      type="checkbox"
+                      [checked]="tieneProgramaInstructorBorrador(pid)"
+                      [disabled]="contratoFormEjecutado()"
+                      (change)="toggleProgramaInstructorBorrador(pid, $any($event.target).checked)" />
+                    <span class="contrato-programa-code">{{ programaContratoCodigo(pid) || pid }}</span>
+                    <span class="contrato-programa-name">{{ programaContratoNombre(pid) }}</span>
+                  </label>
+                }
+              </div>
+            } @else {
+              <p class="hint block-hint">
+                Primero elija programas en los orígenes de alumnos (por clase o el programa global).
+              </p>
+            }
+            @if ((formContrato().instructoresPlan || []).length) {
+              <ul class="plan-muni-lista" role="list">
+                @for (row of formContrato().instructoresPlan || []; track row.idEmpleado; let i = $index) {
+                  <li class="plan-inst-item">
+                    <div class="plan-muni-info">
+                      <strong class="plan-muni-nombre">{{ row.nombre || ('Empleado ' + row.idEmpleado) }}</strong>
+                      <span class="plan-muni-meta">Instructor</span>
+                    </div>
+                    <div class="contrato-programas-list plan-inst-programas">
+                      @for (pid of programasParaInstructoresContrato(); track pid) {
+                        <label
+                          class="contrato-programa-pick"
+                          [class.selected]="tieneProgramaInstructorPlan(i, pid)"
+                          [class.disabled]="contratoFormEjecutado()">
+                          <input
+                            type="checkbox"
+                            [checked]="tieneProgramaInstructorPlan(i, pid)"
+                            [disabled]="contratoFormEjecutado()"
+                            (change)="toggleProgramaInstructorPlan(i, pid, $any($event.target).checked)" />
+                          <span class="contrato-programa-code">{{ programaContratoCodigo(pid) || pid }}</span>
+                          <span class="contrato-programa-name">{{ programaContratoNombre(pid) }}</span>
+                        </label>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      class="plan-muni-btn plan-muni-btn--danger"
+                      (click)="quitarInstructorPlan(i)"
+                      [disabled]="contratoFormEjecutado()"
+                      title="Quitar">
+                      ✕
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <div class="plan-muni-empty">
+                <p>Sin instructores en el contrato. Elija instructor, marque programas y pulse + Agregar.</p>
+              </div>
+            }
+          </div>
+
           <p class="hint block-hint">
             En el plan, «Por día» define cuántas jornadas de ese municipio van el mismo calendario.
             La certificación se aplica según el origen de cada alumno (sesiones y tipo configurados arriba).
             «Generar faltantes» crea jornadas pendientes según el plan de municipios (orden y cupos) y
-            autogenera clases (franjas 8:00–17:00; sin instructor).
+            autogenera clases (sin hora de inicio ni de fin; el horario se registra al operar) y asigna instructor si está en la lista de este contrato.
             Programa desde <strong>inicio jornadas</strong> hasta <strong>fin jornadas</strong> (puede ser meses adelante), respetando sábados, domingos y festivos.
             @if (esCertPorClase() && cantidadProgramasContrato() > 0) {
-              Con los {{ cantidadProgramasContrato() }} programa(s) del contrato, cada clase nueva recibe uno en reparto equitativo.
+              Si hay un solo origen por clase, cada instructor recibe una clase por cada programa que dicta,
+              intercalados para que no queden del mismo instructor de seguido.
             } @else if (esCertPorClase()) {
-              Sin programas en el contrato, las clases autogeneradas quedan sin programa (se asigna al operar).
+              Con varios orígenes por clase (o sin programas), las clases autogeneradas quedan sin programa (se asigna al operar).
             }
           </p>
-        </section>
-
-        <section
-          class="form-block contrato-card-block contrato-programas-block"
-          [class.form-block--muted]="programasSeccionInactiva()">
-          <header class="contrato-block-head">
-            <span class="contrato-block-icon contrato-block-icon--book" aria-hidden="true"></span>
-            <div>
-              <h3 class="form-block-title">Programas del contrato</h3>
-              <p class="contrato-block-sub">
-                Programas que se reparten entre clases al generar faltantes (certificación por clase).
-              </p>
-            </div>
-          </header>
-          <p class="hint block-hint">
-            Elija los programas que aplican a este contrato. Al usar «Generar faltantes» o crear jornadas con
-            autogeneración de clases, el sistema reparte los programas de forma equitativa entre las clases nuevas.
-            Cada clase sigue siendo editable: instructor o administrador pueden cambiar el programa después.
-          </p>
-          @if (esCertGlobal() && esCertPorClase()) {
-            <p class="hint block-hint">
-              Este contrato combina orígenes globales y por clase: el programa de certificación de cada
-              origen global se configura arriba; la lista de programas aplica a las clases (por clase).
-            </p>
-          }
-          @if (esCertGlobal() && !esCertPorClase()) {
-            <p class="hint block-hint">
-              Todos los orígenes activos son globales: el programa de certificación de cada uno se
-              configura en el bloque de orígenes (arriba). Esta lista de programas no aplica a la
-              emisión global.
-            </p>
-          }
-          @if (contratoFormEjecutado()) {
-            <p class="hint block-hint">Contrato ejecutado: los programas no se pueden modificar.</p>
-          }
-          @if (programasJornadaLoading()) {
-            <p class="field-hint">Cargando catálogo de programas…</p>
-          } @else if (programasJornada().length === 0) {
-            <p class="field-hint">
-              No hay programas de «Jornadas de Capacitación» en el catálogo. Créelos en
-              <a routerLink="/app/programas" target="_blank">Programas</a> con tipo de capacitación adecuado.
-            </p>
-          } @else {
-            <input
-              type="search"
-              class="contrato-programas-buscar"
-              placeholder="Buscar por código, nombre o ID…"
-              [ngModel]="buscarProgramasContrato()"
-              (ngModelChange)="buscarProgramasContrato.set($event)"
-              [disabled]="programasContratoDeshabilitados()" />
-            @if (cantidadProgramasContrato() > 0) {
-              <div class="contrato-programas-chips">
-                @for (pid of formContrato().idProgramas; track pid) {
-                  <span class="contrato-programa-chip">{{ programaContratoLabel(pid) }}</span>
-                }
-                @if (programasContratoHabilitados()) {
-                  <button type="button" class="mini ghost" (click)="limpiarProgramasContrato()">Quitar todos</button>
-                }
-              </div>
-            }
-            <div class="contrato-programas-list">
-              @for (p of programasContratoFiltrados(); track programaOptionValue(p)) {
-                <label
-                  class="contrato-programa-pick"
-                  [class.selected]="tieneProgramaContrato(programaOptionValue(p))"
-                  [class.disabled]="programasContratoDeshabilitados()">
-                  <input
-                    type="checkbox"
-                    [checked]="tieneProgramaContrato(programaOptionValue(p))"
-                    [disabled]="programasContratoDeshabilitados()"
-                    (change)="toggleProgramaContrato(programaOptionValue(p), $any($event.target).checked)" />
-                  <span class="contrato-programa-code">{{ p.codigoProg || programaOptionValue(p) }}</span>
-                  <span class="contrato-programa-name">{{ p.nombreProg }}</span>
-                </label>
-              } @empty {
-                <p class="field-hint">Sin coincidencias para la búsqueda.</p>
-              }
-            </div>
-          }
-          @if (esCertPorClase() && cantidadProgramasContrato() > 0) {
-            <p class="hint block-hint">
-              {{ cantidadProgramasContrato() }} programa(s) seleccionados: al generar faltantes se reparte(n) entre las clases nuevas.
-            </p>
-          } @else if (esCertPorClase()) {
-            <p class="hint block-hint">
-              Sin programas seleccionados, las clases autogeneradas quedan sin programa (se asigna al operar).
-            </p>
-          }
         </section>
 
         <section
@@ -779,7 +1002,8 @@
               <h3 class="form-block-title">Programación del contrato</h3>
               <p class="hint">
                 {{ labelTipoCertificado(formContrato().tipoCertificado) }} ·
-                {{ formContrato().clasesPorJornada || 0 }} clase(s) por jornada ·
+                {{ labelClasesPorJornadaCal() }}
+                ·
                 {{ jornadasContratoOrdenadas().length }} jornada(s)
               </p>
             </div>
@@ -1145,6 +1369,16 @@
               Reprogramar jornadas
             </button>
           }
+          @if (puedeBorrarVacios()) {
+            <button
+              type="button"
+              class="ficha-btn ficha-btn--ghost"
+              (click)="borrarVaciosContrato('jornadas')"
+              [disabled]="loading()"
+              title="Borra solo jornadas vacías (sin clases con alumnos). No borra clases de otras jornadas.">
+              Borrar vacíos
+            </button>
+          }
           <button
             type="button"
             class="ficha-btn ficha-btn--ghost"
@@ -1250,6 +1484,16 @@
                   <span class="jornada-modal-nav-dot" aria-hidden="true"></span>
                 }
               </button>
+              <button
+                type="button"
+                class="jornada-modal-nav-btn"
+                [class.active]="jornadaEditPanel() === 'fotos-adicional'"
+                (click)="irPanelJornadaEdit('fotos-adicional')">
+                Evidencia fotográfica adicional
+                @if (fotosEvidenciaAdicionalJornada().length) {
+                  <span class="jornada-modal-nav-dot" aria-hidden="true"></span>
+                }
+              </button>
             </nav>
           }
           <div class="jornada-modal-body">
@@ -1319,10 +1563,10 @@
             Ej.: 100 alumnos y 8 jornadas → meta 13 por jornada.
           }
         </p>
-        @if (jornadaEditModo() === 'nueva' && (contratoActivo()?.clasesPorJornada ?? 0) > 0) {
+        @if (jornadaEditModo() === 'nueva' && clasesPorJornadaNuevaJornada() > 0) {
           <label class="checkbox-inline jornada-gen-clases">
             <input type="checkbox" [ngModel]="jornadaEditGenerarClases()" (ngModelChange)="jornadaEditGenerarClases.set($event)" />
-            Autogenerar {{ contratoActivo()?.clasesPorJornada }} clase(s) en esta jornada
+            Autogenerar {{ clasesPorJornadaNuevaJornada() }} clase(s) en esta jornada
           </label>
         }
         </section>
@@ -1614,13 +1858,78 @@
                   class="danger"
                   (click)="descargarPaqueteEntregaJornada($event)"
                   [disabled]="descargandoPaqueteEntregaJornada()"
-                  title="Informe PDF + certificados ZIP + evidencia consolidada en un solo archivo">
+                  title="Informe PDF + certificados ZIP + evidencia consolidada + evidencia fotográfica adicional">
                   {{
                     descargandoPaqueteEntregaJornada()
                       ? 'Generando paquete…'
                       : 'Paquete de entrega (ZIP completo)'
                   }}
                 </button>
+              </div>
+            </section>
+          </div>
+        }
+        @if (jornadaEditModo() === 'edit' && je._id && jornadaEditPanel() === 'fotos-adicional') {
+          <div class="jornada-evidencias-ficha">
+            <header class="jornada-evidencias-ficha-head">
+              <div>
+                <p class="jornada-evidencias-kicker">Ficha · Evidencia fotográfica adicional</p>
+                <h4>{{ labelJornada(je) }}</h4>
+                <p class="hint">
+                  Cargue fotos JPG o PNG de respaldo de la jornada. No se consolidan en el PDF de planillas;
+                  sí se incluyen en el paquete de entrega de la jornada y del contrato.
+                </p>
+              </div>
+            </header>
+            <section class="jornada-evidencias-bloque">
+              <header class="jornada-evidencias-bloque-head">
+                <h5>Fotos adicionales</h5>
+                <p>{{ fotosEvidenciaAdicionalJornada().length }} de 30. Formatos: JPG y PNG.</p>
+              </header>
+              <div class="jornada-evidencia-panel">
+                @if (!fotosEvidenciaAdicionalJornada().length) {
+                  <p class="hint">Aún no hay fotos adicionales en esta jornada.</p>
+                }
+                @if (fotosEvidenciaAdicionalJornada().length) {
+                  <div class="jornada-fotos-adicional-grid">
+                    @for (f of fotosEvidenciaAdicionalJornada(); track f._id || f.url) {
+                      <figure class="jornada-fotos-adicional-item">
+                        <a [href]="urlFotoEvidencia(f.url)" target="_blank" rel="noopener noreferrer">
+                          <img [src]="urlFotoEvidencia(f.url)" [alt]="f.nombre || 'Foto adicional'" />
+                        </a>
+                        <figcaption>
+                          <span class="jornada-fotos-adicional-nombre" [title]="f.nombre">{{ f.nombre || 'Foto' }}</span>
+                          <button
+                            type="button"
+                            class="mini ghost"
+                            (click)="eliminarFotoEvidenciaAdicional(f)"
+                            [disabled]="subiendoFotosAdicionalJornada() || contratoDeJornadaFinalizado(je)">
+                            Quitar
+                          </button>
+                        </figcaption>
+                      </figure>
+                    }
+                  </div>
+                }
+                <div class="jornada-evidencia-actions">
+                  @if (contratoDeJornadaFinalizado(je)) {
+                    <p class="hint">El contrato está finalizado: las fotos son solo de consulta.</p>
+                  } @else if (fotosEvidenciaAdicionalJornada().length >= 30) {
+                    <p class="hint">Ya hay 30 fotos (máximo). Quite alguna para cargar más.</p>
+                  } @else {
+                    <label
+                      class="evidencia-upload jornada-evidencia-upload"
+                      [class.disabled]="subiendoFotosAdicionalJornada()">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
+                        multiple
+                        (change)="onFotosAdicionalJornadaSelected($event)"
+                        [disabled]="subiendoFotosAdicionalJornada()" />
+                      <span>{{ subiendoFotosAdicionalJornada() ? 'Cargando…' : 'Cargar fotos (JPG / PNG)' }}</span>
+                    </label>
+                  }
+                </div>
               </div>
             </section>
           </div>
@@ -1910,6 +2219,16 @@
               [title]="contratoActivoFinalizado() ? 'Contrato finalizado: no se pueden crear clases' : 'Crear clase'">
               + Crear clase
             </button>
+            @if (puedeBorrarVacios()) {
+              <button
+                type="button"
+                class="ficha-btn ficha-btn--ghost"
+                (click)="borrarVaciosContrato('clases')"
+                [disabled]="loading()"
+                title="Borra solo clases sin alumnos, asistencias ni certificado. No borra jornadas.">
+                Borrar vacíos
+              </button>
+            }
             <button type="button" class="ficha-btn ficha-btn--ghost" (click)="irInstructor()">Clases en ejecución</button>
           </div>
         </div>
@@ -1926,7 +2245,7 @@
       <table class="argo">
         <thead>
           <tr>
-            <th>Contrato</th>
+            <th>Código de jornada</th>
             <th>Fecha jornada</th>
             <th>Programa</th>
             <th>Carpa</th>
@@ -1940,7 +2259,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let c of clasesListaFiltradas()" [class.sel]="claseSel() === c._id" [ngClass]="rowClaseClass(c.estado)" (click)="seleccionarClase(c)">
-            <td><span [ngClass]="capCodContrato(labelContratoCortoClase(c))">{{ labelContratoCortoClase(c) }}</span></td>
+            <td><span class="cap cap-amber cap-mono cap-sm" [title]="c.idJornada">{{ labelCodigoJornadaClase(c) }}</span></td>
             <td><span [ngClass]="capFechaJor(c.fechaJornada)">{{ fmtFecha(c.fechaJornada) }}</span></td>
             <td><span [ngClass]="capPrograma(c.idPrograma)">{{ nombrePrograma(c.idPrograma) }}</span></td>
             <td>
@@ -2299,7 +2618,9 @@
 
                   @if (origenesActivosContrato().length) {
                     <div class="cm-origen-filtro">
-                      <span class="cm-origen-label">Origen del alumno</span>
+                      <span class="cm-origen-label">{{
+                        modalModoClase() === 'nuevo' ? 'Origen de la clase' : 'Origen del alumno'
+                      }}</span>
                       <div class="origen-filtro-chips">
                         @for (o of origenesActivosContrato(); track o.key) {
                           <button
@@ -2312,6 +2633,11 @@
                           </button>
                         }
                       </div>
+                      @if (modalModoClase() === 'nuevo') {
+                        <p class="hint block-hint">
+                          Si el instructor tiene programas en el contrato, el combo solo muestra los que él dicta.
+                        </p>
+                      }
                     </div>
                   }
                 </div>
@@ -2331,6 +2657,11 @@
                         (seleccionado)="onProgramaModalPick($event)"
                         (limpiado)="onProgramaModalLimpiar()"
                       />
+                      @if (origenPorClaseSinProgramas()) {
+                        <p class="hint block-hint warn-text">
+                          {{ mensajeSinProgramasClase() }}
+                        </p>
+                      }
                     </div>
                     <div class="cm-field cm-instructor cm-instructor--destacado">
                       @if (puedeAsignarInstructor()) {
@@ -2525,6 +2856,11 @@
 
                 <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
 
+              }
+              @if (alumnosClaseAnteriorOmitidosPrograma().length > 0) {
+                <p class="hint hint-compact hint-warn">
+                  Se omitieron {{ alumnosClaseAnteriorOmitidosPrograma().length }} alumno(s) que ya tomaron este programa en el contrato.
+                </p>
               }
 
               @if (alumnosClaseAnteriorDisponibles().length > 0) {
@@ -2995,6 +3331,16 @@
             class="danger ghost clase-fbtn clase-fbtn--borrar"
             (click)="eliminarClase(clDel)">
             <span class="clase-fbtn-ic" aria-hidden="true">🗑</span> Borrar clase
+          </button>
+        }
+        @if (puedeBorrarVacios()) {
+          <button
+            type="button"
+            class="danger ghost clase-fbtn clase-fbtn--borrar"
+            (click)="borrarVaciosContrato('clases')"
+            [disabled]="loading()"
+            title="Borra solo las clases sin alumnos, asistencias ni certificado vigente. No borra jornadas.">
+            <span class="clase-fbtn-ic" aria-hidden="true">🗑</span> Borrar vacíos
           </button>
         }
       }

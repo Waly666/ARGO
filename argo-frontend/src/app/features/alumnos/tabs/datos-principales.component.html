@@ -275,6 +275,7 @@
               <argo-date-input
                 [class.campo-obligatorio-error]="campoObligatorioInvalido('fechaNac')"
                 label="Fecha nacimiento *"
+                [required]="true"
                 [ngModel]="form().fechaNac"
                 (ngModelChange)="patch('fechaNac', $event)"
               ></argo-date-input>
@@ -313,10 +314,39 @@
           <span class="section-icon ic-purple">◈</span>
           <div>
             <h3>Datos personales</h3>
-            <p>Salud, formación, jornada y ocupación · todos obligatorios</p>
+            <p>Edad, grupo de edad, salud, formación, jornada, ocupación y actor vial · catálogos obligatorios</p>
           </div>
         </div>
         <div class="section-body">
+          <div class="row">
+            <div class="col-3">
+              <label>Edad</label>
+              <input
+                type="text"
+                [value]="edadCalculadaTexto()"
+                readonly
+                class="readonly"
+                tabindex="-1"
+                aria-readonly="true"
+              />
+              <p class="hint">Se calcula sola con la fecha de nacimiento.</p>
+            </div>
+            <div class="col-6">
+              <label>Grupo de edad</label>
+              <input
+                type="text"
+                [value]="grupoEdadCalculadoTexto()"
+                readonly
+                class="readonly"
+                tabindex="-1"
+                aria-readonly="true"
+              />
+              <p class="hint">
+                Primera infancia 0–5, infancia / niñez 6–13, juventud 14–28 (Ley 1622),
+                adultez 29–59, personas mayores 60+.
+              </p>
+            </div>
+          </div>
           <div class="row">
             <div class="col-3">
               <argo-catalogo-enum-buscar
@@ -430,6 +460,20 @@
                 [opcionesLocales]="opcionesOcupaciones()"
                 (seleccionado)="onCatalogoPick('ocupacion', $event)"
                 (limpiado)="onCatalogoLimpiar('ocupacion')"
+              />
+            </div>
+            <div class="col-3">
+              <argo-catalogo-enum-buscar
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('actorVial')"
+                label="Actor vial *"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(actoresViales(), form().actorVial)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesActoresViales()"
+                (seleccionado)="onCatalogoPick('actorVial', $event)"
+                (limpiado)="onCatalogoLimpiar('actorVial')"
               />
             </div>
           </div>

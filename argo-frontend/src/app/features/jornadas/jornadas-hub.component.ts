@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
-import { Component, DestroyRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
@@ -42,6 +42,24 @@ import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import {
+  filtrarProgramasParaElegirClase,
+  idsProgramasElegiblesClase,
+  mensajeSinProgramasElegiblesClase,
+  programaIdEnLista,
+  type OptsProgramasElegiblesClase,
+  type UsuarioParaPlanInstructor,
+} from './programas-origen-clase.util';
+import {
+  badgeCapacidadFila,
+  clasesPorJornadaDesdePlan,
+  clasesPorJornadaParaMunicipio,
+  inferirModoProgramacionJornadas,
+  mensajeErrorProgramacion,
+  sugerirNumJornadas,
+  totalClasesDesdePlan,
+  type ModoProgramacionJornadas,
+} from './capacidad-programacion-jornadas.util';
 import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { Cliente, ClienteService } from '../../core/services/cliente.service';
@@ -312,7 +330,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   claseActiva = signal<any | null>(null);
   programasJornada = signal<any[]>([]);
   programasJornadaLoading = signal(false);
-  buscarProgramasContrato = signal('');
+  buscarProgramasOrigen = signal<Record<'colegio' | 'estamento' | 'empresa' | 'operativo', string>>({
+    colegio: '',
+    estamento: '',
+    empresa: '',
+    operativo: '',
+  });
   nuevaClaseProg = signal('');
   nuevaClaseUbic = signal('Carpa');
   asistencias = signal<any[]>([]);
@@ -485,6 +508,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   );
   /** Solo administrador puede eliminar clases / jornadas / contratos. */
   puedeEliminarClase = computed(() => this.auth.isAdmin());
+  /** Admin: borrar vacíos según la ficha (jornadas o clases), no ambos a la vez. */
+  puedeBorrarVacios = computed(() => {
+    if (!this.puedeEliminarClase()) return false;
+    const c = this.contratoActivo();
+    if (c?._id) return (c.estado || 'En Ejecución') !== 'Ejecutado';
+    const cl = this.claseActiva();
+    if (!cl) return false;
+    return !this.contratoDeClaseFinalizado(cl);
+  });
   puedeEliminarClaseActiva = computed(
     () =>
       !this.contratoModalFinalizado() &&
@@ -503,8 +535,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Alumnos de la clase fuente que aún no están matriculados en la clase actual. */
   alumnosClaseAnteriorDisponibles = computed(() => {
     const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
-    return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
+    return this.alumnosClaseAnterior().filter((a) => {
+      if (inscritosDocs.has(Number(a.numDoc))) return false;
+      if (a.yaInscritoEnEstaClase) return false;
+      if (a.puedeMatricular === false) return false;
+      return true;
+    });
   });
+  alumnosClaseAnteriorOmitidosPrograma = computed(() =>
+    this.alumnosClaseAnterior().filter((a) => a.yaTomoProgramaContrato),
+  );
   /** Sin clase previa automática en la jornada (primera clase). */
   claseAnteriorSinPrevia = signal(false);
   opcionesClasesCopiarContrato = computed<EnumBuscarOption[]>(() => {
@@ -523,6 +563,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return this.claseAnteriorInfo()
         ? 'La clase elegida no tiene alumnos inscritos.'
         : 'No hay alumnos para copiar de esa clase. Elija otra del listado.';
+    }
+    const omitidos = this.alumnosClaseAnteriorOmitidosPrograma().length;
+    if (omitidos > 0 && this.alumnosClaseAnteriorDisponibles().length === 0) {
+      return `${omitidos} alumno(s) ya tomaron este programa en el contrato. No se copian.`;
     }
     return 'Los alumnos de esa clase ya están matriculados en la clase actual.';
   });
@@ -713,6 +757,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   supervisores = signal<{ _id: string; nombre: string }[]>([]);
   instructores = signal<InstructorJornadaDto[]>([]);
+  /** Solo cargo instructor (programación del contrato; no auxiliar-carpa). */
+  instructoresCargo = signal<InstructorJornadaDto[]>([]);
   ciudadContratoTexto = signal('');
   supNuevoNombre = signal('');
 
@@ -737,8 +783,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Archivos locales pendientes de consolidar y subir (evidencia jornada). */
   jornadaEvidenciaArchivos = signal<File[]>([]);
   subiendoEvidenciaJornada = signal(false);
+  subiendoFotosAdicionalJornada = signal(false);
   /** Panel interno del modal editar jornada. */
-  jornadaEditPanel = signal<'datos' | 'evidencias'>('datos');
+  jornadaEditPanel = signal<'datos' | 'evidencias' | 'fotos-adicional'>('datos');
   jornadaEvidenciaCerts = signal<
     Array<{
       _id: string;
@@ -847,12 +894,25 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   });
 
   opcionesProgramasModal = computed<EnumBuscarOption[]>(() => {
-    const base = this.programasJornada().map((p) => ({
+    const opts = this.optsProgramasClase();
+    const permitidos = idsProgramasElegiblesClase(opts);
+    const catalogo = filtrarProgramasParaElegirClase(this.programasJornada(), opts);
+    const base = catalogo.map((p) => ({
       value: this.programaOptionValue(p),
       label: String(p.nombreProg || p.codigoProg || ''),
     }));
     const v = this.nuevaClaseProg();
-    if (v && !this.buscarProgramaEnLista(v)) {
+    if (!v || catalogo.some((p) => this.programaOptionValue(p) === v)) return base;
+    const hit = this.buscarProgramaEnLista(v);
+    const permitido =
+      permitidos == null ||
+      programaIdEnLista(v, permitidos) ||
+      (hit &&
+        [hit.idPrograma, hit._id, hit.idProg]
+          .filter(Boolean)
+          .some((x) => programaIdEnLista(String(x), permitidos)));
+    if (!permitido) return base;
+    if (!hit) {
       return [{ value: v, label: this.etiquetaProgramaModal() }, ...base];
     }
     return base;
@@ -890,8 +950,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.etiquetaProgramaModal();
   });
 
-  programasContratoFiltrados = computed(() => {
-    const q = this.buscarProgramasContrato().trim().toLowerCase();
+  programasOrigenFiltrados(key: 'colegio' | 'estamento' | 'empresa' | 'operativo') {
+    const q = (this.buscarProgramasOrigen()[key] || '').trim().toLowerCase();
     const list = this.programasJornada();
     if (!q) return list;
     return list.filter(
@@ -900,7 +960,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         String(p.codigoProg || '').toLowerCase().includes(q) ||
         this.programaOptionValue(p).toLowerCase().includes(q),
     );
-  });
+  }
 
   georefLoading = signal(false);
   private georefDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -1217,6 +1277,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       incluiSab: false,
       incluiDom: false,
       incluiFest: false,
+      programacionJornadasModo: 'global',
       idProgramas: [],
       origenesAlumnos: {
         colegio: false,
@@ -1225,12 +1286,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         operativo: true,
       },
       certificacionOrigen: {
-        colegio: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
-        estamento: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
-        empresa: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
-        operativo: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
+        colegio: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '', idProgramas: [] },
+        estamento: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '', idProgramas: [] },
+        empresa: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '', idProgramas: [] },
+        operativo: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '', idProgramas: [] },
       },
       municipiosPlan: [],
+      instructoresPlan: [],
     };
   }
 
@@ -1378,19 +1440,30 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const row =
       (map as Record<
         string,
-        { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string }
+        {
+          numSesCert?: number;
+          tipoCertificado?: string;
+          idProgramaCertificacion?: string;
+          idProgramas?: string[];
+        }
       >)[key] || {};
     const fb = this.formContrato();
+    const tipo = this.normalizarTipoCertificadoContrato(
+      row.tipoCertificado ?? fb.tipoCertificado ?? 'global',
+    );
+    let idProgramas = (row.idProgramas || []).map((x) => String(x).trim()).filter(Boolean);
+    if (tipo === 'por_clase' && !idProgramas.length) {
+      idProgramas = (fb.idProgramas || []).map((x) => String(x).trim()).filter(Boolean);
+    }
     return {
       numSesCert: Math.max(1, parseInt(String(row.numSesCert ?? fb.numSesCert ?? 1), 10) || 1),
-      tipoCertificado: this.normalizarTipoCertificadoContrato(
-        row.tipoCertificado ?? fb.tipoCertificado ?? 'global',
-      ),
+      tipoCertificado: tipo,
       idProgramaCertificacion: String(
         row.idProgramaCertificacion !== undefined && row.idProgramaCertificacion !== null
           ? row.idProgramaCertificacion
           : fb.idProgramaCertificacion || '',
       ).trim(),
+      idProgramas,
     };
   }
 
@@ -1404,6 +1477,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   certOrigenProgramaId(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): string {
     return this.certOrigenRow(key).idProgramaCertificacion;
+  }
+
+  certOrigenRowIds(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): string[] {
+    return this.certOrigenRow(key).idProgramas;
   }
 
   textoProgramaCertOrigen(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): string {
@@ -1439,7 +1516,6 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         estamento: { ...this.certOrigenRow('estamento') },
         empresa: { ...this.certOrigenRow('empresa') },
         operativo: { ...this.certOrigenRow('operativo') },
-        ...(f.certificacionOrigen || {}),
       };
       const row = { ...cur[key] };
       if (field === 'numSesCert') {
@@ -1473,17 +1549,29 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.patchCertOrigen(key, 'idProgramaCertificacion', '');
   }
 
-  /** Campos de Programas del contrato: editables si algún origen activo es por_clase. */
+  /** Programas de un origen: editables si ese origen está activo y es por_clase. */
+  programasOrigenDeshabilitados(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): boolean {
+    return this.contratoFormEjecutado() || !this.origenAlumnoActivo(key) || this.certOrigenTipo(key) !== 'por_clase';
+  }
+
+  cantidadProgramasOrigen(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): number {
+    return this.certOrigenRow(key).idProgramas.filter((id) => String(id).trim()).length;
+  }
+
+  cantidadProgramasContrato(): number {
+    return this.origenesActivosConCert()
+      .filter((o) => this.certOrigenTipo(o.key) === 'por_clase')
+      .reduce((n, o) => n + this.cantidadProgramasOrigen(o.key), 0);
+  }
+
   programasContratoDeshabilitados(): boolean {
     return !this.esCertPorClase();
   }
 
-  /** Programas editables (atajo positivo para la plantilla). */
   programasContratoHabilitados(): boolean {
     return !this.programasContratoDeshabilitados();
   }
 
-  /** Atenúa la sección que no aplica al tipo actual. */
   programasSeccionInactiva(): boolean {
     return !this.esCertPorClase();
   }
@@ -1741,43 +1829,328 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return cod ? `${cod} — ${p.nombreProg}` : String(p.nombreProg || idStr);
   }
 
+  programaContratoCodigo(id: string): string {
+    const p = this.buscarProgramaEnLista(id);
+    return String(p?.codigoProg || '').trim();
+  }
+
+  programaContratoNombre(id: string): string {
+    const idStr = String(id).trim();
+    const p = this.buscarProgramaEnLista(idStr);
+    if (!p) return idStr;
+    return String(p.nombreProg || p.codigoProg || idStr);
+  }
+
+  tieneProgramaOrigen(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    idPrograma: string,
+  ): boolean {
+    const id = String(idPrograma).trim();
+    return this.certOrigenRow(key).idProgramas.some((x) => String(x).trim() === id);
+  }
+
+  toggleProgramaOrigen(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    idPrograma: string,
+    checked: boolean,
+  ): void {
+    if (this.programasOrigenDeshabilitados(key)) return;
+    const id = String(idPrograma).trim();
+    if (!id) return;
+    this.formContrato.update((f) => {
+      const cur = {
+        colegio: { ...this.certOrigenRow('colegio') },
+        estamento: { ...this.certOrigenRow('estamento') },
+        empresa: { ...this.certOrigenRow('empresa') },
+        operativo: { ...this.certOrigenRow('operativo') },
+      };
+      const row = { ...this.certOrigenRow(key) };
+      const set = new Set((row.idProgramas || []).map(String));
+      if (checked) set.add(id);
+      else set.delete(id);
+      row.idProgramas = [...set];
+      cur[key] = row;
+      const next: ContratacionDto = { ...f, certificacionOrigen: cur };
+      next.idProgramas = this.unionProgramasPorClase(cur);
+      return next;
+    });
+  }
+
+  async limpiarProgramasOrigen(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): Promise<void> {
+    if (this.programasOrigenDeshabilitados(key)) return;
+    if (!this.cantidadProgramasOrigen(key)) return;
+    const ok = await this.confirmSvc.open({
+      title: 'Confirmar borrado',
+      message: '¿Quitar todos los programas de este origen?',
+      variant: 'danger',
+      confirmLabel: 'Sí, quitar todos',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
+    this.formContrato.update((f) => {
+      const cur = {
+        colegio: { ...this.certOrigenRow('colegio') },
+        estamento: { ...this.certOrigenRow('estamento') },
+        empresa: { ...this.certOrigenRow('empresa') },
+        operativo: { ...this.certOrigenRow('operativo') },
+      };
+      const row = { ...this.certOrigenRow(key), ...cur[key], idProgramas: [] as string[] };
+      cur[key] = row;
+      const next: ContratacionDto = { ...f, certificacionOrigen: cur };
+      next.idProgramas = this.unionProgramasPorClase(cur);
+      return next;
+    });
+  }
+
+  setBuscarProgramasOrigen(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    q: string,
+  ): void {
+    this.buscarProgramasOrigen.update((m) => ({ ...m, [key]: q }));
+  }
+
+  private unionProgramasPorClase(
+    cert: NonNullable<ContratacionDto['certificacionOrigen']>,
+  ): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const k of ['colegio', 'estamento', 'empresa', 'operativo'] as const) {
+      const row = cert[k];
+      if (this.normalizarTipoCertificadoContrato(row?.tipoCertificado) !== 'por_clase') continue;
+      for (const id of row?.idProgramas || []) {
+        const s = String(id).trim();
+        if (!s || seen.has(s)) continue;
+        seen.add(s);
+        out.push(s);
+      }
+    }
+    return out;
+  }
+
   tieneProgramaContrato(idPrograma: string): boolean {
     const id = String(idPrograma).trim();
     return (this.formContrato().idProgramas || []).some((x) => String(x).trim() === id);
   }
 
   toggleProgramaContrato(idPrograma: string, checked: boolean): void {
-    if (this.programasContratoDeshabilitados()) return;
-    const id = String(idPrograma).trim();
-    if (!id) return;
-    const set = new Set((this.formContrato().idProgramas || []).map(String));
-    if (checked) set.add(id);
-    else set.delete(id);
-    this.patchContrato('idProgramas', [...set]);
+    this.toggleProgramaOrigen('operativo', idPrograma, checked);
   }
 
   async limpiarProgramasContrato(): Promise<void> {
-    if (this.programasContratoDeshabilitados()) return;
-    if (!this.cantidadProgramasContrato()) return;
-    const ok = await this.confirmSvc.open({
-      title: 'Confirmar borrado',
-      message: '¿De verdad desea quitar todos los programas seleccionados de este contrato?',
-      variant: 'danger',
-      confirmLabel: 'Sí, quitar todos',
-      cancelLabel: 'Cancelar',
-    });
-    if (!ok) return;
-    this.patchContrato('idProgramas', []);
-  }
-
-  cantidadProgramasContrato(): number {
-    return (this.formContrato().idProgramas || []).filter((id) => String(id).trim()).length;
+    await this.limpiarProgramasOrigen('operativo');
   }
 
   cargarInstructores() {
     this.jornadaSvc.listarInstructores().subscribe({
       next: (r) => this.instructores.set(r || []),
       error: () => this.instructores.set([]),
+    });
+    this.jornadaSvc.listarInstructores({ soloCargo: true }).subscribe({
+      next: (r) => this.instructoresCargo.set(r || []),
+      error: () => this.instructoresCargo.set([]),
+    });
+  }
+
+  planInstTexto = signal('');
+  planInstIdEmpleado = signal<number | null>(null);
+  planInstIdUsuario = signal('');
+  planInstNombre = signal('');
+  planInstProgramas = signal<string[]>([]);
+  planInstError = signal('');
+  comboInstructorPlan = viewChild<CatalogoEnumBuscarComponent>('comboInstructorPlan');
+
+  programasParaInstructoresContrato = computed(() => {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const o of this.origenesContratoUi) {
+      if (!this.origenAlumnoActivo(o.key)) continue;
+      if (this.certOrigenTipo(o.key) === 'por_clase') {
+        for (const id of this.certOrigenRowIds(o.key)) {
+          const s = String(id).trim();
+          if (!s || seen.has(s)) continue;
+          seen.add(s);
+          ids.push(s);
+        }
+      } else {
+        const g = String(this.certOrigenProgramaId(o.key) || '').trim();
+        if (g && !seen.has(g)) {
+          seen.add(g);
+          ids.push(g);
+        }
+      }
+    }
+    return ids;
+  });
+
+  opcionesInstructoresPlan = computed<EnumBuscarOption[]>(() => {
+    const yaEmp = new Set(
+      (this.formContrato().instructoresPlan || []).map((r) => Number(r.idEmpleado)),
+    );
+    const yaUser = new Set(
+      (this.formContrato().instructoresPlan || [])
+        .map((r) => String(r.idUsuario || '').trim())
+        .filter(Boolean),
+    );
+    return this.instructoresCargo()
+      .filter((i) => {
+        const id = Number(i.idEmpleado);
+        const uid = String(i.idUsuario || '').trim();
+        if (!Number.isFinite(id) || id < 1) return false;
+        if (yaEmp.has(id)) return false;
+        if (uid && yaUser.has(uid)) return false;
+        return true;
+      })
+      .map((i) => ({
+        value: String(i.idEmpleado),
+        label: i.numeroDocumento
+          ? `${i.nombreCompleto} (${i.numeroDocumento})`
+          : i.nombreCompleto,
+        hint: i.cargo || undefined,
+      }));
+  });
+
+  onInstructorPlanPick(opt: EnumBuscarOption): void {
+    const id = Number(opt.value);
+    const inst = this.instructoresCargo().find((x) => Number(x.idEmpleado) === id);
+    this.planInstIdEmpleado.set(Number.isFinite(id) && id > 0 ? id : null);
+    this.planInstIdUsuario.set(inst?.idUsuario || '');
+    this.planInstNombre.set(inst?.nombreCompleto || String(opt.label || ''));
+    this.planInstTexto.set(String(opt.label || ''));
+    this.planInstError.set('');
+  }
+
+  onInstructorPlanLimpiar(): void {
+    this.planInstTexto.set('');
+    this.planInstIdEmpleado.set(null);
+    this.planInstIdUsuario.set('');
+    this.planInstNombre.set('');
+  }
+
+  tieneProgramaInstructorBorrador(idPrograma: string): boolean {
+    const id = String(idPrograma).trim();
+    return this.planInstProgramas().some((x) => String(x).trim() === id);
+  }
+
+  toggleProgramaInstructorBorrador(idPrograma: string, checked: boolean): void {
+    const id = String(idPrograma).trim();
+    if (!id) return;
+    this.planInstProgramas.update((cur) => {
+      const set = new Set(cur.map(String));
+      if (checked) set.add(id);
+      else set.delete(id);
+      return [...set];
+    });
+    this.planInstError.set('');
+  }
+
+  private resolverInstructorPlanDesdeCombo(): number | null {
+    this.comboInstructorPlan()?.confirmarSeleccionSiCoincide();
+    let idEmpleado = this.planInstIdEmpleado();
+    if (idEmpleado != null && Number.isFinite(idEmpleado) && idEmpleado > 0) return idEmpleado;
+    const q = String(this.comboInstructorPlan()?.textoActual() || this.planInstTexto() || '').trim();
+    if (!q) return null;
+    const nq = q.toLowerCase();
+    const opt =
+      this.opcionesInstructoresPlan().find((o) => String(o.label).trim() === q) ||
+      this.opcionesInstructoresPlan().find((o) => String(o.label).toLowerCase().includes(nq));
+    if (!opt) return null;
+    this.onInstructorPlanPick(opt);
+    idEmpleado = this.planInstIdEmpleado();
+    return idEmpleado != null && Number.isFinite(idEmpleado) && idEmpleado > 0 ? idEmpleado : null;
+  }
+
+  agregarInstructorPlan(): void {
+    this.planInstError.set('');
+    const idEmpleado = this.resolverInstructorPlanDesdeCombo();
+    if (idEmpleado == null) {
+      const msg =
+        this.instructoresCargo().length === 0
+          ? 'No hay instructores con usuario vinculado. En RRHH el empleado debe tener cargo instructor o el usuario con rol instructor.'
+          : this.opcionesInstructoresPlan().length === 0
+            ? 'Ya agregó los instructores disponibles. Quite uno de la lista si desea cambiarlo.'
+            : 'Elija un instructor de la lista y pulse Agregar.';
+      this.planInstError.set(msg);
+      this.mostrarMsg(msg, 'warn', 'Instructor');
+      return;
+    }
+    const permitidos = new Set(this.programasParaInstructoresContrato().map((id) => String(id).trim()));
+    const idProgramas = this.planInstProgramas().filter((id) => permitidos.has(String(id).trim()));
+    if (!permitidos.size) {
+      const msg =
+        'Primero elija los programas en los orígenes de alumnos (arriba). Luego marque los que dicta este instructor.';
+      this.planInstError.set(msg);
+      this.mostrarMsg(msg, 'warn', 'Programas del instructor');
+      return;
+    }
+    if (!idProgramas.length) {
+      const msg = 'Marque al menos un programa que dicta este instructor y luego pulse Agregar.';
+      this.planInstError.set(msg);
+      this.mostrarMsg(msg, 'warn', 'Programas del instructor');
+      return;
+    }
+    const ya = (this.formContrato().instructoresPlan || []).some(
+      (r) => Number(r.idEmpleado) === Number(idEmpleado),
+    );
+    if (ya) {
+      const msg = 'Ese instructor ya está en la lista.';
+      this.planInstError.set(msg);
+      this.mostrarMsg(msg, 'warn', 'Instructor duplicado');
+      return;
+    }
+    this.formContrato.update((f) => {
+      const plan = [...(f.instructoresPlan || [])];
+      plan.push({
+        orden: plan.length + 1,
+        idEmpleado,
+        idUsuario: this.planInstIdUsuario(),
+        nombre: this.planInstNombre(),
+        idProgramas,
+      });
+      return {
+        ...f,
+        instructoresPlan: plan.map((p, i) => ({ ...p, orden: i + 1 })),
+      };
+    });
+    this.onInstructorPlanLimpiar();
+    this.planInstProgramas.set([]);
+    const combo = this.comboInstructorPlan();
+    combo?.query.set('');
+    combo?.filtrandoActivo.set(false);
+    combo?.resultados.set([]);
+  }
+
+  quitarInstructorPlan(idx: number): void {
+    this.formContrato.update((f) => {
+      const plan = [...(f.instructoresPlan || [])];
+      if (idx < 0 || idx >= plan.length) return f;
+      plan.splice(idx, 1);
+      return { ...f, instructoresPlan: plan.map((p, i) => ({ ...p, orden: i + 1 })) };
+    });
+  }
+
+  tieneProgramaInstructorPlan(idx: number, idPrograma: string): boolean {
+    const id = String(idPrograma).trim();
+    const row = (this.formContrato().instructoresPlan || [])[idx];
+    return !!(row?.idProgramas || []).some((x) => String(x).trim() === id);
+  }
+
+  toggleProgramaInstructorPlan(idx: number, idPrograma: string, checked: boolean): void {
+    if (this.contratoFormEjecutado()) return;
+    const id = String(idPrograma).trim();
+    if (!id) return;
+    this.formContrato.update((f) => {
+      const plan = [...(f.instructoresPlan || [])];
+      if (!plan[idx]) return f;
+      const set = new Set((plan[idx].idProgramas || []).map(String));
+      if (checked) set.add(id);
+      else set.delete(id);
+      const idProgramas = [...set];
+      if (!idProgramas.length) {
+        this.mostrarMsg('Deje al menos un programa o quite al instructor.', 'warn', 'Programas');
+        return f;
+      }
+      plan[idx] = { ...plan[idx], idProgramas };
+      return { ...f, instructoresPlan: plan };
     });
   }
 
@@ -1793,6 +2166,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   onModalClaseInstructorChange(id: string) {
     this.modalClaseInstructorId.set(id ? Number(id) : '');
+    this.limpiarProgramaSiNoPermitido();
   }
 
   abrirModalCrearClase() {
@@ -1824,6 +2198,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.modalHorarioManual.set(false);
     this.modalFechaClase.set('');
     this.modalCrearJornadaId.set(this.jornadaSel() || '');
+    const origenes = this.origenesActivosContrato();
+    this.origenFiltroAlumno.set(origenes[0]?.key || 'operativo');
     this.cargarJornadasParaCrear();
     this.cargarProgramasJornada();
     this.sincronizarFechaClaseDesdeJornada(this.modalCrearJornadaId());
@@ -1855,6 +2231,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
     this.claseAnteriorSinPrevia.set(false);
+    const origenClase = String(c.origenOperacion || '').trim().toLowerCase();
+    if (
+      origenClase === 'colegio' ||
+      origenClase === 'estamento' ||
+      origenClase === 'empresa' ||
+      origenClase === 'operativo'
+    ) {
+      this.origenFiltroAlumno.set(origenClase);
+    } else {
+      const origenes = this.origenesActivosContrato();
+      this.origenFiltroAlumno.set(origenes[0]?.key || 'operativo');
+    }
     if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
     this.sincronizarProgramaModal(progClase);
     this.cargarProgramasJornada();
@@ -2339,13 +2727,106 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
-  irPanelJornadaEdit(panel: 'datos' | 'evidencias') {
+  irPanelJornadaEdit(panel: 'datos' | 'evidencias' | 'fotos-adicional') {
     this.jornadaEditPanel.set(panel);
     if (panel === 'evidencias') {
       this.jornadaEvidenciaSeccionAbierta.set(null);
       this.cargarClasesJornadaEvidencia();
       this.cargarCertificadosJornadaEvidencia();
     }
+  }
+
+  fotosEvidenciaAdicionalJornada() {
+    return this.jornadaEdit()?.fotosEvidenciaAdicional || [];
+  }
+
+  private aplicarJornadaEditada(j: JornadaCapDto) {
+    const je = this.jornadaEdit();
+    this.jornadaEdit.set({ ...(je || ({} as JornadaCapDto)), ...j });
+    this.jornadas.update((rows) => rows.map((r) => (r._id === j._id ? { ...r, ...j } : r)));
+  }
+
+  onFotosAdicionalJornadaSelected(ev: Event) {
+    if (this.contratoDeJornadaFinalizado(this.jornadaEdit() || ({} as JornadaCapDto))) {
+      this.avisarContratoFinalizado();
+      return;
+    }
+    const input = ev.target as HTMLInputElement;
+    const picked = Array.from(input.files || []);
+    input.value = '';
+    const je = this.jornadaEdit();
+    const id = String(je?._id || '').trim();
+    if (!id) {
+      this.mostrarMsg('Guarde la jornada antes de cargar fotos.', 'warn', 'Evidencia');
+      return;
+    }
+    const ok = picked.filter((f) => {
+      const n = String(f.name || '').toLowerCase();
+      const t = String(f.type || '').toLowerCase();
+      return n.endsWith('.jpg') || n.endsWith('.jpeg') || n.endsWith('.png') || t === 'image/jpeg' || t === 'image/png';
+    });
+    if (!ok.length) {
+      this.mostrarMsg('Solo se permiten fotos JPG o PNG.', 'warn', 'Evidencia fotográfica');
+      return;
+    }
+    if (ok.length !== picked.length) {
+      this.mostrarMsg('Se omitieron archivos que no son JPG o PNG.', 'warn', 'Evidencia fotográfica');
+    }
+    const cupo = 30 - this.fotosEvidenciaAdicionalJornada().length;
+    if (cupo <= 0) {
+      this.mostrarMsg('Máximo 30 fotos adicionales por jornada.', 'warn', 'Evidencia fotográfica');
+      return;
+    }
+    if (ok.length > cupo) {
+      ok.splice(cupo);
+      this.mostrarMsg(`Solo se enviarán ${cupo} foto(s): el tope es 30.`, 'warn', 'Evidencia fotográfica');
+    }
+    this.subiendoFotosAdicionalJornada.set(true);
+    this.jornadaSvc.subirFotosEvidenciaAdicionalJornada(id, ok).subscribe({
+      next: (j) => {
+        this.subiendoFotosAdicionalJornada.set(false);
+        this.aplicarJornadaEditada(j);
+        this.mostrarMsg(
+          ok.length === 1 ? 'Foto adicional guardada.' : `${ok.length} fotos adicionales guardadas.`,
+          'ok',
+          'Evidencia fotográfica',
+        );
+      },
+      error: (e) => {
+        this.subiendoFotosAdicionalJornada.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudieron subir las fotos.', 'error', 'Error');
+      },
+    });
+  }
+
+  async eliminarFotoEvidenciaAdicional(foto: { _id?: string; nombre?: string }) {
+    if (this.contratoDeJornadaFinalizado(this.jornadaEdit() || ({} as JornadaCapDto))) {
+      this.avisarContratoFinalizado();
+      return;
+    }
+    const je = this.jornadaEdit();
+    const id = String(je?._id || '').trim();
+    const fotoId = String(foto?._id || '').trim();
+    if (!id || !fotoId) return;
+    const ok = await this.confirmSvc.open({
+      title: 'Quitar foto',
+      message: `¿Eliminar «${foto.nombre || 'esta foto'}» de la evidencia fotográfica adicional?`,
+      variant: 'danger',
+      confirmLabel: 'Sí, quitar',
+    });
+    if (!ok) return;
+    this.subiendoFotosAdicionalJornada.set(true);
+    this.jornadaSvc.eliminarFotoEvidenciaAdicionalJornada(id, fotoId).subscribe({
+      next: (j) => {
+        this.subiendoFotosAdicionalJornada.set(false);
+        this.aplicarJornadaEditada(j);
+        this.mostrarMsg('Foto eliminada.', 'ok', 'Evidencia fotográfica');
+      },
+      error: (e) => {
+        this.subiendoFotosAdicionalJornada.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo eliminar la foto.', 'error', 'Error');
+      },
+    });
   }
 
   toggleJornadaEvidenciaSeccion(seccion: 'clases' | 'alumnos', ev?: Event) {
@@ -2490,7 +2971,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const cod = String(je?.codigoJornada || 'jornada').trim();
     this.descargandoPaqueteEntregaJornada.set(true);
     this.zipProgresoTitulo.set('Generando paquete de entrega');
-    this.zipProgresoSubtitulo.set('Informe PDF + certificados ZIP + evidencia consolidada');
+    this.zipProgresoSubtitulo.set(
+      'Informe PDF + certificados + evidencia consolidada + evidencia fotográfica adicional',
+    );
     this.zipProgresoOpen.set(true);
     this.zipProgreso.set({
       status: 'running',
@@ -2509,7 +2992,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       );
       this.zipProgresoOpen.set(false);
       this.mostrarMsg(
-        'Paquete de entrega descargado. Revise las carpetas informe/, certificados/ y evidencia/.',
+        'Paquete de entrega descargado. Revise informe/, certificados/, evidencia/, imagenes/ y evidencia-fotografica-adicional/.',
         'ok',
         'Paquete de entrega',
       );
@@ -3098,6 +3581,95 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   setOrigenFiltroAlumno(key: 'colegio' | 'estamento' | 'empresa' | 'operativo') {
     this.origenFiltroAlumno.set(key);
     this.alumnoBusqueda$.next(this.alumnoBusqueda().trim());
+    if (this.modalModoClase() === 'nuevo') {
+      this.limpiarProgramaSiNoPermitido();
+    }
+  }
+
+  /** Origen que filtra el combo de programa (clase nueva = chip; editar = origenOperacion). */
+  origenParaProgramaClase(): 'colegio' | 'estamento' | 'empresa' | 'operativo' {
+    if (this.modalModoClase() === 'editar') {
+      const op = String(this.claseActiva()?.origenOperacion || '').trim().toLowerCase();
+      if (op === 'colegio' || op === 'estamento' || op === 'empresa' || op === 'operativo') {
+        return op;
+      }
+    }
+    return this.origenFiltroAlumno();
+  }
+
+  private planInstructoresParaClase() {
+    return (
+      this.claseActiva()?.instructoresPlan ||
+      this.contratoActivo()?.instructoresPlan ||
+      this.formContrato().instructoresPlan ||
+      []
+    );
+  }
+
+  private identInstructorParaPrograma(): UsuarioParaPlanInstructor {
+    const sel = this.modalClaseInstructorId();
+    if (sel) {
+      const inst = this.instructores().find((x) => Number(x.idEmpleado) === Number(sel));
+      return {
+        idEmpleado: Number(sel),
+        idUsuario: inst?.idUsuario,
+        _id: inst?.idUsuario,
+      };
+    }
+    const cl = this.claseActiva();
+    if (this.modalModoClase() === 'editar' && (cl?.idEmpleadoInstructor || cl?.idUsuarioInstructor)) {
+      return {
+        idEmpleado: cl.idEmpleadoInstructor,
+        idUsuario: cl.idUsuarioInstructor,
+        _id: cl.idUsuarioInstructor,
+      };
+    }
+    const u = this.auth.user();
+    return {
+      _id: u?._id,
+      idEmpleado: u?.empleado?.idEmpleado ?? u?.idEmpleado,
+      empleado: u?.empleado,
+      idUsuario: u?._id,
+    };
+  }
+
+  private optsProgramasClase(): OptsProgramasElegiblesClase {
+    return {
+      certificacionOrigen:
+        this.claseActiva()?.certificacionOrigen ||
+        this.contratoActivo()?.certificacionOrigen ||
+        this.formContrato().certificacionOrigen,
+      origen: this.origenParaProgramaClase(),
+      legadoIdProgramas: this.contratoActivo()?.idProgramas || this.formContrato().idProgramas || [],
+      instructoresPlan: this.planInstructoresParaClase(),
+      user: this.identInstructorParaPrograma(),
+      esAdmin: this.puedeAsignarInstructor(),
+    };
+  }
+
+  origenPorClaseSinProgramas(): boolean {
+    const permitidos = idsProgramasElegiblesClase(this.optsProgramasClase());
+    return permitidos != null && permitidos.length === 0;
+  }
+
+  mensajeSinProgramasClase(): string {
+    return mensajeSinProgramasElegiblesClase(this.optsProgramasClase());
+  }
+
+  private limpiarProgramaSiNoPermitido() {
+    const v = this.nuevaClaseProg();
+    if (!v) return;
+    const permitidos = idsProgramasElegiblesClase(this.optsProgramasClase());
+    if (permitidos == null) return;
+    const hit = this.buscarProgramaEnLista(v);
+    const id = hit ? this.programaOptionValue(hit) : v;
+    const ok =
+      programaIdEnLista(id, permitidos) ||
+      (hit &&
+        [hit.idPrograma, hit._id, hit.idProg]
+          .filter(Boolean)
+          .some((x) => programaIdEnLista(String(x), permitidos)));
+    if (!ok) this.nuevaClaseProg.set('');
   }
 
   focusAlumnoBusqueda() {
@@ -3201,13 +3773,26 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     const idContrato = this.idContratoParaClaseModal();
     if (idContrato) {
-      this.jornadaSvc.progresoCertificacion(a.numDoc, idContrato).subscribe({
+      this.jornadaSvc.progresoCertificacion(a.numDoc, idContrato, this.nuevaClaseProg(), this.claseSel()).subscribe({
         next: (p) => {
           if (p.certificado) {
             void this.certBloqueoSvc.mostrarAlumnoCertificado({
               nombreAlumno: this.nombreAlumnoItem(a),
               certificado: p.certificado,
             });
+            return;
+          }
+          if (p.yaTomoProgramaContrato) {
+            void this.certBloqueoSvc.mostrarDesdeError(
+              {
+                codigo: 'ya_tomo_programa_contrato',
+                message:
+                  p.mensajeYaTomoPrograma ||
+                  `${this.nombreAlumnoItem(a)} ya tomó esta clase en el contrato. No se puede inscribir de nuevo.`,
+                programaNombre: p.programaNombre,
+              },
+              this.nombreAlumnoItem(a),
+            );
             return;
           }
           this.ejecutarAgregarAlumnoMatricula(a);
@@ -3276,7 +3861,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           },
           error: (e) => {
             this.guardandoInscripcion.set(false);
-            if (e?.status === 409 && e?.error?.codigo === 'ya_certificado_contrato') {
+            if (
+              e?.status === 409 &&
+              (e?.error?.codigo === 'ya_certificado_contrato' ||
+                e?.error?.codigo === 'ya_tomo_programa_contrato')
+            ) {
               void this.certBloqueoSvc.mostrarDesdeError(e.error, this.nombreAlumnoItem(a));
               return;
             }
@@ -3532,7 +4121,76 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return plan.reduce((s, r) => s + Math.max(0, parseInt(String(r.numJornadas ?? 0), 10) || 0), 0);
   });
 
+  totalClasesPlanContrato = computed(() => totalClasesDesdePlan(this.formContrato().municipiosPlan));
+
+  clasesPorJornadaPlanContrato = computed(() => {
+    const fromPlan = clasesPorJornadaDesdePlan(this.formContrato().municipiosPlan);
+    if (fromPlan != null) return fromPlan;
+    return Math.max(0, parseInt(String(this.formContrato().clasesPorJornada ?? 1), 10) || 0);
+  });
+
+  modoProgramacionMunicipio = computed(
+    () => inferirModoProgramacionJornadas(this.formContrato()) === 'municipio',
+  );
+
+  flagsCalendarioContrato = computed(() => {
+    const f = this.formContrato();
+    return {
+      incluiSab: !!f.incluiSab,
+      incluiDom: !!f.incluiDom,
+      incluiFest: !!f.incluiFest,
+    };
+  });
+
+  avisoCapacidadProgramacion = computed(() => {
+    const f = this.formContrato();
+    const plan = f.municipiosPlan || [];
+    const modo = inferirModoProgramacionJornadas(f);
+    const exigirFechas = modo === 'municipio' || plan.length > 0;
+    const err = mensajeErrorProgramacion({
+      modo,
+      plan,
+      fechaInicJornadas: f.fechaInicJornadas,
+      fechaFinJornadas: f.fechaFinJornadas,
+      numerojornadas: f.numerojornadas,
+      jornadasPorDia: f.jornadasPorDia,
+      flags: this.flagsCalendarioContrato(),
+      exigirFechas,
+    });
+    if (err) return { ok: false as const, texto: err };
+    if (!plan.length && modo === 'global') return null;
+    return { ok: true as const, texto: 'El calendario alcanza para el plan de municipios.' };
+  });
+
+  clasesPorJornadaNuevaJornada = computed(() =>
+    clasesPorJornadaParaMunicipio(
+      this.formContrato().municipiosPlan,
+      {
+        codMunicipio: this.jornadaEditCodMunicipio(),
+        municipio: this.jornadaEditMunicipio(),
+      },
+      this.clasesPorJornadaPlanContrato(),
+    ),
+  );
+
   tienePlanMunicipios = computed(() => (this.formContrato().municipiosPlan || []).length > 0);
+
+  tituloClasesPorJornadaKpi(): string {
+    if (!this.tienePlanMunicipios()) return 'Clases autogeneradas en cada jornada';
+    return 'Suma del plan: jornadas × clases por jornada de cada municipio';
+  }
+
+  labelClasesPorJornadaCal(): string {
+    if (!this.tienePlanMunicipios()) {
+      return `${this.formContrato().clasesPorJornada || 0} clase(s) por jornada`;
+    }
+    return `${this.totalClasesPlanContrato()} clase(s) en el plan`;
+  }
+
+  onKpiClasesPorJornadaChange(raw: unknown): void {
+    if (this.tienePlanMunicipios()) return;
+    this.patchContrato('clasesPorJornada', raw);
+  }
 
   /** Borrador para agregar fila al plan. */
   planMuniTexto = signal('');
@@ -3541,6 +4199,56 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   planMuniDepto = signal('');
   planMuniJornadas = signal(1);
   planMuniPorDia = signal(1);
+  planMuniClases = signal(1);
+  planMuniFechaInic = signal('');
+  planMuniFechaFin = signal('');
+
+  private sugerirJornadasRango(
+    ini?: string | null,
+    fin?: string | null,
+    porDia?: number,
+  ): number | null {
+    return sugerirNumJornadas(ini, fin, porDia, this.flagsCalendarioContrato());
+  }
+
+  private refrescarJornadasBorrador(): void {
+    if (!this.modoProgramacionMunicipio()) return;
+    const sug = this.sugerirJornadasRango(
+      this.planMuniFechaInic(),
+      this.planMuniFechaFin(),
+      this.planMuniPorDia(),
+    );
+    if (sug == null) return;
+    this.planMuniJornadas.set(sug);
+  }
+
+  onPlanMuniFechaInic(raw: unknown): void {
+    this.planMuniFechaInic.set(ymdCalendario(String(raw || '')) || String(raw || ''));
+    this.refrescarJornadasBorrador();
+  }
+
+  onPlanMuniFechaFin(raw: unknown): void {
+    this.planMuniFechaFin.set(ymdCalendario(String(raw || '')) || String(raw || ''));
+    this.refrescarJornadasBorrador();
+  }
+
+  onPlanMuniPorDia(raw: unknown): void {
+    const porDia = Math.max(1, Math.min(20, parseInt(String(raw), 10) || 1));
+    this.planMuniPorDia.set(porDia);
+    this.refrescarJornadasBorrador();
+  }
+
+  private aplicarSugerenciaJornadasFilas(
+    plan: NonNullable<ContratacionDto['municipiosPlan']>,
+  ): NonNullable<ContratacionDto['municipiosPlan']> {
+    if (!this.modoProgramacionMunicipio()) return plan;
+    const flags = this.flagsCalendarioContrato();
+    return plan.map((r) => {
+      const sug = sugerirNumJornadas(r.fechaInicJornadas, r.fechaFinJornadas, r.jornadasPorDia, flags);
+      if (sug == null) return r;
+      return { ...r, numJornadas: sug };
+    });
+  }
 
   onMunicipioPlanPick(m: MunicipioDivipola): void {
     this.planMuniTexto.set(m.label);
@@ -3554,6 +4262,109 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.planMuniCod.set('');
     this.planMuniNombre.set('');
     this.planMuniDepto.set('');
+  }
+
+  badgeCapacidadFilaPlan(row: NonNullable<ContratacionDto['municipiosPlan']>[number]) {
+    return badgeCapacidadFila(row, this.flagsCalendarioContrato());
+  }
+
+  setModoProgramacionJornadas(modo: ModoProgramacionJornadas): void {
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      if (modo === 'global') {
+        return {
+          ...f,
+          programacionJornadasModo: 'global',
+          municipiosPlan: plan.map((r) => {
+            const { fechaInicJornadas: _i, fechaFinJornadas: _f, ...rest } = r;
+            return rest;
+          }),
+        };
+      }
+      const ini = ymdCalendario(f.fechaInicJornadas) || '';
+      const fin = ymdCalendario(f.fechaFinJornadas) || '';
+      return {
+        ...f,
+        programacionJornadasModo: 'municipio',
+        municipiosPlan: plan.map((r) => ({
+          ...r,
+          fechaInicJornadas: r.fechaInicJornadas || ini,
+          fechaFinJornadas: r.fechaFinJornadas || fin,
+        })),
+      };
+    });
+    if (modo === 'municipio') this.syncMarcoFechasDesdePlan();
+  }
+
+  private syncMarcoFechasDesdePlan(): void {
+    this.formContrato.update((f) => {
+      if (inferirModoProgramacionJornadas(f) !== 'municipio') return f;
+      const plan = f.municipiosPlan || [];
+      const inics = plan
+        .map((r) => ymdCalendario(r.fechaInicJornadas))
+        .filter(Boolean)
+        .sort();
+      const fins = plan
+        .map((r) => ymdCalendario(r.fechaFinJornadas))
+        .filter(Boolean)
+        .sort();
+      if (!inics.length || !fins.length) return f;
+      return {
+        ...f,
+        fechaInicJornadas: inics[0],
+        fechaFinJornadas: fins[fins.length - 1],
+      };
+    });
+  }
+
+  private hidratarFormContrato(c: ContratacionDto): ContratacionDto {
+    const plan = (c.municipiosPlan || []).map((r) => ({
+      ...r,
+      fechaInicJornadas: r.fechaInicJornadas ? ymdCalendario(r.fechaInicJornadas) : '',
+      fechaFinJornadas: r.fechaFinJornadas ? ymdCalendario(r.fechaFinJornadas) : '',
+      clasesPorJornada: Math.max(
+        0,
+        Math.min(20, parseInt(String(r.clasesPorJornada ?? c.clasesPorJornada ?? 1), 10) || 1),
+      ),
+    }));
+    const modo = inferirModoProgramacionJornadas({ ...c, municipiosPlan: plan });
+    const planFinal =
+      modo === 'global'
+        ? plan.map((r) => {
+            const { fechaInicJornadas: _i, fechaFinJornadas: _f, ...rest } = r;
+            return rest;
+          })
+        : plan;
+    const clasesRep = clasesPorJornadaDesdePlan(planFinal);
+    return {
+      ...c,
+      objetoContrato: c.objetoContrato || c.objeto || '',
+      programacionJornadasModo: modo,
+      municipiosPlan: planFinal,
+      clasesPorJornada: clasesRep != null ? clasesRep : c.clasesPorJornada,
+      fechaInicJornadas: c.fechaInicJornadas ? ymdCalendario(c.fechaInicJornadas) : '',
+      fechaFinJornadas: c.fechaFinJornadas ? ymdCalendario(c.fechaFinJornadas) : '',
+      idProgramas: [...(c.idProgramas || [])],
+      planCobro: [...(c.planCobro || [])],
+      comprobantesIngresoCaja: !!c.comprobantesIngresoCaja,
+      tipoCertificado: this.normalizarTipoCertificadoContrato(c.tipoCertificado),
+      idProgramaCertificacion: String(c.idProgramaCertificacion || '').trim(),
+      instructoresPlan: [...(c.instructoresPlan || [])],
+    };
+  }
+
+  private errorProgramacionActual(exigirFechas: boolean): string | null {
+    const f = this.formContrato();
+    return mensajeErrorProgramacion({
+      modo: inferirModoProgramacionJornadas(f),
+      plan: f.municipiosPlan || [],
+      fechaInicJornadas: f.fechaInicJornadas,
+      fechaFinJornadas: f.fechaFinJornadas,
+      numerojornadas: f.numerojornadas,
+      jornadasPorDia: f.jornadasPorDia,
+      flags: this.flagsCalendarioContrato(),
+      exigirFechas,
+    });
   }
 
   private syncNumeroJornadasDesdePlan(
@@ -3578,8 +4389,33 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.mostrarMsg('Ese municipio ya está en el plan.', 'warn', 'Municipio duplicado');
       return;
     }
-    const num = Math.max(1, parseInt(String(this.planMuniJornadas()), 10) || 1);
+    const numDraft = parseInt(String(this.planMuniJornadas()), 10);
+    const num = Number.isFinite(numDraft) && numDraft >= 0 ? numDraft : 1;
     const porDia = Math.max(1, Math.min(20, parseInt(String(this.planMuniPorDia()), 10) || 1));
+    const clases = Math.max(0, Math.min(20, parseInt(String(this.planMuniClases()), 10) || 0));
+    const modoMuni = this.modoProgramacionMunicipio();
+    const fechaInic = modoMuni
+      ? ymdCalendario(this.planMuniFechaInic()) || ymdCalendario(this.formContrato().fechaInicJornadas)
+      : '';
+    const fechaFin = modoMuni
+      ? ymdCalendario(this.planMuniFechaFin()) || ymdCalendario(this.formContrato().fechaFinJornadas)
+      : '';
+    if (modoMuni && (!fechaInic || !fechaFin)) {
+      this.mostrarMsg(
+        'En modo por municipio cada fila necesita inicio y fin.',
+        'warn',
+        'Fechas del municipio',
+      );
+      return;
+    }
+    if (modoMuni && num < 1) {
+      this.mostrarMsg(
+        'En ese rango no hay días hábiles con sábados, domingos y festivos actuales. Ajuste fechas, active esos días o indique el número de jornadas.',
+        'warn',
+        'Sin días hábiles',
+      );
+      return;
+    }
     this.formContrato.update((f) => {
       const plan = [...(f.municipiosPlan || [])];
       plan.push({
@@ -3589,17 +4425,25 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         depto: this.planMuniDepto().trim().toUpperCase(),
         numJornadas: num,
         jornadasPorDia: porDia,
+        clasesPorJornada: clases,
+        ...(modoMuni ? { fechaInicJornadas: fechaInic, fechaFinJornadas: fechaFin } : {}),
       });
       const renum = plan.map((p, i) => ({ ...p, orden: i + 1 }));
+      const clasesRep = clasesPorJornadaDesdePlan(renum);
       return {
         ...f,
         municipiosPlan: renum,
         numerojornadas: this.syncNumeroJornadasDesdePlan(renum),
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
       };
     });
+    if (modoMuni) this.syncMarcoFechasDesdePlan();
     this.onMunicipioPlanLimpiar();
     this.planMuniJornadas.set(1);
     this.planMuniPorDia.set(1);
+    this.planMuniClases.set(this.clasesPorJornadaPlanContrato() || 1);
+    this.planMuniFechaInic.set('');
+    this.planMuniFechaFin.set('');
   }
 
   quitarMunicipioPlan(idx: number): void {
@@ -3608,12 +4452,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       if (idx < 0 || idx >= plan.length) return f;
       plan.splice(idx, 1);
       const renum = plan.map((p, i) => ({ ...p, orden: i + 1 }));
+      const clasesRep = clasesPorJornadaDesdePlan(renum);
       return {
         ...f,
         municipiosPlan: renum,
         numerojornadas: renum.length ? this.syncNumeroJornadasDesdePlan(renum) : f.numerojornadas || 1,
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
       };
     });
+    this.syncMarcoFechasDesdePlan();
   }
 
   moverMunicipioPlan(idx: number, dir: -1 | 1): void {
@@ -3632,15 +4479,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   patchNumJornadasPlan(idx: number, raw: unknown): void {
-    const num = Math.max(1, parseInt(String(raw), 10) || 1);
+    const num = Math.max(0, parseInt(String(raw), 10) || 0);
     this.formContrato.update((f) => {
       const plan = [...(f.municipiosPlan || [])];
       if (!plan[idx]) return f;
-      plan[idx] = { ...plan[idx], numJornadas: num };
+      plan[idx] = { ...plan[idx], numJornadas: Math.max(1, num) || 1 };
+      const clasesRep = clasesPorJornadaDesdePlan(plan);
       return {
         ...f,
         municipiosPlan: plan,
         numerojornadas: this.syncNumeroJornadasDesdePlan(plan),
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
       };
     });
   }
@@ -3650,9 +4499,58 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.formContrato.update((f) => {
       const plan = [...(f.municipiosPlan || [])];
       if (!plan[idx]) return f;
-      plan[idx] = { ...plan[idx], jornadasPorDia: porDia };
-      return { ...f, municipiosPlan: plan };
+      const row = { ...plan[idx], jornadasPorDia: porDia };
+      const sug = this.modoProgramacionMunicipio()
+        ? sugerirNumJornadas(row.fechaInicJornadas, row.fechaFinJornadas, porDia, this.flagsCalendarioContrato())
+        : null;
+      plan[idx] = sug == null ? row : { ...row, numJornadas: sug };
+      const clasesRep = clasesPorJornadaDesdePlan(plan);
+      return {
+        ...f,
+        municipiosPlan: plan,
+        numerojornadas: this.syncNumeroJornadasDesdePlan(plan),
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
+      };
     });
+  }
+
+  patchClasesPorJornadaPlan(idx: number, raw: unknown): void {
+    const clases = Math.max(0, Math.min(20, parseInt(String(raw), 10) || 0));
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      if (!plan[idx]) return f;
+      plan[idx] = { ...plan[idx], clasesPorJornada: clases };
+      const clasesRep = clasesPorJornadaDesdePlan(plan);
+      return {
+        ...f,
+        municipiosPlan: plan,
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
+      };
+    });
+  }
+
+  patchFechaPlan(idx: number, campo: 'fechaInicJornadas' | 'fechaFinJornadas', raw: unknown): void {
+    const ymd = ymdCalendario(String(raw || '')) || '';
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      if (!plan[idx]) return f;
+      const row = { ...plan[idx], [campo]: ymd };
+      const sug = sugerirNumJornadas(
+        row.fechaInicJornadas,
+        row.fechaFinJornadas,
+        row.jornadasPorDia,
+        this.flagsCalendarioContrato(),
+      );
+      plan[idx] = sug == null ? row : { ...row, numJornadas: sug };
+      const clasesRep = clasesPorJornadaDesdePlan(plan);
+      return {
+        ...f,
+        municipiosPlan: plan,
+        numerojornadas: this.syncNumeroJornadasDesdePlan(plan),
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
+      };
+    });
+    this.syncMarcoFechasDesdePlan();
   }
 
   onMunicipioJornada(m: MunicipioDivipola) {
@@ -4425,15 +5323,24 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       );
       return;
     }
-    if (this.normalizarTipoCertificadoContrato(f.tipoCertificado) === 'global') {
-      if (!String(f.idProgramaCertificacion || '').trim()) {
-        this.mostrarMsg(
-          'En certificación global debe elegir el programa de certificación (sección Certificado).',
-          'warn',
-          'Datos del contrato',
-        );
-        return;
-      }
+    const globales = this.origenesActivosConCert().filter((o) => this.certOrigenTipo(o.key) === 'global');
+    const sinProg = globales.find((o) => !this.certOrigenProgramaId(o.key));
+    if (sinProg) {
+      this.mostrarMsg(
+        `En certificación global de «${sinProg.label}» debe elegir el programa de certificación.`,
+        'warn',
+        'Datos del contrato',
+      );
+      return;
+    }
+    const fPlan = this.formContrato();
+    const modo = inferirModoProgramacionJornadas(fPlan);
+    const errProg = this.errorProgramacionActual(
+      modo === 'municipio' || (fPlan.municipiosPlan || []).length > 0,
+    );
+    if (errProg) {
+      this.mostrarMsg(errProg, 'warn', 'Programación de jornadas');
+      return;
     }
     const payload = this.contratoDtoConCliente(f, cli);
     this.loading.set(true);
@@ -4443,12 +5350,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     req.subscribe({
       next: (c) => {
         this.loading.set(false);
-        this.formContrato.set({
-          ...c,
-          tipoCertificado: this.normalizarTipoCertificadoContrato(c.tipoCertificado),
-          idProgramas: [...(c.idProgramas || [])],
-          planCobro: [...(c.planCobro || [])],
-        });
+        this.formContrato.set(this.hidratarFormContrato(c));
         this.contratoSel.set(c._id || '');
         this.recargarContratos();
         this.cargarAvanceContrato(c._id);
@@ -4468,17 +5370,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   /** Carga formulario del contrato sin disparar fetch duplicado de avance (lo hace el effect). */
   private editarContratoSinAvance(c: ContratacionDto) {
-    this.formContrato.set({
-      ...c,
-      objetoContrato: c.objetoContrato || c.objeto || '',
-      fechaInicJornadas: c.fechaInicJornadas ? ymdCalendario(c.fechaInicJornadas) : '',
-      fechaFinJornadas: c.fechaFinJornadas ? ymdCalendario(c.fechaFinJornadas) : '',
-      idProgramas: [...(c.idProgramas || [])],
-      planCobro: [...(c.planCobro || [])],
-      comprobantesIngresoCaja: !!c.comprobantesIngresoCaja,
-      tipoCertificado: this.normalizarTipoCertificadoContrato(c.tipoCertificado),
-      idProgramaCertificacion: String(c.idProgramaCertificacion || '').trim(),
-    });
+    this.formContrato.set(this.hidratarFormContrato(c));
     this.cargarProgramasJornada();
     const cli = this.clientesFe().find((x) => x._id === c.idClienteFacturacion);
     if (cli) this.aplicarClienteAlContrato(cli);
@@ -4522,55 +5414,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.mostrarMsg('Primero guarde la contratación; después use «Generar faltantes».', 'warn', 'Contrato sin guardar');
       return;
     }
-    const inicioTxt = this.formContrato().fechaInicJornadas
-      ? this.fmtFecha(this.formContrato().fechaInicJornadas)
-      : '';
-    if (!inicioTxt || inicioTxt === '—') {
-      this.mostrarMsg('Indique la fecha de inicio de jornadas en el contrato y guárdelo.', 'warn', 'Fecha requerida');
-      return;
-    }
-    const finTxt = this.formContrato().fechaFinJornadas
-      ? this.fmtFecha(this.formContrato().fechaFinJornadas)
-      : '';
-    if (!finTxt || finTxt === '—') {
-      this.mostrarMsg(
-        'Indique la fecha fin de jornadas en el contrato y guárdela (marco de programación).',
-        'warn',
-        'Fecha fin requerida',
-      );
+    const errProg = this.errorProgramacionActual(true);
+    if (errProg) {
+      this.mostrarMsg(errProg, 'warn', 'Programación de jornadas');
       return;
     }
     this.loading.set(true);
     this.jornadaSvc.generarJornadas(id).subscribe({
       next: (r) => {
         this.loading.set(false);
-        const desde = r.fechaDesde ? this.fmtFecha(r.fechaDesde) : inicioTxt;
-        const hasta = r.fechaFin ? this.fmtFecha(r.fechaFin) : finTxt;
-        const notaClases =
-          (r.clasesCreadas ?? 0) > 0
-            ? ` Se autogeneraron ${r.clasesCreadas} clase(s) en ${r.jornadasProcesadasClases ?? 'las'} jornada(s).${
-                (this.formContrato().idProgramas?.length ?? 0) > 0
-                  ? ' Programas repartidos según la configuración del contrato.'
-                  : ''
-              }`
-            : '';
-        let cuerpo = '';
-        if (r.count > 0) {
-          const meta = r.metaJornadas ?? this.formContrato().numerojornadas ?? r.total;
-          cuerpo = `Se crearon ${r.count} jornada(s) del ${desde} al ${hasta}. Total generadas: ${r.total ?? r.count} de ${meta} planificada(s).`;
-        } else if (r.jornadasCompletas) {
-          const meta = r.metaJornadas ?? this.formContrato().numerojornadas ?? r.total;
-          cuerpo = `Las jornadas del contrato ya están completas (${r.total ?? '—'} de ${meta} planificada(s)).`;
-        } else {
-          cuerpo = 'No había fechas pendientes por programar.';
-        }
-        cuerpo += notaClases;
-        const huboCambios = r.count > 0 || (r.clasesCreadas ?? 0) > 0;
-        this.mostrarMsg(
-          cuerpo,
-          huboCambios ? 'ok' : 'info',
-          huboCambios ? 'Programación actualizada' : 'Sin cambios',
-        );
         this.aplicarContratoSync(r.contrato);
         this.recargarContratos();
         if (this.contratoSel() === id || this.formContrato()._id === id) {
@@ -4580,17 +5432,166 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.cargarAvanceContrato(id);
         if (r.count > 0) {
           this.setTab('jornadas');
-        }
-        if (r.count > 0) {
-          this.liveSync.mostrarToastGeneracionJornadas(r.count);
           this.jornadaSvc.listarJornadas({ idContrato: id }).subscribe({
             next: (rows) => this.liveSync.marcarJornadasConocidas((rows || []).map((j) => j._id)),
           });
         }
+        void this.confirmSvc.open({
+          title: 'Jornadas generadas',
+          message: this.textoResumenGenerarJornadas(r),
+          variant: (r.count || 0) > 0 ? 'success' : 'primary',
+          confirmLabel: 'Entendido',
+          hideCancel: true,
+        });
       },
       error: (e) => {
         this.loading.set(false);
         this.mostrarMsg(e?.error?.message || 'No fue posible generar las jornadas.', 'error', 'Error de programación');
+      },
+    });
+  }
+
+  private labelMunicipioGenerado(row: { municipio?: string; depto?: string }): string {
+    const mun = String(row.municipio || '').trim() || 'Sin municipio';
+    const depto = String(row.depto || '').trim();
+    return depto ? `${mun} (${depto})` : mun;
+  }
+
+  private rangoFechasJornadasGeneradas(
+    fechaPrimera?: string | null,
+    fechaUltima?: string | null,
+  ): string {
+    if (!fechaPrimera) return '';
+    const desde = this.fmtFecha(fechaPrimera);
+    const hasta = this.fmtFecha(fechaUltima || fechaPrimera);
+    if (!desde || desde === '—') return '';
+    if (!hasta || hasta === '—' || desde === hasta) {
+      return `Las jornadas quedan el ${desde}.`;
+    }
+    return `Las jornadas van del ${desde} al ${hasta}.`;
+  }
+
+  private textoResumenGenerarJornadas(r: {
+    count: number;
+    total?: number;
+    metaJornadas?: number;
+    jornadasCompletas?: boolean;
+    clasesCreadas?: number;
+    municipiosGenerados?: Array<{ municipio: string; depto?: string; count: number }>;
+    fechaPrimeraGenerada?: string | null;
+    fechaUltimaGenerada?: string | null;
+  }): string {
+    const count = r.count || 0;
+    const meta = r.metaJornadas ?? this.formContrato().numerojornadas ?? r.total;
+    const lineas: string[] = [];
+    if (count > 0) {
+      lineas.push(`Se generaron ${count} ${count === 1 ? 'jornada' : 'jornadas'}.`);
+      const rango = this.rangoFechasJornadasGeneradas(r.fechaPrimeraGenerada, r.fechaUltimaGenerada);
+      if (rango) lineas.push('', rango);
+      const municipios = r.municipiosGenerados || [];
+      if (municipios.length) {
+        lineas.push('', 'Municipios de estas jornadas:');
+        for (const m of municipios) {
+          const n = m.count || 0;
+          lineas.push(`• ${this.labelMunicipioGenerado(m)}: ${n} ${n === 1 ? 'jornada' : 'jornadas'}`);
+        }
+      }
+    } else if (r.jornadasCompletas) {
+      lineas.push('No se generaron jornadas nuevas.');
+      lineas.push('', `El contrato ya está completo: ${r.total ?? '—'} de ${meta ?? '—'} jornada(s) planificada(s).`);
+    } else {
+      lineas.push('No se generaron jornadas nuevas.');
+      lineas.push('', 'No había fechas pendientes por programar en el rango del contrato.');
+    }
+    if ((r.clasesCreadas ?? 0) > 0) {
+      lineas.push('', `También se autogeneraron ${r.clasesCreadas} clase(s) en esas jornadas.`);
+    }
+    if (r.total != null && meta != null && count > 0) {
+      lineas.push('', `Total del contrato: ${r.total} de ${meta} jornada(s) planificada(s).`);
+    }
+    return lineas.join('\n');
+  }
+
+  async borrarVaciosContrato(alcance: 'jornadas' | 'clases') {
+    if (!this.puedeBorrarVacios()) {
+      this.mostrarMsg(
+        this.puedeEliminarClase()
+          ? 'Seleccione un contrato en ejecución. Si está Ejecutado, no se pueden borrar jornadas ni clases.'
+          : 'Solo el administrador puede borrar jornadas y clases vacías.',
+        'warn',
+        'Sin permiso',
+      );
+      return;
+    }
+    const id = this.contratoSel() || this.formContrato()._id || this.claseActiva()?.idContrato;
+    if (!id) {
+      this.mostrarMsg('Seleccione un contrato en el filtro superior.', 'warn', 'Sin contrato');
+      return;
+    }
+    const soloJornadas = alcance === 'jornadas';
+    this.loading.set(true);
+    this.jornadaSvc.previewPurgaVacios(id, alcance).subscribe({
+      next: async (p) => {
+        this.loading.set(false);
+        const clasesVacias = p.clasesSinAlumnos || 0;
+        const jornadasVacias = p.jornadasSinClases || 0;
+        if (soloJornadas ? !jornadasVacias : !clasesVacias) {
+          await this.confirmSvc.open({
+            title: 'Nada que borrar',
+            message: soloJornadas
+              ? 'No hay jornadas vacías (sin clases con alumnos, asistencias o certificado vigente) en este contrato.'
+              : 'No hay clases sin alumnos, asistencias o certificado vigente en este contrato.',
+            variant: 'primary',
+            confirmLabel: 'Entendido',
+            hideCancel: true,
+          });
+          return;
+        }
+        const ok = await this.confirmSvc.open({
+          title: soloJornadas ? 'Borrar jornadas vacías' : 'Borrar clases vacías',
+          message: soloJornadas
+            ? `Se eliminarán ${jornadasVacias} jornada(s) vacía(s). Las clases de otras jornadas no se tocan.\n\nEsta acción no se puede deshacer.`
+            : `Se eliminarán ${clasesVacias} clase(s) sin alumnos, asistencias ni certificado vigente. Las jornadas no se tocan.\n\nSe conservan ${p.clasesConMovimiento || 0} clase(s) con movimiento.\n\nEsta acción no se puede deshacer.`,
+          variant: 'danger',
+          confirmLabel: 'Sí, borrar vacíos',
+          cancelLabel: 'Cancelar',
+        });
+        if (!ok) return;
+        this.loading.set(true);
+        this.jornadaSvc.purgarVacios(id, alcance).subscribe({
+          next: async (r) => {
+            this.loading.set(false);
+            const claseAbiertaId = String(this.claseActiva()?._id || '');
+            const claseAbiertaVacia = !this.inscritos().length;
+            this.aplicarContratoSync(r.contrato);
+            this.recargarVistaJornadas();
+            this.recargarClases();
+            this.recargarContratos();
+            this.cargarAvanceContrato(id);
+            if (!soloJornadas && claseAbiertaVacia && claseAbiertaId && this.modalCrearClase()) {
+              this.cerrarModalCrearClase();
+            }
+            await this.confirmSvc.open({
+              title: soloJornadas ? 'Jornadas vacías borradas' : 'Clases vacías borradas',
+              message:
+                r.message ||
+                (soloJornadas
+                  ? `Se eliminaron ${r.jornadasEliminadas} jornada(s) vacía(s).`
+                  : `Se eliminaron ${r.clasesEliminadas} clase(s) sin alumnos.`),
+              variant: 'success',
+              confirmLabel: 'Entendido',
+              hideCancel: true,
+            });
+          },
+          error: (e) => {
+            this.loading.set(false);
+            this.mostrarMsg(e?.error?.message || 'No se pudieron borrar los registros vacíos.', 'error', 'Error');
+          },
+        });
+      },
+      error: (e) => {
+        this.loading.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo consultar los registros vacíos.', 'error', 'Error');
       },
     });
   }
@@ -4998,6 +5999,24 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const valor =
       k === 'tipoCertificado' ? this.normalizarTipoCertificadoContrato(v) : v;
     this.formContrato.update((f) => ({ ...f, [k]: valor }));
+    if (k === 'incluiSab' || k === 'incluiDom' || k === 'incluiFest') {
+      this.recalcularJornadasAutoDelPlan();
+    }
+  }
+
+  private recalcularJornadasAutoDelPlan(): void {
+    this.refrescarJornadasBorrador();
+    if (!this.modoProgramacionMunicipio()) return;
+    this.formContrato.update((f) => {
+      const plan = this.aplicarSugerenciaJornadasFilas([...(f.municipiosPlan || [])]);
+      const clasesRep = clasesPorJornadaDesdePlan(plan);
+      return {
+        ...f,
+        municipiosPlan: plan,
+        numerojornadas: this.syncNumeroJornadasDesdePlan(plan),
+        ...(clasesRep != null ? { clasesPorJornada: clasesRep } : {}),
+      };
+    });
   }
 
   patchOrigenAlumnoContrato(
@@ -5021,7 +6040,6 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         estamento: { ...this.certOrigenRow('estamento') },
         empresa: { ...this.certOrigenRow('empresa') },
         operativo: { ...this.certOrigenRow('operativo') },
-        ...(f.certificacionOrigen || {}),
       };
       return { ...f, origenesAlumnos: cur, certificacionOrigen: cert };
     });
@@ -5107,6 +6125,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.recargarClases();
   }
 
+  labelCodigoJornadaClase(c: ClaseJornadaDto | { idJornada?: string; codigoJornada?: string } | null | undefined): string {
+    const directo = String(c?.codigoJornada || '').trim();
+    if (directo) return directo;
+    const idJ = String(c?.idJornada || '').trim();
+    if (!idJ) return '—';
+    const j = this.jornadas().find((x) => String(x._id) === idJ);
+    return String(j?.codigoJornada || '').trim() || '—';
+  }
+
   labelContratoCortoClase(c: any): string {
     const id = c?.idContrato || this.jornadas().find((x) => x._id === c?.idJornada)?.idContrato;
     return this.labelContratoCorto(id);
@@ -5155,7 +6182,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     if (!idP) {
-      this.mostrarMsg('Seleccione el programa de capacitación para la nueva clase.', 'warn', 'Falta programa');
+      this.mostrarMsg(
+        this.origenPorClaseSinProgramas()
+          ? this.mensajeSinProgramasClase()
+          : 'Seleccione el programa de capacitación para la nueva clase.',
+        'warn',
+        'Falta programa',
+      );
       return;
     }
     const horarioManual = !this.operacionEspecialActiva() && this.modalHorarioManual();
@@ -5180,6 +6213,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         idJornada: idJ,
         idPrograma: idP,
         ubicacion: this.nuevaClaseUbic(),
+        origenOperacion: this.origenFiltroAlumno(),
         horarioManual,
         ...(horarioManual ? { horaInicio, horaFin } : {}),
         ...(this.puedeAsignarInstructor() && this.modalClaseInstructorId()
@@ -5409,7 +6443,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.jornadaEditModo.set('nueva');
     this.jornadaEditPanel.set('datos');
-    this.jornadaEditGenerarClases.set((c.clasesPorJornada ?? 0) > 0);
+    this.jornadaEditGenerarClases.set(this.clasesPorJornadaNuevaJornada() > 0);
     this.jornadaEditError.set(null);
     this.jornadaEvidenciaArchivos.set([]);
     this.jornadaEvidenciaCerts.set([]);

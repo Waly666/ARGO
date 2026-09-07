@@ -115,6 +115,7 @@
   .field-empresa,
   .field-origen,
   .field-jornada-cat,
+  .field-actor-vial,
   .field-jornada-cap {
     flex: 1;
     min-width: 200px;
@@ -129,6 +130,11 @@
 
   .field-jornada:has(argo-catalogo-enum-buscar.dropdown-open) {
     z-index: 5001;
+  }
+
+  .field-actor-vial:has(argo-catalogo-enum-buscar.dropdown-open),
+  .field-jornada-cat:has(argo-catalogo-enum-buscar.dropdown-open) {
+    z-index: 5000;
   }
 
   .btn-limpiar-jornada,

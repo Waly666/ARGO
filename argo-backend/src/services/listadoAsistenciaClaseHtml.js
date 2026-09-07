@@ -10,6 +10,7 @@ const { esc } = require('./reciboHtmlShared');
 const { informeGoogleFontsLinkHtml, informeDocumentoBaseCss, htmlEncabezadoEmpresa } = require('./informeEncabezadoEmpresa');
 const { fmtFecha, fmtFechaSolo } = require('../utils/timezoneColombia');
 const { informePrintToolbar } = require('./informePrintToolbar');
+const { mapaEtiquetasActorVial, textoActorVialAlumnoInforme } = require('./caracterizacionPoblacion');
 
 function fmtHoraCorta(d) {
   if (!d) return '';
@@ -96,6 +97,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean()
     : [];
   const mapAlu = new Map(alumnos.map((a) => [docKey(a.numDoc), a]));
+  const actorVialMap = await mapaEtiquetasActorVial();
   const asistencias = await asistenciasDeClase(claseRaw._id);
   const mapAsis = new Map();
   for (const a of asistencias) {
@@ -114,6 +116,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
       n: filas.length + 1,
       numDoc: nd,
       nombre: nombreAlumno(al) || '—',
+      actorVial: textoActorVialAlumnoInforme(al, actorVialMap),
       asistio: !!asis,
       horaAsis: asis?.createdAt ? fmtHoraCorta(asis.createdAt) : '',
     });
@@ -129,6 +132,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
       n: filas.length + 1,
       numDoc: nd,
       nombre: nombreAlumno(al) || '—',
+      actorVial: textoActorVialAlumnoInforme(al, actorVialMap),
       asistio: true,
       horaAsis: asis?.createdAt ? fmtHoraCorta(asis.createdAt) : '',
     });
@@ -164,12 +168,13 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
       <td class="n">${f.n}</td>
       <td class="doc">${esc(String(f.numDoc))}</td>
       <td class="nom">${esc(f.nombre)}</td>
+      <td class="vial">${esc(f.actorVial || 'Sin dato')}</td>
       <td class="asis ${f.asistio ? 'asis-si' : 'asis-no'}">${asisTxt}</td>
       <td class="firma"></td>
     </tr>`;
         })
         .join('\n')
-    : `<tr><td colspan="5" class="empty">Sin alumnos inscritos en esta clase.</td></tr>`;
+    : `<tr><td colspan="6" class="empty">Sin alumnos inscritos en esta clase.</td></tr>`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -229,6 +234,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     }
     td.n { width: 28px; text-align: center; }
     td.doc { width: 90px; white-space: nowrap; }
+    td.vial { width: 118px; font-size: 8.5pt; white-space: nowrap; }
     td.asis {
       width: 88px;
       text-align: center;
@@ -291,6 +297,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
         <th>#</th>
         <th>Documento</th>
         <th>Nombre completo</th>
+        <th>Actor vial</th>
         <th>Asistió</th>
         <th>Firma</th>
       </tr>

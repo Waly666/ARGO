@@ -84,8 +84,14 @@ export default function HomeScreen() {
       case 'CrearJornada':
         nav.navigate('CrearJornada', {});
         break;
-      default:
+      case 'JornadasHoy':
+      case 'JornadasGestion':
+      case 'InformesJornadas':
+      case 'CambiarPassword':
         nav.navigate(mod.route);
+        break;
+      default:
+        break;
     }
   }
 

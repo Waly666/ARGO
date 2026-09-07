@@ -55,8 +55,25 @@ export class CertificadoJornadaBloqueoService {
 
   async mostrarDesdeError(errorBody: unknown, nombreAlumno = 'El alumno'): Promise<void> {
     const body = (errorBody || {}) as {
+      codigo?: string;
+      message?: string;
       certificado?: CertificadoBloqueoInfo;
+      programaNombre?: string;
     };
+    if (body.codigo === 'ya_tomo_programa_contrato') {
+      const nombre = nombreAlumno?.trim() || 'El alumno';
+      await this.confirm.open({
+        title: 'Ya tomó esta clase',
+        message:
+          body.message ||
+          `${nombre} ya tomó este programa en el contrato. No se puede inscribir de nuevo.`,
+        confirmLabel: 'Entendido',
+        variant: 'warn',
+        icon: 'warning',
+        hideCancel: true,
+      });
+      return;
+    }
     await this.mostrarAlumnoCertificado({
       nombreAlumno,
       certificado: body.certificado || null,

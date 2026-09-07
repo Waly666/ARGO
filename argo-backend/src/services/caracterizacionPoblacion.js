@@ -1,6 +1,6 @@
 const DatosAlumno = require('../models/DatosAlumno');
 const { models } = require('../models/catalogos');
-const { calcularEdad, rangoEdadLabel, RANGOS_EDAD } = require('../utils/edad');
+const { calcularEdad, rangoEdadLabel, rangoEdadDef, RANGOS_EDAD, SEXOS_INFORME } = require('../utils/edad');
 const {
   normalizarOrigenJornadaCap,
   normalizarTipoInstitucionEducativa,
@@ -12,7 +12,10 @@ const {
   ORIGENES_JORNADA_CAP,
 } = require('../constants/origenJornadaCap');
 
+const { ensureActorVialCatalogo } = require('./actorVialCatalogo');
+
 const CAMPOS_CATALOGO = [
+  { key: 'actorVial', out: 'porActorVial', model: models.actorVial, codeFields: ['idActorVial', 'id', 'codigo'] },
   { key: 'estadoCivil', out: 'porEstadoCivil', model: models.estadoCivil, codeFields: ['idEstadoCivil', 'id', 'codigo'] },
   { key: 'estrato', out: 'porEstrato', model: models.estrato, codeFields: ['idEstrato', 'id', 'codigo'] },
   { key: 'regimenSalud', out: 'porRegimenSalud', model: models.catRegimenSalud, codeFields: ['idRegimen', 'id', 'codigo'] },
@@ -30,6 +33,45 @@ function etiquetaGenero(raw) {
   if (t === 'M' || t.startsWith('MASC')) return 'Masculino';
   if (t === 'F' || t.startsWith('FEM')) return 'Femenino';
   return String(raw).trim();
+}
+
+function sexoInforme(raw) {
+  const g = etiquetaGenero(raw);
+  if (g === 'Masculino' || g === 'Femenino' || g === 'Sin dato') return g;
+  return 'Otro';
+}
+
+function grupoEdadSexoVacio(key, label) {
+  return {
+    key,
+    label,
+    total: 0,
+    porSexo: Object.fromEntries(SEXOS_INFORME.map((s) => [s, 0])),
+  };
+}
+
+function matrizEdadSexoVacia() {
+  return {
+    grupos: RANGOS_EDAD.map((r) => grupoEdadSexoVacio(r.key, r.label)),
+    sinDato: grupoEdadSexoVacio('sin_dato', 'Sin dato'),
+  };
+}
+
+function serializarEdadSexo(matriz) {
+  const grupos = [...matriz.grupos];
+  if (matriz.sinDato.total > 0) grupos.push(matriz.sinDato);
+  const usados = SEXOS_INFORME.filter(
+    (s) => s === 'Masculino' || s === 'Femenino' || grupos.some((g) => (g.porSexo[s] || 0) > 0),
+  );
+  return {
+    sexos: usados,
+    grupos: grupos.map((g) => ({
+      key: g.key,
+      label: g.label,
+      total: g.total,
+      porSexo: usados.map((s) => ({ label: s, value: g.porSexo[s] || 0 })),
+    })),
+  };
 }
 
 function codigoDoc(doc, codeFields) {
@@ -99,6 +141,20 @@ function aLista(map, ordenFijo) {
       return b.value - a.value;
     });
   }
+  return rows;
+}
+
+/** Peatón → conductor → ciclista… según el prefijo numérico del catálogo. */
+function aListaActorVial(map) {
+  const rows = [...map.entries()].map(([label, value]) => ({ label, value }));
+  rows.sort((a, b) => {
+    if (a.label === 'Sin dato') return 1;
+    if (b.label === 'Sin dato') return -1;
+    const na = parseInt(String(a.label).match(/^(\d+)/)?.[1] || '999', 10);
+    const nb = parseInt(String(b.label).match(/^(\d+)/)?.[1] || '999', 10);
+    if (na !== nb) return na - nb;
+    return String(a.label).localeCompare(String(b.label), 'es');
+  });
   return rows;
 }
 
@@ -232,6 +288,7 @@ function textoOrigenAlumnoInforme(a) {
  */
 async function caracterizarDesdeDocs(docs) {
   const list = Array.isArray(docs) ? docs : [];
+  await ensureActorVialCatalogo();
   const mapas = {};
   await Promise.all(
     CAMPOS_CATALOGO.map(async (c) => {
@@ -241,9 +298,21 @@ async function caracterizarDesdeDocs(docs) {
 
   const porEdad = new Map(RANGOS_EDAD.map((r) => [r.label, 0]));
   porEdad.set('Sin dato', 0);
+  const edadSexo = matrizEdadSexoVacia();
+  const edadSexoByKey = new Map(edadSexo.grupos.map((g) => [g.key, g]));
   const porGenero = new Map();
   const buckets = {};
   for (const c of CAMPOS_CATALOGO) buckets[c.out] = new Map();
+  const actorEtiquetas = [
+    ...new Set([...(mapas.actorVial || new Map()).values()]),
+  ].filter((e) => e && !/^\d+$/.test(String(e).trim()));
+  actorEtiquetas.sort((a, b) => {
+    const na = parseInt(String(a).match(/^(\d+)/)?.[1] || '999', 10);
+    const nb = parseInt(String(b).match(/^(\d+)/)?.[1] || '999', 10);
+    if (na !== nb) return na - nb;
+    return String(a).localeCompare(String(b), 'es');
+  });
+  for (const e of actorEtiquetas) buckets.porActorVial.set(e, 0);
 
   const porOrigenJornada = new Map(
     ORIGENES_JORNADA_CAP.map((k) => [ORIGEN_JORNADA_LABELS[k], 0]),
@@ -260,8 +329,15 @@ async function caracterizarDesdeDocs(docs) {
 
   for (const a of list) {
     const edad = calcularEdad(a.fechaNac);
+    const grupoEdad = rangoEdadDef(edad);
     contar(porEdad, rangoEdadLabel(edad));
     contar(porGenero, etiquetaGenero(a.genero));
+    const sexo = sexoInforme(a.genero);
+    const celdaEdad = grupoEdad ? edadSexoByKey.get(grupoEdad.key) : edadSexo.sinDato;
+    if (celdaEdad) {
+      celdaEdad.total += 1;
+      celdaEdad.porSexo[sexo] = (celdaEdad.porSexo[sexo] || 0) + 1;
+    }
     for (const c of CAMPOS_CATALOGO) {
       contar(buckets[c.out], labelDe(mapas[c.key], a[c.key]));
     }
@@ -289,7 +365,9 @@ async function caracterizarDesdeDocs(docs) {
 
   return {
     total: list.length,
+    porActorVial: aListaActorVial(buckets.porActorVial),
     porEdad: aLista(porEdad, [...RANGOS_EDAD.map((r) => r.label), 'Sin dato']),
+    porEdadSexo: serializarEdadSexo(edadSexo),
     porGenero: aLista(porGenero),
     porEstadoCivil: aLista(buckets.porEstadoCivil),
     porEstrato: aLista(buckets.porEstrato),
@@ -326,6 +404,7 @@ async function caracterizarPoblacion(opts = {}) {
       [
         'fechaNac',
         'genero',
+        'actorVial',
         'estadoCivil',
         'estrato',
         'regimenSalud',
@@ -353,6 +432,17 @@ async function caracterizarPoblacion(opts = {}) {
   return caracterizarDesdeDocs(docs);
 }
 
+/** Mapa código/etiqueta del catálogo actor vial (para tablas de informes). */
+async function mapaEtiquetasActorVial() {
+  await ensureActorVialCatalogo();
+  return mapaCatalogo(models.actorVial, ['idActorVial', 'id', 'codigo'], 'actorVial');
+}
+
+function textoActorVialAlumnoInforme(a, map) {
+  if (!a) return 'Sin dato';
+  return labelDe(map || new Map(), a.actorVial);
+}
+
 module.exports = {
   calcularEdad,
   rangoEdadLabel,
@@ -361,4 +451,6 @@ module.exports = {
   textoOrigenAlumnoInforme,
   textoPerfilAlumnoInforme,
   textoCaracterizacionAlumnoInforme,
+  mapaEtiquetasActorVial,
+  textoActorVialAlumnoInforme,
 };

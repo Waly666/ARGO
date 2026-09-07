@@ -23,9 +23,9 @@ import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { useAuth } from '../context/AuthContext';
 import { puedeGestionarJornadas } from '../utils/permisos';
-import { ORIGEN_JORNADA_LABELS, type OrigenJornadaKey } from '../utils/origenJornada';
-import { crearClase, listarClases, listarContratos, programasJornadaCap } from '../api/jornadasApi';
-import type { ClaseJornada, ProgramaJornada } from '../api/types';
+import { ORIGEN_JORNADA_LABELS, type OrigenJornadaKey, filtrarProgramasParaElegirClase, idsProgramasInstructorPlan, idsProgramasPermitidosOrigen } from '../utils/origenJornada';
+import { crearClase, listarClases, obtenerContrato, programasInstructorContrato, programasJornadaCap } from '../api/jornadasApi';
+import type { ClaseJornada, ContratoJornada, ProgramaJornada } from '../api/types';
 import { UBICACIONES_CLASE } from '../config/appBranding';
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
@@ -55,6 +55,14 @@ export default function ClasesJornadaScreen() {
   const [origenesContrato, setOrigenesContrato] = useState<Record<string, boolean>>({
     operativo: true,
   });
+  const [certificacionOrigen, setCertificacionOrigen] = useState<
+    import('../api/types').ContratoJornada['certificacionOrigen']
+  >(null);
+  const [idProgramasLegado, setIdProgramasLegado] = useState<string[]>([]);
+  const [instructoresPlan, setInstructoresPlan] = useState<
+    NonNullable<ContratoJornada['instructoresPlan']>
+  >([]);
+  const [idsProgInstructor, setIdsProgInstructor] = useState<string[] | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [modalNueva, setModalNueva] = useState(false);
   const [progSel, setProgSel] = useState('');
@@ -67,17 +75,58 @@ export default function ClasesJornadaScreen() {
     return act.length ? act : ORIGEN_OPTS.filter((o) => o.key === 'operativo');
   }, [origenesContrato]);
 
+  const programasFiltrados = useMemo(() => {
+    return filtrarProgramasParaElegirClase(programas, {
+      certificacionOrigen,
+      origen: origenSel,
+      legadoIdProgramas: idProgramasLegado,
+      instructoresPlan,
+      user,
+      esAdmin,
+      idsProgramasInstructor: idsProgInstructor,
+    });
+  }, [
+    programas,
+    certificacionOrigen,
+    origenSel,
+    idProgramasLegado,
+    instructoresPlan,
+    user,
+    esAdmin,
+    idsProgInstructor,
+  ]);
+
+  const origenPorClaseVacio = useMemo(() => {
+    const permitidos = idsProgramasPermitidosOrigen(
+      certificacionOrigen,
+      origenSel,
+      idProgramasLegado,
+    );
+    return permitidos != null && permitidos.length === 0;
+  }, [certificacionOrigen, origenSel, idProgramasLegado]);
+
+  const instructorSinProgramas = useMemo(() => {
+    if (Array.isArray(idsProgInstructor)) return idsProgInstructor.length === 0;
+    if (esAdmin) return false;
+    const ids = idsProgramasInstructorPlan(instructoresPlan, user);
+    return ids != null && ids.length === 0;
+  }, [esAdmin, instructoresPlan, user, idsProgInstructor]);
+
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const [cls, progs, contratos] = await Promise.all([
+      const [cls, progs, contrato, misProg] = await Promise.all([
         listarClases(jornadaId),
         programasJornadaCap(),
-        listarContratos().catch(() => []),
+        idContrato
+          ? obtenerContrato(String(idContrato)).catch(() => null)
+          : Promise.resolve(null),
+        idContrato
+          ? programasInstructorContrato(String(idContrato)).catch(() => null)
+          : Promise.resolve(null),
       ]);
       setClases(cls || []);
       setProgramas(progs || []);
-      const contrato = (contratos || []).find((x) => String(x._id) === String(idContrato));
       const o = contrato?.origenesAlumnos || { operativo: true };
       setOrigenesContrato({
         colegio: !!o.colegio,
@@ -85,6 +134,10 @@ export default function ClasesJornadaScreen() {
         empresa: !!o.empresa,
         operativo: o.operativo !== false || (!o.colegio && !o.estamento && !o.empresa),
       });
+      setCertificacionOrigen(contrato?.certificacionOrigen || null);
+      setIdProgramasLegado(Array.isArray(contrato?.idProgramas) ? contrato.idProgramas : []);
+      setInstructoresPlan(Array.isArray(contrato?.instructoresPlan) ? contrato.instructoresPlan : []);
+      setIdsProgInstructor(misProg ? misProg.idProgramas : undefined);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar las clases');
     } finally {
@@ -391,11 +444,54 @@ export default function ClasesJornadaScreen() {
               <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800', marginBottom: 12 }}>
                 Nueva clase
               </ScaledText>
+              <ScaledText
+                baseSize={14}
+                style={{ color: c.textSoft, marginBottom: 8, fontWeight: '600' }}
+              >
+                Origen de alumnos
+              </ScaledText>
+              <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+                Solo se podrán inscribir alumnos de este origen. Si es por clase, el programa se
+                limita a los configurados en el contrato.
+              </ScaledText>
+              <View style={styles.chipsWrap}>
+                {origenesActivos.map((o) => {
+                  const sel = origenSel === o.key;
+                  return (
+                    <Pressable
+                      key={o.key}
+                      onPress={() => {
+                        setOrigenSel(o.key);
+                        setProgSel('');
+                      }}
+                      style={[
+                        styles.chip,
+                        sel && { backgroundColor: c.primary, borderColor: c.primary },
+                      ]}
+                    >
+                      <ScaledText baseSize={13} style={{ color: sel ? '#fff' : c.text }}>
+                        {o.label}
+                      </ScaledText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {origenPorClaseVacio ? (
+                <ScaledText baseSize={12} style={{ color: c.warn, marginTop: 8 }}>
+                  Este origen está por clase y no tiene programas en el contrato.
+                </ScaledText>
+              ) : null}
+              {instructorSinProgramas ? (
+                <ScaledText baseSize={12} style={{ color: c.warn, marginTop: 8 }}>
+                  No tiene programas asignados en este contrato. Pida que lo agreguen en Instructores
+                  y programas.
+                </ScaledText>
+              ) : null}
               <ProgramaPicker
-                programas={programas}
+                programas={programasFiltrados}
                 value={progSel}
                 onChange={setProgSel}
-                disabled={guardando}
+                disabled={guardando || instructorSinProgramas}
               />
               <ScaledText
                 baseSize={14}
@@ -420,40 +516,11 @@ export default function ClasesJornadaScreen() {
                 })}
               </View>
 
-              <ScaledText
-                baseSize={14}
-                style={{ color: c.textSoft, marginTop: 14, marginBottom: 8, fontWeight: '600' }}
-              >
-                Origen de alumnos
-              </ScaledText>
-              <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
-                Solo se podrán inscribir alumnos de este origen en la clase.
-              </ScaledText>
-              <View style={styles.chipsWrap}>
-                {origenesActivos.map((o) => {
-                  const sel = origenSel === o.key;
-                  return (
-                    <Pressable
-                      key={o.key}
-                      onPress={() => setOrigenSel(o.key)}
-                      style={[
-                        styles.chip,
-                        sel && { backgroundColor: c.primary, borderColor: c.primary },
-                      ]}
-                    >
-                      <ScaledText baseSize={13} style={{ color: sel ? '#fff' : c.text }}>
-                        {o.label}
-                      </ScaledText>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
               <View style={{ height: 16 }} />
               <PrimaryButton
                 label="Crear clase"
                 onPress={() => void onCrearClase()}
-                disabled={guardando}
+                disabled={guardando || instructorSinProgramas || origenPorClaseVacio}
                 fullWidth
               />
               <View style={{ height: 8 }} />

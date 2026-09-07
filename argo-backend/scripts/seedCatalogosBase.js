@@ -51,6 +51,13 @@ const CATALOGOS = {
     { idOcupacion: '4', descripcion: '4) DESEMPLEADO' },
     { idOcupacion: '5', descripcion: '5) INDEPENDIENTE' },
   ],
+  actorVial: [
+    { idActorVial: '1', descripcion: '1) PEATÓN' },
+    { idActorVial: '2', descripcion: '2) CONDUCTOR' },
+    { idActorVial: '3', descripcion: '3) CICLISTA' },
+    { idActorVial: '4', descripcion: '4) MOTOCICLISTA' },
+    { idActorVial: '5', descripcion: '5) PASAJERO' },
+  ],
   discapacidad: [
     { idDiscapacidad: '1', descripcion: '1) SORDERA PROFUNDA' },
     { idDiscapacidad: '2', descripcion: '2) HIPOACUSIA A BAJA AUDICION' },

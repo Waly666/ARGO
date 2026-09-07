@@ -109,6 +109,19 @@ function origenesContratoDefault() {
   };
 }
 
+function normalizeIdProgramasOrigen(raw) {
+  const list = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
+  const out = [];
+  const seen = new Set();
+  for (const item of list) {
+    const id = String(item ?? '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
 function configCertOrigenDefault(
   fallbackNum = 1,
   fallbackTipo = TIPO_CERTIFICADO_GLOBAL,
@@ -118,6 +131,7 @@ function configCertOrigenDefault(
     numSesCert: Math.max(1, parseInt(fallbackNum, 10) || 1),
     tipoCertificado: normalizarTipoCertContrato(fallbackTipo),
     idProgramaCertificacion: String(fallbackProg || '').trim(),
+    idProgramas: [],
   };
 }
 
@@ -247,24 +261,94 @@ function normalizarOrigenesContrato(raw) {
 /**
  * Normaliza mapa de certificación por origen.
  * Conserva valores top-level del contrato como fallback (contratos antiguos).
+ * En por_clase, `idProgramas` es la lista de programas de ese origen.
+ * Legado: si un origen por_clase no tiene lista propia, copia `contrato.idProgramas`.
  */
 function normalizarCertificacionOrigen(raw, contrato = null) {
   const base = certificacionOrigenDefault(contrato);
-  if (!raw || typeof raw !== 'object') return base;
-  for (const k of ORIGENES_JORNADA_CAP) {
-    const row = raw[k];
-    if (!row || typeof row !== 'object') continue;
-    if (row.numSesCert !== undefined) {
-      base[k].numSesCert = Math.max(1, parseInt(row.numSesCert, 10) || 1);
+  if (raw && typeof raw === 'object') {
+    for (const k of ORIGENES_JORNADA_CAP) {
+      const row = raw[k];
+      if (!row || typeof row !== 'object') continue;
+      if (row.numSesCert !== undefined) {
+        base[k].numSesCert = Math.max(1, parseInt(row.numSesCert, 10) || 1);
+      }
+      if (row.tipoCertificado !== undefined) {
+        base[k].tipoCertificado = normalizarTipoCertContrato(row.tipoCertificado);
+      }
+      if (row.idProgramaCertificacion !== undefined) {
+        base[k].idProgramaCertificacion = String(row.idProgramaCertificacion || '').trim();
+      }
+      if (row.idProgramas !== undefined) {
+        base[k].idProgramas = normalizeIdProgramasOrigen(row.idProgramas);
+      }
     }
-    if (row.tipoCertificado !== undefined) {
-      base[k].tipoCertificado = normalizarTipoCertContrato(row.tipoCertificado);
-    }
-    if (row.idProgramaCertificacion !== undefined) {
-      base[k].idProgramaCertificacion = String(row.idProgramaCertificacion || '').trim();
+  }
+  const legado = normalizeIdProgramasOrigen(contrato?.idProgramas);
+  if (legado.length) {
+    for (const k of ORIGENES_JORNADA_CAP) {
+      if (
+        base[k].tipoCertificado === TIPO_CERTIFICADO_POR_CLASE &&
+        !base[k].idProgramas.length
+      ) {
+        base[k].idProgramas = [...legado];
+      }
     }
   }
   return base;
+}
+
+/** Lista de programas permitidos en un origen por_clase (vacío si el origen es global). */
+function idsProgramasPorClaseOrigen(contrato, origenRaw) {
+  const origen = normalizarOrigenJornadaCap(origenRaw);
+  if (!origen) return [];
+  const map = normalizarCertificacionOrigen(contrato?.certificacionOrigen, contrato);
+  const row = map[origen] || map.operativo;
+  if (normalizarTipoCertContrato(row?.tipoCertificado) !== TIPO_CERTIFICADO_POR_CLASE) {
+    return [];
+  }
+  return normalizeIdProgramasOrigen(row?.idProgramas);
+}
+
+function origenEsCertPorClase(contrato, origenRaw) {
+  const origen = normalizarOrigenJornadaCap(origenRaw);
+  if (!origen) return false;
+  const map = normalizarCertificacionOrigen(contrato?.certificacionOrigen, contrato);
+  const row = map[origen] || map.operativo;
+  return normalizarTipoCertContrato(row?.tipoCertificado) === TIPO_CERTIFICADO_POR_CLASE;
+}
+
+/**
+ * Programas para autogenerar clases: solo si hay exactamente un origen activo por_clase.
+ * Con varios orígenes por_clase el instructor elige origen y programa al operar.
+ */
+function programasAutogeneracionContrato(contrato) {
+  const origenes = normalizarOrigenesContrato(contrato?.origenesAlumnos);
+  const map = normalizarCertificacionOrigen(contrato?.certificacionOrigen, contrato);
+  const activosPorClase = ORIGENES_JORNADA_CAP.filter(
+    (k) => origenes[k] && normalizarTipoCertContrato(map[k]?.tipoCertificado) === TIPO_CERTIFICADO_POR_CLASE,
+  );
+  if (activosPorClase.length !== 1) return [];
+  return normalizeIdProgramasOrigen(map[activosPorClase[0]]?.idProgramas);
+}
+
+/** Unión de listas por_clase (compat con campo top-level idProgramas). */
+function unionIdProgramasPorClase(certificacionOrigen) {
+  const seen = new Set();
+  const out = [];
+  if (!certificacionOrigen || typeof certificacionOrigen !== 'object') return out;
+  for (const k of ORIGENES_JORNADA_CAP) {
+    const row = certificacionOrigen[k];
+    if (!row || normalizarTipoCertContrato(row.tipoCertificado) !== TIPO_CERTIFICADO_POR_CLASE) {
+      continue;
+    }
+    for (const id of normalizeIdProgramasOrigen(row.idProgramas)) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
 }
 
 /**
@@ -329,4 +413,9 @@ module.exports = {
   normalizarTipoCertContrato,
   configCertificacionParaOrigen,
   origenActivoEnContrato,
+  normalizeIdProgramasOrigen,
+  idsProgramasPorClaseOrigen,
+  origenEsCertPorClase,
+  programasAutogeneracionContrato,
+  unionIdProgramasPorClase,
 };

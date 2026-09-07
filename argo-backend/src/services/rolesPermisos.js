@@ -145,11 +145,20 @@ const LEGACY_PERMISO_EXPANSION = {
     'jornadas.app.informes',
   ],
   'jornadas.registrar_alumnos': ['jornadas.app.registrar_alumno'],
-  'jornadas.ver': ['jornadas.app.informes'],
   'alumnos.certificados': ['jornadas.app.certificados'],
 };
 
+function tienePantallasAppJornadasExplicitas(permisos) {
+  return (permisos || []).some((p) => String(p).startsWith('jornadas.app.'));
+}
+
 function concedidoPorPermisoLegacy(permisos, clave) {
+  if (
+    String(clave).startsWith('jornadas.app.') &&
+    tienePantallasAppJornadasExplicitas(permisos)
+  ) {
+    return false;
+  }
   for (const [legacy, concedidos] of Object.entries(LEGACY_PERMISO_EXPANSION)) {
     if (permisos.includes(legacy) && concedidos.includes(clave)) return true;
   }

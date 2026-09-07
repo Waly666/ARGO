@@ -21,6 +21,16 @@ export function listarContratos() {
   return apiFetch<ContratoJornada[]>(`${BASE}/contratos`);
 }
 
+export function obtenerContrato(id: string) {
+  return apiFetch<ContratoJornada>(`${BASE}/contratos/${encodeURIComponent(id)}`);
+}
+
+export function programasInstructorContrato(id: string) {
+  return apiFetch<{ enPlan: boolean; idProgramas: string[] | null }>(
+    `${BASE}/contratos/${encodeURIComponent(id)}/programas-instructor`,
+  );
+}
+
 export type InformeDashboardFiltros = {
   idJornada?: string;
   idClase?: string;

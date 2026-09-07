@@ -37,12 +37,17 @@ import {
   listarAsistencias,
   matricularAlumno,
   obtenerClase,
+  obtenerContrato,
+  programasInstructorContrato,
   programasJornadaCap,
   progresoCertificacion,
   quitarInscripcionClase,
   subirFotoEvidencia,
 } from '../api/jornadasApi';
 import {
+  filtrarProgramasParaElegirClase,
+  idsProgramasInstructorPlan,
+  idsProgramasPermitidosOrigen,
   labelOrigenJornada,
   mensajeOrigenNoCoincide,
   origenAlumnoEfectivo,
@@ -52,6 +57,7 @@ import type {
   AsistenciaClase,
   ClaseAnteriorResumen,
   ClaseJornada,
+  ContratoJornada,
   InscritoClase,
   MetaJornadaResp,
   ProgramaJornada,
@@ -116,6 +122,10 @@ export default function ClaseDetalleScreen() {
 
   const [clase, setClase] = useState<ClaseJornada | null>(null);
   const [programas, setProgramas] = useState<ProgramaJornada[]>([]);
+  const [instructoresPlan, setInstructoresPlan] = useState<
+    NonNullable<ContratoJornada['instructoresPlan']>
+  >([]);
+  const [idsProgInstructor, setIdsProgInstructor] = useState<string[] | null | undefined>(undefined);
   const [asistencias, setAsistencias] = useState<AsistenciaClase[]>([]);
   const [inscritos, setInscritos] = useState<InscritoClase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,17 +193,25 @@ export default function ClaseDetalleScreen() {
 
   const cargar = useCallback(async () => {
     try {
-      const [clRaw, progs, asis, ins, op] = await Promise.all([
+      const [clRaw, progs, asis, ins, op, contrato, misProg] = await Promise.all([
         obtenerClase(claseId),
         programasJornadaCap(),
         listarAsistencias(claseId),
         inscritosClase(claseId),
         estadoOperacionJornadas().catch(() => null),
+        idContrato ? obtenerContrato(String(idContrato)).catch(() => null) : Promise.resolve(null),
+        idContrato
+          ? programasInstructorContrato(String(idContrato)).catch(() => null)
+          : Promise.resolve(null),
       ]);
       const lista = progs || [];
       setAsistencias(asis || []);
       setInscritos(ins || []);
       setMostrarSwitchHorarioManual(op?.mostrarSwitchHorarioManual === true);
+      setInstructoresPlan(
+        Array.isArray(contrato?.instructoresPlan) ? contrato.instructoresPlan : [],
+      );
+      setIdsProgInstructor(misProg ? misProg.idProgramas : undefined);
       aplicarClaseEnPantalla(clRaw, lista);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo cargar la clase');
@@ -201,7 +219,7 @@ export default function ClaseDetalleScreen() {
       setLoading(false);
       setBusy(false);
     }
-  }, [claseId, aplicarClaseEnPantalla]);
+  }, [claseId, idContrato, aplicarClaseEnPantalla]);
 
   useEffect(() => {
     void cargar();
@@ -222,6 +240,43 @@ export default function ClaseDetalleScreen() {
     const act = ORIGEN_OPTS.filter((x) => !!o[x.key]);
     return act.length ? act : ORIGEN_OPTS.filter((x) => x.key === 'operativo');
   }, [clase?.origenesAlumnos]);
+  const programasFiltrados = useMemo(() => {
+    const origen = String(clase?.origenOperacion || origenFiltro || '').trim();
+    return filtrarProgramasParaElegirClase(programas, {
+      certificacionOrigen: clase?.certificacionOrigen,
+      origen,
+      instructoresPlan,
+      user: state.status === 'signedIn' ? state.user : null,
+      esAdmin: puedeGestionar,
+      idsProgramasInstructor: idsProgInstructor,
+    });
+  }, [
+    programas,
+    clase?.certificacionOrigen,
+    clase?.origenOperacion,
+    origenFiltro,
+    instructoresPlan,
+    state,
+    puedeGestionar,
+    idsProgInstructor,
+  ]);
+  const origenPorClaseVacio = useMemo(() => {
+    const origen = String(clase?.origenOperacion || origenFiltro || '').trim();
+    const permitidos = idsProgramasPermitidosOrigen(
+      clase?.certificacionOrigen,
+      origen,
+    );
+    return permitidos != null && permitidos.length === 0;
+  }, [clase?.certificacionOrigen, clase?.origenOperacion, origenFiltro]);
+  const instructorSinProgramas = useMemo(() => {
+    if (Array.isArray(idsProgInstructor)) return idsProgInstructor.length === 0;
+    if (puedeGestionar) return false;
+    const ids = idsProgramasInstructorPlan(
+      instructoresPlan,
+      state.status === 'signedIn' ? state.user : null,
+    );
+    return ids != null && ids.length === 0;
+  }, [puedeGestionar, instructoresPlan, state, idsProgInstructor]);
   /** Config ON, o clase ya marcada como manual (conserva comportamiento). */
   const puedeUsarHorarioManual =
     mostrarSwitchHorarioManual || clase?.horarioManual === true || horarioManual;
@@ -655,6 +710,14 @@ export default function ClaseDetalleScreen() {
         );
         return;
       }
+      if (err.status === 409 && err.body?.codigo === 'ya_tomo_programa_contrato') {
+        Alert.alert(
+          'Ya tomó esta clase',
+          err.body.message ||
+            `${nombreHint} ya tomó este programa en el contrato. No se puede inscribir de nuevo.`,
+        );
+        return;
+      }
       if (err.status === 409 && err.body?.sesiones != null) {
         Alert.alert(
           'Progreso',
@@ -1048,11 +1111,22 @@ export default function ClaseDetalleScreen() {
       </ScaledText>
       <SurfaceCard>
         <ProgramaPicker
-          programas={programas}
+          programas={programasFiltrados}
           value={progSel}
           onChange={(id) => void onProgramaElegido(id)}
-          disabled={busy || finalizada}
+          disabled={busy || finalizada || instructorSinProgramas}
         />
+        {origenPorClaseVacio ? (
+          <ScaledText baseSize={12} style={{ color: c.warn, marginTop: 8 }}>
+            Este origen está por clase y no tiene programas configurados en el contrato.
+          </ScaledText>
+        ) : null}
+        {instructorSinProgramas ? (
+          <ScaledText baseSize={12} style={{ color: c.warn, marginTop: 8 }}>
+            No tiene programas asignados en este contrato. Pida que lo agreguen en Instructores y
+            programas.
+          </ScaledText>
+        ) : null}
         {!mismoProgramaId(progSel, clase?.idPrograma) && progSel ? (
           <ScaledText baseSize={12} style={{ color: c.warn, marginTop: 8 }}>
             Guardando programa en la clase…
@@ -1093,7 +1167,7 @@ export default function ClaseDetalleScreen() {
         <PrimaryButton
           label="Guardar programa y ubicación"
           onPress={() => void guardarProgramaUbicacion()}
-          disabled={busy || finalizada || !progSel.trim()}
+          disabled={busy || finalizada || !progSel.trim() || instructorSinProgramas}
           fullWidth
         />
       </SurfaceCard>
@@ -1552,7 +1626,7 @@ export default function ClaseDetalleScreen() {
                     No hay alumnos nuevos que coincidan con el origen «
                     {labelOrigenJornada(origenFiltro)}»
                     {alumnosAnteriorOmitidos.length
-                      ? ` (${alumnosAnteriorOmitidos.length} omitido(s): otro origen, ya inscritos o certificados).`
+                      ? ` (${alumnosAnteriorOmitidos.length} omitido(s): ya tomaron este programa, otro origen, ya inscritos o certificados).`
                       : '.'}
                   </ScaledText>
                 ) : (

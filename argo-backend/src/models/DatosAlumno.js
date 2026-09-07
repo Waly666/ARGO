@@ -46,6 +46,8 @@ const DatosAlumnoSchema = new mongoose.Schema(
     regimenSalud: { type: String, trim: true },
     nivelFormacion: { type: String, trim: true },
     ocupacion: { type: String, trim: true },
+    /** Catálogo actorVial (peatón, conductor, ciclista, motociclista, pasajero). */
+    actorVial: { type: String, trim: true },
     discapacidad: { type: String, trim: true },
     munOrigen: { type: String, trim: true },
     codMunicipio: { type: String, trim: true },
