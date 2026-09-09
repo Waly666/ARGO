@@ -1761,7 +1761,8 @@ exports.quitarVideoFinstruvialServicioPortal = async (req, res, next) => {
 exports.subirImagenFinstruvialServiciosHubPortal = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Seleccione una imagen' });
-    const result = await subirImagenHubServicios(req.file, req.user);
+    const slot = req.query?.slot || req.body?.slot;
+    const result = await subirImagenHubServicios(req.file, req.user, slot);
     res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -1771,7 +1772,8 @@ exports.subirImagenFinstruvialServiciosHubPortal = async (req, res, next) => {
 
 exports.quitarImagenFinstruvialServiciosHubPortal = async (req, res, next) => {
   try {
-    const result = await quitarImagenHubServicios(req.user);
+    const slot = req.query?.slot || req.body?.slot;
+    const result = await quitarImagenHubServicios(req.user, slot);
     res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

@@ -722,7 +722,10 @@ export class AulaVirtualAdminService {
     );
   }
 
-  subirImagenFinstruvialServiciosHubPortal(file: File): Observable<{
+  subirImagenFinstruvialServiciosHubPortal(
+    file: File,
+    slot: 'hero' | 'formacion' | 'formacion2' = 'hero',
+  ): Observable<{
     config: PortalAulaConfig;
     url: string;
     urlAbsoluta?: string;
@@ -735,12 +738,15 @@ export class AulaVirtualAdminService {
       url: string;
       urlAbsoluta?: string;
       message: string;
-    }>(`${this.base}/portal/finstruvial-servicios/hub-imagen`, fd);
+    }>(`${this.base}/portal/finstruvial-servicios/hub-imagen`, fd, { params: { slot } });
   }
 
-  quitarImagenFinstruvialServiciosHubPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+  quitarImagenFinstruvialServiciosHubPortal(
+    slot: 'hero' | 'formacion' | 'formacion2' = 'hero',
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
     return this.http.delete<{ config: PortalAulaConfig; message: string }>(
       `${this.base}/portal/finstruvial-servicios/hub-imagen`,
+      { params: { slot } },
     );
   }
 

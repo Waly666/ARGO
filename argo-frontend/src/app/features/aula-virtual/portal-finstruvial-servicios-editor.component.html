@@ -105,14 +105,52 @@
       />
     </label>
     <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>ALT imagen formación 1</span>
-        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagenAlt" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>ALT imagen formación 2</span>
-        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagen2Alt" />
-      </label>
+      <div class="psb-imagen-slot">
+        <div class="psb-imagen-slot__head"><strong>Imagen formación 1</strong> (bloque «Formación integral»)</div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto alternativo (ALT)</span>
+          <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagenAlt" />
+        </label>
+        @if (previewUrl(finstruvialServicios.hub.formacionImagenUrl, finstruvialServicios.hub.formacionImagenUrlAbsoluta); as src) {
+          <img class="psb-imagen-slot__preview" [src]="src" [alt]="finstruvialServicios.hub.formacionImagenAlt" />
+        } @else {
+          <div class="psb-imagen-slot__empty">Sin imagen — se muestra marcador en /servicios</div>
+        }
+        <div class="psb-imagen-slot__actions">
+          <label class="psb-btn psb-btn--ghost">
+            {{ uploadingId() === 'hub:formacion' ? 'Subiendo…' : 'Subir imagen' }}
+            <input type="file" accept="image/*" hidden (change)="onHubImagen($event, 'formacion')" />
+          </label>
+          @if (finstruvialServicios.hub.formacionImagenUrl) {
+            <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen('formacion')">
+              Quitar imagen
+            </button>
+          }
+        </div>
+      </div>
+      <div class="psb-imagen-slot">
+        <div class="psb-imagen-slot__head"><strong>Imagen formación 2</strong> (complementaria)</div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto alternativo (ALT)</span>
+          <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagen2Alt" />
+        </label>
+        @if (previewUrl(finstruvialServicios.hub.formacionImagen2Url, finstruvialServicios.hub.formacionImagen2UrlAbsoluta); as src) {
+          <img class="psb-imagen-slot__preview" [src]="src" [alt]="finstruvialServicios.hub.formacionImagen2Alt" />
+        } @else {
+          <div class="psb-imagen-slot__empty">Sin imagen — se muestra marcador en /servicios</div>
+        }
+        <div class="psb-imagen-slot__actions">
+          <label class="psb-btn psb-btn--ghost">
+            {{ uploadingId() === 'hub:formacion2' ? 'Subiendo…' : 'Subir imagen' }}
+            <input type="file" accept="image/*" hidden (change)="onHubImagen($event, 'formacion2')" />
+          </label>
+          @if (finstruvialServicios.hub.formacionImagen2Url) {
+            <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen('formacion2')">
+              Quitar imagen
+            </button>
+          }
+        </div>
+      </div>
     </div>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
@@ -172,11 +210,11 @@
       }
       <div class="psb-imagen-slot__actions">
         <label class="psb-btn psb-btn--ghost">
-          {{ uploadingId() === 'hub' ? 'Subiendo…' : 'Subir imagen' }}
-          <input type="file" accept="image/*" hidden (change)="onHubImagen($event)" />
+          {{ uploadingId() === 'hub:hero' ? 'Subiendo…' : 'Subir imagen' }}
+          <input type="file" accept="image/*" hidden (change)="onHubImagen($event, 'hero')" />
         </label>
         @if (finstruvialServicios.hub.heroImagenUrl) {
-          <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen()">Quitar imagen</button>
+          <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen('hero')">Quitar imagen</button>
         }
       </div>
     </div>

@@ -245,7 +245,43 @@ async function quitarVideoServicioFinstruvial(slugRaw, videoIdRaw, usuario) {
   };
 }
 
-async function subirImagenHubServicios(file, usuario) {
+const HUB_IMAGE_SLOTS = {
+  hero: {
+    urlKey: 'heroImagenUrl',
+    absKey: 'heroImagenUrlAbsoluta',
+    filePrefix: 'hub-hero',
+    messageOk: 'Imagen del portafolio actualizada.',
+    messageRemoved: 'Imagen del portafolio eliminada.',
+  },
+  formacion: {
+    urlKey: 'formacionImagenUrl',
+    absKey: 'formacionImagenUrlAbsoluta',
+    filePrefix: 'hub-formacion-1',
+    messageOk: 'Imagen de formación 1 actualizada.',
+    messageRemoved: 'Imagen de formación 1 eliminada.',
+  },
+  formacion2: {
+    urlKey: 'formacionImagen2Url',
+    absKey: 'formacionImagen2UrlAbsoluta',
+    filePrefix: 'hub-formacion-2',
+    messageOk: 'Imagen de formación 2 actualizada.',
+    messageRemoved: 'Imagen de formación 2 eliminada.',
+  },
+};
+
+function resolveHubImageSlot(slotRaw) {
+  const slot = String(slotRaw || 'hero').trim();
+  const cfg = HUB_IMAGE_SLOTS[slot];
+  if (!cfg) {
+    const err = new Error('Slot de imagen del portafolio no válido.');
+    err.status = 400;
+    throw err;
+  }
+  return { slot, cfg };
+}
+
+async function subirImagenHubServicios(file, usuario, slotRaw) {
+  const { cfg } = resolveHubImageSlot(slotRaw);
   const aula = await obtenerConfigAula();
   const landing = mergeLanding(aula.landing || {});
   const hub = landing.finstruvialServicios?.hub;
@@ -256,26 +292,27 @@ async function subirImagenHubServicios(file, usuario) {
   }
 
   await optimizarImagenArchivo(file.path, { maxWidth: 1920, maxHeight: 1280 });
-  const rel = `${UPLOAD_KEY}/hub/hub-${Date.now()}.webp`;
+  const rel = `${UPLOAD_KEY}/hub/${cfg.filePrefix}-${Date.now()}.webp`;
   const abs = resolvePath(rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   fs.renameSync(file.path, abs);
 
-  quitarImagenAnterior(hub.heroImagenUrl);
+  quitarImagenAnterior(hub[cfg.urlKey]);
   const url = `/uploads/${rel}`;
-  hub.heroImagenUrl = url;
-  hub.heroImagenUrlAbsoluta = publicUrl(rel);
+  hub[cfg.urlKey] = url;
+  hub[cfg.absKey] = publicUrl(rel);
 
   await guardarConfigAula({ landing }, usuario);
   return {
     config: { ...aula, landing },
     url,
-    urlAbsoluta: hub.heroImagenUrlAbsoluta,
-    message: 'Imagen del portafolio actualizada.',
+    urlAbsoluta: hub[cfg.absKey],
+    message: cfg.messageOk,
   };
 }
 
-async function quitarImagenHubServicios(usuario) {
+async function quitarImagenHubServicios(usuario, slotRaw) {
+  const { cfg } = resolveHubImageSlot(slotRaw);
   const aula = await obtenerConfigAula();
   const landing = mergeLanding(aula.landing || {});
   const hub = landing.finstruvialServicios?.hub;
@@ -284,13 +321,13 @@ async function quitarImagenHubServicios(usuario) {
     err.status = 400;
     throw err;
   }
-  quitarImagenAnterior(hub.heroImagenUrl);
-  hub.heroImagenUrl = '';
-  hub.heroImagenUrlAbsoluta = '';
+  quitarImagenAnterior(hub[cfg.urlKey]);
+  hub[cfg.urlKey] = '';
+  hub[cfg.absKey] = '';
   await guardarConfigAula({ landing }, usuario);
   return {
     config: { ...aula, landing },
-    message: 'Imagen del portafolio eliminada.',
+    message: cfg.messageRemoved,
   };
 }
 

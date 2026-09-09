@@ -223,6 +223,10 @@ export class PortalFinstruvialServiciosEditorComponent {
       ...defaults.hub,
       heroImagenUrl: hero.heroImagenUrl,
       heroImagenUrlAbsoluta: hero.heroImagenUrlAbsoluta,
+      formacionImagenUrl: hero.formacionImagenUrl,
+      formacionImagenUrlAbsoluta: hero.formacionImagenUrlAbsoluta,
+      formacionImagen2Url: hero.formacionImagen2Url,
+      formacionImagen2UrlAbsoluta: hero.formacionImagen2UrlAbsoluta,
     };
     this.finstruvialServicios.menuLabel = defaults.menuLabel;
     this.finstruvialServicios.activa = activa;
@@ -250,38 +254,61 @@ export class PortalFinstruvialServiciosEditorComponent {
     return resolveUploadAssetUrl(url, urlAbsoluta);
   }
 
-  onHubImagen(ev: Event) {
+  onHubImagen(ev: Event, slot: 'hero' | 'formacion' | 'formacion2' = 'hero') {
     const file = (ev.target as HTMLInputElement).files?.[0];
     (ev.target as HTMLInputElement).value = '';
     if (!file) return;
-    this.uploadingId.set('hub');
+    const uploadKey = `hub:${slot}`;
+    this.uploadingId.set(uploadKey);
     this.api
-      .subirImagenFinstruvialServiciosHubPortal(file)
+      .subirImagenFinstruvialServiciosHubPortal(file, slot)
       .pipe(finalize(() => this.uploadingId.set(null)))
       .subscribe({
         next: (res) => {
           if (res.url) {
-            this.finstruvialServicios.hub.heroImagenUrl = res.url;
-            this.finstruvialServicios.hub.heroImagenUrlAbsoluta = res.urlAbsoluta || '';
+            if (slot === 'hero') {
+              this.finstruvialServicios.hub.heroImagenUrl = res.url;
+              this.finstruvialServicios.hub.heroImagenUrlAbsoluta = res.urlAbsoluta || '';
+            } else if (slot === 'formacion') {
+              this.finstruvialServicios.hub.formacionImagenUrl = res.url;
+              this.finstruvialServicios.hub.formacionImagenUrlAbsoluta = res.urlAbsoluta || '';
+            } else {
+              this.finstruvialServicios.hub.formacionImagen2Url = res.url;
+              this.finstruvialServicios.hub.formacionImagen2UrlAbsoluta = res.urlAbsoluta || '';
+            }
           }
           if (res.config) this.portalConfigUpdated.emit(res.config);
-          this.avNotice.emit({ message: res.message || 'Imagen del portafolio actualizada' });
+          this.avNotice.emit({ message: res.message || 'Imagen actualizada' });
         },
         error: (e) =>
           this.avNotice.emit({ message: e?.error?.message || 'No se pudo subir la imagen', error: true }),
       });
   }
 
-  quitarHubImagen() {
-    if (!confirm('¿Quitar la imagen del portafolio?')) return;
-    this.uploadingId.set('hub');
+  quitarHubImagen(slot: 'hero' | 'formacion' | 'formacion2' = 'hero') {
+    const labels: Record<'hero' | 'formacion' | 'formacion2', string> = {
+      hero: 'la imagen del portafolio',
+      formacion: 'la imagen de formación 1',
+      formacion2: 'la imagen de formación 2',
+    };
+    if (!confirm(`¿Quitar ${labels[slot]}?`)) return;
+    const uploadKey = `hub:${slot}`;
+    this.uploadingId.set(uploadKey);
     this.api
-      .quitarImagenFinstruvialServiciosHubPortal()
+      .quitarImagenFinstruvialServiciosHubPortal(slot)
       .pipe(finalize(() => this.uploadingId.set(null)))
       .subscribe({
         next: (res) => {
-          this.finstruvialServicios.hub.heroImagenUrl = '';
-          this.finstruvialServicios.hub.heroImagenUrlAbsoluta = '';
+          if (slot === 'hero') {
+            this.finstruvialServicios.hub.heroImagenUrl = '';
+            this.finstruvialServicios.hub.heroImagenUrlAbsoluta = '';
+          } else if (slot === 'formacion') {
+            this.finstruvialServicios.hub.formacionImagenUrl = '';
+            this.finstruvialServicios.hub.formacionImagenUrlAbsoluta = '';
+          } else {
+            this.finstruvialServicios.hub.formacionImagen2Url = '';
+            this.finstruvialServicios.hub.formacionImagen2UrlAbsoluta = '';
+          }
           if (res.config) this.portalConfigUpdated.emit(res.config);
           this.avNotice.emit({ message: res.message || 'Imagen eliminada' });
         },
