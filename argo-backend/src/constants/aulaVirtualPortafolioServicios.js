@@ -16,6 +16,32 @@ const SLUGS = [
   'planeacionGestionVial',
 ];
 
+function pickHubMedia(hub) {
+  if (!hub) return undefined;
+  const heroImagenUrl = hub.heroImagenUrl?.trim() || '';
+  const heroImagenUrlAbsoluta = hub.heroImagenUrlAbsoluta?.trim() || '';
+  const formacionImagenUrl = hub.formacionImagenUrl?.trim() || '';
+  const formacionImagenUrlAbsoluta = hub.formacionImagenUrlAbsoluta?.trim() || '';
+  const formacionImagen2Url = hub.formacionImagen2Url?.trim() || '';
+  const formacionImagen2UrlAbsoluta = hub.formacionImagen2UrlAbsoluta?.trim() || '';
+  const hasAny =
+    heroImagenUrl ||
+    heroImagenUrlAbsoluta ||
+    formacionImagenUrl ||
+    formacionImagenUrlAbsoluta ||
+    formacionImagen2Url ||
+    formacionImagen2UrlAbsoluta;
+  if (!hasAny) return undefined;
+  return {
+    heroImagenUrl,
+    heroImagenUrlAbsoluta,
+    formacionImagenUrl,
+    formacionImagenUrlAbsoluta,
+    formacionImagen2Url,
+    formacionImagen2UrlAbsoluta,
+  };
+}
+
 function servialPortafolioMediaOnly(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const paginas = {};
@@ -40,15 +66,10 @@ function servialPortafolioMediaOnly(raw) {
       videos,
     };
   }
-  const hubHero = raw.hub?.heroImagenUrl?.trim() || raw.hub?.heroImagenUrlAbsoluta?.trim();
+  const hub = pickHubMedia(raw.hub);
   return {
     activa: raw.activa,
-    hub: hubHero
-      ? {
-          heroImagenUrl: raw.hub?.heroImagenUrl?.trim() || '',
-          heroImagenUrlAbsoluta: raw.hub?.heroImagenUrlAbsoluta?.trim() || '',
-        }
-      : undefined,
+    hub,
     paginas,
   };
 }

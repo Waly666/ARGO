@@ -877,6 +877,14 @@ function normalizarFinstruvialServicios(raw, tema) {
     merged.hub.heroImagenUrlAbsoluta =
       publicUploadUrl(merged.hub.heroImagenUrl) || merged.hub.heroImagenUrlAbsoluta;
   }
+  if (merged.hub?.formacionImagenUrl) {
+    merged.hub.formacionImagenUrlAbsoluta =
+      publicUploadUrl(merged.hub.formacionImagenUrl) || merged.hub.formacionImagenUrlAbsoluta;
+  }
+  if (merged.hub?.formacionImagen2Url) {
+    merged.hub.formacionImagen2UrlAbsoluta =
+      publicUploadUrl(merged.hub.formacionImagen2Url) || merged.hub.formacionImagen2UrlAbsoluta;
+  }
   for (const slug of SLUGS) {
     const p = merged.paginas?.[slug];
     if (!p) continue;

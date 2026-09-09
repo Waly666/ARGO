@@ -41,6 +41,34 @@ function pickPaginaMedia(
   };
 }
 
+function pickHubMedia(
+  hub?: Partial<PortalFinstruvialServiciosConfig['hub']>,
+): PortalFinstruvialServiciosConfig['hub'] | undefined {
+  if (!hub) return undefined;
+  const heroImagenUrl = hub.heroImagenUrl?.trim() || '';
+  const heroImagenUrlAbsoluta = hub.heroImagenUrlAbsoluta?.trim() || '';
+  const formacionImagenUrl = hub.formacionImagenUrl?.trim() || '';
+  const formacionImagenUrlAbsoluta = hub.formacionImagenUrlAbsoluta?.trim() || '';
+  const formacionImagen2Url = hub.formacionImagen2Url?.trim() || '';
+  const formacionImagen2UrlAbsoluta = hub.formacionImagen2UrlAbsoluta?.trim() || '';
+  const hasAny =
+    heroImagenUrl ||
+    heroImagenUrlAbsoluta ||
+    formacionImagenUrl ||
+    formacionImagenUrlAbsoluta ||
+    formacionImagen2Url ||
+    formacionImagen2UrlAbsoluta;
+  if (!hasAny) return undefined;
+  return {
+    heroImagenUrl,
+    heroImagenUrlAbsoluta,
+    formacionImagenUrl,
+    formacionImagenUrlAbsoluta,
+    formacionImagen2Url,
+    formacionImagen2UrlAbsoluta,
+  } as PortalFinstruvialServiciosConfig['hub'];
+}
+
 /** Conserva solo fotos/videos y visibilidad; los textos vienen de los defaults Servial. */
 export function servialPortafolioMediaOnly(
   raw?: Partial<PortalFinstruvialServiciosConfig> | null,
@@ -51,15 +79,10 @@ export function servialPortafolioMediaOnly(
     const picked = pickPaginaMedia(raw.paginas?.[slug]);
     if (picked) paginas[slug] = picked;
   }
-  const hubHero = raw.hub?.heroImagenUrl?.trim() || raw.hub?.heroImagenUrlAbsoluta?.trim();
+  const hub = pickHubMedia(raw.hub);
   return {
     activa: raw.activa,
-    hub: hubHero
-      ? ({
-          heroImagenUrl: raw.hub?.heroImagenUrl?.trim() || '',
-          heroImagenUrlAbsoluta: raw.hub?.heroImagenUrlAbsoluta?.trim() || '',
-        } as PortalFinstruvialServiciosConfig['hub'])
-      : undefined,
+    hub,
     paginas: paginas as PortalFinstruvialServiciosConfig['paginas'],
   };
 }
