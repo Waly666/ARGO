@@ -2,13 +2,13 @@ import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
   /** Nombre bajo el icono en el teléfono (una sola línea). */
-  name: 'Aula Virtual Servial',
+  name: 'Aula Virtual Finstruvial',
   slug: 'finstruvial-aula',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  scheme: 'servialaula',
+  scheme: 'finstruvialaula',
   splash: {
     image: './assets/branding/logo.png',
     resizeMode: 'contain',
@@ -20,7 +20,7 @@ const config: ExpoConfig = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#f8fafc',
     },
-    package: 'co.servial.aula',
+    package: 'co.finstruvial.aula',
     softwareKeyboardLayoutMode: 'resize',
   },
   plugins: [
@@ -60,7 +60,7 @@ const config: ExpoConfig = {
     ],
   ],
   extra: {
-    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://app.servial.edu.co/api',
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://app.finstruvial.edu.co/api',
     eas: {
       projectId: '572bdf10-65ce-47c7-acfb-33aa5a3b3ea1',
     },

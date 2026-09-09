@@ -23,6 +23,8 @@ export interface PortalAcercaLanding {
     imagenUrl: string;
     imagenUrlAbsoluta?: string;
     imagenAlt: string;
+    /** Solo ERP */
+    promptImagen?: string;
     imagenCaption: string;
     pillarsLabel: string;
     pillars: PortalPromoHeroPillar[];
@@ -214,6 +216,7 @@ export function mergeAcercaLanding(raw?: Partial<PortalAcercaLanding> | null): P
       imagenUrl: str(heroSrc.imagenUrl, d.hero.imagenUrl),
       imagenUrlAbsoluta: heroSrc.imagenUrlAbsoluta?.trim() || d.hero.imagenUrlAbsoluta,
       imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
+      promptImagen: str(heroSrc.promptImagen, d.hero.promptImagen ?? ''),
       imagenCaption: str(heroSrc.imagenCaption, d.hero.imagenCaption),
       pillarsLabel: extras.pillarsLabel,
       pillars: mergePromoHeroPillars(heroSrc.pillars, d.hero.pillars),

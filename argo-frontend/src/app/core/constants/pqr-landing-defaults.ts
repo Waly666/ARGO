@@ -15,6 +15,7 @@ export interface PortalPqrLanding {
       imagenUrl: string;
       imagenUrlAbsoluta?: string;
       imagenAlt: string;
+      promptImagen?: string;
     };
 }
 
@@ -72,6 +73,7 @@ export function mergePqrLanding(raw?: Partial<PortalPqrLanding> | null): PortalP
       imagenUrl: String(src.imagenUrl ?? '').trim(),
       imagenUrlAbsoluta: String(src.imagenUrlAbsoluta ?? '').trim() || undefined,
       imagenAlt: String(src.imagenAlt ?? '').trim(),
+      promptImagen: String(src.promptImagen ?? '').trim(),
     },
   };
 }

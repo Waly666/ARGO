@@ -1087,7 +1087,20 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   urlFotoEvidencia(path?: string | null): string {
     if (!path) return '';
     if (/^https?:\/\//i.test(path)) return path;
-    return `${environment.uploadsUrl}/${path.replace(/^\/+/, '')}`;
+    const rel = String(path).replace(/^\/+/, '').replace(/^uploads\//i, '');
+    return `${environment.uploadsUrl}/${rel}`;
+  }
+
+  fotosEvidenciaClaseActiva() {
+    const c = this.claseActiva();
+    type FotoEv = NonNullable<ClaseJornadaDto['fotosEvidencia']>[number];
+    if (!c) return [] as FotoEv[];
+    const arr = (c.fotosEvidencia || []).filter(
+      (f: FotoEv) => !!String(f?.url || '').trim(),
+    );
+    if (arr.length) return arr;
+    if (c.urlforo) return [{ url: c.urlforo, nombre: 'Evidencia' }] as FotoEv[];
+    return [] as FotoEv[];
   }
 
   limpiarMsgModal(): void {
@@ -1385,23 +1398,61 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   onFotoEvidenciaSelected(ev: Event): void {
     const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const files = [...(input.files || [])];
     const id = this.claseSel();
-    if (!file || !id) return;
+    input.value = '';
+    if (!files.length || !id) return;
+    const cupo = 8 - this.fotosEvidenciaClaseActiva().length;
+    if (cupo <= 0) {
+      this.mostrarMsg('Esta clase ya tiene 8 fotos de evidencia.', 'warn', 'Evidencia');
+      return;
+    }
+    const lote = files.slice(0, cupo);
     this.subiendoFotoEvidencia.set(true);
-    this.jornadaSvc.subirFotoEvidenciaClase(id, file).subscribe({
+    const subir = (i: number) => {
+      if (i >= lote.length) {
+        this.subiendoFotoEvidencia.set(false);
+        this.mostrarMsg(
+          lote.length > 1 ? `${lote.length} fotos de evidencia guardadas.` : 'Foto de evidencia guardada.',
+          'ok',
+          'Evidencia',
+        );
+        this.emitClaseGuardada();
+        return;
+      }
+      this.jornadaSvc.subirFotoEvidenciaClase(id, lote[i]).subscribe({
+        next: (c) => {
+          this.claseActiva.set(c);
+          subir(i + 1);
+        },
+        error: (e) => {
+          this.subiendoFotoEvidencia.set(false);
+          this.mostrarMsg(e?.error?.message || 'No se pudo subir la foto.', 'error', 'Error');
+        },
+      });
+    };
+    subir(0);
+  }
+
+  async quitarFotoEvidenciaClase(fotoId?: string): Promise<void> {
+    const id = this.claseSel();
+    const fid = String(fotoId || '').trim();
+    if (!id || !fid) return;
+    const ok = await this.confirmSvc.open({
+      title: 'Quitar foto',
+      message: '¿Quitar esta foto de evidencia de la clase?',
+      variant: 'danger',
+      confirmLabel: 'Sí, quitar',
+    });
+    if (!ok) return;
+    this.jornadaSvc.eliminarFotoEvidenciaClase(id, fid).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
-        this.subiendoFotoEvidencia.set(false);
-        this.mostrarMsg('Foto de evidencia guardada.', 'ok', 'Evidencia');
+        this.mostrarMsg('Foto quitada.', 'ok', 'Evidencia');
         this.emitClaseGuardada();
       },
-      error: (e) => {
-        this.subiendoFotoEvidencia.set(false);
-        this.mostrarMsg(e?.error?.message || 'No se pudo subir la foto.', 'error', 'Error');
-      },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo quitar la foto.', 'error', 'Error'),
     });
-    input.value = '';
   }
 
   onAlumnoBusquedaInput(value: string): void {

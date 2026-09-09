@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CategoriaVirtual, CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
@@ -12,7 +13,7 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 @Component({
   selector: 'av-cursos',
   standalone: true,
-  imports: [CommonModule, CursoCardComponent],
+  imports: [CommonModule, CursoCardComponent, PortalBreadcrumbsComponent],
   templateUrl: './cursos.component.html',
   styleUrl: './cursos.component.scss',
 })
@@ -29,6 +30,13 @@ export class CursosComponent implements OnInit {
   catSel = signal<number | null>(null);
 
   landing = computed(() => mergePortalLanding(this.config()?.landing));
+
+  crumbs = computed(() => [
+    { label: 'Inicio', path: '/' },
+    {
+      label: this.modo() === 'tienda' ? this.landing().catalogo.tituloTienda : this.landing().catalogo.tituloCursos,
+    },
+  ]);
 
   logoUrl = computed(() =>
     resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo),

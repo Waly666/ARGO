@@ -32,6 +32,8 @@ const PAGE_ICONS: Partial<Record<PortalSeoPageKey, string>> = {
   examenTeorico: '📋',
   mercanciasPeligrosas: '☣️',
   trabajoEnAlturas: '🪜',
+  manejoDefensivo: '🚘',
+  primerosAuxilios: '❤️',
   blog: '📰',
   galeria: '📷',
   pqr: '📝',

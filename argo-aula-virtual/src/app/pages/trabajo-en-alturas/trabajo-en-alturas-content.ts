@@ -63,7 +63,19 @@ export interface TaOperacionSector {
   texto: string;
 }
 
+import {
+  mergeEnlacesRelacionados,
+  PortalEnlaceRelacionado,
+} from '../../core/portal-enlace-relacionado.util';
+import {
+  SERVIAL_ENLACES_TITULO,
+  SERVIAL_ENLACES_TRABAJO_ALTURAS,
+} from '../../core/constants/portal-enlaces-relacionados-servial';
+
+export const TRABAJO_EN_ALTURAS_GUION_VERSION = 1;
+
 export interface PortalTrabajoEnAlturasLanding {
+  guionVersion?: number;
   kicker: string;
   titulo: string;
   tituloLinea2: string;
@@ -94,6 +106,7 @@ export interface PortalTrabajoEnAlturasLanding {
   introTexto: string;
   introRiesgos: string[];
   introAudiencia: string[];
+  introAudienciaTitulo: string;
   objetivosTitulo: string;
   objetivoGeneral: string;
   objetivosEspecificos: string[];
@@ -124,6 +137,10 @@ export interface PortalTrabajoEnAlturasLanding {
   documentosTitulo: string;
   documentosLead: string;
   documentosGrupos: TaDocumentoGrupo[];
+  localTitulo: string;
+  localTexto: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
   faq: TaFaq[];
 }
 
@@ -151,17 +168,18 @@ export const TRABAJO_EN_ALTURAS_MODULOS: TaModulo[] = [
 ];
 
 export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
-  kicker: 'CEA SERVIAL COLOMBIA · Sector transportador',
-  titulo: 'Trabajo Seguro',
-  tituloLinea2: 'en Alturas',
-  subtitulo: 'Normativa · Prevención · SG-SST · Sector transporte',
+  guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
+  kicker: 'SERVIAL Colombia · Trabajo en alturas · Villavicencio',
+  titulo: 'Curso de Trabajo Seguro en Alturas en Villavicencio, Meta',
+  tituloLinea2: '',
+  subtitulo: 'Resolución 4272 de 2021 · Prevención · SG-SST · Sector transporte',
   heroLead:
-    'Guía informativa sobre el marco legal del trabajo en alturas en Colombia, con énfasis en el sector transportador: definiciones, obligaciones, requisitos del Trabajador Autorizado y documentación de consulta.',
+    'Capacitación en trabajo seguro en alturas para trabajadores y empresas de Villavicencio, Meta y los Llanos Orientales, conforme a la normativa vigente en Colombia.',
   heroParrafos: [
     'La Resolución 4272 de 2021 regula las actividades que se desarrollan a partir de 2,0 metros sobre el nivel de referencia. En logística y transporte, las operaciones en techos de tractocamiones, planchones, tolvas, cisternas y carrocerías exigen controles adicionales por superficies irregulares, móviles y expuestas al clima.',
     'Conocer la normativa, las responsabilidades del empleador y del trabajador, y los requisitos de los sistemas de protección contra caídas (SPCC) es la base para prevenir accidentes graves y fatales.',
   ],
-  heroPillarsLabel: 'Contenidos del curso',
+  heroPillarsLabel: 'Contenido del Curso de Trabajo en Alturas',
   heroPillars: PROMO_HERO_PILARES_TA,
   heroStats: ['Res. 4272 de 2021', '2,0 m'],
   backLabel: '← Volver al inicio',
@@ -173,7 +191,7 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
   ctaNormativaTexto: 'Marco normativo',
   ctaDocumentosTexto: 'Descargar normativa',
   ctaFaqTexto: 'Preguntas frecuentes',
-  ctaInicioTexto: 'Ver información completa',
+  ctaInicioTexto: 'Información del curso de trabajo en alturas',
   ctaUrl: '/trabajo-en-alturas',
   homeItems: [
     {
@@ -230,6 +248,7 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
     'Superficies móviles o inestables del vehículo',
     'Condiciones climáticas adversas (viento, calor)',
   ],
+  introAudienciaTitulo: '¿Quién debe realizar el Curso de Trabajo en Alturas?',
   introAudiencia: [
     'Conductores y operarios de cargue y descargue',
     'Mecánicos y personal de taller',
@@ -257,7 +276,7 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
     'Aplicar la técnica de tres puntos de apoyo y la regla de las 3 C',
     'No realizar trabajo en alturas sin autorización, certificación vigente o condiciones seguras',
   ],
-  normativaTitulo: 'Marco normativo colombiano',
+  normativaTitulo: 'Normativa de Trabajo en Alturas en Colombia',
   normativaLead:
     'El trabajo seguro en alturas se rige principalmente por la Resolución 4272 de 2021 del Ministerio de Trabajo, que deroga la Resolución 1409 de 2012. Se integra al SG-SST (Ley 1562 de 2012 y Decreto 1072 de 2015) y se complementa con normas técnicas internacionales de EPI y anclajes.',
   normativaDestacados: [
@@ -309,7 +328,7 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
     'Código Sustantivo del Trabajo — deber de protección y prevención',
     'Normas EN 361, EN 362, EN 355, EN 795 y referencia ANSI Z359',
   ],
-  modulosTitulo: 'Mapa del curso — 20 módulos',
+  modulosTitulo: 'Contenido del Curso de Trabajo en Alturas — 20 módulos',
   modulosLead:
     'Cada módulo corresponde a un capítulo del manual 2026. Incluye contenido visual, evaluación y actividades interactivas.',
   modulos: JSON.parse(JSON.stringify(TRABAJO_EN_ALTURAS_MODULOS)),
@@ -356,6 +375,11 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
   documentosTitulo: 'Normativa y documentos de consulta',
   documentosLead: 'Textos oficiales y material técnico de referencia para consulta y descarga.',
   documentosGrupos: JSON.parse(JSON.stringify(TRABAJO_EN_ALTURAS_DOCUMENTOS_GRUPOS)),
+  localTitulo: 'Curso de Trabajo en Alturas en Villavicencio, Meta',
+  localTexto:
+    'SERVIAL Colombia brinda capacitación en trabajo seguro en alturas para trabajadores, contratistas y empresas de Villavicencio, Meta y los Llanos Orientales.',
+  enlacesRelacionadosTitulo: SERVIAL_ENLACES_TITULO,
+  enlacesRelacionados: SERVIAL_ENLACES_TRABAJO_ALTURAS.map((e) => ({ ...e })),
   faq: [
     {
       pregunta: '¿A partir de qué altura aplica la normativa de trabajo en alturas?',
@@ -414,16 +438,42 @@ function mergeImagenes(raw: TaImagen[] | undefined, fb: TaImagen[]): TaImagen[] 
   });
 }
 
+function trabajoEnAlturasNecesitaActualizarGuion(src: Partial<PortalTrabajoEnAlturasLanding>): boolean {
+  const v = Number(src.guionVersion) || 0;
+  if (v < TRABAJO_EN_ALTURAS_GUION_VERSION) return true;
+  const titulo = String(src.titulo || '').trim();
+  if (titulo === 'Trabajo Seguro') return true;
+  if (/gamificad|20 módulos gamificados|ruleta de 15 retos/i.test(String(src.heroLead || ''))) return true;
+  return String(src.normativaTitulo || '').trim() === 'Marco normativo colombiano';
+}
+
+function mergeTrabajoEnAlturasPreservandoUsuario(
+  src: Partial<PortalTrabajoEnAlturasLanding>,
+  d: PortalTrabajoEnAlturasLanding,
+): PortalTrabajoEnAlturasLanding {
+  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
+  return {
+    ...JSON.parse(JSON.stringify(d)) as PortalTrabajoEnAlturasLanding,
+    guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
+    enlaceCursoUrl,
+    imagenes: mergeImagenes(src.imagenes, d.imagenes),
+  };
+}
+
 export function mergeTrabajoEnAlturasLanding(
   raw?: Partial<PortalTrabajoEnAlturasLanding> | null,
 ): PortalTrabajoEnAlturasLanding {
   const d = TRABAJO_EN_ALTURAS_LANDING;
   const src = raw && typeof raw === 'object' ? raw : {};
+  if (trabajoEnAlturasNecesitaActualizarGuion(src)) {
+    return mergeTrabajoEnAlturasPreservandoUsuario(src, d);
+  }
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
   const arr = <T>(v: T[] | undefined, fb: T[]) => (Array.isArray(v) && v.length ? v : fb);
 
   const merged = {
     ...d,
+    guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
     kicker: str(src.kicker, d.kicker),
     titulo: str(src.titulo, d.titulo),
     tituloLinea2: str(src.tituloLinea2, d.tituloLinea2),
@@ -454,6 +504,7 @@ export function mergeTrabajoEnAlturasLanding(
     introTexto: str(src.introTexto, d.introTexto),
     introRiesgos: arr(src.introRiesgos, d.introRiesgos),
     introAudiencia: arr(src.introAudiencia, d.introAudiencia),
+    introAudienciaTitulo: str(src.introAudienciaTitulo, d.introAudienciaTitulo),
     objetivosTitulo: str(src.objetivosTitulo, d.objetivosTitulo),
     objetivoGeneral: str(src.objetivoGeneral, d.objetivoGeneral),
     objetivosEspecificos: arr(src.objetivosEspecificos, d.objetivosEspecificos),
@@ -484,20 +535,12 @@ export function mergeTrabajoEnAlturasLanding(
     documentosTitulo: str(src.documentosTitulo, d.documentosTitulo),
     documentosLead: str(src.documentosLead, d.documentosLead),
     documentosGrupos: arr(src.documentosGrupos, d.documentosGrupos),
+    localTitulo: str(src.localTitulo, d.localTitulo),
+    localTexto: str(src.localTexto, d.localTexto),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     faq: arr(src.faq, d.faq),
   };
-
-  if (/gamificad|20 módulos|módulos gamificados|ruleta de 15 retos/i.test(
-    `${merged.heroLead} ${merged.subtitulo} ${merged.homeItems.map((h) => h.titulo).join(' ')}`,
-  )) {
-    return {
-      ...merged,
-      ...TRABAJO_EN_ALTURAS_LANDING,
-      imagenes: merged.imagenes,
-      enlaceCursoUrl: merged.enlaceCursoUrl,
-      enlaceCursoEtiqueta: merged.enlaceCursoEtiqueta,
-    };
-  }
 
   return merged;
 }

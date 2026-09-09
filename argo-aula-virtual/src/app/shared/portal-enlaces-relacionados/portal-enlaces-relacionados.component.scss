@@ -1,0 +1,46 @@
+.per-section {
+  margin: 0 0 2rem;
+  padding: 1.35rem 1.25rem;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  border: 1px solid #e2e8f0;
+}
+
+.per-section__title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.per-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.per-list__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  line-height: 1.55;
+}
+
+.per-list__texto {
+  color: #475569;
+  font-size: 0.98rem;
+}
+
+.per-list__link {
+  color: var(--av-primary, #059669);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--av-accent, #10b981);
+  }
+}

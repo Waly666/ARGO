@@ -266,10 +266,9 @@
           </div>
           <div class="row">
             <div class="col-3">
-              <label>Segundo nombre *</label>
+              <label>Segundo nombre</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
-                     [class.campo-obligatorio-error]="campoObligatorioInvalido('nombre2')"
-                     [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" required />
+                     [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" />
             </div>
             <div class="col-3">
               <argo-date-input

@@ -1,5 +1,6 @@
 @if (curso(); as c) {
-  <div class="detail-page">
+  <article class="detail-page">
+    <av-portal-breadcrumbs [items]="crumbs()" />
     <div class="detail-top">
       <div class="container">
         <a routerLink="/cursos" class="detail-back">← Volver al catálogo</a>
@@ -375,7 +376,7 @@
         </div>
       }
     }
-  </div>
+  </article>
 }
 
 @if (error()) {

@@ -21,6 +21,7 @@ import {
 } from '../api/aulaApi';
 import {
   buscarMunicipios,
+  fetchActoresViales,
   fetchDepartamentos,
   fetchGeneros,
   fetchMunicipioPorCodigo,
@@ -43,12 +44,14 @@ import type { RootStackParamList } from '../navigation/types';
 import { space } from '../theme/spacing';
 import { FormSelect, type SelectOption } from '../components/FormSelect';
 import {
+  ACTOR_VIAL_FALLBACK,
   catEtiqueta,
   catValor,
   etiquetaGenero,
   GENEROS_FALLBACK,
   TIPOS_DOC_FALLBACK,
 } from '../utils/catalogoHelpers';
+import { edadCalculadaTexto, grupoEdadCalculadoTexto } from '../utils/edadHelpers';
 import { ymdToday } from '../utils/argoDateHelpers';
 import { payloadAutorizacionDatos } from '../config/autorizacionDatos';
 import type { CedulaPdf417Data } from '../utils/cedulaPdf417';
@@ -69,6 +72,7 @@ type RegistroForm = {
   direccion: string;
   genero: string;
   fechaNac: string;
+  actorVial: string;
   codMunicipio: string;
   munOrigen: string;
   empresaId: string | null;
@@ -89,6 +93,7 @@ const FORM_INICIAL: RegistroForm = {
   direccion: '',
   genero: '',
   fechaNac: '',
+  actorVial: '',
   codMunicipio: '',
   munOrigen: '',
   empresaId: null,
@@ -128,6 +133,7 @@ export default function RegistroScreen() {
 
   const [tiposDoc, setTiposDoc] = useState<Record<string, unknown>[]>(TIPOS_DOC_FALLBACK);
   const [generos, setGeneros] = useState<Record<string, unknown>[]>(GENEROS_FALLBACK);
+  const [actoresViales, setActoresViales] = useState<Record<string, unknown>[]>(ACTOR_VIAL_FALLBACK);
   const [departamentos, setDepartamentos] = useState<DeptoDivipola[]>([]);
   const [municipiosExp, setMunicipiosExp] = useState<MunicipioDivipola[]>([]);
   const [municipiosOrigen, setMunicipiosOrigen] = useState<MunicipioDivipola[]>([]);
@@ -160,6 +166,9 @@ export default function RegistroScreen() {
     void fetchGeneros()
       .then((rows) => setGeneros(rows?.length ? rows : GENEROS_FALLBACK))
       .catch(() => setGeneros(GENEROS_FALLBACK));
+    void fetchActoresViales()
+      .then((rows) => setActoresViales(rows?.length ? rows : ACTOR_VIAL_FALLBACK))
+      .catch(() => setActoresViales(ACTOR_VIAL_FALLBACK));
     void fetchDepartamentos()
       .then(setDepartamentos)
       .catch(() => setDepartamentos([]));
@@ -172,6 +181,13 @@ export default function RegistroScreen() {
   const generoOpts: SelectOption[] = useMemo(
     () => [{ value: '', label: 'Seleccione…' }, ...generos.map((g) => ({ value: catValor(g), label: etiquetaGenero(g) }))],
     [generos],
+  );
+  const actorVialOpts: SelectOption[] = useMemo(
+    () => [
+      { value: '', label: 'Seleccione…' },
+      ...actoresViales.map((g) => ({ value: catValor(g), label: catEtiqueta(g) })),
+    ],
+    [actoresViales],
   );
   const deptoOpts: SelectOption[] = useMemo(
     () => [{ value: '', label: 'Seleccione…' }, ...departamentos.map((d) => ({ value: d.codDepto, label: d.nombreDepto }))],
@@ -256,6 +272,7 @@ export default function RegistroScreen() {
         nombre2: String(a.nombre2 || ''),
         genero: String(a.genero || '').toUpperCase(),
         fechaNac: String(a.fechaNac || ''),
+        actorVial: String(a.actorVial || ''),
         codMunicipio: String(a.codMunicipio || a.munOrigen || ''),
         munOrigen: String(a.munOrigen || a.codMunicipio || ''),
       });
@@ -356,6 +373,7 @@ export default function RegistroScreen() {
       direccion: form.direccion,
       genero: form.genero,
       fechaNac: form.fechaNac,
+      actorVial: form.actorVial,
       codMunicipio: form.codMunicipio,
       munOrigen: form.munOrigen,
       empresaId: form.empresaId,
@@ -378,6 +396,14 @@ export default function RegistroScreen() {
     }
     if (!form.numDoc.trim()) {
       setError('El número de documento es obligatorio.');
+      return;
+    }
+    if (!form.fechaNac.trim()) {
+      setError('Indique la fecha de nacimiento.');
+      return;
+    }
+    if (!form.actorVial.trim()) {
+      setError('Seleccione el actor vial.');
       return;
     }
     setLoading(true);
@@ -625,6 +651,35 @@ export default function RegistroScreen() {
             value={form.fechaNac}
             onChange={(v) => patch({ fechaNac: v })}
             max={ymdToday()}
+          />
+
+          <FieldLabel>Edad</FieldLabel>
+          <IconInput
+            value={edadCalculadaTexto(form.fechaNac)}
+            editable={false}
+            icon="calendar-outline"
+            autoCapitalize="none"
+          />
+          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+            Se calcula sola con la fecha de nacimiento.
+          </ScaledText>
+
+          <FieldLabel>Grupo de edad</FieldLabel>
+          <IconInput
+            value={grupoEdadCalculadoTexto(form.fechaNac)}
+            editable={false}
+            icon="people-outline"
+            autoCapitalize="none"
+          />
+          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+            Primera infancia 0–5, infancia / niñez 6–13, juventud 14–28 (Ley 1622), adultez 29–59, personas mayores 60+.
+          </ScaledText>
+
+          <FormSelect
+            label="Actor vial *"
+            value={form.actorVial}
+            onChange={(v) => patch({ actorVial: v })}
+            options={actorVialOpts}
           />
 
           <FieldLabel>Celular</FieldLabel>

@@ -138,6 +138,12 @@ router.post(
   fotoEvidenciaClase,
   ctrl.subirFotoEvidenciaClase,
 );
+router.delete(
+  '/clases/:id/foto-evidencia/:fotoId',
+  operar,
+  contratoMutable.clasePorParametro,
+  ctrl.eliminarFotoEvidenciaClase,
+);
 router.post('/clases/:id/asistencia', operar, contratoMutable.clasePorParametro, ctrl.registrarAsistencia);
 router.delete('/clases/:id/asistencias/:numDoc', operar, contratoMutable.clasePorParametro, ctrl.eliminarAsistenciaAlumno);
 router.get('/clases/:id/asistencias', ver, ctrl.listarAsistenciasClase);

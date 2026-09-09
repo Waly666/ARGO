@@ -159,7 +159,10 @@
     </label>
     <p class="psb-note">Principales riesgos</p>
     <argo-portal-editor-string-list [items]="trabajoEnAlturas.introRiesgos" addLabel="+ Añadir riesgo" />
-    <p class="psb-note">¿A quién aplica?</p>
+    <label class="psb-field psb-field--plain">
+      <span>Título «¿A quién aplica?» (H3)</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.introAudienciaTitulo" />
+    </label>
     <argo-portal-editor-string-list [items]="trabajoEnAlturas.introAudiencia" addLabel="+ Añadir audiencia" />
   </section>
 
@@ -390,6 +393,18 @@
   </section>
 
   <section class="psb-card">
+    <h3 class="psb-card__title">SEO local (Villavicencio)</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título bloque local (H2)</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.localTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto bloque local</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="trabajoEnAlturas.localTexto"></textarea>
+    </label>
+  </section>
+
+  <section class="psb-card">
     <h3 class="psb-card__title">Preguntas frecuentes</h3>
     <argo-portal-editor-faq-list [items]="trabajoEnAlturas.faq" />
   </section>
@@ -478,7 +493,14 @@
           <span>Texto alternativo (accesibilidad)</span>
           <input type="text" class="psb-input" [(ngModel)]="img.alt" />
         </label>
+        <label class="psb-field psb-field--plain">
+          <span>Prompt para generar imagen (horizontal 16:9) — no sale en el sitio</span>
+          <textarea class="psb-input psb-prompt" rows="4" [(ngModel)]="img.promptImagen"></textarea>
+        </label>
         <div class="psb-imagen-slot__actions">
+          <button type="button" class="psb-btn psb-btn--ghost" (click)="copiarPrompt(img)">
+            {{ copiadoPromptId() === img.id ? 'Copiado' : 'Copiar prompt' }}
+          </button>
           <label class="psb-btn psb-btn--secondary">
             {{ uploadingId() === img.id ? 'Subiendo…' : 'Subir imagen' }}
             <input

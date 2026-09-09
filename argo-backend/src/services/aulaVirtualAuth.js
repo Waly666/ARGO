@@ -67,6 +67,7 @@ function mapAlumnoPublico(da) {
     nombre2: da.nombre2 || '',
     genero: da.genero || '',
     fechaNac: da.fechaNac ? new Date(da.fechaNac).toISOString().slice(0, 10) : '',
+    actorVial: da.actorVial || '',
     codMunicipio: da.codMunicipio || da.munOrigen || '',
     munOrigen: da.munOrigen || da.codMunicipio || '',
     nombreCompleto: nombreCompletoAlumno(da),
@@ -114,6 +115,7 @@ function buildAlumnoPayload(alumno, numDoc) {
     nombre2: nombreMayusculas(alumno?.nombre2),
     fechaNac: alumno?.fechaNac || '',
     genero: alumno?.genero || '',
+    actorVial: String(alumno?.actorVial || '').trim(),
     celular: alumno?.celular || '',
     direccion: alumno?.direccion || '',
     munOrigen: alumno?.munOrigen || '',
@@ -159,6 +161,11 @@ async function validarDatosRegistroPortal({ email, password, alumno }) {
     const payload = buildAlumnoPayload(alumno, numDoc);
     if (!payload.apellido1 || !payload.nombre1) {
       const err = new Error('Apellido y nombre son obligatorios para alumnos nuevos');
+      err.status = 400;
+      throw err;
+    }
+    if (!payload.actorVial) {
+      const err = new Error('Seleccione el actor vial');
       err.status = 400;
       throw err;
     }
@@ -208,6 +215,7 @@ async function crearCuentaPortal({ email, passwordHash, alumno, consentimiento }
       nombre2: nombreMayusculas(alumno.nombre2),
       fechaNac: alumno.fechaNac ? new Date(alumno.fechaNac) : null,
       genero: alumno.genero || '',
+      actorVial: alumno.actorVial || '',
       correo: mail,
       celular: alumno.celular || '',
       direccion: alumno.direccion || '',
@@ -225,6 +233,7 @@ async function crearCuentaPortal({ email, passwordHash, alumno, consentimiento }
     if (!da.celular && alumno.celular) patch.celular = String(alumno.celular).trim();
     if (!da.direccion && alumno.direccion) patch.direccion = String(alumno.direccion).trim();
     if (empresaIdValido && !da.empresaId) patch.empresaId = empresaIdValido;
+    if (!da.actorVial && alumno.actorVial) patch.actorVial = String(alumno.actorVial).trim();
     if (Object.keys(patch).length) {
       await DatosAlumno.updateOne({ _id: da._id }, { $set: patch });
       da = { ...da, ...patch };

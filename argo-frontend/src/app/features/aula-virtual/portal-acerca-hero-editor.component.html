@@ -118,6 +118,15 @@
 
   </label>
 
+  <argo-portal-editor-imagen-prompt
+    [promptImagen]="acerca.hero.promptImagen || ''"
+    (promptImagenChange)="acerca.hero.promptImagen = $event"
+    [alt]="acerca.hero.imagenAlt"
+    etiqueta="Imagen del encabezado Acerca de"
+    (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+    (copyError)="avNotice.emit({ message: $event, error: true })"
+  />
+
   <label class="psb-field psb-field--full">
 
     <span>Pie de foto (opcional)</span>

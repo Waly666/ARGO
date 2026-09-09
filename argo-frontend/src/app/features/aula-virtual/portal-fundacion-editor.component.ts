@@ -11,11 +11,12 @@ import {
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-fundacion-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent],
+  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent, PortalEditorImagenPromptComponent],
   templateUrl: './portal-fundacion-editor.component.html',
   styleUrl: './portal-fundacion-editor.component.scss',
 })

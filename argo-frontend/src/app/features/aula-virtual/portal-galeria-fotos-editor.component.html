@@ -60,6 +60,16 @@
             class="psb-input pgfe-leyenda"
             placeholder="Leyenda opcional"
             [(ngModel)]="foto.leyenda" />
+          @if (foto.tipo !== 'video') {
+            <argo-portal-editor-imagen-prompt
+              [promptImagen]="foto.promptImagen || ''"
+              (promptImagenChange)="foto.promptImagen = $event"
+              [alt]="foto.leyenda"
+              etiqueta="Foto galería"
+              (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+              (copyError)="avNotice.emit({ message: $event, error: true })"
+            />
+          }
           <button type="button" class="psb-btn psb-btn--ghost pgfe-quitar" (click)="confirmarEliminar(foto)">
             Quitar
           </button>

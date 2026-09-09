@@ -3,6 +3,7 @@ const Cliente = require('../models/Cliente');
 const fs = require('fs');
 const path = require('path');
 const upload = require('../middleware/upload');
+const { comprimirArchivoAJpeg } = require('../services/comprimirFotoEvidencia');
 const { consolidarEvidenciasEnPdf } = require('../services/evidenciaJornadaConsolidada');
 const Supervisor = require('../models/Supervisor');
 const JornadaCap = require('../models/JornadaCap');
@@ -2009,8 +2010,13 @@ exports.eliminarClase = async (req, res, next) => {
 
     const asistencias = await AsisClasJorCap.deleteMany({ idclaseJornada: clase._id });
     const inscritos = await InscripcionClase.deleteMany({ idClase: clase._id });
-    if (clase.urlforo) {
-      const fotoPath = upload.resolvePath(clase.urlforo);
+    const urls = new Set();
+    for (const f of Array.isArray(clase.fotosEvidencia) ? clase.fotosEvidencia : []) {
+      if (f?.url) urls.add(String(f.url));
+    }
+    if (clase.urlforo) urls.add(String(clase.urlforo));
+    for (const rel of urls) {
+      const fotoPath = upload.resolvePath(rel);
       if (fotoPath && fs.existsSync(fotoPath)) {
         try {
           fs.unlinkSync(fotoPath);
@@ -2316,27 +2322,43 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
   }
 };
 
-/** Sube foto de evidencia a uploads/evidenciascap/{codContrato}/fotos/ y guarda urlforo. */
+/** Sube foto de evidencia a uploads/evidenciascap/{codContrato}/fotos/ (se agregan, no reemplazan). */
+const MAX_FOTOS_EVIDENCIA_CLASE = 8;
+
+function fotosEvidenciaActuales(clase) {
+  const arr = Array.isArray(clase.fotosEvidencia) ? [...clase.fotosEvidencia] : [];
+  const conUrl = arr.filter((f) => String(f?.url || '').trim());
+  if (conUrl.length) return conUrl;
+  const u = String(clase.urlforo || '').trim();
+  if (u) return [{ url: u, nombre: path.basename(u), createdAt: new Date() }];
+  return [];
+}
+
 exports.subirFotoEvidenciaClase = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Debe enviar una imagen (campo foto)' });
     const clase = req.claseEvidencia;
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const rel = path.relative(upload.baseDir, req.file.path).replace(/\\/g, '/');
-    const prev = clase.urlforo;
-    if (prev && prev !== rel) {
-      const prevPath = upload.resolvePath(prev);
-      if (prevPath && fs.existsSync(prevPath)) {
-        try {
-          fs.unlinkSync(prevPath);
-        } catch (_) {
-          /* ignore */
-        }
-      }
+    const relOrig = path.relative(upload.baseDir, req.file.path).replace(/\\/g, '/');
+    const actuales = fotosEvidenciaActuales(clase);
+    if (actuales.length >= MAX_FOTOS_EVIDENCIA_CLASE) {
+      borrarArchivoEvidencia(relOrig);
+      return res.status(400).json({
+        message: `Máximo ${MAX_FOTOS_EVIDENCIA_CLASE} fotos de evidencia por clase.`,
+      });
     }
 
-    clase.urlforo = rel;
+    const absJpeg = await comprimirArchivoAJpeg(req.file.path);
+    const rel = path.relative(upload.baseDir, absJpeg).replace(/\\/g, '/');
+
+    actuales.push({
+      url: rel,
+      nombre: path.basename(rel),
+      createdAt: new Date(),
+    });
+    clase.fotosEvidencia = actuales;
+    clase.urlforo = actuales[0]?.url || rel;
     clase.userChangeRecord = auditoriaUsuario(req);
     await clase.save();
     res.json(await dtoClaseConJornada(clase));
@@ -2348,6 +2370,29 @@ exports.subirFotoEvidenciaClase = async (req, res, next) => {
         /* ignore */
       }
     }
+    next(e);
+  }
+};
+
+exports.eliminarFotoEvidenciaClase = async (req, res, next) => {
+  try {
+    const clase = await ClaseJornadaCap.findById(req.params.id);
+    if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
+    await asegurarInstructorOperandoClase(clase, req);
+
+    const fotoId = String(req.params.fotoId || '').trim();
+    let fotos = fotosEvidenciaActuales(clase);
+    const idx = fotos.findIndex((f) => String(f._id || '') === fotoId || String(f.url) === fotoId);
+    if (idx < 0) return res.status(404).json({ message: 'Foto no encontrada' });
+    const [quitada] = fotos.splice(idx, 1);
+    if (quitada?.url) borrarArchivoEvidencia(quitada.url);
+    clase.fotosEvidencia = fotos;
+    clase.urlforo = fotos[0]?.url || '';
+    clase.userChangeRecord = auditoriaUsuario(req);
+    await clase.save();
+    res.json(await dtoClaseConJornada(clase));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };
@@ -2431,11 +2476,16 @@ exports.subirFotosEvidenciaAdicionalJornada = async (req, res, next) => {
       });
     }
 
-    const nuevas = files.map((f) => ({
-      url: path.relative(upload.baseDir, f.path).replace(/\\/g, '/'),
-      nombre: String(f.originalname || '').trim() || path.basename(f.path),
-      createdAt: new Date(),
-    }));
+    const nuevas = [];
+    for (const f of files) {
+      const absJpeg = await comprimirArchivoAJpeg(f.path);
+      const rel = path.relative(upload.baseDir, absJpeg).replace(/\\/g, '/');
+      nuevas.push({
+        url: rel,
+        nombre: path.basename(rel),
+        createdAt: new Date(),
+      });
+    }
     jornada.fotosEvidenciaAdicional = [...actuales, ...nuevas];
     jornada.userChangeRecord = auditoriaUsuario(req);
     await jornada.save();

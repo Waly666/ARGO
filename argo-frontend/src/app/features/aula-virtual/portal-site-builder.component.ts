@@ -24,6 +24,14 @@ import {
   mergeTrabajoEnAlturasLanding,
   PortalTrabajoEnAlturasLanding,
 } from '../../core/constants/trabajo-en-alturas-landing-defaults';
+import {
+  mergeManejoDefensivoLanding,
+  PortalManejoDefensivoLanding,
+} from '../../core/constants/manejo-defensivo-landing-defaults';
+import {
+  mergePrimerosAuxiliosLanding,
+  PortalPrimerosAuxiliosLanding,
+} from '../../core/constants/primeros-auxilios-landing-defaults';
 import { PORTAL_ASISTENTE_PAGINAS } from '../../core/utils/portal-asistente.util';
 import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
@@ -32,6 +40,8 @@ import { PortalCursosConduccionEditorComponent } from './portal-cursos-conduccio
 import { PortalExamenTeoricoEditorComponent } from './portal-examen-teorico-editor.component';
 import { PortalMercanciasPeligrosasEditorComponent } from './portal-mercancias-peligrosas-editor.component';
 import { PortalTrabajoEnAlturasEditorComponent } from './portal-trabajo-en-alturas-editor.component';
+import { PortalManejoDefensivoEditorComponent } from './portal-manejo-defensivo-editor.component';
+import { PortalPrimerosAuxiliosEditorComponent } from './portal-primeros-auxilios-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
 import { PortalGaleriaHeroImagenEditorComponent } from './portal-galeria-hero-imagen-editor.component';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
@@ -81,6 +91,8 @@ export type BuilderPanel =
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'manejoDefensivo'
+  | 'primerosAuxilios'
   | 'finstruvialServiciosHub'
   | 'finstruvialServicioAulaVirtual'
   | 'finstruvialServicioPeridata'
@@ -132,6 +144,8 @@ interface GuiaPaso {
     PortalExamenTeoricoEditorComponent,
     PortalMercanciasPeligrosasEditorComponent,
     PortalTrabajoEnAlturasEditorComponent,
+    PortalManejoDefensivoEditorComponent,
+    PortalPrimerosAuxiliosEditorComponent,
     PortalFinstruvialServiciosEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalGaleriaHeroImagenEditorComponent,
@@ -202,6 +216,8 @@ export class PortalSiteBuilderComponent {
         { id: 'examenTeorico', icon: '📋', label: 'Examen teórico' },
         { id: 'mercanciasPeligrosas', icon: '☣️', label: 'Mercancías peligrosas' },
         { id: 'trabajoEnAlturas', icon: '🪜', label: 'Trabajo en alturas' },
+        { id: 'manejoDefensivo', icon: '🚘', label: 'Manejo defensivo' },
+        { id: 'primerosAuxilios', icon: '❤️', label: 'Primeros auxilios' },
         { id: 'galeria', icon: '📷', label: 'Galería' },
         { id: 'blog', icon: '📰', label: 'Blog' },
         { id: 'asistente', icon: '🤖', label: 'Asistente' },
@@ -377,6 +393,34 @@ export class PortalSiteBuilderComponent {
     return this.portalForm.landing.trabajoEnAlturas;
   }
 
+  ensureManejoDefensivoLanding(): PortalManejoDefensivoLanding {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    if (!this.portalForm.landing.manejoDefensivo) {
+      this.portalForm.landing.manejoDefensivo = mergePortalLanding().manejoDefensivo;
+    } else {
+      this.portalForm.landing.manejoDefensivo = mergeManejoDefensivoLanding(
+        this.portalForm.landing.manejoDefensivo,
+      );
+    }
+    return this.portalForm.landing.manejoDefensivo;
+  }
+
+  ensurePrimerosAuxiliosLanding(): PortalPrimerosAuxiliosLanding {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    if (!this.portalForm.landing.primerosAuxilios) {
+      this.portalForm.landing.primerosAuxilios = mergePortalLanding().primerosAuxilios;
+    } else {
+      this.portalForm.landing.primerosAuxilios = mergePrimerosAuxiliosLanding(
+        this.portalForm.landing.primerosAuxilios,
+      );
+    }
+    return this.portalForm.landing.primerosAuxilios;
+  }
+
   ensureFinstruvialServiciosLanding(): PortalFinstruvialServiciosConfig {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding(null, this.portalForm.site?.tema);
@@ -493,6 +537,16 @@ export class PortalSiteBuilderComponent {
         title: 'Trabajo en alturas',
         help:
           'Página educativa en /trabajo-en-alturas con el programa de 20 módulos, normativa Res. 4272 y material descargable. Las imágenes se guardan al subirlas; publique el sitio para los textos.',
+      },
+      manejoDefensivo: {
+        title: 'Curso de manejo defensivo',
+        help:
+          'Página pública en /curso-manejo-defensivo. Edite H1, H2, textos, CTAs e imágenes. El título SEO y la meta descripción se configuran en SEO (Google). Las imágenes se guardan al subirlas; publique el sitio para los textos.',
+      },
+      primerosAuxilios: {
+        title: 'Curso de primeros auxilios',
+        help:
+          'Página pública en /curso-primeros-auxilios. Edite H1, H2, textos, CTAs e imágenes. El título SEO y la meta descripción se configuran en SEO (Google). Las imágenes se guardan al subirlas; publique el sitio para los textos.',
       },
       finstruvialServiciosHub: {
         title: 'Portafolio de servicios',

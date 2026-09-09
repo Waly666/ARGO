@@ -452,6 +452,44 @@
         />
       }
 
+      @case ('manejoDefensivo') {
+        <p class="psb-note">
+          Página pública en <strong>/curso-manejo-defensivo</strong>. Vincule el programa del catálogo para que
+          <strong>Inscríbete</strong> abra esa ficha. El H1 se edita aquí; el título de Google está en
+          <strong>SEO (Google)</strong>. Pulse <strong>Publicar cambios</strong> para guardar textos y el curso vinculado.
+          <a
+            class="psb-btn psb-btn--ghost psb-note__action"
+            [href]="portalUrl + 'curso-manejo-defensivo'"
+            target="_blank"
+            rel="noopener"
+          >Abrir página en el portal ↗</a>
+        </p>
+        <argo-portal-manejo-defensivo-editor
+          [manejoDefensivo]="ensureManejoDefensivoLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('primerosAuxilios') {
+        <p class="psb-note">
+          Página pública en <strong>/curso-primeros-auxilios</strong>. Vincule el programa del catálogo para que
+          <strong>Inscríbete</strong> abra esa ficha. El H1 se edita aquí; el título de Google está en
+          <strong>SEO (Google)</strong>. Pulse <strong>Publicar cambios</strong> para guardar textos y el curso vinculado.
+          <a
+            class="psb-btn psb-btn--ghost psb-note__action"
+            [href]="portalUrl + 'curso-primeros-auxilios'"
+            target="_blank"
+            rel="noopener"
+          >Abrir página en el portal ↗</a>
+        </p>
+        <argo-portal-primeros-auxilios-editor
+          [primerosAuxilios]="ensurePrimerosAuxiliosLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
       @case ('finstruvialServiciosHub') {
         <argo-portal-finstruvial-servicios-editor
           modo="hub"

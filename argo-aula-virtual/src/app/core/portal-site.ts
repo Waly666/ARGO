@@ -36,6 +36,8 @@ const DEFAULT_HOME_ORDER = [
   'examenTeorico',
   'mercanciasPeligrosas',
   'trabajoEnAlturas',
+  'manejoDefensivo',
+  'primerosAuxilios',
   'quoteBand',
   'fotosInicio',
   'serviciosEmpresa',

@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchBlob, apiFetchText, apiPostForm } from './client';
+import { apiFetch, apiFetchBlob, apiFetchText, apiUploadFile } from './client';
 import type {
   AsistenciaClase,
   AsistenciaResp,
@@ -6,6 +6,7 @@ import type {
   ClaseJornada,
   ContratoJornada,
   FinalizarClaseResp,
+  PostCierreClaseResp,
   InformesJornadaResp,
   InscritoClase,
   AlumnosClaseAnteriorResp,
@@ -224,6 +225,40 @@ export function finalizarClase(
   });
 }
 
+/** Resultado del post-cierre async (asistencias + certificados según numSesCert del contrato). */
+export function obtenerPostCierreClase(id: string) {
+  return apiFetch<PostCierreClaseResp>(`${BASE}/clases/${encodeURIComponent(id)}/post-cierre`);
+}
+
+/**
+ * Espera a que el backend termine de marcar asistencias y emitir certificados.
+ * Finalizar responde al instante con certificadosGenerados=0; sin esto la UI avisa en falso.
+ */
+export async function esperarPostCierreClase(
+  id: string,
+  opts?: { maxMs?: number; intervalMs?: number },
+): Promise<PostCierreClaseResp> {
+  const maxMs = opts?.maxMs ?? 120_000;
+  const intervalMs = opts?.intervalMs ?? 500;
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const started = Date.now();
+  await sleep(300);
+  let last: PostCierreClaseResp = { status: 'unknown', postCierrePendiente: true };
+  while (Date.now() - started < maxMs) {
+    try {
+      last = await obtenerPostCierreClase(id);
+      if (last.status === 'done' || last.status === 'error') return last;
+      // unknown sostenido: el mapa en memoria no tiene esta clase (reinicio o endpoint viejo).
+      if (last.status === 'unknown' && Date.now() - started > 8_000) return last;
+    } catch (e) {
+      const status = (e as { status?: number })?.status;
+      if (status === 404) return { status: 'unknown', postCierrePendiente: false };
+    }
+    await sleep(intervalMs);
+  }
+  return last;
+}
+
 export function registrarAsistencia(idClase: string, numDoc: string) {
   return apiFetch<AsistenciaResp>(`${BASE}/clases/${idClase}/asistencia`, {
     method: 'POST',
@@ -310,6 +345,7 @@ export type CrearAlumnoJornadaDto = {
   regimenSalud?: string;
   nivelFormacion?: string;
   ocupacion?: string;
+  actorVial?: string;
   discapacidad?: string;
   multiCulturalidad?: string;
   observaciones?: string;
@@ -368,13 +404,20 @@ export function certificadosGenerados(idContrato?: string) {
 }
 
 export function subirFotoEvidencia(idClase: string, uri: string) {
-  const fd = new FormData();
-  fd.append('foto', {
-    uri,
-    name: 'evidencia.jpg',
-    type: 'image/jpeg',
-  } as unknown as Blob);
-  return apiPostForm<ClaseJornada>(`${BASE}/clases/${idClase}/foto-evidencia`, fd);
+  const fileUri = uri.startsWith('/') ? `file://${uri}` : uri;
+  return apiUploadFile<ClaseJornada>(
+    `${BASE}/clases/${idClase}/foto-evidencia`,
+    fileUri,
+    'foto',
+    { mimeType: 'image/jpeg' },
+  );
+}
+
+export function eliminarFotoEvidencia(idClase: string, fotoId: string) {
+  return apiFetch<ClaseJornada>(
+    `${BASE}/clases/${encodeURIComponent(idClase)}/foto-evidencia/${encodeURIComponent(fotoId)}`,
+    { method: 'DELETE' },
+  );
 }
 
 export type InformesOpts = {

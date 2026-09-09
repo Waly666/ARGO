@@ -29,6 +29,14 @@
           <span>Leyenda (opcional)</span>
           <input type="text" class="psb-input" [(ngModel)]="foto.leyenda" placeholder="Ej.: Jornada de capacitación 2026" />
         </label>
+        <argo-portal-editor-imagen-prompt
+          [promptImagen]="foto.promptImagen || ''"
+          (promptImagenChange)="foto.promptImagen = $event"
+          [alt]="foto.leyenda"
+          [etiqueta]="'Foto inicio ' + (i + 1)"
+          (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+          (copyError)="avNotice.emit({ message: $event, error: true })"
+        />
         <button type="button" class="psb-btn psb-btn--ghost phfe-quitar" [disabled]="uploading()" (click)="confirmarEliminar(foto)">
           Quitar foto
         </button>

@@ -9,6 +9,14 @@ const {
   TRABAJO_EN_ALTURAS_DEFAULTS,
   mergeTrabajoEnAlturasLanding,
 } = require('./aulaVirtualTrabajoEnAlturasDefaults');
+const {
+  MANEJO_DEFENSIVO_DEFAULTS,
+  mergeManejoDefensivoLanding,
+} = require('./aulaVirtualManejoDefensivoDefaults');
+const {
+  PRIMEROS_AUXILIOS_DEFAULTS,
+  mergePrimerosAuxiliosLanding,
+} = require('./aulaVirtualPrimerosAuxiliosDefaults');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('./aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('./aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS } = require('./aulaVirtualHomeFotosDefaults');
@@ -211,6 +219,8 @@ const LANDING_DEFAULTS = {
   examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_DEFAULTS)),
   mercanciasPeligrosas: JSON.parse(JSON.stringify(MERCANCIAS_PELIGROSAS_DEFAULTS)),
   trabajoEnAlturas: JSON.parse(JSON.stringify(TRABAJO_EN_ALTURAS_DEFAULTS)),
+  manejoDefensivo: JSON.parse(JSON.stringify(MANEJO_DEFENSIVO_DEFAULTS)),
+  primerosAuxilios: JSON.parse(JSON.stringify(PRIMEROS_AUXILIOS_DEFAULTS)),
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [
@@ -589,6 +599,7 @@ function mergeLandingHero(raw) {
     ctaLlamarUrl: str(src.ctaLlamarUrl, d.ctaLlamarUrl),
     mostrarBotonLlamar: src.mostrarBotonLlamar !== false && src.mostrarBotonLlamar !== 'false',
     imagenAlt: str(src.imagenAlt, d.imagenAlt),
+    promptImagen: str(src.promptImagen, d.promptImagen),
     eyebrow: str(src.eyebrow, d.eyebrow),
     eyebrowServial: str(src.eyebrowServial, d.eyebrowServial),
     subEyebrow: str(src.subEyebrow, d.subEyebrow),
@@ -642,4 +653,6 @@ module.exports = {
   mergeFinstruvialServicios,
   mergeMercanciasPeligrosasLanding,
   mergeTrabajoEnAlturasLanding,
+  mergeManejoDefensivoLanding,
+  mergePrimerosAuxiliosLanding,
 };

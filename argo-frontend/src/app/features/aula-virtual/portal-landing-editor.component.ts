@@ -9,11 +9,12 @@ import {
 } from '../../core/constants/portal-landing-defaults';
 import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-landing-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalAppMobileEditorComponent],
+  imports: [CommonModule, FormsModule, PortalAppMobileEditorComponent, PortalEditorImagenPromptComponent],
   templateUrl: './portal-landing-editor.component.html',
   styleUrl: './portal-landing-editor.component.scss',
 })

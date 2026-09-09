@@ -84,6 +84,12 @@
           </div>
           <div class="pseo-panel__meta">
             <code class="pseo-panel__ruta">{{ meta.ruta }}</code>
+            <a
+              class="psb-btn psb-btn--ghost pseo-panel__open"
+              [href]="previewUrl(meta.key)"
+              target="_blank"
+              rel="noopener"
+            >Abrir página ↗</a>
             <span class="pseo-panel__status" [class.pseo-panel__status--custom]="!usesAutoText(meta.key)">
               {{ usesAutoText(meta.key) ? 'Texto automático' : 'Personalizado' }}
             </span>

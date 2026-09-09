@@ -11,6 +11,8 @@ const { mergePortafolioServicios } = require('../constants/aulaVirtualPortafolio
 const { examenTeoricoContenidoAntiguo } = require('../constants/aulaVirtualExamenTeoricoDefaults');
 const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMercanciasPeligrosasDefaults');
 const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
+const { mergeManejoDefensivoLanding } = require('../constants/aulaVirtualManejoDefensivoDefaults');
+const { mergePrimerosAuxiliosLanding } = require('../constants/aulaVirtualPrimerosAuxiliosDefaults');
 const { mergeAcercaLanding } = require('../constants/aulaVirtualAcercaDefaults');
 const { mergePromoHeroPillars, mergePromoHeroTheme } = require('../constants/portalPromoHeroFields');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosConduccionDefaults');
@@ -249,6 +251,39 @@ function normalizarTrabajoEnAlturas(raw, fallback) {
   return { ...merged, imagenes };
 }
 
+function normalizarPrimerosAuxilios(raw, fallback) {
+  const merged = mergePrimerosAuxiliosLanding(raw || {});
+  const fb = fallback && typeof fallback === 'object' ? fallback : {};
+  const imagenes = (merged.imagenes || []).map((img, i) => {
+    const url = str(img?.url, fb.imagenes?.[i]?.url);
+    return {
+      id: str(img?.id, fb.imagenes?.[i]?.id),
+      etiqueta: str(img?.etiqueta, fb.imagenes?.[i]?.etiqueta),
+      url,
+      urlAbsoluta: url ? publicUploadUrl(url) || url : '',
+      alt: str(img?.alt, fb.imagenes?.[i]?.alt),
+    };
+  });
+  return { ...merged, imagenes };
+}
+
+function normalizarManejoDefensivo(raw, fallback) {
+  const merged = mergeManejoDefensivoLanding(raw || {});
+  const fb = fallback && typeof fallback === 'object' ? fallback : {};
+  const imagenes = (merged.imagenes || []).map((img, i) => {
+    const url = str(img?.url, fb.imagenes?.[i]?.url);
+    return {
+      id: str(img?.id, fb.imagenes?.[i]?.id),
+      etiqueta: str(img?.etiqueta, fb.imagenes?.[i]?.etiqueta),
+      url,
+      urlAbsoluta: url ? publicUploadUrl(url) || url : '',
+      alt: str(img?.alt, fb.imagenes?.[i]?.alt),
+      promptImagen: str(img?.promptImagen, fb.imagenes?.[i]?.promptImagen),
+    };
+  });
+  return { ...merged, imagenes };
+}
+
 function normalizarPopup(raw) {
   const d = LANDING_DEFAULTS.popup;
   const src = raw && typeof raw === 'object' ? raw : {};
@@ -470,6 +505,8 @@ function normalizarLanding(input, tema) {
     examenTeorico: normalizarExamenTeorico(src.examenTeorico, d.examenTeorico),
     mercanciasPeligrosas: normalizarMercanciasPeligrosas(src.mercanciasPeligrosas, d.mercanciasPeligrosas),
     trabajoEnAlturas: normalizarTrabajoEnAlturas(src.trabajoEnAlturas, d.trabajoEnAlturas),
+    manejoDefensivo: normalizarManejoDefensivo(src.manejoDefensivo, d.manejoDefensivo),
+    primerosAuxilios: normalizarPrimerosAuxilios(src.primerosAuxilios, d.primerosAuxilios),
     servicios: {
       titulo: str(serviciosSrc.titulo, d.servicios.titulo),
       items: normalizarItemsIcono(serviciosSrc.items, d.servicios.items, ['icon', 'title', 'url']),

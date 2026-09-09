@@ -15,6 +15,7 @@ const {
   sanitizarNombreArchivo,
   MAX_CERTS_ZIP,
 } = require('./certificadosJornadaZip');
+const { jpegBufferDesdeArchivo } = require('./comprimirFotoEvidencia');
 
 const JOB_TTL_MS = 45 * 60 * 1000;
 /** @type {Map<string, object>} */
@@ -90,12 +91,9 @@ function appendEvidenciaAlArchivo(archive, carpeta, urlRel) {
   return true;
 }
 
-/** Agrega fotos de evidencia de cada clase (urlforo) en carpeta imagenes/. */
+/** Agrega fotos de evidencia de cada clase, JPEG corto (evita rutas Windows > 260). */
 async function appendImagenesClasesAlArchivo(archive, carpeta, idJornada) {
-  const clases = await ClaseJornadaCap.find({
-    idJornada,
-    urlforo: { $nin: [null, ''] },
-  })
+  const clases = await ClaseJornadaCap.find({ idJornada })
     .sort({ indiceClaseEnJornada: 1, horaInicio: 1, createdAt: 1 })
     .lean();
 
@@ -103,42 +101,45 @@ async function appendImagenesClasesAlArchivo(archive, carpeta, idJornada) {
   let count = 0;
   for (let i = 0; i < clases.length; i++) {
     const clase = clases[i];
-    const rel = String(clase.urlforo || '').trim();
-    if (!rel) continue;
-    const abs = upload.resolvePath(rel);
-    if (!abs || !fs.existsSync(abs)) continue;
-    const idx = clase.indiceClaseEnJornada ?? i + 1;
-    const prog = sanitizarNombreArchivo(clase.idPrograma || 'clase');
-    const original = sanitizarNombreArchivo(path.basename(abs)) || `clase-${idx}.jpg`;
-    const name = `${String(idx).padStart(2, '0')}_${prog}_${original}`;
-    archive.file(abs, { name: `${base}imagenes/${name}` });
-    count++;
+    const urls = [];
+    const seen = new Set();
+    for (const f of Array.isArray(clase.fotosEvidencia) ? clase.fotosEvidencia : []) {
+      const rel = String(f?.url || '').trim();
+      if (rel && !seen.has(rel)) {
+        seen.add(rel);
+        urls.push(rel);
+      }
+    }
+    const legado = String(clase.urlforo || '').trim();
+    if (legado && !seen.has(legado)) urls.push(legado);
+    const idx = String(clase.indiceClaseEnJornada ?? i + 1).padStart(2, '0');
+    for (let n = 0; n < urls.length; n++) {
+      const abs = upload.resolvePath(urls[n]);
+      if (!abs || !fs.existsSync(abs)) continue;
+      const buf = await jpegBufferDesdeArchivo(abs);
+      if (!buf?.length) continue;
+      const name = `c${idx}-f${n + 1}.jpg`;
+      archive.append(buf, { name: `${base}imagenes/${name}` });
+      count++;
+    }
   }
   return count;
 }
 
-/** Fotos JPG/PNG de la ficha Evidencia fotográfica adicional (carpeta propia en el ZIP). */
-function appendFotosAdicionalAlArchivo(archive, carpeta, jornada) {
+/** Fotos adicionales de la jornada, JPEG con nombre corto. */
+async function appendFotosAdicionalAlArchivo(archive, carpeta, jornada) {
   const fotos = Array.isArray(jornada?.fotosEvidenciaAdicional) ? jornada.fotosEvidenciaAdicional : [];
   const base = carpeta.endsWith('/') ? carpeta : `${carpeta}/`;
   let count = 0;
-  const usados = new Set();
   for (let i = 0; i < fotos.length; i++) {
     const rel = String(fotos[i]?.url || '').trim();
     if (!rel) continue;
     const abs = upload.resolvePath(rel);
     if (!abs || !fs.existsSync(abs)) continue;
-    const original = sanitizarNombreArchivo(fotos[i]?.nombre || path.basename(abs)) || `foto-${i + 1}.jpg`;
-    let ext = (path.extname(abs) || path.extname(original) || '.jpg').toLowerCase();
-    if (ext === '.jpeg') ext = '.jpg';
-    if (ext !== '.jpg' && ext !== '.png') ext = '.jpg';
-    const stem = path.basename(original, path.extname(original)) || `foto-${i + 1}`;
-    let name = `${String(i + 1).padStart(2, '0')}_${stem}${ext}`;
-    if (usados.has(name.toLowerCase())) {
-      name = `${String(i + 1).padStart(2, '0')}_${stem}_${count + 1}${ext}`;
-    }
-    usados.add(name.toLowerCase());
-    archive.file(abs, { name: `${base}evidencia-fotografica-adicional/${name}` });
+    const buf = await jpegBufferDesdeArchivo(abs);
+    if (!buf?.length) continue;
+    const name = `e${String(i + 1).padStart(2, '0')}.jpg`;
+    archive.append(buf, { name: `${base}fotos-extra/${name}` });
     count++;
   }
   return count;
@@ -161,15 +162,14 @@ function nombreEmpresaContratante(contrato) {
 }
 
 function buildEtiquetasPaqueteContrato(contrato) {
-  const cod = truncarSlug(contrato?.codContrato || 'sin-codigo', 32);
+  const cod = truncarSlug(contrato?.codContrato || 'sin-codigo', 24);
   const empresa = truncarSlug(nombreEmpresaContratante(contrato) || 'empresa-contratante', 48);
   const stamp = new Date().toISOString().slice(0, 10);
-  const base = `contrato_${cod}_${empresa}`;
   return {
     codContrato: cod,
     empresaContratante: empresa,
-    root: `${base}/`,
-    filename: `paquete-entrega-contrato_${cod}_${empresa}_${stamp}.zip`,
+    root: `${cod}/`,
+    filename: `entrega_${cod}_${stamp}.zip`,
   };
 }
 
@@ -200,7 +200,7 @@ function leemeJornada({
   if (incluyeImagenes) lineas.push(`  • imagenes/ (${totalImagenes} foto(s) de clases)`);
   if (incluyeFotosAdicional) {
     lineas.push(
-      `  • evidencia-fotografica-adicional/ (${totalFotosAdicional} foto(s) JPG/PNG de la ficha)`,
+      `  • fotos-extra/ (${totalFotosAdicional} foto(s) de la ficha)`,
     );
   }
   if (
@@ -243,8 +243,8 @@ function leemeContrato({
     '  • jornadas/{codigo-jornada}/informe/',
     '  • jornadas/{codigo-jornada}/certificados/',
     '  • jornadas/{codigo-jornada}/evidencia/ (PDF consolidado de planillas)',
-    '  • jornadas/{codigo-jornada}/imagenes/ (fotos de clases)',
-    '  • jornadas/{codigo-jornada}/evidencia-fotografica-adicional/ (JPG/PNG de la ficha)',
+    '  • jornadas/{codigo-jornada}/imagenes/ (fotos de clases, JPG)',
+    '  • jornadas/{codigo-jornada}/fotos-extra/ (fotos adicionales de la ficha)',
   ];
   return `${lineas.join('\n')}\n`;
 }
@@ -261,8 +261,9 @@ async function agregarContenidoJornadaAlArchivo({
   index = 0,
   total = 1,
 }) {
-  const codJ = sanitizarNombreArchivo(
+  const codJ = truncarSlug(
     jornada.codigoJornada || buildCodigoJornada('', jornada._id) || String(jornada._id),
+    28,
   );
   const jRoot = `${root}jornadas/${codJ}/`;
   const report = (fase, pctInSpan) => {
@@ -320,7 +321,7 @@ async function agregarContenidoJornadaAlArchivo({
   report(`Imágenes de clases ${codJ}…`, 90);
   const totalImagenes = await appendImagenesClasesAlArchivo(archive, jRoot, jornada._id);
   report(`Evidencia fotográfica adicional ${codJ}…`, 94);
-  const totalFotosAdicional = appendFotosAdicionalAlArchivo(archive, jRoot, jornada);
+  const totalFotosAdicional = await appendFotosAdicionalAlArchivo(archive, jRoot, jornada);
 
   archive.append(
     leemeJornada({
@@ -354,12 +355,13 @@ async function buildPaqueteJornadaToFile({ jornadaId, publicOrigin, onProgress }
     throw err;
   }
   const contrato = await Contratacion.findById(jornada.idContrato).select('codContrato').lean();
-  const codJ = sanitizarNombreArchivo(
+  const codJ = truncarSlug(
     jornada.codigoJornada || buildCodigoJornada(contrato?.codContrato, jornada._id) || String(jornada._id),
+    28,
   );
   const root = `${codJ}/`;
   const stamp = new Date().toISOString().slice(0, 10);
-  const filename = `paquete-entrega_${codJ}_${stamp}.zip`;
+  const filename = `entrega_${codJ}_${stamp}.zip`;
   const filePath = path.join(
     os.tmpdir(),
     `argo-paquete-jor-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.zip`,
@@ -450,7 +452,7 @@ async function buildPaqueteJornadaToFile({ jornadaId, publicOrigin, onProgress }
             total: 1,
           });
         }
-        totalFotosAdicional = appendFotosAdicionalAlArchivo(archive, root, jornada);
+        totalFotosAdicional = await appendFotosAdicionalAlArchivo(archive, root, jornada);
         incluyeFotosAdicional = totalFotosAdicional > 0;
 
         archive.append(
@@ -691,7 +693,7 @@ function takePaqueteEntregaDownload(jobId, ownerSub) {
   }
   const meta = {
     filePath: job.filePath,
-    filename: job.filename || 'paquete-entrega-contrato.zip',
+    filename: job.filename || 'entrega-contrato.zip',
   };
   jobs.delete(job.id);
   return meta;

@@ -1,58 +1,209 @@
-import { PortalFinstruvialServicioLanding } from './finstruvial-servicio-landing.types';
+import {
+  PortalFinstruvialServicioLanding,
+  PortalServiciosHubFaq,
+  PortalServiciosHubTarjeta,
+} from './finstruvial-servicio-landing.types';
 import { FinstruvialServicioSlug } from './finstruvial-servicios.constants';
+
+export const SERVIAL_AULA_VIRTUAL_GUION_VERSION = 1;
+
+export const SERVIAL_AULA_VIRTUAL_FAQ: PortalServiciosHubFaq[] = [
+  {
+    pregunta: '¿Qué es el Aula Virtual de SERVIAL?',
+    respuesta:
+      'Es la plataforma de formación en línea de SERVIAL Colombia para acceder a los cursos y programas virtuales disponibles.',
+  },
+  {
+    pregunta: '¿Puedo realizar los cursos desde cualquier lugar de Colombia?',
+    respuesta:
+      'Los cursos que estén habilitados en modalidad virtual pueden desarrollarse en línea de acuerdo con las condiciones específicas de cada programa.',
+  },
+  {
+    pregunta: '¿Puedo estudiar desde celular o computador?',
+    respuesta:
+      'Sí. La plataforma está optimizada para acceder desde computador, tableta o dispositivo móvil, según las características de cada curso.',
+  },
+  {
+    pregunta: '¿Cómo ingreso al Aula Virtual de SERVIAL?',
+    respuesta:
+      'Debe registrarse en el portal, inscribirse al curso de su interés y, una vez habilitado el acceso, ingresar con su usuario y contraseña desde la sección Aula Virtual.',
+  },
+];
+
+export const SERVIAL_AULA_VIRTUAL_CATALOGO_OVERRIDES = [
+  {
+    patron: 'mercancías peligrosas',
+    titulo: 'Curso de Mercancías Peligrosas',
+    url: '/mercancias-peligrosas',
+    cta: 'Ver Curso de Mercancías Peligrosas',
+  },
+  {
+    patron: 'trabajo en alturas',
+    titulo: 'Curso de Trabajo en Alturas',
+    url: '/trabajo-en-alturas',
+    cta: 'Ver Curso de Trabajo en Alturas',
+  },
+  {
+    patron: 'primeros auxilios',
+    titulo: 'Curso de Primeros Auxilios',
+    url: '/curso-primeros-auxilios',
+    cta: 'Ver Curso de Primeros Auxilios',
+  },
+  {
+    patron: 'manejo defensivo',
+    titulo: 'Curso Virtual de Manejo Defensivo',
+    url: '/curso-manejo-defensivo',
+    cta: 'Ver Curso de Manejo Defensivo',
+  },
+  {
+    patron: 'seguridad vial',
+    titulo: 'Curso Virtual de Seguridad Vial',
+    url: '/cursos',
+    cta: 'Conocer Curso de Seguridad Vial',
+  },
+];
 
 /** Contenido portafolio Servial Colombia (PDF portafolio servicios). */
 export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
   Record<FinstruvialServicioSlug, Partial<PortalFinstruvialServicioLanding>>
 > = {
   aulaVirtual: {
+    guionVersion: SERVIAL_AULA_VIRTUAL_GUION_VERSION,
     estilo: 'academy',
     theme: 'gold',
     menuLabel: 'Aula Virtual',
-    kicker: 'Plataforma educativa',
-    tituloLinea: 'AULA VIRTUAL',
-    tituloAcento: 'SERVIAL COLOMBIA',
-    lead: 'Formación en línea desde cualquier lugar y a cualquier hora.',
-    heroParrafos: [
-      'Prestamos servicios de capacitación con horarios flexibles y la posibilidad de tomar clases en ambientes virtuales desde nuestra aula virtual por internet.',
-    ],
-    introKicker: 'Nuestro servicio',
-    introTitulo: 'Aula Virtual Servial Colombia',
-    introLead:
-      'Capacitación acorde a las necesidades de su empresa, con acceso desde cualquier lugar.',
-    introParrafos: [
-      'El Aula Virtual de Servial Colombia integra conocimiento técnico, recursos multimedia, actividades de aprendizaje y evaluación para conductores, instructores, empresas del sector transportador y demás actores vinculados al tránsito, el transporte y la seguridad vial.',
-      'Combinamos flexibilidad, contenidos aplicados y formación orientada al saber, saber hacer y ser, para transformar el conocimiento en decisiones responsables y comportamientos seguros en la vía.',
-    ],
+    kicker: 'Formación en línea',
+    tituloLinea: 'Aula Virtual',
+    tituloAcento: 'SERVIAL Colombia',
+    lead:
+      'Cursos virtuales de seguridad vial, tránsito, transporte y formación especializada, disponibles desde Villavicencio, Meta, para estudiantes y empresas en toda Colombia.',
+    heroParrafos: [],
+    introKicker: '',
+    introTitulo: '',
+    introLead: '',
+    introParrafos: [],
     ctaPrincipal: 'Ingresar al aula',
     ctaPrincipalUrl: '/aula',
-    ctaSecundario: 'Ver cursos',
+    ctaSecundario: 'Explorar Cursos Virtuales',
     ctaSecundarioUrl: '/cursos',
+    seoTextoTitulo: 'Cursos Virtuales con SERVIAL Colombia',
+    seoTextoImagenId: 'formacion',
+    seoTextoParrafos: [
+      'El Aula Virtual de SERVIAL Colombia permite acceder a cursos y programas de capacitación en seguridad vial, tránsito, transporte, prevención y formación especializada desde computador, tableta o dispositivo móvil.',
+      'Nuestra plataforma facilita el aprendizaje virtual para personas, conductores, trabajadores y empresas que requieren fortalecer sus conocimientos y competencias mediante una modalidad flexible y accesible.',
+      'Desde nuestra sede en Villavicencio, Meta, SERVIAL ofrece alternativas de formación virtual para participantes de diferentes regiones de Colombia, incluyendo el Meta y los Llanos Orientales. Los estudiantes pueden consultar la oferta académica disponible, acceder a los contenidos de sus cursos y desarrollar su proceso de formación de acuerdo con las condiciones establecidas para cada programa.',
+    ],
     pilaresEducativos: [
       { icon: '📖', titulo: 'SABER', texto: 'Normas, procedimientos y fundamentos técnicos de seguridad vial.' },
       { icon: '🛠️', titulo: 'SABER HACER', texto: 'Aplicación del conocimiento en situaciones reales de conducción y operación.' },
       { icon: '💚', titulo: 'SER', texto: 'Responsabilidad, prevención y compromiso con la vida en las vías.' },
     ],
+    rutaAprendizajeKicker: 'Proceso formativo',
+    rutaAprendizajeTitulo: 'Ruta de aprendizaje',
+    rutaAprendizajeLead:
+      'Cada curso en el Aula Virtual de SERVIAL sigue un proceso estructurado que acompaña al estudiante desde el primer acceso hasta la certificación. A través de contenidos, actividades y evaluaciones, usted avanza paso a paso fortaleciendo sus competencias en seguridad vial, tránsito y transporte, a su propio ritmo y desde cualquier lugar.',
+    rutaAprendizajeImagenId: 'ruta',
     rutaAprendizaje: ['ESTUDIAR', 'COMPRENDER', 'PRACTICAR', 'APLICAR', 'EVALUAR', 'CERTIFICARSE'],
-    bloquesKicker: 'Cursos',
-    bloquesTitulo: 'Programas en línea',
+    bloquesKicker: 'Catálogo',
+    bloquesTitulo: 'Cursos Disponibles en el Aula Virtual',
     usarCatalogoCursos: true,
     bloques: [],
-    experienciaSeccionKicker: 'Metodología',
-    experienciaSeccionTitulo: 'Experiencia educativa',
+    catalogoOverrides: SERVIAL_AULA_VIRTUAL_CATALOGO_OVERRIDES,
+    modulosPlataformaKicker: 'Plataforma',
+    modulosPlataformaTitulo: '¿Cómo funciona el Aula Virtual de SERVIAL?',
+    modulosPlataformaLead:
+      'Conozca las secciones del campus virtual: desde el tablero de inicio hasta sus certificados y foros de curso.',
+    modulosPlataforma: [
+      {
+        icon: '📊',
+        titulo: 'Tablero',
+        texto:
+          'Vista general de su progreso, avisos y accesos rápidos a los cursos activos desde el panel principal.',
+        imagenId: 'modulo-tablero',
+      },
+      {
+        icon: '📚',
+        titulo: 'Tus cursos',
+        texto:
+          'Listado de programas matriculados con acceso directo a lecciones, materiales y evaluaciones pendientes.',
+        imagenId: 'modulo-cursos',
+      },
+      {
+        icon: '🏅',
+        titulo: 'Certificados',
+        texto:
+          'Descarga y consulta de certificados obtenidos al completar los requisitos de cada programa.',
+        imagenId: 'modulo-certificados',
+      },
+      {
+        icon: '👤',
+        titulo: 'Perfil',
+        texto: 'Datos personales, contraseña y preferencias de su cuenta en el aula virtual.',
+        imagenId: 'modulo-perfil',
+      },
+    ],
+    experienciaSeccionKicker: 'Ventajas',
+    experienciaSeccionTitulo: 'Beneficios de nuestros Cursos Virtuales',
     experienciaItems: [
       { icon: '🎥', titulo: 'Contenido multimedia', texto: 'Videos, lecturas y recursos interactivos.' },
       { icon: '📝', titulo: 'Actividades', texto: 'Ejercicios prácticos y casos del sector transportador.' },
       { icon: '✅', titulo: 'Evaluaciones', texto: 'Verificación de aprendizajes y competencias.' },
       { icon: '🏅', titulo: 'Certificación', texto: 'Cuando aplique conforme al programa ofrecido.' },
     ],
+    listaTitulo: 'Capacitación Virtual para Empresas',
+    listaServicios: [
+      {
+        titulo: 'Programas a la medida',
+        texto: 'Formación virtual para flotas, conductores y personal del sector transportador.',
+      },
+      {
+        titulo: 'Flexibilidad horaria',
+        texto: 'Acceso a contenidos y actividades según la disponibilidad de su equipo.',
+      },
+      {
+        titulo: 'Seguimiento formativo',
+        texto: 'Herramientas para consultar avance y resultados de los participantes.',
+      },
+    ],
+    localTitulo: 'Aula Virtual SERVIAL desde Villavicencio, Meta',
+    localTexto:
+      'SERVIAL Colombia tiene su sede en Villavicencio, Meta, y pone su plataforma de formación virtual a disposición de estudiantes, trabajadores y empresas del Meta, los Llanos Orientales y diferentes regiones de Colombia.',
+    faqTitulo: 'Preguntas Frecuentes sobre el Aula Virtual',
+    faq: SERVIAL_AULA_VIRTUAL_FAQ,
+    enlacesRelacionadosTitulo: 'Formación relacionada en SERVIAL',
+    enlacesRelacionados: [
+      {
+        texto: '¿Necesitas formación presencial para tu licencia?',
+        etiqueta: 'Cursos de conducción en Villavicencio',
+        url: '/cursos-conduccion',
+      },
+      {
+        texto: '¿Buscas técnicas de conducción preventiva?',
+        etiqueta: 'Curso de Manejo Defensivo',
+        url: '/curso-manejo-defensivo',
+      },
+      {
+        texto: '¿Quieres conocer el proceso para obtener tu licencia?',
+        etiqueta: 'Requisitos para la licencia de conducción',
+        url: 'https://servial.com.co/licencias-de-conduccion/',
+      },
+    ],
     cierreQuote: 'Únicos con calidad certificada en formación vial — Villavicencio, Meta.',
-    ctaBtnPrincipal: 'Ingresar al aula',
+    ctaTitulo: 'Inscripción a los Cursos Virtuales de SERVIAL',
+    ctaLead: 'Consulte la oferta disponible, regístrese en el portal e inicie su proceso de formación virtual.',
+    ctaBtnPrincipal: 'Explorar Cursos Virtuales',
+    ctaBtnSecundario: 'Ingresar al aula',
     metaDescription:
-      'Aula Virtual Servial Colombia: cursos en línea en seguridad vial, normas de tránsito y capacitación para conductores y empresas.',
+      'Aula Virtual y cursos online de SERVIAL Colombia: seguridad vial, tránsito, transporte y formación especializada desde Villavicencio para todo el país.',
     imagenes: [
-      { id: 'hero', etiqueta: 'Imagen principal', url: '', alt: 'Aula Virtual Servial Colombia' },
-      { id: 'seccion', etiqueta: 'Imagen de sección', url: '', alt: 'Campus virtual Servial' },
+      { id: 'hero', etiqueta: 'Imagen principal', url: '', alt: 'Aula Virtual de SERVIAL Colombia' },
+      { id: 'seccion', etiqueta: 'Imagen de sección', url: '', alt: 'Cursos virtuales de seguridad vial en Colombia' },
+      { id: 'formacion', etiqueta: 'Formación virtual', url: '', alt: 'Estudiantes en formación virtual SERVIAL' },
+      { id: 'ruta', etiqueta: 'Ruta de aprendizaje', url: '', alt: 'Proceso de aprendizaje en el aula virtual' },
+      { id: 'modulo-tablero', etiqueta: 'Captura — Tablero', url: '', alt: 'Capacitación virtual en tránsito y transporte' },
+      { id: 'modulo-cursos', etiqueta: 'Captura — Tus cursos', url: '', alt: 'Cursos online SERVIAL Colombia' },
+      { id: 'modulo-certificados', etiqueta: 'Captura — Certificados', url: '', alt: 'Formación virtual para conductores y empresas' },
+      { id: 'modulo-perfil', etiqueta: 'Captura — Perfil', url: '', alt: 'Plataforma educativa virtual SERVIAL' },
     ],
   },
   capacitacionSensibilizacion: {
@@ -136,7 +287,7 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     productoParrafos: [
       'Centro de Enseñanza Automovilística habilitado — Resoluciones 2267 y 2294 de 2014 Mintransporte.',
       'Instituto de educación para el trabajo y el desarrollo humano — Resoluciones 999, 1000, 1192 y 1090 de las secretarías de educación.',
-      'Categorías A2, B1, C1, C2 y C3 con instructores certificados y calidad TÜV Rheinland.',
+      'Categorías A2, B2, C1, C2 y C3 con instructores certificados y calidad TÜV Rheinland.',
     ],
     cierreQuote: 'Calidad, amabilidad y eficiencia en cada proceso formativo.',
     ctaBtnPrincipal: 'Solicitar información',
@@ -330,16 +481,120 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
   },
 };
 
+export const SERVIAL_SERVICIOS_HUB_GUION_VERSION = 1;
+
+export const SERVIAL_HUB_TARJETAS: PortalServiciosHubTarjeta[] = [
+  {
+    icon: '☣️',
+    titulo: 'Curso de Mercancías Peligrosas',
+    lead: 'Capacitación en transporte de sustancias peligrosas para conductores y empresas del sector transportador.',
+    url: '/mercancias-peligrosas',
+    cta: 'Ver Curso de Mercancías Peligrosas',
+  },
+  {
+    icon: '🦺',
+    titulo: 'Curso de Trabajo Seguro en Alturas',
+    lead: 'Formación en trabajo seguro en alturas conforme a la normativa vigente en Colombia.',
+    url: '/trabajo-en-alturas',
+    cta: 'Ver Curso de Trabajo en Alturas',
+  },
+  {
+    icon: '➕',
+    titulo: 'Curso de Primeros Auxilios',
+    lead: 'Atención inicial de emergencias y primeros auxilios para conductores, trabajadores y empresas.',
+    url: '/curso-primeros-auxilios',
+    cta: 'Ver Curso de Primeros Auxilios',
+  },
+  {
+    icon: '🛡️',
+    titulo: 'Curso de Manejo Defensivo',
+    lead: 'Técnicas de conducción preventiva para reducir riesgos y siniestralidad en la vía.',
+    url: '/curso-manejo-defensivo',
+    cta: 'Ver Curso de Manejo Defensivo',
+  },
+  {
+    icon: '🚛',
+    titulo: 'Cursos para Transporte de Carga',
+    lead: 'Formación en normas y operación segura para el transporte de carga.',
+    url: '/cursos-transporte-de-carga/',
+    cta: 'Ver Cursos de Transporte de Carga',
+    externo: true,
+  },
+  {
+    icon: '🚗',
+    titulo: 'Cursos para Licencias de Conducción',
+    lead: 'Cursos A2, B2, C1, C2 y C3 con instructores certificados en Villavicencio.',
+    url: '/licencias-de-conduccion/',
+    cta: 'Ver Cursos de Conducción',
+    externo: true,
+  },
+  {
+    icon: '💻',
+    titulo: 'Aula Virtual y Cursos Online',
+    lead: 'Cursos y programas en línea en seguridad vial, tránsito y transporte.',
+    url: '/servicios/aula-virtual',
+    cta: 'Acceder al Aula Virtual',
+  },
+  {
+    icon: '🎓',
+    titulo: 'Capacitación Empresarial',
+    lead: 'Programas de formación especializada para empresas del sector transportador.',
+    url: '/servicios/capacitacion-sensibilizacion',
+    cta: 'Conocer Capacitación',
+  },
+];
+
+export const SERVIAL_HUB_FAQ: PortalServiciosHubFaq[] = [
+  {
+    pregunta: '¿Qué cursos ofrece SERVIAL Colombia?',
+    respuesta:
+      'SERVIAL Colombia ofrece diferentes programas de formación relacionados con conducción, transporte, seguridad vial, prevención de riesgos y capacitación especializada para personas y empresas.',
+  },
+  {
+    pregunta: '¿Dónde está ubicado SERVIAL Colombia?',
+    respuesta:
+      'SERVIAL Colombia se encuentra en Villavicencio, Meta, y atiende participantes y organizaciones de Villavicencio, el Meta y los Llanos Orientales.',
+  },
+  {
+    pregunta: '¿SERVIAL ofrece capacitación para empresas?',
+    respuesta:
+      'Sí. SERVIAL desarrolla programas de capacitación dirigidos a empresas y organizaciones, de acuerdo con sus necesidades de formación y los cursos disponibles.',
+  },
+];
+
 export const SERVIAL_PORTAFOLIO_HUB = {
-  kicker: 'Portafolio de servicios',
-  tituloLinea: 'SERVICIOS',
-  tituloAcento: 'SERVIAL COLOMBIA',
+  guionVersion: SERVIAL_SERVICIOS_HUB_GUION_VERSION,
+  kicker: 'SERVIAL Colombia',
+  tituloLinea: 'Servicios de Formación y Capacitación en Villavicencio',
+  tituloAcento: '',
   lead:
-    'Capacitación, asesoría, consultoría y soluciones informáticas en tránsito, transporte, movilidad y seguridad vial.',
-  gridTitulo: 'Nuestros servicios',
-  gridLead:
-    'Especialistas en el sector transportador colombiano — Villavicencio, Meta.',
-  heroImagenAlt: 'Portafolio de servicios Servial Colombia',
+    'SERVIAL Colombia ofrece cursos, capacitación y formación especializada para conductores, trabajadores, empresas e instituciones en Villavicencio, Meta y los Llanos Orientales.',
+  gridTitulo: 'Nuestros Cursos y Servicios',
+  gridLead: '',
+  seoTextoTitulo: 'Formación y capacitación con SERVIAL Colombia',
+  seoTextoParrafos: [
+    'SERVIAL Colombia brinda servicios de formación y capacitación en Villavicencio, Meta, dirigidos a conductores, trabajadores, empresas e instituciones que requieren fortalecer sus conocimientos y competencias en seguridad vial, transporte, conducción segura y prevención de riesgos.',
+    'Nuestra oferta incluye cursos de conducción, transporte de carga, mercancías peligrosas, trabajo seguro en alturas, primeros auxilios y diferentes programas de capacitación especializada, disponibles de acuerdo con los requisitos y características de cada formación.',
+    'Desde Villavicencio atendemos participantes y organizaciones del Meta y los Llanos Orientales, combinando formación presencial y herramientas educativas virtuales para facilitar el acceso a programas de actualización y capacitación.',
+    'En SERVIAL promovemos una formación orientada al desarrollo de competencias, la prevención de riesgos y el cumplimiento de la normativa aplicable en Colombia.',
+  ],
+  localTitulo: 'Servicios de Capacitación en Villavicencio, Meta',
+  localTexto:
+    'SERVIAL Colombia está ubicado en Villavicencio y ofrece programas de formación para personas y empresas de la ciudad, el departamento del Meta y los Llanos Orientales.',
+  localDireccion: 'Calle 37B #19A-65, barrio Jordán, Villavicencio, Meta.',
+  localTelefono: '321 303 9595',
+  localEmail: 'info@servial.com.co',
+  faqTitulo: 'Preguntas frecuentes',
+  faq: SERVIAL_HUB_FAQ,
+  tarjetas: SERVIAL_HUB_TARJETAS,
+  heroImagenAlt: 'Cursos y servicios de capacitación SERVIAL Colombia',
+  heroImagenPrompt:
+    'Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Grupo diverso de conductores y trabajadores en capacitación de seguridad vial y transporte, ambiente profesional y moderno. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua.',
+  heroStats: ['Villavicencio, Meta', 'Llanos Orientales', 'Personas y empresas'],
+  formacionImagenUrl: '',
+  formacionImagenAlt: 'Capacitación en seguridad vial en Villavicencio',
+  formacionImagen2Url: '',
+  formacionImagen2Alt: 'Cursos para conductores y empresas en Villavicencio Meta',
 };
 
 export const SERVIAL_PORTAFOLIO_MENU_LABEL = 'Nuestros servicios';

@@ -77,12 +77,8 @@ function buildEvidenciaCap() {
     },
     filename: (req, file, cb) => {
       const clase = req.claseEvidencia;
-      const id = clase?._id ? String(clase._id) : 'clase';
-      const ref = clase?.horaInicio || clase?.fechaClase || new Date();
-      const ts = formatTsInicio(ref);
-      let ext = path.extname(file.originalname || '').toLowerCase();
-      if (!ext || ext.length > 6) ext = '.jpg';
-      cb(null, `${id}_${ts}${ext}`);
+      const id = clase?._id ? String(clase._id).slice(-8) : 'clase';
+      cb(null, `${id}_${Date.now().toString(36)}.jpg`);
     },
   });
   return multer({
@@ -107,13 +103,8 @@ function buildEvidenciaCapJornadaAdicional() {
       ensureDir(dest);
       cb(null, dest);
     },
-    filename: (_req, file, cb) => {
-      let ext = path.extname(file.originalname || '').toLowerCase();
-      if (ext === '.jpeg') ext = '.jpg';
-      if (ext !== '.jpg' && ext !== '.png') ext = '.jpg';
-      const stem = path.basename(file.originalname || 'foto', path.extname(file.originalname || ''));
-      const safe = String(stem || 'foto').replace(/[^\w.\-]+/g, '_').slice(0, 40) || 'foto';
-      cb(null, `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}${ext}`);
+    filename: (_req, _file, cb) => {
+      cb(null, `${Date.now().toString(36)}_${Math.round(Math.random() * 1e4)}.jpg`);
     },
   });
   return multer({
@@ -368,6 +359,8 @@ module.exports = {
   aulaVirtualExamenTeorico: buildPdf('aula-virtual-examen-teorico', 15),
   aulaVirtualMercanciasPeligrosas: buildImagen('aula-virtual-mercancias-peligrosas', 8),
   aulaVirtualTrabajoEnAlturas: buildImagen('aula-virtual-trabajo-en-alturas', 8),
+  aulaVirtualManejoDefensivo: buildImagen('aula-virtual-manejo-defensivo', 8),
+  aulaVirtualPrimerosAuxilios: buildImagen('aula-virtual-primeros-auxilios', 8),
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   aulaVirtualBlogHero: buildImagen('aula-virtual-blog-hero', 8),
   aulaVirtualPqrHero: buildImagen('aula-virtual-pqr-hero', 8),

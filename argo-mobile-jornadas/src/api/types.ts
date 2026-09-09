@@ -237,6 +237,12 @@ export interface ClaseJornada {
   codMunicipioJornada?: string;
   direccionJornada?: string;
   urlforo?: string;
+  fotosEvidencia?: Array<{
+    _id?: string;
+    url: string;
+    nombre?: string;
+    createdAt?: string;
+  }>;
   indiceClaseEnJornada?: number;
   /** Cantidad de alumnos inscritos en la clase. */
   alumnosInscritos?: number;
@@ -367,10 +373,30 @@ export interface AsistenciaResp {
 
 export interface FinalizarClaseResp {
   clase?: ClaseJornada;
+  postCierrePendiente?: boolean;
+  reproceso?: boolean;
+  message?: string;
   asistenciasRegistradas?: number;
   certificadosGenerados?: number;
   certificadosEmitidos?: Array<{
     certificado?: Record<string, unknown>;
     nombreAlumno?: string;
+    numDoc?: number;
   }>;
+}
+
+/** GET /jornadas/clases/:id/post-cierre — asistencias + certificados tras finalizar. */
+export interface PostCierreClaseResp {
+  status: 'pending' | 'done' | 'error' | 'unknown';
+  postCierrePendiente?: boolean;
+  ok?: boolean;
+  error?: string;
+  asistenciasRegistradas?: number;
+  certificadosGenerados?: number;
+  certificadosEmitidos?: Array<{
+    certificado?: Record<string, unknown>;
+    nombreAlumno?: string;
+    numDoc?: number;
+  }>;
+  message?: string;
 }

@@ -189,22 +189,43 @@
             <div class="cm-panel cm-evidencia">
               <h3 class="clase-modal-section">Evidencia fotográfica</h3>
               <div class="evidencia-foto-panel compact">
-                @if (claseActiva()?.urlforo) {
-                  <img
-                    [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
-                    alt="Evidencia de clase"
-                    class="evidencia-preview" />
-                } @else {
-                  <p class="hint hint-compact">Sin foto cargada.</p>
+                @if (!fotosEvidenciaClaseActiva().length) {
+                  <p class="hint hint-compact">Sin fotos cargadas. Puede agregar varias (hasta 8).</p>
                 }
-                <label class="evidencia-upload">
+                @if (fotosEvidenciaClaseActiva().length) {
+                  <div class="evidencia-fotos-grid">
+                    @for (f of fotosEvidenciaClaseActiva(); track f._id || f.url) {
+                      <figure class="evidencia-fotos-item">
+                        <a [href]="urlFotoEvidencia(f.url)" target="_blank" rel="noopener noreferrer">
+                          <img [src]="urlFotoEvidencia(f.url)" [alt]="f.nombre || 'Evidencia'" />
+                        </a>
+                        <button
+                          type="button"
+                          class="evidencia-quitar"
+                          (click)="quitarFotoEvidenciaClase(f._id || f.url)"
+                          [disabled]="subiendoFotoEvidencia()">
+                          Quitar
+                        </button>
+                      </figure>
+                    }
+                  </div>
+                }
+                <label class="evidencia-upload" [class.disabled]="fotosEvidenciaClaseActiva().length >= 8">
                   <input
                     type="file"
-                    accept="image/*"
-                    capture="environment"
+                    accept="image/jpeg,image/png,image/jpg"
+                    multiple
                     (change)="onFotoEvidenciaSelected($event)"
-                    [disabled]="subiendoFotoEvidencia()" />
-                  <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
+                    [disabled]="subiendoFotoEvidencia() || fotosEvidenciaClaseActiva().length >= 8" />
+                  <span>{{
+                    subiendoFotoEvidencia()
+                      ? 'Subiendo…'
+                      : fotosEvidenciaClaseActiva().length >= 8
+                        ? 'Máximo 8 fotos'
+                        : fotosEvidenciaClaseActiva().length
+                          ? '📷 Agregar otra foto'
+                          : '📷 Cargar foto'
+                  }}</span>
                 </label>
               </div>
             </div>

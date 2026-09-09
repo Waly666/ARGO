@@ -358,6 +358,10 @@
   <section class="psb-card">
     <h3 class="psb-card__title">Seguridad y gestión del riesgo</h3>
     <label class="psb-field psb-field--plain">
+      <span>Título de la sección (H2)</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.seguridadTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
       <span>Vehículos — título</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.vehiculosTitulo" />
     </label>
@@ -472,7 +476,65 @@
   </section>
 
   <section class="psb-card">
+    <h3 class="psb-card__title">SEO local e inscripciones</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título bloque Villavicencio (H2)</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto bloque Villavicencio</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="mercanciasPeligrosas.localTexto"></textarea>
+    </label>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Ubicación</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localUbicacion" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Teléfono</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTelefono" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Atención</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localAtencion" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Título inscripciones (H2)</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto inscripciones</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.inscripcionesTexto"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón consulta</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesCtaTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL botón consulta</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesCtaUrl" />
+      </label>
+    </div>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto WhatsApp</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesWhatsappTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL WhatsApp</span>
+        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesWhatsappUrl" />
+      </label>
+    </div>
+  </section>
+
+  <section class="psb-card">
     <h3 class="psb-card__title">Preguntas frecuentes</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título de la sección FAQ (H2)</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.faqTitulo" />
+    </label>
     <argo-portal-editor-faq-list [items]="mercanciasPeligrosas.faq" />
   </section>
 
@@ -614,7 +676,14 @@
           <span>Texto alternativo (accesibilidad)</span>
           <input type="text" class="psb-input" [(ngModel)]="img.alt" />
         </label>
+        <label class="psb-field psb-field--plain">
+          <span>Prompt para generar imagen (horizontal 16:9) — no sale en el sitio</span>
+          <textarea class="psb-input psb-prompt" rows="4" [(ngModel)]="img.promptImagen"></textarea>
+        </label>
         <div class="psb-imagen-slot__actions">
+          <button type="button" class="psb-btn psb-btn--ghost" (click)="copiarPrompt(img)">
+            {{ copiadoPromptId() === img.id ? 'Copiado' : 'Copiar prompt' }}
+          </button>
           <label class="psb-btn psb-btn--secondary">
             {{ uploadingId() === img.id ? 'Subiendo…' : 'Subir imagen' }}
             <input

@@ -4,9 +4,13 @@ export interface PortalHeroImagenFields {
   imagenUrl?: string;
   imagenUrlAbsoluta?: string;
   imagenAlt?: string;
+  /** Solo ERP: prompt para generar la foto. No se muestra en el portal. */
+  promptImagen?: string;
   heroImagenUrl?: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt?: string;
+  /** Solo ERP (alias en páginas con heroImagenAlt). */
+  heroImagenPrompt?: string;
 }
 
 export type PortalLandingHeroImageKey =

@@ -598,8 +598,176 @@
   }
 }
 
+.lic-card__head-text {
+  min-width: 0;
+}
+
+.lic-card__subtitulo {
+  margin: 0 0 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--av-primary, #059669);
+}
+
+.cc-text {
+  margin: 0 0 1rem;
+  max-width: 46rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.cc-metodologia-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.cc-metodologia-card {
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--cc-border);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #64748b;
+  }
+}
+
+.cc-requisitos-licencia {
+  margin: 0 0 1.25rem;
+  max-width: 44rem;
+  line-height: 1.65;
+  color: #334155;
+
+  a {
+    color: var(--av-primary, #059669);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.cc-requisitos-btn {
+  display: inline-flex;
+}
+
+.cc-seo {
+  max-width: 52rem;
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.35rem, 2.8vw, 1.75rem);
+    font-weight: 800;
+    color: var(--cc-ink);
+  }
+}
+
+.cc-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.cc-faq__item {
+  border: 1px solid var(--cc-border);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+
+  summary {
+    cursor: pointer;
+    padding: 1rem 1.15rem;
+    font-weight: 700;
+    color: var(--cc-ink);
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  p {
+    margin: 0;
+    padding: 0 1.15rem 1rem;
+    line-height: 1.65;
+    color: #64748b;
+  }
+}
+
+.cc-local {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid var(--cc-border);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  text-align: center;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+  }
+}
+
+.cc-local__datos {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  line-height: 1.65;
+  color: #475569;
+
+  li {
+    margin-bottom: 0.5rem;
+  }
+
+  a {
+    color: var(--av-primary, #059669);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.cc-local__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.cc-section--local .cc-section__head {
+  margin-bottom: 1.25rem;
+}
+
 @media (max-width: 768px) {
   .cc-invita__beneficios {
+    grid-template-columns: 1fr;
+  }
+
+  .cc-metodologia-grid {
     grid-template-columns: 1fr;
   }
 

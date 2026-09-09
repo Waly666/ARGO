@@ -23,6 +23,7 @@ export interface PortalJornadasCapacitacionLanding {
       imagenUrl: string;
       imagenUrlAbsoluta?: string;
       imagenAlt: string;
+      promptImagen?: string;
     };
 }
 
@@ -99,6 +100,7 @@ export function mergeJornadasCapacitacionLanding(
       imagenUrl: String(src.imagenUrl ?? '').trim(),
       imagenUrlAbsoluta: String(src.imagenUrlAbsoluta ?? '').trim() || undefined,
       imagenAlt: String(src.imagenAlt ?? '').trim(),
+      promptImagen: String(src.promptImagen ?? '').trim(),
     },
   };
 }

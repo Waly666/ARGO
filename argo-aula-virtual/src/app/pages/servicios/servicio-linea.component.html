@@ -1,5 +1,10 @@
 @if (servicio(); as s) {
-  <div class="fsv-page" [class.fsv-page--tech]="s.estilo === 'tech'" [class.fsv-page--academy]="s.estilo === 'academy'">
+  <div
+    class="fsv-page"
+    [class.fsv-page--tech]="s.estilo === 'tech'"
+    [class.fsv-page--academy]="s.estilo === 'academy'"
+    [class.fsv-page--aula-guion]="mostrarSeoGuion()"
+  >
     <av-portal-promo-banner-hero
       [showPhoto]="!!heroPhoto()"
       [photoUrl]="heroPhoto()"
@@ -37,6 +42,39 @@
     </av-portal-promo-banner-hero>
 
     <main>
+      @if (s.seoTextoTitulo.trim() && s.seoTextoParrafos.length) {
+        <section class="fsv-section fsv-section--seo-text" id="formacion-virtual">
+          <div class="container">
+            <div class="fsv-seo-split reveal" avRevealOnScroll>
+              <article class="fsv-seo-split__copy">
+                <header class="fsv-section-head">
+                  <p class="fsv-section-head__kicker">Formación en línea</p>
+                  <h2 class="fsv-section__title">{{ s.seoTextoTitulo }}</h2>
+                </header>
+                <div class="fsv-article__body">
+                  @for (p of s.seoTextoParrafos; track p) {
+                    <p class="fsv-article__p">{{ p }}</p>
+                  }
+                </div>
+              </article>
+              <div class="fsv-seo-split__media">
+                @if (imagenUrl(s.imagenes, s.seoTextoImagenId || 'formacion'); as imgUrl) {
+                  <figure class="fsv-media-card fsv-media-card--main">
+                    <img [src]="imgUrl" [alt]="etiquetaImagen(s.imagenes, s.seoTextoImagenId || 'formacion')" loading="lazy" />
+                  </figure>
+                } @else {
+                  <figure class="fsv-media-card fsv-media-card--main fsv-media-card--placeholder">
+                    <span class="fsv-media-card__icon" aria-hidden="true">💻</span>
+                    <p class="fsv-media-card__label">Formación virtual</p>
+                    <span class="fsv-media-card__hint">{{ etiquetaImagen(s.imagenes, s.seoTextoImagenId || 'formacion') }}</span>
+                  </figure>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
       @if (mostrarPresentacionSplit()) {
         @if (servicio(); as s) {
         <section
@@ -196,8 +234,15 @@
               <h2 class="fsv-section__title">{{ s.bloquesTitulo }}</h2>
             </header>
             <div class="fsv-catalog-grid reveal" avRevealOnScroll [revealDelay]="60">
-              @for (c of cursosCatalogo(); track c.idPrograma) {
-                <av-curso-card [curso]="c" modo="cursos" [logoUrl]="logoUrl()" />
+              @for (item of cursosCatalogoVista(); track item.curso.idPrograma) {
+                <av-curso-card
+                  [curso]="item.curso"
+                  modo="cursos"
+                  [logoUrl]="logoUrl()"
+                  [tituloOverride]="item.titulo || null"
+                  [linkRoute]="item.linkRoute || null"
+                  [btnLabelOverride]="item.btnLabel || null"
+                />
               } @empty {
                 <p class="fsv-catalog-empty">
                   No hay cursos publicados en el portal. Active «Publicado en portal» en ARGO → Aula virtual.
@@ -819,8 +864,12 @@
         <section class="fsv-section fsv-section--alt" id="pilares">
           <div class="container">
             <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
-              <p class="fsv-section-head__kicker">Metodología educativa</p>
-              <h2 class="fsv-section__title">Saber, saber hacer y ser</h2>
+              @if (s.pilaresSeccionKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ s.pilaresSeccionKicker }}</p>
+              } @else {
+                <p class="fsv-section-head__kicker">Metodología educativa</p>
+              }
+              <h2 class="fsv-section__title">{{ s.pilaresSeccionTitulo.trim() || 'Saber, saber hacer y ser' }}</h2>
             </header>
             <div class="fsv-pilares reveal" avRevealOnScroll [revealDelay]="60">
               @for (pilar of s.pilaresEducativos; track pilar.titulo) {
@@ -836,22 +885,67 @@
       }
 
       @if (s.rutaAprendizaje.length) {
-        <section class="fsv-section" id="ruta">
-          <div class="container">
-            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
-              <p class="fsv-section-head__kicker">Ruta</p>
-              <h2 class="fsv-section__title">Ruta de aprendizaje</h2>
-            </header>
-            <div class="fsv-flow fsv-flow--numbered reveal" avRevealOnScroll [revealDelay]="60">
-              @for (paso of s.rutaAprendizaje; track paso; let i = $index; let last = $last) {
-                <span class="fsv-flow__step"><em>{{ i + 1 }}.</em> {{ paso }}</span>
-                @if (!last) {
-                  <span class="fsv-flow__arrow" aria-hidden="true">→</span>
-                }
-              }
+        @if (mostrarSeoGuion() || s.rutaAprendizajeLead.trim()) {
+          <section class="fsv-section fsv-section--ruta" id="ruta">
+            <div class="container">
+              <div class="fsv-ruta reveal" avRevealOnScroll>
+                <div class="fsv-ruta__intro">
+                  <header class="fsv-section-head">
+                    <p class="fsv-section-head__kicker">{{ s.rutaAprendizajeKicker.trim() || 'Ruta' }}</p>
+                    <h2 class="fsv-section__title">{{ s.rutaAprendizajeTitulo.trim() || 'Ruta de aprendizaje' }}</h2>
+                    @if (s.rutaAprendizajeLead.trim()) {
+                      <p class="fsv-section-head__lead">{{ s.rutaAprendizajeLead }}</p>
+                    }
+                  </header>
+                  <ol class="fsv-ruta__timeline" aria-label="Pasos de la ruta de aprendizaje">
+                    @for (paso of s.rutaAprendizaje; track paso; let i = $index) {
+                      <li class="fsv-ruta__step">
+                        <span class="fsv-ruta__badge" aria-hidden="true">{{ i + 1 }}</span>
+                        <span class="fsv-ruta__label">{{ paso }}</span>
+                      </li>
+                    }
+                  </ol>
+                </div>
+                <div class="fsv-ruta__media">
+                  @if (imagenUrl(s.imagenes, s.rutaAprendizajeImagenId || 'ruta'); as imgUrl) {
+                    <figure class="fsv-ruta__frame">
+                      <img
+                        [src]="imgUrl"
+                        [alt]="etiquetaImagen(s.imagenes, s.rutaAprendizajeImagenId || 'ruta')"
+                        loading="lazy"
+                        width="560"
+                        height="640"
+                      />
+                    </figure>
+                  } @else {
+                    <figure class="fsv-ruta__frame fsv-ruta__frame--placeholder" aria-hidden="true">
+                      <span>🧭</span>
+                      <p>{{ etiquetaImagen(s.imagenes, s.rutaAprendizajeImagenId || 'ruta') }}</p>
+                    </figure>
+                  }
+                  <div class="fsv-ruta__glow" aria-hidden="true"></div>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        } @else {
+          <section class="fsv-section" id="ruta">
+            <div class="container">
+              <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+                <p class="fsv-section-head__kicker">{{ s.rutaAprendizajeKicker.trim() || 'Ruta' }}</p>
+                <h2 class="fsv-section__title">{{ s.rutaAprendizajeTitulo.trim() || 'Ruta de aprendizaje' }}</h2>
+              </header>
+              <div class="fsv-flow fsv-flow--numbered reveal" avRevealOnScroll [revealDelay]="60">
+                @for (paso of s.rutaAprendizaje; track paso; let i = $index; let last = $last) {
+                  <span class="fsv-flow__step"><em>{{ i + 1 }}.</em> {{ paso }}</span>
+                  @if (!last) {
+                    <span class="fsv-flow__arrow" aria-hidden="true">→</span>
+                  }
+                }
+              </div>
+            </div>
+          </section>
+        }
       }
 
       @if (s.resultadoIconos.length) {
@@ -962,6 +1056,48 @@
         </section>
       }
 
+      @if (s.localTitulo.trim()) {
+        <section class="fsv-section" id="ubicacion">
+          <div class="container">
+            <article class="fsv-highlight reveal" avRevealOnScroll>
+              <h2 class="fsv-section__title">{{ s.localTitulo }}</h2>
+              @if (s.localTexto.trim()) {
+                <p class="fsv-highlight__text">{{ s.localTexto }}</p>
+              }
+            </article>
+          </div>
+        </section>
+      }
+
+      @if (s.enlacesRelacionados.length) {
+        <section class="fsv-section" id="enlaces-relacionados">
+          <div class="container">
+            <av-portal-enlaces-relacionados
+              [titulo]="s.enlacesRelacionadosTitulo"
+              [enlaces]="s.enlacesRelacionados"
+            />
+          </div>
+        </section>
+      }
+
+      @if (s.faq.length) {
+        <section class="fsv-section fsv-section--alt" id="faq">
+          <div class="container">
+            <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+              <h2 class="fsv-section__title">{{ s.faqTitulo || 'Preguntas frecuentes' }}</h2>
+            </header>
+            <div class="fsv-faq reveal" avRevealOnScroll [revealDelay]="40">
+              @for (item of s.faq; track item.pregunta) {
+                <details class="fsv-faq__item">
+                  <summary>{{ item.pregunta }}</summary>
+                  <p>{{ item.respuesta }}</p>
+                </details>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
       <section class="fsv-section" id="contacto">
         <div class="container">
           @if (s.cierreQuote.trim()) {
@@ -971,8 +1107,13 @@
             <h2>{{ s.ctaTitulo }}</h2>
             <p>{{ s.ctaLead }}</p>
             <div class="fsv-cta__actions">
-              <a class="btn btn-primary" routerLink="/acerca" fragment="contacto">{{ s.ctaBtnPrincipal }}</a>
-              <a class="btn btn-outline" routerLink="/servicios">{{ s.ctaBtnSecundario }}</a>
+              @if (mostrarSeoGuion()) {
+                <a class="btn btn-primary" routerLink="/cursos">{{ s.ctaBtnPrincipal }}</a>
+                <a class="btn btn-outline" routerLink="/aula">{{ s.ctaBtnSecundario }}</a>
+              } @else {
+                <a class="btn btn-primary" routerLink="/acerca" fragment="contacto">{{ s.ctaBtnPrincipal }}</a>
+                <a class="btn btn-outline" routerLink="/servicios">{{ s.ctaBtnSecundario }}</a>
+              }
             </div>
           </article>
         </div>

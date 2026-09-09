@@ -43,6 +43,7 @@ import {
   PortalFinstruvialMedioTipoUi,
   PortalFinstruvialMediosPanelComponent,
 } from './portal-finstruvial-medios-panel.component';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-finstruvial-servicios-editor',
@@ -53,6 +54,7 @@ import {
     PortalPromoHeroFieldsEditorComponent,
     PortalFinstruvialEditorSeccionComponent,
     PortalFinstruvialMediosPanelComponent,
+    PortalEditorImagenPromptComponent,
   ],
   templateUrl: './portal-finstruvial-servicios-editor.component.html',
   styleUrl: './portal-finstruvial-servicios-editor.component.scss',
@@ -695,5 +697,19 @@ export class PortalFinstruvialServiciosEditorComponent {
     const idx = pagina.imagenes.findIndex((i) => i.id === imagenId);
     if (idx < 0) return;
     pagina.imagenes[idx] = { ...pagina.imagenes[idx], url, urlAbsoluta: urlAbsoluta || '' };
+  }
+
+  onHubHeroStatsChange(value: string): void {
+    this.finstruvialServicios.hub.heroStats = value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  onHubSeoTextoParrafosChange(value: string): void {
+    this.finstruvialServicios.hub.seoTextoParrafos = value
+      .split(/\n\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 }

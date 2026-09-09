@@ -6,11 +6,12 @@ import { finalize } from 'rxjs';
 import { PortalPopupConfig } from '../../core/constants/portal-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-popup-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent],
   templateUrl: './portal-popup-editor.component.html',
   styleUrl: './portal-popup-editor.component.scss',
 })

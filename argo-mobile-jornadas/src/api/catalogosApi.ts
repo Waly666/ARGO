@@ -1,4 +1,5 @@
 import { apiFetch } from './client';
+import { ACTORES_VIALES, type CatalogOption } from '../catalogos/alumnoCatalogos';
 
 export type MunicipioDivipola = {
   codMunicipio: string;
@@ -103,4 +104,20 @@ export function buscarTitulaciones(nivel: string, q = '', limit = 80) {
   if (String(nivel || '').trim()) params.set('nivel', String(nivel).trim());
   if (q.trim()) params.set('q', q.trim());
   return apiFetch<TitulacionColombia[]>(`/catalogos/titulaciones/buscar?${params.toString()}`);
+}
+
+export async function fetchActoresViales(): Promise<CatalogOption[]> {
+  try {
+    const rows = await apiFetch<Record<string, unknown>[]>('/catalogos/actorVial');
+    const mapped = (rows || [])
+      .map((r) => {
+        const value = String(r.idActorVial ?? r.id ?? r.codigo ?? '').trim();
+        const label = String(r.descripcion ?? r.nombre ?? value).trim();
+        return { value, label };
+      })
+      .filter((o) => o.value);
+    return mapped.length ? mapped : ACTORES_VIALES;
+  } catch {
+    return ACTORES_VIALES;
+  }
 }

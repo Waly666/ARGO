@@ -11,6 +11,8 @@ const PORTAL_SEO_PAGE_KEYS = [
   'examenTeorico',
   'mercanciasPeligrosas',
   'trabajoEnAlturas',
+  'manejoDefensivo',
+  'primerosAuxilios',
   'serviciosHub',
   'servicio_aulaVirtual',
   'servicio_peridata',

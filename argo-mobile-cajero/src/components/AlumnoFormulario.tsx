@@ -45,6 +45,7 @@ import type { SoportePago } from '../utils/pago';
 import { mensajeErrorApi } from '../utils/pago';
 import { capturarFotoAlumno } from '../utils/imageCapture';
 import { alumnoDetalleToForm } from '../utils/alumnoFormMap';
+import { edadCalculadaTexto, grupoEdadCalculadoTexto } from '../utils/edadHelpers';
 import { urlArchivoAlumno } from '../utils/documentHtml';
 
 export type AlumnoFormGuardado = {
@@ -80,6 +81,7 @@ function emptyForm(): AlumnoCrearDto {
     regimenSalud: '',
     nivelFormacion: '',
     ocupacion: '',
+    actorVial: '',
     discapacidad: '9',
     munOrigen: '',
     codMunicipio: '',
@@ -215,6 +217,7 @@ export function AlumnoFormulario({
       regimenesSalud: mapCatalogoOpciones(catalogos.regimenesSalud),
       nivelesFormacion: mapCatalogoOpciones(catalogos.nivelesFormacion),
       ocupaciones: mapCatalogoOpciones(catalogos.ocupaciones),
+      actoresViales: mapCatalogoOpciones(catalogos.actoresViales),
       discapacidades: mapCatalogoOpciones(catalogos.discapacidades),
       multi: mapCatalogoOpciones(catalogos.multiCulturalidades),
       alertaFreq: [
@@ -259,6 +262,14 @@ export function AlumnoFormulario({
     }
     if (!n1 || !a1) {
       Alert.alert('Datos obligatorios', 'Primer nombre y primer apellido son requeridos.');
+      return;
+    }
+    if (!form.fechaNac?.trim()) {
+      Alert.alert('Fecha de nacimiento', 'Indique la fecha de nacimiento.');
+      return;
+    }
+    if (!String(form.actorVial || '').trim()) {
+      Alert.alert('Actor vial', 'Seleccione el actor vial.');
       return;
     }
     if (duplicado?.existe) {
@@ -426,7 +437,27 @@ export function AlumnoFormulario({
         </View>
       </FormSection>
 
-      <FormSection title="Datos personales" subtitle="Salud, formación, jornada y ocupación" icon="body-outline" tone="neutral">
+      <FormSection title="Datos personales" subtitle="Edad, grupo de edad, salud, formación, jornada, ocupación y actor vial" icon="body-outline" tone="neutral">
+        <IconInput
+          label="Edad"
+          icon="calendar-outline"
+          value={edadCalculadaTexto(form.fechaNac)}
+          editable={false}
+          autoCapitalize="none"
+        />
+        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+          Se calcula sola con la fecha de nacimiento.
+        </ScaledText>
+        <IconInput
+          label="Grupo de edad"
+          icon="people-outline"
+          value={grupoEdadCalculadoTexto(form.fechaNac)}
+          editable={false}
+          autoCapitalize="none"
+        />
+        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+          Primera infancia 0–5, infancia / niñez 6–13, juventud 14–28 (Ley 1622), adultez 29–59, personas mayores 60+.
+        </ScaledText>
         <CatalogoSelectField label="Género" value={form.genero || ''} options={opts.generos} onChange={(v) => patch('genero', v)} />
         <CatalogoSelectField label="Tipo de sangre" value={form.tipoSangre || ''} options={opts.tiposSangre} onChange={(v) => patch('tipoSangre', v)} />
         <CatalogoSelectField label="Jornada" value={form.jornada || ''} options={opts.jornadas} onChange={(v) => patch('jornada', v)} />
@@ -435,6 +466,7 @@ export function AlumnoFormulario({
         <CatalogoSelectField label="Régimen de salud" value={form.regimenSalud || ''} options={opts.regimenesSalud} onChange={(v) => patch('regimenSalud', v)} />
         <CatalogoSelectField label="Nivel de formación" value={form.nivelFormacion || ''} options={opts.nivelesFormacion} onChange={(v) => patch('nivelFormacion', v)} />
         <CatalogoSelectField label="Ocupación" value={form.ocupacion || ''} options={opts.ocupaciones} onChange={(v) => patch('ocupacion', v)} />
+        <CatalogoSelectField label="Actor vial" value={form.actorVial || ''} options={opts.actoresViales} onChange={(v) => patch('actorVial', v)} required />
       </FormSection>
 
       <FormSection title="Contacto y ubicación" subtitle="Correo, celular, dirección, departamento y municipio de origen" icon="call-outline" tone="accent">

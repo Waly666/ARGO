@@ -8,6 +8,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import {
@@ -23,7 +24,7 @@ import {
 @Component({
   selector: 'av-examen-teorico',
   standalone: true,
-  imports: [CommonModule, RouterLink, PortalIconComponent, PortalPromoBannerHeroComponent],
+  imports: [CommonModule, RouterLink, PortalIconComponent, PortalEnlacesRelacionadosComponent, PortalPromoBannerHeroComponent],
   templateUrl: './examen-teorico.component.html',
   styleUrl: './examen-teorico.component.scss',
 })

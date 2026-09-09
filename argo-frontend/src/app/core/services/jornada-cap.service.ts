@@ -595,6 +595,12 @@ export interface ClaseJornadaDto {
   instructoresPlan?: ContratacionDto['instructoresPlan'] | null;
   /** Ruta relativa bajo uploads/ (evidenciascap/{codContrato}/fotos/...). */
   urlforo?: string;
+  fotosEvidencia?: Array<{
+    _id?: string;
+    url: string;
+    nombre?: string;
+    createdAt?: string;
+  }>;
 }
 
 export interface InstructorJornadaDto {
@@ -1122,6 +1128,12 @@ export class JornadaCapService {
     const fd = new FormData();
     fd.append('foto', file);
     return this.http.post<ClaseJornadaDto>(`${this.base}/clases/${id}/foto-evidencia`, fd);
+  }
+
+  eliminarFotoEvidenciaClase(id: string, fotoId: string): Observable<ClaseJornadaDto> {
+    return this.http.delete<ClaseJornadaDto>(
+      `${this.base}/clases/${id}/foto-evidencia/${encodeURIComponent(fotoId)}`,
+    );
   }
 
   subirEvidenciaConsolidadaJornada(id: string, files: File[]): Observable<JornadaCapDto> {

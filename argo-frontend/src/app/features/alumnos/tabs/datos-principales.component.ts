@@ -1523,7 +1523,6 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     falta(vacio(f.apellido1), 'apellido1', 'primer apellido', identificacion);
     falta(vacio(f.apellido2), 'apellido2', 'segundo apellido', identificacion);
     falta(vacio(f.nombre1), 'nombre1', 'primer nombre', identificacion);
-    falta(vacio(f.nombre2), 'nombre2', 'segundo nombre', identificacion);
     falta(
       calcularEdad(f.fechaNac) == null,
       'fechaNac',

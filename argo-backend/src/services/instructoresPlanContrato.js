@@ -163,8 +163,11 @@ function secuenciaParaJornada(secuenciaBase, n) {
 }
 
 /** N cupos: cicla los pares intercalados. Nunca mezcla el programa de un instructor con otro. */
-function cuposAutogeneracionClases(plan, n) {
-  return secuenciaParaJornada(secuenciaParesIntercalada(paresInstructorPrograma(plan)), n);
+function cuposAutogeneracionClases(plan, n, programasPermitidos) {
+  return secuenciaParaJornada(
+    secuenciaParesIntercalada(paresInstructorPrograma(plan, programasPermitidos)),
+    n,
+  );
 }
 
 function programaPropioDelInstructor(row, idPrograma) {

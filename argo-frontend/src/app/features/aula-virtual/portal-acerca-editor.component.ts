@@ -12,13 +12,14 @@ import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/a
 import { environment } from '../../../environments/environment';
 import { addStringItem, removeAt } from './portal-landing-editor-helpers';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 type AcercaBloque = 'hero' | 'quienes' | 'contacto' | 'valores' | 'cta';
 
 @Component({
   selector: 'argo-portal-acerca-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent],
+  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent, PortalEditorImagenPromptComponent],
   templateUrl: './portal-acerca-editor.component.html',
   styleUrl: './portal-acerca-editor.component.scss',
 })

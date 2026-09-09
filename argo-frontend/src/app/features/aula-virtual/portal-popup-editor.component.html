@@ -40,6 +40,14 @@
     <span>Texto alternativo (accesibilidad)</span>
     <input type="text" class="psb-input" [(ngModel)]="popup.imagenAlt" placeholder="Aviso promocional" />
   </label>
+  <argo-portal-editor-imagen-prompt
+    [promptImagen]="popup.promptImagen || ''"
+    (promptImagenChange)="popup.promptImagen = $event"
+    [alt]="popup.imagenAlt"
+    etiqueta="Popup del sitio"
+    (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+    (copyError)="avNotice.emit({ message: $event, error: true })"
+  />
 
   <div class="ppe-grid">
     <label class="psb-check">

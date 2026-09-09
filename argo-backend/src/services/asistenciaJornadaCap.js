@@ -351,7 +351,9 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
  */
 async function emitirCertificadosAsistentesClase(req, claseDoc, opts = {}) {
   const clase = claseDoc?.toObject ? claseDoc.toObject() : { ...claseDoc };
-  const asistencias = await AsisClasJorCap.find({ idclaseJornada: clase._id }).lean();
+  const asistencias = await AsisClasJorCap.find({
+    $or: [{ idclaseJornada: clase._id }, { idclaseJornada: String(clase._id) }],
+  }).lean();
   if (!asistencias.length) {
     return { certificadosNuevos: 0, certificadosEmitidos: [], evaluados: 0 };
   }

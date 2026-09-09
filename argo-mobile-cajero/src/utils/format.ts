@@ -56,6 +56,7 @@ export function aMayusculas(val?: string | null): string {
 /** Campos de ficha alumno que no se fuerzan a mayúsculas (códigos, fechas, dígitos). */
 export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
   'fechaNac',
+  'actorVial',
   'numDoc',
   'celular',
   'alertaPagoFrecuencia',

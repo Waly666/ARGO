@@ -16,17 +16,37 @@ import {
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig, CursoVirtual } from '../../core/models';
+import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { youtubeEmbedUrl } from '../../core/youtube-embed.util';
 import { resolveUploadUrl } from '../../core/upload-url.util';
-import { PortalFinstruvialServicioBloque, PortalFinstruvialServicioImagen, PortalFinstruvialServicioMedio } from '../../core/constants/finstruvial-servicio-landing.types';
+import {
+  PortalFinstruvialServicioBloque,
+  PortalFinstruvialServicioCatalogoOverride,
+  PortalFinstruvialServicioImagen,
+  PortalFinstruvialServicioMedio,
+} from '../../core/constants/finstruvial-servicio-landing.types';
+
+export interface ServicioCatalogoCardView {
+  curso: CursoVirtual;
+  titulo?: string;
+  linkRoute?: string;
+  btnLabel?: string;
+}
 
 @Component({
   selector: 'av-servicio-linea',
   standalone: true,
-  imports: [CommonModule, RouterLink, PortalPromoBannerHeroComponent, CursoCardComponent, RevealOnScrollDirective],
+  imports: [
+    CommonModule,
+    RouterLink,
+    PortalPromoBannerHeroComponent,
+    PortalEnlacesRelacionadosComponent,
+    CursoCardComponent,
+    RevealOnScrollDirective,
+  ],
   templateUrl: './servicio-linea.component.html',
   styleUrl: './servicio-linea.component.scss',
 })
@@ -145,6 +165,22 @@ export class ServicioLineaComponent implements OnInit {
     // Aula Virtual: mismos cursos y portadas que /cursos (catálogo del ERP).
     return s.slug === 'aulaVirtual' || s.usarCatalogoCursos === true;
   });
+
+  cursosCatalogoVista = computed((): ServicioCatalogoCardView[] => {
+    const s = this.servicio();
+    const overrides = s?.catalogoOverrides || [];
+    return this.cursosCatalogo().map((curso) => {
+      const match = this.catalogoOverridePara(curso.nombreProg, overrides);
+      return {
+        curso,
+        titulo: match?.titulo,
+        linkRoute: match?.url,
+        btnLabel: match?.cta,
+      };
+    });
+  });
+
+  mostrarSeoGuion = computed(() => Number(this.servicio()?.guionVersion) >= 1);
 
   mostrarModulosPlataforma = computed(() => {
     const s = this.servicio();
@@ -304,5 +340,23 @@ export class ServicioLineaComponent implements OnInit {
   enlaceHref(url: string): string | null {
     const u = String(url || '').trim();
     return this.enlaceEsExterno(u) ? u : null;
+  }
+
+  private catalogoOverridePara(
+    nombre: string,
+    overrides: PortalFinstruvialServicioCatalogoOverride[],
+  ): PortalFinstruvialServicioCatalogoOverride | null {
+    const norm = String(nombre || '')
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '')
+      .toLowerCase();
+    for (const item of overrides) {
+      const patron = String(item.patron || '')
+        .normalize('NFD')
+        .replace(/\p{M}/gu, '')
+        .toLowerCase();
+      if (patron && norm.includes(patron)) return item;
+    }
+    return null;
   }
 }

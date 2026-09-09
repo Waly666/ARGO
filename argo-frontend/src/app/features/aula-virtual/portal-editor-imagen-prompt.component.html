@@ -1,0 +1,16 @@
+<label class="psb-field psb-field--plain peip">
+  <span>Prompt para generar imagen (horizontal 16:9) — no sale en el sitio</span>
+  <textarea
+    class="psb-input psb-prompt"
+    rows="4"
+    [ngModel]="promptImagen"
+    (ngModelChange)="onPromptChange($event)"
+    [placeholder]="sugerenciaPrompt()"
+  ></textarea>
+  @if (!promptImagen.trim() && sugerenciaPrompt()) {
+    <p class="peip__hint">Si el campo está vacío, «Copiar prompt» usa la sugerencia del texto alternativo.</p>
+  }
+</label>
+<button type="button" class="psb-btn psb-btn--ghost peip__copy" (click)="copiar()">
+  {{ copiado() ? 'Copiado' : 'Copiar prompt' }}
+</button>

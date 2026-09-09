@@ -54,6 +54,7 @@ import {
 } from '../../core/utils/comprobante-alarma.helpers';
 import { ymdLocal } from '../jornadas/jornada-calendario.util';
 import { etiquetaEdad } from '../../core/utils/edad.helpers';
+import { AlumnoJornadaQrThumbComponent } from './alumno-jornada-qr-thumb.component';
 type VistaAlumnos = VistaLista;
 type SortColAlumnos =
   | 'fechaReg'
@@ -124,6 +125,7 @@ function saveSortPrefs(storageKey: string, col: SortColAlumnos, dir: SortDir): v
   standalone: true,
   imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent,
     ArgoDateInputComponent,
+    AlumnoJornadaQrThumbComponent,
   ],
   templateUrl: './alumnos-lista.component.html',
   styleUrls: ['./alumnos-lista.component.scss'],

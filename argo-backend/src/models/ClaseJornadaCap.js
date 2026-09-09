@@ -13,6 +13,14 @@ const ClaseJornadaCapSchema = new mongoose.Schema(
     fechaClase: { type: Date, required: true, index: true },
     /** Ruta relativa: evidenciascap/{codContrato}/fotos/{idClase}_{YYYYMMDDHHmmss}.ext */
     urlforo: { type: String, trim: true, default: '' },
+    /** Varias fotos de evidencia de la clase. urlforo se mantiene como la primera (compat.). */
+    fotosEvidencia: [
+      {
+        url: { type: String, trim: true, required: true },
+        nombre: { type: String, trim: true, default: '' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
     horaInicio: { type: Date, default: null },
     horaFin: { type: Date, default: null },
     /** true: las horas las define el usuario y los botones iniciar/finalizar no las sobrescriben. */

@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import type { CatalogoItem } from './domain';
 import {
+  ACTOR_VIAL_DEF,
   DISCAPACIDADES_DEF,
   ESTADOS_CIVIL_DEF,
   ESTRATOS_DEF,
@@ -54,6 +55,7 @@ export async function fetchCatalogosAlumno(): Promise<{
   regimenesSalud: CatalogoItem[];
   nivelesFormacion: CatalogoItem[];
   ocupaciones: CatalogoItem[];
+  actoresViales: CatalogoItem[];
   discapacidades: CatalogoItem[];
   multiCulturalidades: CatalogoItem[];
 }> {
@@ -68,6 +70,7 @@ export async function fetchCatalogosAlumno(): Promise<{
     regimenesSalud,
     nivelesFormacion,
     ocupaciones,
+    actoresViales,
     discapacidades,
     multiCulturalidades,
   ] = await Promise.all([
@@ -80,6 +83,7 @@ export async function fetchCatalogosAlumno(): Promise<{
     catalogo('catRegimenSalud', REGIMEN_SALUD_DEF),
     catalogo('nivelFormacion', NIVEL_FORMACION_DEF),
     catalogo('ocupacion', OCUPACIONES_DEF),
+    catalogo('actorVial', ACTOR_VIAL_DEF),
     catalogo('discapacidad', DISCAPACIDADES_DEF),
     catalogo('multiCulturalidad', MULTICULTURALIDAD_DEF),
   ]);
@@ -93,6 +97,7 @@ export async function fetchCatalogosAlumno(): Promise<{
     regimenesSalud,
     nivelesFormacion,
     ocupaciones,
+    actoresViales,
     discapacidades,
     multiCulturalidades,
   };

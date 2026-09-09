@@ -7,6 +7,8 @@ import {
   FinstruvialServicioSlug,
 } from './constants/finstruvial-servicios.constants';
 import { mergeFinstruvialServicios } from './constants/finstruvial-servicios-defaults';
+import { mergePortafolioServicios, portafolioServiciosEsServial } from './portafolio-servicios.util';
+import { mergeCursosConduccionLanding } from '../pages/cursos-conduccion/cursos-conduccion-content';
 import {
   DEFAULT_CEA_CORTO,
   DEFAULT_CEA_NOMBRE,
@@ -41,7 +43,7 @@ import { resolvePortalSeoPage, PortalSeoPageKey, finstruvialServicioSeoKey } fro
 type PageMetaOpts = {
   pageTitle: string;
   description: string;
-  keywords: string;
+  keywords?: string;
   url: string;
   image: string;
   siteName?: string;
@@ -266,31 +268,90 @@ export class PortalSeoService {
   }
 
   applyCursosConduccion(config: PortalConfig | null) {
-    const cc = config?.landing?.cursosConduccion;
-    const titulo = cc?.tituloPrincipal?.trim() || 'Cursos de conducción';
-    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const cc = mergeCursosConduccionLanding(config?.landing?.cursosConduccion);
+    const esServial = portafolioServiciosEsServial(config?.site?.tema);
+    const h1 = cc.tituloPrincipal?.trim() || 'Cursos de Conducción en Villavicencio';
+    const fallbackTitle = esServial
+      ? 'Cursos de Conducción en Villavicencio | SERVIAL Colombia'
+      : `${h1} | ${SEO_BRAND}`;
     const fallbackDescription = this.truncate(
-      cc?.textoInstitucional?.trim() ||
-        'Categorías de licencia de conducción y resoluciones del Centro de Enseñanza Automovilística.',
+      cc.textoInstitucional?.trim() ||
+        'Categorías de licencia de conducción y formación teórica, práctica y de taller en el Centro de Enseñanza Automovilística.',
     );
+    const fallbackKeywords = esServial
+      ? 'curso de conducción Villavicencio, cursos de conducción Villavicencio, escuela de conducción Villavicencio, CEA Villavicencio, curso A2 Villavicencio, curso B2 Villavicencio, curso C1 Villavicencio, curso C2 Villavicencio, curso C3 Villavicencio, licencia de conducción Villavicencio, SERVIAL Colombia'
+      : `${BLOG_SEO_KEYWORDS}, cursos conducción, licencia conducción, categorías licencia`;
     const url = this.pageUrl('/cursos-conduccion');
+    const heroUrl = cc.hero.imagenUrlAbsoluta?.trim() || cc.hero.imagenUrl?.trim() || '';
+    const image = heroUrl || this.defaultImage(config);
     const seo = this.resolvedSeo(config, 'cursosConduccion', {
       pageTitle: fallbackTitle,
       description: fallbackDescription,
-      keywords: `${BLOG_SEO_KEYWORDS}, cursos conducción, licencia conducción, categorías licencia`,
+      keywords: fallbackKeywords,
     });
+    const faqs = Array.isArray(cc.faq) ? cc.faq.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) : [];
+    const categorias = cc.licencias?.items?.filter((i) => i.titulo?.trim()) || [];
+    const org = this.orgName(config);
+    const jsonLd: Record<string, unknown>[] = [
+      ...this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Cursos de conducción', path: '/cursos-conduccion' },
+      ]),
+    ];
+    if (esServial) {
+      jsonLd.push(
+        {
+          '@type': 'EducationalOrganization',
+          name: org,
+          url: this.pageUrl('/'),
+          telephone: cc.localTelefono?.trim() || config?.telefono?.trim() || undefined,
+          address: this.postalAddress(config),
+        },
+        {
+          '@type': 'LocalBusiness',
+          name: org,
+          url,
+          telephone: cc.localTelefono?.trim() || config?.telefono?.trim() || undefined,
+          address: this.postalAddress(config),
+          areaServed: [
+            { '@type': 'City', name: SEO_LOCALITY },
+            { '@type': 'AdministrativeArea', name: SEO_REGION },
+            { '@type': 'Country', name: 'Colombia' },
+          ],
+        },
+      );
+      if (categorias.length) {
+        jsonLd.push({
+          '@type': 'ItemList',
+          name: cc.licencias.titulo || 'Cursos de Conducción Disponibles',
+          itemListElement: categorias.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.titulo,
+            url: this.pageUrl('/cursos-conduccion'),
+          })),
+        });
+      }
+      if (faqs.length) {
+        jsonLd.push({
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((item) => ({
+            '@type': 'Question',
+            name: item.pregunta,
+            acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+          })),
+        });
+      }
+    }
     this.applyPageMeta({
       pageTitle: seo.pageTitle,
       description: this.truncate(seo.description),
       keywords: seo.keywords,
       url,
-      image: this.defaultImage(config),
+      image,
       siteName: SEO_BRAND,
       themeColor: this.themeColor(config),
-      jsonLd: this.breadcrumbJsonLd(url, [
-        { name: 'Inicio', path: '/' },
-        { name: 'Cursos conducción', path: '/cursos-conduccion' },
-      ]),
+      jsonLd,
     });
   }
 
@@ -326,81 +387,376 @@ export class PortalSeoService {
 
   applyMercanciasPeligrosas(config: PortalConfig | null) {
     const mp = config?.landing?.mercanciasPeligrosas;
-    const titulo =
-      [mp?.titulo, mp?.tituloLinea2].filter(Boolean).join(' ') || 'Mercancías peligrosas en Colombia';
-    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
-    const fallbackDescription = this.truncate(
+    const h1 =
+      [mp?.titulo, mp?.tituloLinea2].filter(Boolean).join(' ').trim() ||
+      'Curso de Mercancías Peligrosas en Villavicencio, Meta';
+    const fallbackTitle = 'Curso Mercancías Peligrosas Villavicencio | SERVIAL';
+    const fallbackDescription =
       mp?.heroLead?.trim() ||
-        mp?.subtitulo?.trim() ||
-        'Normativa, clasificación, documentación y responsabilidades del transporte de mercancías peligrosas en Colombia.',
-    );
+      'Curso de mercancías peligrosas en Villavicencio, Meta. Capacitación para conductores y empresas con SERVIAL Colombia. Atención en los Llanos Orientales.';
     const url = this.pageUrl('/mercancias-peligrosas');
+    const hero = mp?.imagenes?.find((img) => img.id === 'hero');
+    const heroUrl = hero?.urlAbsoluta?.trim() || hero?.url?.trim() || '';
+    const image = heroUrl || this.defaultImage(config);
     const seo = this.resolvedSeo(config, 'mercanciasPeligrosas', {
       pageTitle: fallbackTitle,
-      description: fallbackDescription,
-      keywords: `${BLOG_SEO_KEYWORDS}, mercancías peligrosas, Decreto 1079, NTC 1692, transporte Colombia, MinTransporte`,
+      description: this.truncate(fallbackDescription),
+      keywords: '',
     });
+    const faqs = Array.isArray(mp?.faq) ? mp.faq.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) : [];
+    const org = this.orgName(config);
     this.applyPageMeta({
       pageTitle: seo.pageTitle,
       description: this.truncate(seo.description),
       keywords: seo.keywords,
       url,
-      image: this.defaultImage(config),
+      image,
       siteName: SEO_BRAND,
       themeColor: this.themeColor(config),
-      jsonLd: this.breadcrumbJsonLd(url, [
-        { name: 'Inicio', path: '/' },
-        { name: 'Mercancías peligrosas', path: '/mercancias-peligrosas' },
-      ]),
+      jsonLd: [
+        ...this.breadcrumbJsonLd(url, [
+          { name: 'Inicio', path: '/' },
+          { name: 'Cursos', path: '/cursos' },
+          { name: h1, path: '/mercancias-peligrosas' },
+        ]),
+        {
+          '@type': 'Course',
+          name: h1,
+          description: this.truncate(seo.description, 300),
+          provider: { '@type': 'EducationalOrganization', name: org },
+          url,
+          image,
+          inLanguage: 'es-CO',
+          hasCourseInstance: {
+            '@type': 'CourseInstance',
+            courseMode: ['online', 'onsite'],
+            location: {
+              '@type': 'Place',
+              name: 'Villavicencio, Meta, Colombia',
+              address: this.postalAddress(config),
+            },
+          },
+        },
+        {
+          '@type': 'LocalBusiness',
+          name: org,
+          url,
+          telephone: config?.telefono?.trim() || mp?.localTelefono?.trim() || undefined,
+          address: this.postalAddress(config),
+          areaServed: [
+            { '@type': 'City', name: SEO_LOCALITY },
+            { '@type': 'AdministrativeArea', name: SEO_REGION },
+            { '@type': 'Country', name: 'Colombia' },
+          ],
+        },
+        ...(faqs.length
+          ? [
+              {
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((item) => ({
+                  '@type': 'Question',
+                  name: item.pregunta,
+                  acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+                })),
+              },
+            ]
+          : []),
+      ],
     });
   }
 
   applyTrabajoEnAlturas(config: PortalConfig | null) {
     const ta = config?.landing?.trabajoEnAlturas;
-    const titulo =
-      [ta?.titulo, ta?.tituloLinea2].filter(Boolean).join(' ') || 'Trabajo seguro en alturas';
-    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
-    const fallbackDescription = this.truncate(
+    const h1 =
+      [ta?.titulo, ta?.tituloLinea2].filter(Boolean).join(' ').trim() ||
+      'Curso de Trabajo Seguro en Alturas en Villavicencio, Meta';
+    const fallbackTitle = 'Curso de Trabajo en Alturas en Villavicencio | SERVIAL Colombia';
+    const fallbackDescription =
       ta?.heroLead?.trim() ||
-        ta?.subtitulo?.trim() ||
-        'Capacitación en trabajo seguro en alturas para el sector transportador: Resolución 4272, EPI y 20 módulos.',
-    );
+      'Curso de trabajo seguro en alturas en Villavicencio, Meta. Capacitación para trabajadores y empresas con SERVIAL Colombia, conforme a la normativa vigente. Atención en los Llanos Orientales.';
+    const fallbackKeywords =
+      'curso trabajo en alturas Villavicencio, trabajo seguro en alturas Villavicencio, curso de alturas Meta, capacitación trabajo en alturas Colombia, curso trabajador autorizado alturas, reentrenamiento trabajo en alturas, curso coordinador trabajo en alturas, Resolución 4272 de 2021, capacitación alturas Llanos Orientales, SERVIAL Colombia';
     const url = this.pageUrl('/trabajo-en-alturas');
+    const hero = ta?.imagenes?.find((img) => img.id === 'hero');
+    const heroUrl = hero?.urlAbsoluta?.trim() || hero?.url?.trim() || '';
+    const image = heroUrl || this.defaultImage(config);
     const seo = this.resolvedSeo(config, 'trabajoEnAlturas', {
       pageTitle: fallbackTitle,
-      description: fallbackDescription,
-      keywords: `${BLOG_SEO_KEYWORDS}, trabajo en alturas, Resolución 4272, seguridad sector transporte, EPI, Colombia`,
+      description: this.truncate(fallbackDescription),
+      keywords: fallbackKeywords,
     });
+    const faqs = Array.isArray(ta?.faq) ? ta.faq.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) : [];
+    const org = this.orgName(config);
     this.applyPageMeta({
       pageTitle: seo.pageTitle,
       description: this.truncate(seo.description),
       keywords: seo.keywords,
       url,
-      image: this.defaultImage(config),
+      image,
       siteName: SEO_BRAND,
       themeColor: this.themeColor(config),
-      jsonLd: this.breadcrumbJsonLd(url, [
-        { name: 'Inicio', path: '/' },
-        { name: 'Trabajo en alturas', path: '/trabajo-en-alturas' },
-      ]),
+      jsonLd: [
+        ...this.breadcrumbJsonLd(url, [
+          { name: 'Inicio', path: '/' },
+          { name: 'Cursos', path: '/cursos' },
+          { name: h1, path: '/trabajo-en-alturas' },
+        ]),
+        {
+          '@type': 'Course',
+          name: h1,
+          description: this.truncate(seo.description, 300),
+          provider: { '@type': 'EducationalOrganization', name: org },
+          url,
+          image,
+          inLanguage: 'es-CO',
+          hasCourseInstance: {
+            '@type': 'CourseInstance',
+            courseMode: ['online', 'onsite'],
+            location: {
+              '@type': 'Place',
+              name: 'Villavicencio, Meta, Colombia',
+              address: this.postalAddress(config),
+            },
+          },
+        },
+        {
+          '@type': 'LocalBusiness',
+          name: org,
+          url,
+          telephone: config?.telefono?.trim() || undefined,
+          address: this.postalAddress(config),
+          areaServed: [
+            { '@type': 'City', name: SEO_LOCALITY },
+            { '@type': 'AdministrativeArea', name: SEO_REGION },
+            { '@type': 'Country', name: 'Colombia' },
+          ],
+        },
+        ...(faqs.length
+          ? [
+              {
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((item) => ({
+                  '@type': 'Question',
+                  name: item.pregunta,
+                  acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+                })),
+              },
+            ]
+          : []),
+      ],
+    });
+  }
+
+  applyManejoDefensivo(config: PortalConfig | null) {
+    const md = config?.landing?.manejoDefensivo;
+    const fallbackTitle =
+      'Curso de Manejo Defensivo Virtual y Presencial | Meta y Colombia';
+    const fallbackDescription =
+      md?.heroLead?.trim() ||
+      'Curso de Manejo Defensivo virtual y presencial para conductores y empresas. Formación práctica en seguridad vial en Villavicencio, Meta, Llanos Orientales y Colombia.';
+    const url = this.pageUrl('/curso-manejo-defensivo');
+    const hero = md?.imagenes?.find((img) => img.id === 'hero');
+    const heroUrl = hero?.urlAbsoluta?.trim() || hero?.url?.trim() || '';
+    const image = heroUrl || this.defaultImage(config);
+    const seo = this.resolvedSeo(config, 'manejoDefensivo', {
+      pageTitle: fallbackTitle,
+      description: this.truncate(fallbackDescription),
+      keywords: '',
+    });
+    const faqs = Array.isArray(md?.faq) ? md.faq.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) : [];
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image,
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: [
+        ...this.breadcrumbJsonLd(url, [
+          { name: 'Inicio', path: '/' },
+          { name: 'Cursos', path: '/cursos' },
+          { name: md?.h1?.trim() || 'Curso de Manejo Defensivo', path: '/curso-manejo-defensivo' },
+        ]),
+        {
+          '@type': 'Course',
+          name: md?.h1?.trim() || 'Curso de Manejo Defensivo Virtual y Presencial',
+          description: this.truncate(seo.description, 300),
+          provider: { '@type': 'EducationalOrganization', name: this.orgName(config) },
+          url,
+          image,
+          inLanguage: 'es-CO',
+          hasCourseInstance: {
+            '@type': 'CourseInstance',
+            courseMode: ['online', 'onsite'],
+            location: {
+              '@type': 'Place',
+              name: 'Villavicencio, Meta, Colombia',
+              address: this.postalAddress(config),
+            },
+          },
+        },
+        ...(faqs.length
+          ? [
+              {
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((item) => ({
+                  '@type': 'Question',
+                  name: item.pregunta,
+                  acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+                })),
+              },
+            ]
+          : []),
+      ],
+    });
+  }
+
+  applyPrimerosAuxilios(config: PortalConfig | null) {
+    const pa = config?.landing?.primerosAuxilios;
+    const fallbackTitle = 'Curso de Primeros Auxilios en Villavicencio | Virtual y Presencial';
+    const fallbackDescription =
+      pa?.heroLead?.trim() ||
+      'Curso de Primeros Auxilios virtual y presencial en Villavicencio, Meta y Colombia. Formación en RCP, trauma y atención inicial de emergencias para personas y empresas.';
+    const url = this.pageUrl('/curso-primeros-auxilios');
+    const hero = pa?.imagenes?.find((img) => img.id === 'hero');
+    const heroUrl = hero?.urlAbsoluta?.trim() || hero?.url?.trim() || '';
+    const image = heroUrl || this.defaultImage(config);
+    const seo = this.resolvedSeo(config, 'primerosAuxilios', {
+      pageTitle: fallbackTitle,
+      description: this.truncate(fallbackDescription),
+      keywords: '',
+    });
+    const faqs = Array.isArray(pa?.faq) ? pa.faq.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) : [];
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image,
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: [
+        ...this.breadcrumbJsonLd(url, [
+          { name: 'Inicio', path: '/' },
+          { name: 'Cursos', path: '/cursos' },
+          { name: pa?.h1?.trim() || 'Curso de Primeros Auxilios', path: '/curso-primeros-auxilios' },
+        ]),
+        {
+          '@type': 'Course',
+          name: pa?.h1?.trim() || 'Curso de Primeros Auxilios Virtual y Presencial',
+          description: this.truncate(seo.description, 300),
+          provider: { '@type': 'EducationalOrganization', name: this.orgName(config) },
+          url,
+          image,
+          inLanguage: 'es-CO',
+          hasCourseInstance: {
+            '@type': 'CourseInstance',
+            courseMode: ['online', 'onsite'],
+            location: {
+              '@type': 'Place',
+              name: 'Villavicencio, Meta, Colombia',
+              address: this.postalAddress(config),
+            },
+          },
+        },
+        ...(faqs.length
+          ? [
+              {
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((item) => ({
+                  '@type': 'Question',
+                  name: item.pregunta,
+                  acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+                })),
+              },
+            ]
+          : []),
+      ],
     });
   }
 
   applyServiciosHub(config: PortalConfig | null) {
-    const servicios = mergeFinstruvialServicios(config?.landing?.finstruvialServicios);
+    const esServial = portafolioServiciosEsServial(config?.site?.tema);
+    const servicios = mergePortafolioServicios(config?.landing?.finstruvialServicios, config?.site?.tema);
     const hub = servicios.hub;
-    const titulo = [hub.tituloLinea, hub.tituloAcento].filter(Boolean).join(' ') || 'Servicios';
-    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
-    const fallbackDescription = this.truncate(
-      hub.lead?.trim() ||
-        'Consultoría, estudios técnicos, planeación vial, tecnología y formación en tránsito, transporte y seguridad vial.',
-    );
+    const h1 = [hub.tituloLinea, hub.tituloAcento].filter(Boolean).join(' ').trim() || 'Servicios';
+    const fallbackTitle = esServial
+      ? 'Servicios de Capacitación en Villavicencio | SERVIAL Colombia'
+      : `${h1} | ${SEO_BRAND}`;
+    const fallbackDescription = esServial
+      ? 'Conoce los servicios y cursos de SERVIAL Colombia en Villavicencio, Meta: conducción, seguridad vial, transporte y formación especializada para personas y empresas.'
+      : this.truncate(
+          hub.lead?.trim() ||
+            'Consultoría, estudios técnicos, planeación vial, tecnología y formación en tránsito, transporte y seguridad vial.',
+        );
+    const fallbackKeywords = esServial
+      ? 'servicios SERVIAL Villavicencio, cursos en Villavicencio, capacitaciones en Villavicencio, capacitación empresarial Villavicencio, cursos de seguridad vial Villavicencio, formación para conductores Villavicencio, SERVIAL Colombia'
+      : `${BLOG_SEO_KEYWORDS}, servicios, consultoría vial, seguridad vial, FINSTRUVIAL`;
     const url = this.pageUrl('/servicios');
     const seo = this.resolvedSeo(config, 'serviciosHub', {
       pageTitle: fallbackTitle,
-      description: fallbackDescription,
-      keywords: `${BLOG_SEO_KEYWORDS}, servicios, consultoría vial, seguridad vial, FINSTRUVIAL`,
+      description: this.truncate(fallbackDescription),
+      keywords: fallbackKeywords,
     });
+    const org = this.orgName(config);
+    const tarjetas =
+      hub.tarjetas?.filter((t) => t.titulo?.trim() && t.url?.trim()) ||
+      [];
+    const faqs = hub.faq?.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) || [];
+    const jsonLd: Record<string, unknown>[] = [
+      ...this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: servicios.menuLabel || 'Servicios', path: '/servicios' },
+      ]),
+    ];
+    if (esServial) {
+      jsonLd.push(
+        {
+          '@type': 'EducationalOrganization',
+          name: org,
+          url: this.pageUrl('/'),
+          telephone: hub.localTelefono?.trim() || config?.telefono?.trim() || undefined,
+          email: hub.localEmail?.trim() || undefined,
+          address: this.postalAddress(config),
+        },
+        {
+          '@type': 'LocalBusiness',
+          name: org,
+          url,
+          telephone: hub.localTelefono?.trim() || config?.telefono?.trim() || undefined,
+          email: hub.localEmail?.trim() || undefined,
+          address: this.postalAddress(config),
+          areaServed: [
+            { '@type': 'City', name: SEO_LOCALITY },
+            { '@type': 'AdministrativeArea', name: SEO_REGION },
+            { '@type': 'Country', name: 'Colombia' },
+          ],
+        },
+      );
+      if (tarjetas.length) {
+        jsonLd.push({
+          '@type': 'ItemList',
+          name: hub.gridTitulo || 'Cursos y servicios SERVIAL Colombia',
+          itemListElement: tarjetas.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.titulo,
+            url: item.url.startsWith('http') ? item.url : this.pageUrl(item.url),
+          })),
+        });
+      }
+      if (faqs.length) {
+        jsonLd.push({
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((item) => ({
+            '@type': 'Question',
+            name: item.pregunta,
+            acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+          })),
+        });
+      }
+    }
     this.applyPageMeta({
       pageTitle: seo.pageTitle,
       description: this.truncate(seo.description),
@@ -409,10 +765,7 @@ export class PortalSeoService {
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
       themeColor: this.themeColor(config),
-      jsonLd: this.breadcrumbJsonLd(url, [
-        { name: 'Inicio', path: '/' },
-        { name: servicios.menuLabel || 'Servicios', path: '/servicios' },
-      ]),
+      jsonLd,
     });
   }
 
@@ -421,20 +774,69 @@ export class PortalSeoService {
       this.applyServiciosHub(config);
       return;
     }
-    const servicios = mergeFinstruvialServicios(config?.landing?.finstruvialServicios);
+    const esServial = portafolioServiciosEsServial(config?.site?.tema);
+    const servicios = mergePortafolioServicios(config?.landing?.finstruvialServicios, config?.site?.tema);
     const p = servicios.paginas[slug];
     const titulo = [p.tituloLinea, p.tituloAcento].filter(Boolean).join(' ') || p.menuLabel;
-    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
-    const fallbackDescription = this.truncate(
-      p.metaDescription?.trim() || p.lead?.trim() || p.introLead?.trim() || p.menuLabel,
-    );
+    const esAulaVirtualServial = esServial && slug === 'aulaVirtual' && Number(p.guionVersion) >= 1;
+    const fallbackTitle = esAulaVirtualServial
+      ? 'Aula Virtual y Cursos Online | SERVIAL Colombia'
+      : `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = esAulaVirtualServial
+      ? 'Acceda al Aula Virtual de SERVIAL Colombia: cursos online en seguridad vial, tránsito, transporte y formación especializada para estudiantes y empresas en todo el país.'
+      : this.truncate(p.metaDescription?.trim() || p.lead?.trim() || p.introLead?.trim() || p.menuLabel);
+    const fallbackKeywords = esAulaVirtualServial
+      ? 'aula virtual SERVIAL, cursos virtuales SERVIAL, cursos virtuales Villavicencio, capacitación virtual Villavicencio, cursos online Colombia, cursos seguridad vial virtuales, capacitación virtual seguridad vial, cursos virtuales Meta, SERVIAL Colombia'
+      : `${BLOG_SEO_KEYWORDS}, ${p.menuLabel}, seguridad vial, FINSTRUVIAL`;
     const route = FINSTRUVIAL_SERVICIO_ROUTE[slug];
     const url = this.pageUrl(route);
     const seo = this.resolvedSeo(config, finstruvialServicioSeoKey(slug), {
       pageTitle: fallbackTitle,
       description: fallbackDescription,
-      keywords: `${BLOG_SEO_KEYWORDS}, ${p.menuLabel}, seguridad vial, FINSTRUVIAL`,
+      keywords: fallbackKeywords,
     });
+    const jsonLd: Record<string, unknown>[] = [
+      ...this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: servicios.menuLabel || 'Servicios', path: '/servicios' },
+        { name: p.menuLabel, path: route },
+      ]),
+    ];
+    if (esAulaVirtualServial) {
+      const org = this.orgName(config);
+      const catalogoItems =
+        p.catalogoOverrides?.filter((item) => item.titulo?.trim() && item.url?.trim()) || [];
+      jsonLd.push({
+        '@type': 'EducationalOrganization',
+        name: org,
+        url: this.pageUrl('/'),
+        telephone: config?.telefono?.trim() || undefined,
+        address: this.postalAddress(config),
+      });
+      if (catalogoItems.length) {
+        jsonLd.push({
+          '@type': 'ItemList',
+          name: p.bloquesTitulo || 'Cursos disponibles en el Aula Virtual',
+          itemListElement: catalogoItems.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.titulo,
+            url: item.url.startsWith('http') ? item.url : this.pageUrl(item.url),
+          })),
+        });
+      }
+      const faqs = p.faq?.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) || [];
+      if (faqs.length) {
+        jsonLd.push({
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((item) => ({
+            '@type': 'Question',
+            name: item.pregunta,
+            acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+          })),
+        });
+      }
+    }
     this.applyPageMeta({
       pageTitle: seo.pageTitle,
       description: this.truncate(seo.description),
@@ -443,11 +845,7 @@ export class PortalSeoService {
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
       themeColor: this.themeColor(config),
-      jsonLd: this.breadcrumbJsonLd(url, [
-        { name: 'Inicio', path: '/' },
-        { name: servicios.menuLabel || 'Servicios', path: '/servicios' },
-        { name: p.menuLabel, path: route },
-      ]),
+      jsonLd,
     });
   }
 
@@ -665,7 +1063,11 @@ export class PortalSeoService {
 
     this.title.setTitle(this.truncateTitle(opts.pageTitle));
     this.setMeta('description', opts.description);
-    this.setMeta('keywords', opts.keywords);
+    if (opts.keywords?.trim()) {
+      this.setMeta('keywords', opts.keywords);
+    } else {
+      this.meta.removeTag('name="keywords"');
+    }
     this.setMeta('robots', robots);
     this.setMeta('author', siteName);
     this.setMeta('application-name', siteName);

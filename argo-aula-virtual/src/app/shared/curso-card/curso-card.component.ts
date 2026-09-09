@@ -16,8 +16,23 @@ export class CursoCardComponent {
   curso = input.required<CursoVirtual>();
   modo = input<'tienda' | 'cursos'>('cursos');
   logoUrl = input<string | null>(null);
+  tituloOverride = input<string | null>(null);
+  linkRoute = input<string | null>(null);
+  btnLabelOverride = input<string | null>(null);
 
-  btnLabel = computed(() => (this.modo() === 'tienda' ? 'Comprar' : 'Ver curso'));
+  titulo = computed(() => this.tituloOverride()?.trim() || this.curso().nombreProg);
+
+  detalleRoute = computed(() => {
+    const custom = this.linkRoute()?.trim();
+    if (custom) return custom.startsWith('/') ? custom : `/${custom}`;
+    return ['/cursos', this.curso().idPrograma];
+  });
+
+  btnLabel = computed(() => {
+    const custom = this.btnLabelOverride()?.trim();
+    if (custom) return custom;
+    return this.modo() === 'tienda' ? 'Comprar' : 'Ver curso';
+  });
 
   fmtPrecio(n: number) {
     return new Intl.NumberFormat('es-CO', {

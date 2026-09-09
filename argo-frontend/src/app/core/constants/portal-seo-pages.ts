@@ -21,6 +21,8 @@ export type PortalSeoPageKey =
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'manejoDefensivo'
+  | 'primerosAuxilios'
   | 'serviciosHub'
   | FinstruvialServicioSeoKey
   | 'blog'
@@ -166,10 +168,11 @@ export const PORTAL_SEO_PAGE_CATALOG: PortalSeoPageMeta[] = [
     ruta: '/cursos-conduccion',
     grupo: 'Servicios',
     hint: 'Licencias de conducción y categorías del CEA.',
-    defaultTitulo: 'Cursos de conducción y licencias | Su institución',
+    defaultTitulo: 'Cursos de Conducción en Villavicencio | SERVIAL Colombia',
     defaultDescripcion:
-      'Licencias de conducción categorías A2, B1, C1, C2 y C3. Cursos de conducción y educación vial.',
-    defaultKeywords: 'licencia de conducción, cursos conducción, categorías licencia',
+      'CEA SERVIAL Colombia: cursos de conducción A2, B2, C1, C2 y C3 en Villavicencio, Meta. Formación teórica, práctica y de taller.',
+    defaultKeywords:
+      'curso de conducción Villavicencio, escuela de conducción Villavicencio, CEA Villavicencio, curso A2, curso B2, curso C1, curso C2, curso C3',
   },
   {
     key: 'examenTeorico',
@@ -187,21 +190,50 @@ export const PORTAL_SEO_PAGE_CATALOG: PortalSeoPageMeta[] = [
     label: 'Mercancías peligrosas',
     ruta: '/mercancias-peligrosas',
     grupo: 'Servicios',
-    hint: 'Capacitación en transporte de mercancías peligrosas.',
-    defaultTitulo: 'Curso mercancías peligrosas y transporte | Su institución',
+    hint:
+      'TITLE y meta descripción para Google. El H1 y los H2 se editan en «Mercancías peligrosas». Google no usa meta keywords.',
+    defaultTitulo: 'Curso Mercancías Peligrosas Villavicencio | SERVIAL',
     defaultDescripcion:
-      'Capacitación en transporte de mercancías peligrosas: normativa, documentación y seguridad vial.',
-    defaultKeywords: 'mercancías peligrosas, curso transporte, MinTransporte',
+      'Curso de mercancías peligrosas en Villavicencio, Meta. Capacitación para conductores y empresas con SERVIAL Colombia. Atención en los Llanos Orientales.',
+    defaultKeywords: '',
   },
   {
     key: 'trabajoEnAlturas',
     label: 'Trabajo en alturas',
     ruta: '/trabajo-en-alturas',
     grupo: 'Servicios',
-    hint: 'Formación en trabajo seguro en alturas.',
-    defaultTitulo: 'Curso trabajo en alturas | Su institución',
-    defaultDescripcion: 'Capacitación en trabajo seguro en alturas: normativa, EPI y buenas prácticas.',
-    defaultKeywords: 'trabajo en alturas, Resolución 4272, seguridad',
+    hint:
+      'TITLE, meta descripción y palabras clave para Google. El H1 y los H2 se editan en «Trabajo en alturas».',
+    defaultTitulo: 'Curso de Trabajo en Alturas en Villavicencio | SERVIAL Colombia',
+    defaultDescripcion:
+      'Curso de trabajo seguro en alturas en Villavicencio, Meta. Capacitación para trabajadores y empresas con SERVIAL Colombia, conforme a la normativa vigente. Atención en los Llanos Orientales.',
+    defaultKeywords:
+      'curso trabajo en alturas Villavicencio, trabajo seguro en alturas Villavicencio, curso de alturas Meta, capacitación trabajo en alturas Colombia, curso trabajador autorizado alturas, reentrenamiento trabajo en alturas, curso coordinador trabajo en alturas, Resolución 4272 de 2021, capacitación alturas Llanos Orientales, SERVIAL Colombia',
+  },
+  {
+    key: 'manejoDefensivo',
+    label: 'Manejo defensivo',
+    ruta: '/curso-manejo-defensivo',
+    grupo: 'Servicios',
+    hint:
+      'Página de ensayo SEO. El título y la meta descripción se usan en Google. El H1 y los H2 se editan en «Manejo defensivo». Google no usa meta keywords.',
+    defaultTitulo: 'Curso de Manejo Defensivo Virtual y Presencial | Meta y Colombia',
+    defaultDescripcion:
+      'Curso de Manejo Defensivo virtual y presencial para conductores y empresas. Formación práctica en seguridad vial en Villavicencio, Meta, Llanos Orientales y Colombia.',
+    defaultKeywords: '',
+  },
+  {
+    key: 'primerosAuxilios',
+    label: 'Primeros auxilios',
+    ruta: '/curso-primeros-auxilios',
+    grupo: 'Servicios',
+    hint:
+      'Página SEO del curso de primeros auxilios. El título y la meta descripción se usan en Google. El H1 y los H2 se editan en «Primeros auxilios».',
+    defaultTitulo: 'Curso de Primeros Auxilios en Villavicencio | Virtual y Presencial',
+    defaultDescripcion:
+      'Curso de Primeros Auxilios virtual y presencial en Villavicencio, Meta y Colombia. Formación en RCP, trauma y atención inicial de emergencias para personas y empresas.',
+    defaultKeywords:
+      'curso de primeros auxilios, curso primeros auxilios Villavicencio, curso de primeros auxilios en Villavicencio, curso primeros auxilios Meta, curso de RCP Villavicencio, curso primeros auxilios virtual, capacitación primeros auxilios empresas Villavicencio',
   },
   ...buildFinstruvialSeoCatalog(),
   {
@@ -291,6 +323,17 @@ export function finstruvialSeoEditorFallback(
 
   if (key === 'serviciosHub') {
     const hub = servicios.hub;
+    const esServialHub =
+      Number(hub.guionVersion) >= 1 || String(hub.tituloLinea || '').includes('Villavicencio');
+    if (esServialHub) {
+      return {
+        titulo: 'Servicios de Capacitación en Villavicencio | SERVIAL Colombia',
+        descripcion:
+          'Conoce los servicios y cursos de SERVIAL Colombia en Villavicencio, Meta: conducción, seguridad vial, transporte y formación especializada para personas y empresas.',
+        keywords:
+          'servicios SERVIAL Villavicencio, cursos en Villavicencio, capacitaciones en Villavicencio, capacitación empresarial Villavicencio, cursos de seguridad vial Villavicencio, formación para conductores Villavicencio, SERVIAL Colombia',
+      };
+    }
     const titulo = [hub.tituloLinea, hub.tituloAcento].filter(Boolean).join(' ') || servicios.menuLabel;
     return {
       titulo: `${titulo} | FINSTRUVIAL`,
@@ -304,6 +347,18 @@ export function finstruvialSeoEditorFallback(
   if (!isFinstruvialServicioSeoKey(key)) return null;
   const slug = key.slice(9) as FinstruvialServicioSlug;
   const p = servicios.paginas[slug];
+  const esServial =
+    Number(servicios.hub?.guionVersion) >= 1 ||
+    String(servicios.hub?.tituloLinea || '').includes('Villavicencio');
+  if (key === 'servicio_aulaVirtual' && esServial) {
+    return {
+      titulo: 'Aula Virtual y Cursos Online | SERVIAL Colombia',
+      descripcion:
+        'Acceda al Aula Virtual de SERVIAL Colombia: cursos online en seguridad vial, tránsito, transporte y formación especializada para estudiantes y empresas en todo el país.',
+      keywords:
+        'aula virtual SERVIAL, cursos virtuales SERVIAL, cursos virtuales Villavicencio, capacitación virtual Villavicencio, cursos online Colombia, cursos seguridad vial virtuales, capacitación virtual seguridad vial, cursos virtuales Meta, SERVIAL Colombia',
+    };
+  }
   const titulo = finstruvialServicioTitulo(p);
   return {
     titulo: `${titulo} | FINSTRUVIAL`,

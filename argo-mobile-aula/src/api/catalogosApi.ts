@@ -23,6 +23,10 @@ export function fetchGeneros(): Promise<Record<string, unknown>[]> {
   return apiFetch(`${B}/generos`, { auth: false });
 }
 
+export function fetchActoresViales(): Promise<Record<string, unknown>[]> {
+  return apiFetch(`${B}/actores-viales`, { auth: false });
+}
+
 export function fetchDepartamentos(): Promise<DeptoDivipola[]> {
   return apiFetch(`${B}/departamentos`, { auth: false });
 }

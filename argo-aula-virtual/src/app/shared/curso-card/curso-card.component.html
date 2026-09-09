@@ -1,6 +1,6 @@
 @let c = curso();
 <article class="catalog-card card-lift">
-  <a [routerLink]="['/cursos', c.idPrograma]" class="catalog-card__cover-link">
+  <a [routerLink]="detalleRoute()" class="catalog-card__cover-link">
     <div class="catalog-card__cover">
       @if (portadaUrl(c); as img) {
         <img [src]="img" [alt]="c.nombreProg" />
@@ -23,7 +23,7 @@
     }
 
     <h3 class="catalog-card__title">
-      <a [routerLink]="['/cursos', c.idPrograma]">{{ c.nombreProg }}</a>
+      <a [routerLink]="detalleRoute()">{{ titulo() }}</a>
     </h3>
 
     @if (c.autor) {
@@ -59,7 +59,7 @@
 
     <footer class="catalog-card__foot">
       <p class="catalog-card__price">{{ fmtPrecio(c.tarifaVirtual) }}</p>
-      <a [routerLink]="['/cursos', c.idPrograma]" class="catalog-card__btn btn btn-primary btn-sm">
+      <a [routerLink]="detalleRoute()" class="catalog-card__btn btn btn-primary btn-sm">
         {{ btnLabel() }}
       </a>
     </footer>

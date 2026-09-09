@@ -70,6 +70,7 @@ const { logAuthIntento } = require('../services/authSecurityLog');
 const path = require('path');
 const { models } = require('../models/catalogos');
 const catalogoController = require('./catalogoController');
+const { ensureActorVialCatalogo } = require('../services/actorVialCatalogo');
 
 exports.configPublica = async (_req, res, next) => {
   try {
@@ -750,6 +751,16 @@ exports.catalogosTiposDoc = async (_req, res, next) => {
 exports.catalogosGeneros = async (_req, res, next) => {
   try {
     const data = await models.genero.find().sort({ idGenero: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosActoresViales = async (_req, res, next) => {
+  try {
+    await ensureActorVialCatalogo();
+    const data = await models.actorVial.find().sort({ idActorVial: 1 }).lean();
     res.json(data);
   } catch (e) {
     next(e);

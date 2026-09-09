@@ -8,8 +8,10 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
+import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
 import {
   PROMO_BANNER_RIBBON_DEFAULT,
 } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
@@ -23,7 +25,15 @@ import {
 @Component({
   selector: 'av-trabajo-en-alturas',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, PortalIconComponent, PortalPromoBannerHeroComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    RevealOnScrollDirective,
+    PortalIconComponent,
+    PortalEnlacesRelacionadosComponent,
+    PortalPromoBannerHeroComponent,
+    PortalBreadcrumbsComponent,
+  ],
   templateUrl: './trabajo-en-alturas.component.html',
   styleUrl: './trabajo-en-alturas.component.scss',
 })

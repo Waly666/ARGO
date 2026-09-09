@@ -11,11 +11,12 @@ import {
 } from '../../core/utils/portal-hero-imagen.util';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-promo-hero-imagen-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent],
   templateUrl: './portal-promo-hero-imagen-editor.component.html',
   styleUrl: './portal-promo-hero-imagen-editor.component.scss',
 })
@@ -105,6 +106,17 @@ export class PortalPromoHeroImagenEditorComponent {
   onHeroAltChange(value: string) {
     if (this.usesFlatHeroAlt()) this.hero.heroImagenAlt = value;
     else this.hero.imagenAlt = value;
+  }
+
+  heroPromptText(): string {
+    return this.usesFlatHeroAlt()
+      ? this.hero.heroImagenPrompt?.trim() || ''
+      : this.hero.promptImagen?.trim() || '';
+  }
+
+  onHeroPromptChange(value: string) {
+    if (this.usesFlatHeroAlt()) this.hero.heroImagenPrompt = value;
+    else this.hero.promptImagen = value;
   }
 
   private syncHeroFromConfig(config: PortalAulaConfig) {

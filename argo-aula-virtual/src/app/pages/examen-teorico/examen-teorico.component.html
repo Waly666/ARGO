@@ -152,22 +152,27 @@
     </section>
   }
 
-  @if (contenido().ctaFinalTexto.trim()) {
+  @if (contenido().enlacesRelacionados.length || contenido().ctaFinalTexto.trim()) {
     <section class="et-cta">
       <div class="container et-cta__inner">
-        <p>¿Listo para prepararse? Conozca nuestros cursos de conducción y cumpla con la normativa vigente.</p>
-        @if (enlaceEsExterno(contenido().ctaFinalUrl)) {
-          <a
-            class="btn btn-primary"
-            [href]="contenido().ctaFinalUrl"
-            target="_blank"
-            rel="noopener noreferrer">
-            {{ contenido().ctaFinalTexto }}
-          </a>
-        } @else {
-          <a class="btn btn-primary" [routerLink]="enlaceRuta(contenido().ctaFinalUrl)">
-            {{ contenido().ctaFinalTexto }}
-          </a>
+        <av-portal-enlaces-relacionados
+          [titulo]="contenido().enlacesRelacionadosTitulo"
+          [enlaces]="contenido().enlacesRelacionados"
+        />
+        @if (contenido().ctaFinalTexto.trim()) {
+          @if (enlaceEsExterno(contenido().ctaFinalUrl)) {
+            <a
+              class="btn btn-primary"
+              [href]="contenido().ctaFinalUrl"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ contenido().ctaFinalTexto }}
+            </a>
+          } @else {
+            <a class="btn btn-primary" [routerLink]="enlaceRuta(contenido().ctaFinalUrl)">
+              {{ contenido().ctaFinalTexto }}
+            </a>
+          }
         }
       </div>
     </section>

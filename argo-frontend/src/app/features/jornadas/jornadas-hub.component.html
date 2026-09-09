@@ -774,9 +774,9 @@
               <div>
                 <label class="contrato-origenes-label">Instructores y programas</label>
                 <p class="hint block-hint">
-                  Elija un instructor, marque los programas que dicta y pulse Agregar. Después puede agregar
-                  el siguiente. No entra auxiliar de carpa. Al generar faltantes, las clases se reparte en
-                  partes iguales entre quienes tienen ese programa.
+                  Elija un instructor, marque los programas JOR que dicta y pulse Agregar. Después puede agregar
+                  el siguiente. No entra auxiliar de carpa. Al generar faltantes, las clases siguen los programas
+                  de los orígenes y se asignan en partes iguales entre quienes los dictan.
                 </p>
               </div>
             </header>
@@ -812,7 +812,9 @@
             @if (planInstError()) {
               <p class="hint block-hint plan-inst-error">{{ planInstError() }}</p>
             }
-            @if (programasParaInstructoresContrato().length) {
+            @if (programasJornadaLoading()) {
+              <p class="hint block-hint">Cargando catálogo de programas JOR…</p>
+            } @else if (programasParaInstructoresContrato().length) {
               <div class="contrato-programas-list origen-cert-programas-list plan-inst-programas">
                 @for (pid of programasParaInstructoresContrato(); track pid) {
                   <label
@@ -831,7 +833,8 @@
               </div>
             } @else {
               <p class="hint block-hint">
-                Primero elija programas en los orígenes de alumnos (por clase o el programa global).
+                No hay programas de «Jornadas de Capacitación» (código JOR) en el catálogo. Créelos en
+                <a routerLink="/app/programas" target="_blank">Programas</a>.
               </p>
             }
             @if ((formContrato().instructoresPlan || []).length) {
@@ -2745,28 +2748,45 @@
                 <div class="cm-panel cm-evidencia cm-evidencia--under-datos">
                   <h3 class="clase-modal-section">Evidencia fotográfica</h3>
                   <div class="evidencia-foto-panel compact">
-                    @if (claseActiva()?.urlforo) {
-                      <img
-                        [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
-                        alt="Evidencia de clase"
-                        class="evidencia-preview" />
-                    } @else {
-                      <p class="hint hint-compact">Sin foto cargada.</p>
+                    @if (!fotosEvidenciaClaseActiva().length) {
+                      <p class="hint hint-compact">Sin fotos cargadas. Puede agregar varias (hasta 8).</p>
                     }
-                    <label class="evidencia-upload" [class.disabled]="modalModoClase() === 'nuevo'">
+                    @if (fotosEvidenciaClaseActiva().length) {
+                      <div class="evidencia-fotos-grid">
+                        @for (f of fotosEvidenciaClaseActiva(); track f._id || f.url) {
+                          <figure class="evidencia-fotos-item">
+                            <a [href]="urlFotoEvidencia(f.url)" target="_blank" rel="noopener noreferrer">
+                              <img [src]="urlFotoEvidencia(f.url)" [alt]="f.nombre || 'Evidencia'" />
+                            </a>
+                            <button
+                              type="button"
+                              class="evidencia-quitar"
+                              (click)="quitarFotoEvidenciaClase(f._id || f.url)"
+                              [disabled]="subiendoFotoEvidencia() || contratoModalFinalizado()">
+                              Quitar
+                            </button>
+                          </figure>
+                        }
+                      </div>
+                    }
+                    <label class="evidencia-upload" [class.disabled]="modalModoClase() === 'nuevo' || fotosEvidenciaClaseActiva().length >= 8 || contratoModalFinalizado()">
                       <input
                         type="file"
-                        accept="image/*"
-                        capture="environment"
+                        accept="image/jpeg,image/png,image/jpg"
+                        multiple
                         (change)="onFotoEvidenciaSelected($event)"
-                        [disabled]="modalModoClase() === 'nuevo' || subiendoFotoEvidencia()" />
+                        [disabled]="modalModoClase() === 'nuevo' || subiendoFotoEvidencia() || fotosEvidenciaClaseActiva().length >= 8 || contratoModalFinalizado()" />
                       <span>
                         {{
                           modalModoClase() === 'nuevo'
                             ? 'Disponible después de crear la clase'
                             : subiendoFotoEvidencia()
                               ? 'Subiendo…'
-                              : '📷 Cargar foto'
+                              : fotosEvidenciaClaseActiva().length >= 8
+                                ? 'Máximo 8 fotos'
+                                : fotosEvidenciaClaseActiva().length
+                                  ? '📷 Agregar otra foto'
+                                  : '📷 Cargar foto'
                         }}
                       </span>
                     </label>

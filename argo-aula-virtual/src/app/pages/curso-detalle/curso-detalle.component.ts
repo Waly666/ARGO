@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -12,6 +12,7 @@ import { CursoVirtual, EstadoConsignacionCurso, EstadoInscripcionVirtual, MedioP
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
 
 
 
@@ -21,7 +22,7 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 
   standalone: true,
 
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PortalBreadcrumbsComponent],
 
   templateUrl: './curso-detalle.component.html',
 
@@ -44,6 +45,12 @@ export class CursoDetalleComponent implements OnInit {
 
 
   curso = signal<CursoVirtual | null>(null);
+
+  crumbs = computed(() => [
+    { label: 'Inicio', path: '/' },
+    { label: 'Cursos', path: '/cursos' },
+    { label: this.curso()?.nombreProg?.trim() || 'Curso' },
+  ]);
 
   inscripcion = signal<EstadoInscripcionVirtual | null>(null);
 

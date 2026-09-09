@@ -81,6 +81,7 @@ export interface AlumnoDetalleItem extends AlumnoListItem {
   regimenSalud?: string;
   nivelFormacion?: string;
   ocupacion?: string;
+  actorVial?: string;
   discapacidad?: string;
   munOrigen?: string;
   codMunicipio?: string;
@@ -124,6 +125,7 @@ export interface AlumnoCrearDto {
   regimenSalud?: string;
   nivelFormacion?: string;
   ocupacion?: string;
+  actorVial?: string;
   discapacidad?: string;
   munOrigen?: string;
   codMunicipio?: string;
@@ -230,6 +232,7 @@ export interface CatalogoItem {
   idRegimen?: string;
   idNivel?: string;
   idOcupacion?: string;
+  idActorVial?: string;
   idDiscapacidad?: string;
   id?: string;
   codigo?: string;

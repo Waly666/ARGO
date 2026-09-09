@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ClaseIdChip } from '../components/ClaseIdChip';
@@ -30,6 +29,7 @@ import {
   alumnosClaseAnterior,
   buscarAlumnoDoc,
   estadoOperacionJornadas,
+  esperarPostCierreClase,
   finalizarClase,
   inscritosClase,
   iniciarClase,
@@ -43,7 +43,9 @@ import {
   progresoCertificacion,
   quitarInscripcionClase,
   subirFotoEvidencia,
+  eliminarFotoEvidencia,
 } from '../api/jornadasApi';
+import { capturarFotoCamara } from '../utils/fotoArchivo';
 import {
   filtrarProgramasParaElegirClase,
   idsProgramasInstructorPlan,
@@ -60,11 +62,12 @@ import type {
   ContratoJornada,
   InscritoClase,
   MetaJornadaResp,
+  PostCierreClaseResp,
   ProgramaJornada,
   ProgresoCert,
 } from '../api/types';
 import { UBICACIONES_CLASE } from '../config/appBranding';
-import { getUploadsBaseUrl } from '../config/apiBase';
+import { urlArchivoEnServidor } from '../config/apiBase';
 import { compartirHtmlPdf, imprimirHtml } from '../services/documentoPrint';
 import {
   formatCronometro,
@@ -104,6 +107,57 @@ function nombreAlumno(a: {
   return `${nom} ${ap}`.trim() || a.nombreCompleto || '';
 }
 
+/** Mensaje tras post-cierre: no avisamos “faltan sesiones” si el backend aún no había terminado. */
+function mensajeCierreClase(
+  post: PostCierreClaseResp | null,
+  nAsisFallback: number,
+  inscritosActuales: InscritoClase[],
+): string {
+  const nCert = post?.certificadosGenerados ?? 0;
+  const nAsis = post?.asistenciasRegistradas ?? nAsisFallback;
+  const hayLista = inscritosActuales.length > 0;
+  const todosAsis = hayLista && inscritosActuales.every((i) => i.tieneAsistencia);
+  const todosCert = hayLista && inscritosActuales.every((i) => i.yaCertificadoContrato);
+
+  let msg: string;
+  if (!post || post.status === 'pending' || post.status === 'unknown') {
+    msg =
+      'Clase cerrada. Las asistencias y certificados se están generando según las sesiones a certificar del contrato. Actualice la lista en unos segundos.';
+  } else if (post.status === 'error') {
+    msg = post.error || 'La clase se cerró, pero hubo un aviso al generar certificados.';
+  } else if (nCert > 0) {
+    msg = `Clase cerrada. Se emitieron ${nCert} certificado(s) según las sesiones a certificar del contrato.`;
+  } else if (todosCert) {
+    msg =
+      'Clase cerrada. Asistencia registrada. Los alumnos ya tenían certificado del contrato (no se emitieron nuevos).';
+  } else {
+    msg =
+      'Clase cerrada. Asistencia registrada. Algunos alumnos aún no completan las sesiones a certificar de su origen en el contrato.';
+  }
+  if (nAsis > 0) {
+    msg += ` Asistencias registradas: ${nAsis}.`;
+  } else if (todosAsis) {
+    msg += ' Todos los inscritos quedaron con asistencia.';
+  }
+  return msg;
+}
+
+const MAX_FOTOS_EVIDENCIA = 8;
+
+function fotosEvidenciaLista(clase: ClaseJornada | null): Array<{ id: string; url: string }> {
+  if (!clase) return [];
+  const arr = (clase.fotosEvidencia || []).filter((f) => String(f?.url || '').trim());
+  if (arr.length) {
+    return arr.map((f) => ({
+      id: String(f._id || f.url),
+      url: f.url,
+    }));
+  }
+  const u = String(clase.urlforo || '').trim();
+  if (u) return [{ id: u, url: u }];
+  return [];
+}
+
 export default function ClaseDetalleScreen() {
   const route = useRoute<Route>();
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -130,6 +184,8 @@ export default function ClaseDetalleScreen() {
   const [inscritos, setInscritos] = useState<InscritoClase[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [cerrandoClase, setCerrandoClase] = useState(false);
+  const [fotoCacheBust, setFotoCacheBust] = useState(0);
 
   const [progSel, setProgSel] = useState('');
   const [ubicSel, setUbicSel] = useState('Carpa');
@@ -213,11 +269,12 @@ export default function ClaseDetalleScreen() {
       );
       setIdsProgInstructor(misProg ? misProg.idProgramas : undefined);
       aplicarClaseEnPantalla(clRaw, lista);
+      return { inscritos: ins || [], clase: clRaw };
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo cargar la clase');
+      return { inscritos: [] as InscritoClase[], clase: null };
     } finally {
       setLoading(false);
-      setBusy(false);
     }
   }, [claseId, idContrato, aplicarClaseEnPantalla]);
 
@@ -475,6 +532,7 @@ export default function ClaseDetalleScreen() {
     }
 
     setBusy(true);
+    setCerrandoClase(true);
     try {
       const r = await finalizarClase(
         claseId,
@@ -491,15 +549,14 @@ export default function ClaseDetalleScreen() {
         setHoraInicioInp(isoAHoraInput(r.clase.horaInicio) || '');
         setHoraFinInp(isoAHoraInput(r.clase.horaFin) || '');
       }
-      await cargar();
-      const nCert = r.certificadosGenerados ?? 0;
-      let msg =
-        nCert > 0
-          ? `Clase cerrada. Se emitieron ${nCert} certificado(s) según el contrato.`
-          : 'Clase cerrada. No se emitieron certificados nuevos (revise sesiones requeridas o si ya tenían certificado).';
-      if (r.asistenciasRegistradas) {
-        msg += ` Asistencias pendientes registradas: ${r.asistenciasRegistradas}.`;
+      // El backend cierra ya y deja asistencias + certificados en segundo plano
+      // (sesiones a certificar del origen en el contrato). Hay que esperar ese resultado.
+      let post: PostCierreClaseResp | null = null;
+      if (r.postCierrePendiente !== false) {
+        post = await esperarPostCierreClase(claseId);
       }
+      const recarga = await cargar();
+      let msg = mensajeCierreClase(post, r.asistenciasRegistradas ?? 0, recarga.inscritos);
       const hi = isoAHoraCompleta(r.clase?.horaInicio);
       const hf = isoAHoraCompleta(r.clase?.horaFin);
       const durMs = msDuracionClase(r.clase?.horaInicio, r.clase?.horaFin);
@@ -511,28 +568,67 @@ export default function ClaseDetalleScreen() {
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo finalizar');
     } finally {
+      setCerrandoClase(false);
       setBusy(false);
     }
   }
 
   async function onFoto() {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert('Cámara', 'Permita el acceso a la cámara para la evidencia.');
+    const n = fotosEvidenciaLista(clase).length;
+    if (n >= MAX_FOTOS_EVIDENCIA) {
+      Alert.alert('Límite', `Esta clase ya tiene ${MAX_FOTOS_EVIDENCIA} fotos de evidencia.`);
       return;
     }
-    const shot = await ImagePicker.launchCameraAsync({ quality: 0.75, allowsEditing: false });
-    if (shot.canceled || !shot.assets?.[0]?.uri) return;
-    setBusy(true);
     try {
-      const updated = await subirFotoEvidencia(claseId, shot.assets[0].uri);
-      setClase(updated);
-      Alert.alert('Evidencia', 'Foto guardada.');
+      const uriLocal = await capturarFotoCamara();
+      if (!uriLocal) return;
+      setBusy(true);
+      await subirFotoEvidencia(claseId, uriLocal);
+      const desdeServidor = await obtenerClase(claseId);
+      setClase(desdeServidor);
+      setFotoCacheBust(Date.now());
+      const total = fotosEvidenciaLista(desdeServidor).length;
+      Alert.alert(
+        'Evidencia en el servidor',
+        `Foto ${total} de ${MAX_FOTOS_EVIDENCIA} guardada en esta clase. Puede agregar más.`,
+      );
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo subir la foto');
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg === 'CAMARA_PERMISO') {
+        Alert.alert('Cámara', 'Permita el acceso a la cámara para la evidencia.');
+        return;
+      }
+      Alert.alert('Error', msg || 'No se pudo subir la foto al servidor');
     } finally {
       setBusy(false);
     }
+  }
+
+  function onQuitarFoto(fotoId: string) {
+    Alert.alert('Quitar foto', '¿Quitar esta foto de evidencia de la clase? El archivo se borra del servidor.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Quitar',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            setBusy(true);
+            try {
+              const updated = await eliminarFotoEvidencia(claseId, fotoId);
+              setClase(updated);
+              setFotoCacheBust(Date.now());
+            } catch (e) {
+              Alert.alert(
+                'Error',
+                e instanceof Error ? e.message : 'No se pudo quitar la foto.',
+              );
+            } finally {
+              setBusy(false);
+            }
+          })();
+        },
+      },
+    ]);
   }
 
   async function onListadoAsistencia() {
@@ -718,9 +814,9 @@ export default function ClaseDetalleScreen() {
         );
         return;
       }
-      if (err.status === 409 && err.body?.sesiones != null) {
+      if (err.status === 409 && err.body?.codigo === 'sesiones_insuficientes') {
         Alert.alert(
-          'Progreso',
+          'Sesiones a certificar',
           `${err.body.nombreAlumno || nd}: ${err.body.sesiones}/${err.body.numSesCert} — faltan ${err.body.faltan}.`,
         );
         return;
@@ -922,25 +1018,31 @@ export default function ClaseDetalleScreen() {
     }
   }
 
+  /** Quita la inscripción a ESTA clase. No borra la ficha del alumno. */
+  function puedeQuitarInscripcion(_ins?: InscritoClase): boolean {
+    if (finalizada) return puedeGestionar;
+    return true;
+  }
+
   function onQuitarInscrito(ins: InscritoClase) {
-    if (finalizada && !puedeGestionar) {
+    if (!puedeQuitarInscripcion(ins)) {
       Alert.alert(
         'Clase finalizada',
-        'Solo un administrador puede quitar alumnos de una clase ya finalizada.',
+        'Solo un administrador puede quitar inscripciones de una clase ya finalizada.',
       );
       return;
     }
     const nombre = ins.nombreCompleto || `doc. ${ins.numDoc}`;
     const extraAsist = ins.tieneAsistencia
-      ? ' También se eliminará su asistencia en esta clase.'
+      ? ' También se quitará su asistencia en esta clase.'
       : '';
     Alert.alert(
-      'Quitar de la clase',
-      `¿Quitar a ${nombre} de esta clase?\n\nLa matrícula al programa se conserva.${extraAsist}`,
+      'Quitar inscripción',
+      `¿Quitar la inscripción de ${nombre} en esta clase?\n\nNo se elimina la ficha del alumno ni su matrícula al programa.${extraAsist}`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Sí, quitar',
+          text: 'Sí, quitar inscripción',
           style: 'destructive',
           onPress: () => {
             void (async () => {
@@ -948,11 +1050,11 @@ export default function ClaseDetalleScreen() {
               try {
                 await quitarInscripcionClase(claseId, ins.numDoc);
                 await cargar();
-                Alert.alert('Listo', `${nombre} fue retirado de la clase.`);
+                Alert.alert('Inscripción quitada', `${nombre} ya no está en esta clase. El alumno sigue en el sistema.`);
               } catch (e) {
                 Alert.alert(
                   'Error',
-                  e instanceof Error ? e.message : 'No se pudo quitar al alumno.',
+                  e instanceof Error ? e.message : 'No se pudo quitar la inscripción.',
                 );
               } finally {
                 setBusy(false);
@@ -1019,10 +1121,15 @@ export default function ClaseDetalleScreen() {
     },
   });
 
-  const fotoUrl =
-    clase?.urlforo && !clase.urlforo.startsWith('http')
-      ? `${getUploadsBaseUrl()}/${clase.urlforo.replace(/^\/+/, '')}`
-      : clase?.urlforo;
+  const fotosEvidencia = fotosEvidenciaLista(clase);
+  const fotoUrls = fotosEvidencia.map((f) => {
+    const base = urlArchivoEnServidor(f.url);
+    if (!base) return { ...f, uri: null as string | null };
+    const uri = fotoCacheBust
+      ? `${base}${base.includes('?') ? '&' : '?'}v=${fotoCacheBust}`
+      : base;
+    return { ...f, uri };
+  });
 
   if (loading && !clase) {
     return (
@@ -1347,21 +1454,55 @@ export default function ClaseDetalleScreen() {
           variant="danger"
           icon="checkmark-done-outline"
         />
-        <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 8, textAlign: 'center' }}>
-          Al finalizar se registran asistencias pendientes y se emiten certificados según el
-          contrato.
-        </ScaledText>
+        {cerrandoClase ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
+            <ActivityIndicator color={c.primary} />
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginLeft: 8, flex: 1 }}>
+              Registrando asistencias y certificados según las sesiones a certificar del contrato…
+            </ScaledText>
+          </View>
+        ) : (
+          <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 8, textAlign: 'center' }}>
+            Al finalizar se registran asistencias pendientes y se emiten certificados según las
+            sesiones a certificar de cada origen en el contrato.
+          </ScaledText>
+        )}
         <View style={{ height: 10 }} />
         <PrimaryButton
-          label="📷 Foto evidencia"
+          label={
+            fotosEvidencia.length
+              ? `Agregar foto de evidencia (${fotosEvidencia.length}/${MAX_FOTOS_EVIDENCIA})`
+              : '📷 Foto evidencia'
+          }
           onPress={() => void onFoto()}
-          disabled={busy}
+          disabled={busy || fotosEvidencia.length >= MAX_FOTOS_EVIDENCIA}
           fullWidth
           variant="ghost"
           icon="camera-outline"
         />
-        {fotoUrl ? (
-          <Image source={{ uri: fotoUrl }} style={styles.foto} resizeMode="cover" />
+        {fotoUrls.length ? (
+          <>
+            <View style={styles.fotosGrid}>
+              {fotoUrls.map((f) =>
+                f.uri ? (
+                  <View key={f.id} style={styles.fotoItem}>
+                    <Image source={{ uri: f.uri }} style={styles.fotoThumb} resizeMode="cover" />
+                    <Pressable
+                      onPress={() => onQuitarFoto(f.id)}
+                      disabled={busy}
+                      style={[styles.fotoQuitar, { backgroundColor: c.dangerBg, opacity: busy ? 0.5 : 1 }]}
+                      accessibilityLabel="Quitar esta foto"
+                    >
+                      <Ionicons name="close" size={16} color={c.danger} />
+                    </Pressable>
+                  </View>
+                ) : null,
+              )}
+            </View>
+            <ScaledText baseSize={11} style={{ color: c.textSoft, marginTop: 6, textAlign: 'center' }}>
+              Fotos en el servidor (las mismas del ERP). Puede agregar hasta {MAX_FOTOS_EVIDENCIA}.
+            </ScaledText>
+          </>
         ) : null}
       </SurfaceCard>
 
@@ -1520,6 +1661,12 @@ export default function ClaseDetalleScreen() {
           <ScaledText baseSize={15} style={styles.sectionTitle}>
             Registrados ({inscritos.length})
           </ScaledText>
+          {!finalizada ? (
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8, lineHeight: 16 }}>
+              Puede quitar la inscripción de un alumno en esta clase (antes o durante la operación).
+              No se borra la ficha del alumno.
+            </ScaledText>
+          ) : null}
           {inscritos.map((ins) => (
             <SurfaceCard key={String(ins.numDoc)} style={{ marginBottom: 8 }}>
               <View style={styles.inscritoHead}>
@@ -1545,25 +1692,27 @@ export default function ClaseDetalleScreen() {
                     ) : null}
                   </View>
                 </View>
-                {(!finalizada || puedeGestionar) && !ins.yaCertificadoContrato ? (
-                  <Pressable
-                    onPress={() => onQuitarInscrito(ins)}
-                    disabled={busy}
-                    hitSlop={8}
-                    style={[
-                      styles.quitarBtn,
-                      {
-                        borderColor: '#fca5a5',
-                        backgroundColor: c.dangerBg,
-                        opacity: busy ? 0.5 : 1,
-                      },
-                    ]}
-                    accessibilityLabel={`Quitar a ${ins.nombreCompleto || ins.numDoc} de la clase`}
-                  >
-                    <Ionicons name="trash-outline" size={18} color={c.danger} />
-                  </Pressable>
-                ) : null}
               </View>
+              {puedeQuitarInscripcion(ins) ? (
+                <Pressable
+                  onPress={() => onQuitarInscrito(ins)}
+                  disabled={busy}
+                  style={[
+                    styles.quitarInscripcionBtn,
+                    {
+                      borderColor: '#fca5a5',
+                      backgroundColor: c.dangerBg,
+                      opacity: busy ? 0.5 : 1,
+                    },
+                  ]}
+                  accessibilityLabel={`Quitar inscripción de ${ins.nombreCompleto || ins.numDoc}`}
+                >
+                  <Ionicons name="person-remove-outline" size={16} color={c.danger} />
+                  <ScaledText baseSize={13} style={{ color: c.danger, fontWeight: '700' }}>
+                    Quitar inscripción
+                  </ScaledText>
+                </Pressable>
+              ) : null}
             </SurfaceCard>
           ))}
         </>
@@ -1758,14 +1907,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
   },
-  quitarBtn: {
-    width: 40,
-    height: 40,
+  quitarInscripcionBtn: {
+    marginTop: 12,
+    minHeight: 40,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   origenChip: {
     paddingHorizontal: 12,
@@ -1854,4 +2006,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   foto: { width: '100%', height: 180, borderRadius: 12, marginTop: 12 },
+  fotosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  fotoItem: {
+    width: '48%',
+    flexGrow: 1,
+    maxWidth: '48%',
+    position: 'relative',
+  },
+  fotoThumb: {
+    width: '100%',
+    height: 140,
+    borderRadius: 12,
+  },
+  fotoQuitar: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

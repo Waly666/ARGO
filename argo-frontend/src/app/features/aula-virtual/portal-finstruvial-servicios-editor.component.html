@@ -96,9 +96,73 @@
       </label>
     </div>
     <label class="psb-field psb-field--plain">
+      <span>Chips del hero (separados por coma)</span>
+      <input
+        type="text"
+        class="psb-input"
+        [ngModel]="(finstruvialServicios.hub.heroStats || []).join(', ')"
+        (ngModelChange)="onHubHeroStatsChange($event)"
+      />
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>ALT imagen formación 1</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagenAlt" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>ALT imagen formación 2</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagen2Alt" />
+      </label>
+    </div>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Título bloque SEO (H2)</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.seoTextoTitulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título bloque local (H2)</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localTitulo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Párrafos bloque SEO (uno por línea)</span>
+      <textarea
+        class="psb-input"
+        rows="5"
+        [ngModel]="(finstruvialServicios.hub.seoTextoParrafos || []).join('\n\n')"
+        (ngModelChange)="onHubSeoTextoParrafosChange($event)"
+      ></textarea>
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto bloque local</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.localTexto"></textarea>
+    </label>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Dirección</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localDireccion" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Teléfono</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localTelefono" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Correo</span>
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localEmail" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
       <span>Texto alternativo de la imagen</span>
       <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.heroImagenAlt" />
     </label>
+    <argo-portal-editor-imagen-prompt
+      [promptImagen]="finstruvialServicios.hub.heroImagenPrompt || ''"
+      (promptImagenChange)="finstruvialServicios.hub.heroImagenPrompt = $event"
+      [alt]="finstruvialServicios.hub.heroImagenAlt"
+      etiqueta="Imagen del portafolio"
+      (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+      (copyError)="avNotice.emit({ message: $event, error: true })"
+    />
     <div class="psb-imagen-slot">
       <div class="psb-imagen-slot__head"><strong>Imagen del portafolio</strong></div>
       @if (previewUrl(finstruvialServicios.hub.heroImagenUrl, finstruvialServicios.hub.heroImagenUrlAbsoluta); as src) {
@@ -246,6 +310,14 @@
             <span>Texto alternativo de la imagen</span>
             <input type="text" class="psb-input" [(ngModel)]="p.heroImagenAlt" placeholder="Descripción breve de la foto" />
           </label>
+          <argo-portal-editor-imagen-prompt
+            [promptImagen]="p.heroImagenPrompt || ''"
+            (promptImagenChange)="p.heroImagenPrompt = $event"
+            [alt]="p.heroImagenAlt"
+            [etiqueta]="'Banner ' + p.menuLabel"
+            (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+            (copyError)="avNotice.emit({ message: $event, error: true })"
+          />
           <div class="psb-imagen-slot__actions">
             <label class="psb-btn psb-btn--ghost">
               {{ uploadingId() === lineaActiva() + ':hero' ? 'Subiendo…' : 'Subir imagen del banner' }}
@@ -328,6 +400,14 @@
               <span>Texto alternativo</span>
               <input type="text" class="psb-input" [(ngModel)]="imagenSeccionSlot().alt" placeholder="Descripción de la foto" />
             </label>
+            <argo-portal-editor-imagen-prompt
+              [promptImagen]="imagenSeccionSlot().promptImagen || ''"
+              (promptImagenChange)="imagenSeccionSlot().promptImagen = $event"
+              [alt]="imagenSeccionSlot().alt"
+              etiqueta="Imagen de presentación"
+              (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+              (copyError)="avNotice.emit({ message: $event, error: true })"
+            />
             <div class="psb-imagen-slot__actions">
               <label class="psb-btn psb-btn--ghost">
                 {{ uploadingId() === lineaActiva() + ':seccion' ? 'Subiendo…' : 'Subir imagen de presentación' }}
@@ -722,6 +802,14 @@
               <span>Texto alternativo</span>
               <input type="text" class="psb-input" [(ngModel)]="imagenProductoSlot().alt" [placeholder]="'Captura de la plataforma ' + productoShowcaseNombre()" />
             </label>
+            <argo-portal-editor-imagen-prompt
+              [promptImagen]="imagenProductoSlot().promptImagen || ''"
+              (promptImagenChange)="imagenProductoSlot().promptImagen = $event"
+              [alt]="imagenProductoSlot().alt"
+              [etiqueta]="'Imagen ' + productoShowcaseNombre()"
+              (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+              (copyError)="avNotice.emit({ message: $event, error: true })"
+            />
             <div class="psb-imagen-slot__actions">
               <label class="psb-btn psb-btn--ghost">
                 {{ uploadingId() === lineaActiva() + ':producto' ? 'Subiendo…' : 'Subir imagen de ' + productoShowcaseNombre() }}
@@ -1294,6 +1382,14 @@
             <span>Texto alternativo</span>
             <input type="text" class="psb-input" [(ngModel)]="img.alt" />
           </label>
+          <argo-portal-editor-imagen-prompt
+            [promptImagen]="img.promptImagen || ''"
+            (promptImagenChange)="img.promptImagen = $event"
+            [alt]="img.alt"
+            [etiqueta]="img.etiqueta"
+            (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+            (copyError)="avNotice.emit({ message: $event, error: true })"
+          />
           <div class="psb-imagen-slot__actions">
             <label class="psb-btn psb-btn--ghost">
               {{ uploadingId() === lineaActiva() + ':' + img.id ? 'Subiendo…' : 'Subir imagen' }}

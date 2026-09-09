@@ -1,9 +1,34 @@
-import { LICENCIAS_HOME, LicenciaHomeItem } from '../home/home-content';
 import {
   mergePromoHeroPillars,
   PROMO_HERO_PILARES_INSTITUCION,
   PortalPromoHeroPillar,
 } from '../../core/constants/portal-promo-hero-fields.util';
+import {
+  mergeEnlacesRelacionados,
+  PortalEnlaceRelacionado,
+} from '../../core/portal-enlace-relacionado.util';
+import {
+  CC_DIRECCION,
+  CC_ENLACES_RELACIONADOS,
+  CC_ENLACES_RELACIONADOS_TITULO,
+  CC_FAQ,
+  CC_FAQ_TITULO,
+  CC_HERO,
+  CC_INVITACION,
+  CC_INSCRIPCIONES,
+  CC_LICENCIAS_ITEMS,
+  CC_LICENCIAS_SECCION,
+  CC_LICENCIAS_URL,
+  CC_LOCAL,
+  CC_MAPS_URL,
+  CC_METODOLOGIA,
+  CC_REQUISITOS,
+  CC_SEO_TEXTO,
+  CC_TELEFONO_DISPLAY,
+  CC_WHATSAPP_DISPLAY,
+  CC_WHATSAPP_URL,
+  CURSOS_CONDUCCION_GUION_VERSION,
+} from './cursos-conduccion-guion';
 
 export interface PortalCursosConduccionResolucion {
   titulo: string;
@@ -19,7 +44,19 @@ export interface PortalCursosConduccionCategoria {
   descripcion: string;
 }
 
-export type PortalCursosConduccionLicenciaItem = LicenciaHomeItem;
+export interface PortalCursosConduccionLicenciaItem {
+  icon: string;
+  codigo: string;
+  titulo: string;
+  subtitulo?: string;
+  incluye: string[];
+  licenciaLabel: string;
+  valor: string;
+  btnTexto: string;
+  btnUrl: string;
+  destacada: boolean;
+  imagenAlt?: string;
+}
 
 export interface PortalCursosConduccionLicencias {
   kicker: string;
@@ -60,7 +97,18 @@ export interface PortalCursosConduccionInvitacion {
   btnRegistro: string;
 }
 
+export interface PortalCursosConduccionFaqItem {
+  pregunta: string;
+  respuesta: string;
+}
+
+export interface PortalCursosConduccionMetodologiaItem {
+  titulo: string;
+  texto: string;
+}
+
 export interface PortalCursosConduccionLanding {
+  guionVersion?: number;
   hero: {
     kicker: string;
     imagenUrl: string;
@@ -77,6 +125,33 @@ export interface PortalCursosConduccionLanding {
   invitacion: PortalCursosConduccionInvitacion;
   licencias: PortalCursosConduccionLicencias;
   publicidad: PortalCursosConduccionPublicidad;
+  metodologiaTitulo: string;
+  metodologiaLead: string;
+  metodologiaItems: PortalCursosConduccionMetodologiaItem[];
+  requisitosTitulo: string;
+  requisitosLead: string;
+  requisitosTexto: string;
+  requisitosLicenciaTexto: string;
+  requisitosLicenciaEnlaceTexto: string;
+  requisitosBtnTexto: string;
+  requisitosBtnUrl: string;
+  seoTextoTitulo: string;
+  seoTextoParrafos: string[];
+  faqTitulo: string;
+  faq: PortalCursosConduccionFaqItem[];
+  inscripcionesTitulo: string;
+  inscripcionesLead: string;
+  localTitulo: string;
+  localLead: string;
+  localDireccion: string;
+  localWhatsApp: string;
+  localWhatsAppUrl: string;
+  localTelefono: string;
+  localBtnMapsTexto: string;
+  localBtnMapsUrl: string;
+  localBtnWhatsappTexto: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
   /** @deprecated Usar licencias */
   etiquetaCategorias?: string;
   /** @deprecated Usar licencias.lead */
@@ -87,40 +162,32 @@ export interface PortalCursosConduccionLanding {
   textoInvitacion?: string;
 }
 
+const INVITACION_BENEFICIOS: PortalCursosConduccionBeneficio[] = [
+  {
+    icon: 'shield-check',
+    titulo: 'Seguridad vial',
+    texto: 'Normas de tránsito, prevención del riesgo y conducción responsable.',
+  },
+  {
+    icon: 'academic-cap',
+    titulo: 'Competencias al volante',
+    texto: 'Técnicas de conducción segura adaptadas a cada categoría de licencia.',
+  },
+  {
+    icon: 'wrench',
+    titulo: 'Conocimiento del vehículo',
+    texto: 'Actividades de taller para verificar elementos de seguridad y mantenimiento básico.',
+  },
+];
+
 const INVITACION_DEFAULTS: PortalCursosConduccionInvitacion = {
-  kicker: 'Tu libertad al volante',
-  titulo: '¡Da el primer paso hacia tu libertad!',
-  lead:
-    'Aprender a conducir no es solo obtener una licencia: es ganar independencia, confianza y nuevas oportunidades para moverte con seguridad.',
-  institucion:
-    'Te acompañamos para que aprendas a conducir de manera responsable, segura y con la preparación que necesitas ante el Ministerio de Transporte.',
-  beneficios: [
-    {
-      icon: '💪',
-      titulo: 'Confianza',
-      texto: 'Avanza con instructores certificados y un plan de formación claro.',
-    },
-    {
-      icon: '🛣️',
-      titulo: 'Independencia',
-      texto: 'Muévete con autonomía en la ciudad, el trabajo y tu día a día.',
-    },
-    {
-      icon: '🚦',
-      titulo: 'Seguridad vial',
-      texto: 'Conduce con criterio, respeto por la norma y buenas prácticas.',
-    },
-  ],
-  destacado: '¡No dejes para después lo que puede abrirte nuevas puertas hoy!',
-  cierre: 'Inscríbete a tu curso de conducción y empieza a construir el camino hacia tu licencia.',
-  firma: '¡Tu camino comienza aquí!',
-  btnCursos: 'Ver cursos disponibles',
-  btnRegistro: 'Crear cuenta gratis',
+  ...CC_INVITACION,
+  beneficios: INVITACION_BENEFICIOS.map((b) => ({ ...b })),
 };
 
 const LICENCIAS_DEFAULTS: PortalCursosConduccionLicencias = {
-  ...LICENCIAS_HOME,
-  items: LICENCIAS_HOME.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+  ...CC_LICENCIAS_SECCION,
+  items: CC_LICENCIAS_ITEMS.map((item) => ({ ...item, incluye: [...item.incluye] })),
 };
 
 const PUBLICIDAD_DEFAULTS: PortalCursosConduccionPublicidad = {
@@ -130,29 +197,105 @@ const PUBLICIDAD_DEFAULTS: PortalCursosConduccionPublicidad = {
 };
 
 export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding = {
+  guionVersion: CURSOS_CONDUCCION_GUION_VERSION,
   hero: {
-    kicker: 'Cursos de conducción',
+    kicker: CC_HERO.kicker,
     imagenUrl: '',
-    imagenAlt: 'Formación en conducción y categorías de licencia',
-    pillarsLabel: 'Formación en conducción',
+    imagenAlt: CC_HERO.imagenAlt,
+    pillarsLabel: 'Formación de conductores',
     pillars: PROMO_HERO_PILARES_INSTITUCION,
     mostrarBadgeVirtual: true,
     virtualBadgeLabel: 'VIRTUAL',
   },
-  tituloPrincipal: 'CENTRO DE ENSEÑANZA AUTOMOVILÍSTICA',
-  textoInstitucional:
-    'Centro de Enseñanza Automovilística CEA, debidamente habilitado ante Ministerio de transporte.',
+  tituloPrincipal: CC_HERO.tituloPrincipal,
+  textoInstitucional: CC_HERO.textoInstitucional,
   resoluciones: [
     { titulo: 'Resolución 2267 de 06/08/2014 Mintransporte', archivoUrl: '', nombreArchivo: '' },
     { titulo: 'Resolución 2294 del 11/08/2014 Mintransporte', archivoUrl: '', nombreArchivo: '' },
   ],
-  invitacion: { ...INVITACION_DEFAULTS, beneficios: INVITACION_DEFAULTS.beneficios.map((b) => ({ ...b })) },
+  invitacion: { ...INVITACION_DEFAULTS, beneficios: INVITACION_BENEFICIOS.map((b) => ({ ...b })) },
   licencias: {
     ...LICENCIAS_DEFAULTS,
     items: LICENCIAS_DEFAULTS.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
   },
   publicidad: { ...PUBLICIDAD_DEFAULTS, slides: [] },
+  metodologiaTitulo: CC_METODOLOGIA.titulo,
+  metodologiaLead: CC_METODOLOGIA.lead,
+  metodologiaItems: CC_METODOLOGIA.items.map((m) => ({ ...m })),
+  requisitosTitulo: CC_REQUISITOS.titulo,
+  requisitosLead: CC_REQUISITOS.lead,
+  requisitosTexto: CC_REQUISITOS.texto,
+  requisitosLicenciaTexto: CC_REQUISITOS.licenciaTexto,
+  requisitosLicenciaEnlaceTexto: CC_REQUISITOS.licenciaEnlaceTexto,
+  requisitosBtnTexto: CC_REQUISITOS.btnTexto,
+  requisitosBtnUrl: CC_REQUISITOS.btnUrl,
+  seoTextoTitulo: CC_SEO_TEXTO.titulo,
+  seoTextoParrafos: [...CC_SEO_TEXTO.parrafos],
+  faqTitulo: CC_FAQ_TITULO,
+  faq: CC_FAQ.map((f) => ({ ...f })),
+  inscripcionesTitulo: CC_INSCRIPCIONES.titulo,
+  inscripcionesLead: CC_INSCRIPCIONES.lead,
+  localTitulo: CC_LOCAL.titulo,
+  localLead: CC_LOCAL.lead,
+  localDireccion: CC_DIRECCION,
+  localWhatsApp: CC_WHATSAPP_DISPLAY,
+  localWhatsAppUrl: CC_WHATSAPP_URL,
+  localTelefono: CC_TELEFONO_DISPLAY,
+  localBtnMapsTexto: CC_LOCAL.btnMapsTexto,
+  localBtnMapsUrl: CC_MAPS_URL,
+  localBtnWhatsappTexto: CC_LOCAL.btnWhatsappTexto,
+  enlacesRelacionadosTitulo: CC_ENLACES_RELACIONADOS_TITULO,
+  enlacesRelacionados: CC_ENLACES_RELACIONADOS.map((e) => ({ ...e })),
 };
+
+function cursosConduccionNecesitaActualizarGuion(src: Partial<PortalCursosConduccionLanding>): boolean {
+  const v = Number(src.guionVersion) || 0;
+  if (v < CURSOS_CONDUCCION_GUION_VERSION) return true;
+  const titulo = String(src.tituloPrincipal || '').trim();
+  if (titulo === 'CENTRO DE ENSEÑANZA AUTOMOVILÍSTICA') return true;
+  const items = src.licencias?.items || [];
+  if (items.some((i) => String(i.codigo || '').toUpperCase() === 'B1')) return true;
+  if (!items.some((i) => String(i.codigo || '').toUpperCase() === 'C3')) return true;
+  return false;
+}
+
+function mergeCursosConduccionPreservandoUsuario(
+  src: Partial<PortalCursosConduccionLanding>,
+  d: PortalCursosConduccionLanding,
+): PortalCursosConduccionLanding {
+  const merged = JSON.parse(JSON.stringify(d)) as PortalCursosConduccionLanding;
+  const hero = src.hero;
+  if (hero?.imagenUrl?.trim() || hero?.imagenUrlAbsoluta?.trim()) {
+    merged.hero = {
+      ...merged.hero,
+      imagenUrl: hero.imagenUrl?.trim() || merged.hero.imagenUrl,
+      imagenUrlAbsoluta: hero.imagenUrlAbsoluta?.trim() || merged.hero.imagenUrlAbsoluta,
+    };
+  }
+  if (src.publicidad?.slides?.length) {
+    merged.publicidad = mergePublicidad(src.publicidad);
+  }
+  if (src.resoluciones?.length) {
+    merged.resoluciones = src.resoluciones.map((r, i) => ({
+      titulo: r.titulo?.trim() || d.resoluciones[i]?.titulo || '',
+      archivoUrl: r.archivoUrl?.trim() || '',
+      archivoUrlAbsoluta: r.archivoUrlAbsoluta?.trim() || undefined,
+      nombreArchivo: r.nombreArchivo?.trim() || '',
+    }));
+  }
+  const precios = new Map(
+    (src.licencias?.items || []).map((item) => [String(item.codigo || '').toUpperCase(), item.valor]),
+  );
+    merged.licencias.items = merged.licencias.items.map((item) => {
+      const valor = precios.get(item.codigo.toUpperCase());
+      return valor?.trim() ? { ...item, valor: valor.trim() } : item;
+    });
+    if (!src.enlacesRelacionados?.length) {
+      merged.enlacesRelacionados = d.enlacesRelacionados.map((e) => ({ ...e }));
+      merged.enlacesRelacionadosTitulo = d.enlacesRelacionadosTitulo;
+    }
+    return merged;
+}
 
 function mergeInvitacion(
   raw?: Partial<PortalCursosConduccionInvitacion> | null,
@@ -171,7 +314,7 @@ function mergeInvitacion(
     btnCursos: raw.btnCursos?.trim() || d.btnCursos,
     btnRegistro: raw.btnRegistro?.trim() || d.btnRegistro,
     beneficios: beneficiosSrc.map((b, i) => ({
-      icon: b.icon?.trim() || d.beneficios[i]?.icon || '✦',
+      icon: b.icon?.trim() || d.beneficios[i]?.icon || 'shield-check',
       titulo: b.titulo?.trim() || d.beneficios[i]?.titulo || '',
       texto: b.texto?.trim() || d.beneficios[i]?.texto || '',
     })),
@@ -188,12 +331,14 @@ function mergeLicenciaItem(
     icon: item.icon?.trim() || fb.icon,
     codigo: item.codigo?.trim() || fb.codigo,
     titulo: item.titulo?.trim() || fb.titulo,
+    subtitulo: item.subtitulo?.trim() || fb.subtitulo,
     incluye: incluye.length ? incluye : [...fb.incluye],
     licenciaLabel: item.licenciaLabel?.trim() || fb.licenciaLabel,
     valor: item.valor?.trim() ?? fb.valor,
     btnTexto: item.btnTexto?.trim() || fb.btnTexto,
     btnUrl: item.btnUrl?.trim() || fb.btnUrl,
     destacada: item.destacada === true,
+    imagenAlt: item.imagenAlt?.trim() || fb.imagenAlt,
   };
 }
 
@@ -218,14 +363,14 @@ function mergeLicencias(
   if (legacy?.categorias?.length) {
     const iconMap: Record<string, string> = {
       a2: 'bicycle',
-      b1: 'car',
+      b2: 'truck',
       c1: 'bus',
       c2: 'truck',
       c3: 'truck',
     };
     return {
       kicker: legacy.etiquetaCategorias?.trim() || d.kicker,
-      titulo: 'Categorías de licencia',
+      titulo: 'Cursos de Conducción Disponibles',
       lead: legacy.textoIntroCategorias?.trim() || d.lead,
       items: legacy.categorias.map((c, i) => {
         const fb = d.items[i] || d.items[0];
@@ -237,7 +382,7 @@ function mergeLicencias(
             codigo: cod,
             titulo: c.titulo?.trim() ? c.titulo.trim() : fb.titulo,
             incluye: desc ? [desc, ...fb.incluye.slice(1)] : fb.incluye,
-            licenciaLabel: fb.licenciaLabel || `Licencia ${cod}`,
+            licenciaLabel: fb.licenciaLabel || `Categoría ${cod}`,
           },
           fb,
         );
@@ -268,12 +413,48 @@ function mergePublicidad(
   };
 }
 
+function mergeFaq(
+  raw?: PortalCursosConduccionFaqItem[] | null,
+  fb: PortalCursosConduccionFaqItem[] = CC_FAQ,
+): PortalCursosConduccionFaqItem[] {
+  const src = Array.isArray(raw) ? raw : [];
+  if (!src.length) return fb.map((f) => ({ ...f }));
+  return src
+    .map((item, i) => ({
+      pregunta: item.pregunta?.trim() || fb[i]?.pregunta || '',
+      respuesta: item.respuesta?.trim() || fb[i]?.respuesta || '',
+    }))
+    .filter((f) => f.pregunta && f.respuesta);
+}
+
+function mergeMetodologiaItems(
+  raw?: PortalCursosConduccionMetodologiaItem[] | null,
+): PortalCursosConduccionMetodologiaItem[] {
+  const fb = CC_METODOLOGIA.items;
+  const src = Array.isArray(raw) ? raw : [];
+  if (!src.length) return fb.map((m) => ({ ...m }));
+  return src.map((item, i) => ({
+    titulo: item.titulo?.trim() || fb[i]?.titulo || '',
+    texto: item.texto?.trim() || fb[i]?.texto || '',
+  }));
+}
+
 export function mergeCursosConduccionLanding(
   raw?: Partial<PortalCursosConduccionLanding> | null,
 ): PortalCursosConduccionLanding {
   const d = CURSOS_CONDUCCION_LANDING_DEFAULTS;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  if (cursosConduccionNecesitaActualizarGuion(src)) {
+    return mergeCursosConduccionPreservandoUsuario(src, d);
+  }
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalCursosConduccionLanding;
+
+  const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
+  const parrafos = (v: string[] | undefined, fb: string[]) =>
+    Array.isArray(v) && v.length ? v.map((p) => String(p || '').trim()).filter(Boolean) : [...fb];
+
   return {
+    guionVersion: CURSOS_CONDUCCION_GUION_VERSION,
     hero: {
       kicker: raw.hero?.kicker?.trim() || d.hero.kicker,
       imagenUrl: raw.hero?.imagenUrl?.trim() || d.hero.imagenUrl,
@@ -284,8 +465,8 @@ export function mergeCursosConduccionLanding(
       mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
       virtualBadgeLabel: raw.hero?.virtualBadgeLabel?.trim() || d.hero.virtualBadgeLabel,
     },
-    tituloPrincipal: raw.tituloPrincipal?.trim() || d.tituloPrincipal,
-    textoInstitucional: raw.textoInstitucional?.trim() || d.textoInstitucional,
+    tituloPrincipal: str(raw.tituloPrincipal, d.tituloPrincipal),
+    textoInstitucional: str(raw.textoInstitucional, d.textoInstitucional),
     invitacion: mergeInvitacion(raw.invitacion),
     licencias: mergeLicencias(raw.licencias, {
       etiquetaCategorias: raw.etiquetaCategorias,
@@ -301,5 +482,32 @@ export function mergeCursosConduccionLanding(
         }))
       : d.resoluciones.map((r) => ({ ...r })),
     publicidad: mergePublicidad(raw.publicidad),
+    metodologiaTitulo: str(raw.metodologiaTitulo, d.metodologiaTitulo),
+    metodologiaLead: str(raw.metodologiaLead, d.metodologiaLead),
+    metodologiaItems: mergeMetodologiaItems(raw.metodologiaItems),
+    requisitosTitulo: str(raw.requisitosTitulo, d.requisitosTitulo),
+    requisitosLead: str(raw.requisitosLead, d.requisitosLead),
+    requisitosTexto: str(raw.requisitosTexto, d.requisitosTexto),
+    requisitosLicenciaTexto: str(raw.requisitosLicenciaTexto, d.requisitosLicenciaTexto),
+    requisitosLicenciaEnlaceTexto: str(raw.requisitosLicenciaEnlaceTexto, d.requisitosLicenciaEnlaceTexto),
+    requisitosBtnTexto: str(raw.requisitosBtnTexto, d.requisitosBtnTexto),
+    requisitosBtnUrl: str(raw.requisitosBtnUrl, d.requisitosBtnUrl),
+    seoTextoTitulo: str(raw.seoTextoTitulo, d.seoTextoTitulo),
+    seoTextoParrafos: parrafos(raw.seoTextoParrafos, d.seoTextoParrafos),
+    faqTitulo: str(raw.faqTitulo, d.faqTitulo),
+    faq: mergeFaq(raw.faq, d.faq),
+    inscripcionesTitulo: str(raw.inscripcionesTitulo, d.inscripcionesTitulo),
+    inscripcionesLead: str(raw.inscripcionesLead, d.inscripcionesLead),
+    localTitulo: str(raw.localTitulo, d.localTitulo),
+    localLead: str(raw.localLead, d.localLead),
+    localDireccion: str(raw.localDireccion, d.localDireccion),
+    localWhatsApp: str(raw.localWhatsApp, d.localWhatsApp),
+    localWhatsAppUrl: str(raw.localWhatsAppUrl, d.localWhatsAppUrl),
+    localTelefono: str(raw.localTelefono, d.localTelefono),
+    localBtnMapsTexto: str(raw.localBtnMapsTexto, d.localBtnMapsTexto),
+    localBtnMapsUrl: str(raw.localBtnMapsUrl, d.localBtnMapsUrl),
+    localBtnWhatsappTexto: str(raw.localBtnWhatsappTexto, d.localBtnWhatsappTexto),
+    enlacesRelacionadosTitulo: str(raw.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(raw.enlacesRelacionados, d.enlacesRelacionados),
   };
 }

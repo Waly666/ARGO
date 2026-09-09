@@ -6,11 +6,12 @@ import { finalize } from 'rxjs';
 import { PortalGaleriaLanding } from '../../core/constants/portal-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-galeria-hero-imagen-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent],
   templateUrl: './portal-galeria-hero-imagen-editor.component.html',
   styleUrl: './portal-galeria-hero-imagen-editor.component.scss',
 })

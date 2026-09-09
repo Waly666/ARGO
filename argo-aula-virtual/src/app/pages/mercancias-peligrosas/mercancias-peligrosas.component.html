@@ -1,4 +1,5 @@
 <div class="mp-page">
+  <av-portal-breadcrumbs [items]="[{ label: 'Inicio', path: '/' }, { label: 'Mercancías peligrosas' }]" />
   <av-portal-promo-banner-hero
     sectionId="inicio"
     [theme]="contenido().theme"
@@ -285,7 +286,7 @@
       <div class="container">
         <header class="mp-section-head reveal" avRevealOnScroll>
           <p class="mp-section-head__kicker">Prevención</p>
-          <h2 class="mp-section__title">Seguridad y gestión del riesgo</h2>
+          <h2 class="mp-section__title">{{ contenido().seguridadTitulo }}</h2>
         </header>
         <div class="mp-seguridad-grid reveal" avRevealOnScroll [revealDelay]="60">
           <article class="mp-seguridad-panel">
@@ -380,9 +381,18 @@
       </div>
     </section>
 
+    <section class="mp-section mp-section--alt">
+      <div class="container">
+        <av-portal-enlaces-relacionados
+          [titulo]="contenido().enlacesRelacionadosTitulo"
+          [enlaces]="contenido().enlacesRelacionados"
+        />
+      </div>
+    </section>
+
     <section class="mp-section" id="faq">
       <div class="container">
-        <h2 class="mp-section__title">Preguntas frecuentes</h2>
+        <h2 class="mp-section__title">{{ contenido().faqTitulo }}</h2>
         <div class="mp-faq">
           @for (item of contenido().faq; track item.pregunta) {
             <details class="mp-faq__item">
@@ -491,6 +501,49 @@
                 }
               </div>
             </div>
+          }
+        </div>
+      </section>
+    }
+    @if (contenido().localTitulo.trim() || contenido().inscripcionesTitulo.trim()) {
+      <section class="mp-section mp-section--alt" id="inscripciones">
+        <div class="container">
+          @if (contenido().localTitulo.trim()) {
+            <article class="mp-highlight reveal" avRevealOnScroll>
+              <h2 class="mp-section__title">{{ contenido().localTitulo }}</h2>
+              <p class="mp-text">{{ contenido().localTexto }}</p>
+              @if (contenido().localUbicacion.trim()) {
+                <p class="mp-text"><strong>Ubicación:</strong> {{ contenido().localUbicacion }}</p>
+              }
+              @if (contenido().localTelefono.trim()) {
+                <p class="mp-text"><strong>Teléfono:</strong> {{ contenido().localTelefono }}</p>
+              }
+              @if (contenido().localAtencion.trim()) {
+                <p class="mp-text"><strong>Atención:</strong> {{ contenido().localAtencion }}</p>
+              }
+            </article>
+          }
+          @if (contenido().inscripcionesTitulo.trim()) {
+            <article class="mp-highlight reveal" avRevealOnScroll [revealDelay]="60">
+              <h2 class="mp-section__title">{{ contenido().inscripcionesTitulo }}</h2>
+              <p class="mp-text">{{ contenido().inscripcionesTexto }}</p>
+              <div class="ppbh-ctas">
+                @if (inscripcionesCtaHref()) {
+                  <a class="btn btn-primary" [routerLink]="inscripcionesCtaHref()!">
+                    {{ contenido().inscripcionesCtaTexto }}
+                  </a>
+                }
+                @if (contenido().inscripcionesWhatsappUrl.trim()) {
+                  <a
+                    class="btn btn-outline"
+                    [href]="contenido().inscripcionesWhatsappUrl"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    {{ contenido().inscripcionesWhatsappTexto }} ↗
+                  </a>
+                }
+              </div>
+            </article>
           }
         </div>
       </section>

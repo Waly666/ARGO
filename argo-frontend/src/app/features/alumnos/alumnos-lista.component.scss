@@ -977,6 +977,11 @@ table.alumnos-grid .col-alertas {
   background: linear-gradient(120deg, rgba(56, 189, 248, 0.1), transparent 60%);
 }
 
+.alum-shell .card-title--with-qr {
+  align-items: flex-start;
+  background: linear-gradient(120deg, rgba(20, 184, 166, 0.14), transparent 62%);
+}
+
 .card-avatar {
   width: 52px;
   height: 52px;

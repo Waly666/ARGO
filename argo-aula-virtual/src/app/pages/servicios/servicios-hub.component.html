@@ -1,37 +1,205 @@
-<div class="fsv-page">
-  <av-portal-promo-banner-hero
-    [showPhoto]="!!heroPhoto()"
-    [photoUrl]="heroPhoto()"
-    [photoAlt]="hub().heroImagenAlt"
-    [kicker]="hub().kicker"
-    [titleLine]="hub().tituloLinea"
-    [titleAccent]="hub().tituloAcento"
-    [lead]="hub().lead"
-    [showVirtualBadge]="false"
-    theme="blue"
-    titleId="fsv-hub-title"
-  />
+<div class="fsv-page" [class.fsv-page--servial]="esServialHub()">
+  <av-portal-breadcrumbs [items]="[{ label: 'Inicio', path: '/' }, { label: 'Servicios' }]" />
+
+  @if (esServialHub()) {
+    <section class="fsv-hero" id="inicio" aria-labelledby="fsv-hub-title">
+      <div class="fsv-hero__mesh" aria-hidden="true"></div>
+      <div class="container fsv-hero__grid">
+        <div class="fsv-hero__copy reveal" avRevealOnScroll>
+          @if (logoUrl(); as logo) {
+            <figure class="fsv-hero__logo">
+              <img [src]="logo" [alt]="nombreCea()" />
+            </figure>
+          }
+          @if (hub().kicker.trim()) {
+            <p class="fsv-hero__kicker">{{ hub().kicker }}</p>
+          }
+          <h1 id="fsv-hub-title" class="fsv-hero__title">
+            {{ hub().tituloLinea }}
+            @if (hub().tituloAcento.trim()) {
+              <span class="fsv-hero__title-accent">{{ hub().tituloAcento }}</span>
+            }
+          </h1>
+          @if (hub().lead.trim()) {
+            <p class="fsv-hero__lead">{{ hub().lead }}</p>
+          }
+          @if (hub().heroStats.length) {
+            <div class="fsv-hero__stats" aria-label="Cobertura del servicio">
+              @for (stat of hub().heroStats; track stat) {
+                <span class="fsv-hero__stat">{{ stat }}</span>
+              }
+            </div>
+          }
+          <div class="fsv-hero__actions">
+            <a class="fsv-btn fsv-btn--primary" href="#formacion">Conocer nuestra formación</a>
+            <a class="fsv-btn fsv-btn--ghost" href="#portafolio">Ver cursos y servicios</a>
+          </div>
+        </div>
+
+        <div class="fsv-hero__media reveal" avRevealOnScroll [revealDelay]="80">
+          @if (heroPhoto(); as src) {
+            <figure class="fsv-media-card fsv-media-card--hero">
+              <img [src]="src" [alt]="hub().heroImagenAlt" />
+            </figure>
+          } @else {
+            <figure class="fsv-media-card fsv-media-card--hero fsv-media-card--placeholder">
+              <span class="fsv-media-card__icon" aria-hidden="true">🎓</span>
+              <p class="fsv-media-card__label">Imagen principal del portafolio</p>
+              <span class="fsv-media-card__hint">{{ hub().heroImagenAlt }}</span>
+            </figure>
+          }
+        </div>
+      </div>
+    </section>
+  } @else {
+    <av-portal-promo-banner-hero
+      [showPhoto]="!!heroPhoto()"
+      [photoUrl]="heroPhoto()"
+      [photoAlt]="hub().heroImagenAlt"
+      [kicker]="hub().kicker"
+      [titleLine]="hub().tituloLinea"
+      [titleAccent]="hub().tituloAcento"
+      [lead]="hub().lead"
+      [showVirtualBadge]="false"
+      theme="blue"
+      size="page-tall"
+      titleId="fsv-hub-title"
+    />
+  }
 
   <main>
+    @if (hub().seoTextoTitulo.trim() && hub().seoTextoParrafos.length) {
+      <section class="fsv-section fsv-formacion" id="formacion">
+        <div class="container">
+          <div class="fsv-formacion__grid reveal" avRevealOnScroll>
+            <div class="fsv-formacion__copy">
+              <p class="fsv-section-head__kicker">Formación integral</p>
+              <h2 class="fsv-section__title">{{ hub().seoTextoTitulo }}</h2>
+              <div class="fsv-formacion__body">
+                @for (p of hub().seoTextoParrafos; track p) {
+                  <p>{{ p }}</p>
+                }
+              </div>
+              <ul class="fsv-formacion__tags" aria-label="Áreas de formación">
+                @for (tag of formacionHighlights; track tag) {
+                  <li>{{ tag }}</li>
+                }
+              </ul>
+            </div>
+
+            <div class="fsv-formacion__media">
+              @if (imagenHub(hub().formacionImagenUrl, hub().formacionImagenUrlAbsoluta); as src1) {
+                <figure class="fsv-media-card fsv-media-card--main">
+                  <img [src]="src1" [alt]="hub().formacionImagenAlt" />
+                </figure>
+              } @else {
+                <figure class="fsv-media-card fsv-media-card--main fsv-media-card--placeholder">
+                  <span class="fsv-media-card__icon" aria-hidden="true">🛡️</span>
+                  <p class="fsv-media-card__label">Imagen de formación</p>
+                  <span class="fsv-media-card__hint">{{ hub().formacionImagenAlt }}</span>
+                </figure>
+              }
+
+              @if (imagenHub(hub().formacionImagen2Url, hub().formacionImagen2UrlAbsoluta); as src2) {
+                <figure class="fsv-media-card fsv-media-card--secondary">
+                  <img [src]="src2" [alt]="hub().formacionImagen2Alt" />
+                </figure>
+              } @else {
+                <figure class="fsv-media-card fsv-media-card--secondary fsv-media-card--placeholder">
+                  <span class="fsv-media-card__icon" aria-hidden="true">🚗</span>
+                  <p class="fsv-media-card__label">Imagen complementaria</p>
+                  <span class="fsv-media-card__hint">{{ hub().formacionImagen2Alt }}</span>
+                </figure>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
     <section class="fsv-section fsv-section--alt" id="portafolio">
       <div class="container">
         <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
           <p class="fsv-section-head__kicker">Portafolio</p>
           <h2 class="fsv-section__title">{{ hub().gridTitulo }}</h2>
-          <p class="fsv-section-head__lead">{{ hub().gridLead }}</p>
+          @if (hub().gridLead.trim()) {
+            <p class="fsv-section-head__lead">{{ hub().gridLead }}</p>
+          }
         </header>
 
         <div class="fsv-grid reveal" avRevealOnScroll [revealDelay]="60">
-          @for (item of tarjetas(); track item.slug; let i = $index) {
-            <a class="fsv-card" [routerLink]="item.route" [style.animation-delay]="i * 60 + 'ms'">
-              <span class="fsv-card__icon" aria-hidden="true">{{ item.hubIcon }}</span>
-              <h3>{{ item.menuLabel }}</h3>
-              <p>{{ item.hubLead }}</p>
-              <span class="fsv-card__link">{{ item.tarjetaCta }} →</span>
-            </a>
+          @for (item of tarjetas(); track item.titulo; let i = $index) {
+            @if (enlaceExterno(item)) {
+              <a
+                class="fsv-card"
+                [href]="item.url"
+                [style.animation-delay]="i * 60 + 'ms'"
+              >
+                <span class="fsv-card__icon" aria-hidden="true">{{ item.icon }}</span>
+                <h3>{{ item.titulo }}</h3>
+                <p>{{ item.lead }}</p>
+                <span class="fsv-card__link">{{ item.cta }} →</span>
+              </a>
+            } @else {
+              <a
+                class="fsv-card"
+                [routerLink]="item.url"
+                [style.animation-delay]="i * 60 + 'ms'"
+              >
+                <span class="fsv-card__icon" aria-hidden="true">{{ item.icon }}</span>
+                <h3>{{ item.titulo }}</h3>
+                <p>{{ item.lead }}</p>
+                <span class="fsv-card__link">{{ item.cta }} →</span>
+              </a>
+            }
           }
         </div>
       </div>
     </section>
+
+    @if (hub().localTitulo.trim()) {
+      <section class="fsv-section" id="ubicacion">
+        <div class="container">
+          <article class="fsv-highlight reveal" avRevealOnScroll>
+            <h2 class="fsv-section__title">{{ hub().localTitulo }}</h2>
+            @if (hub().localTexto.trim()) {
+              <p class="fsv-highlight__text">{{ hub().localTexto }}</p>
+            }
+            <ul class="fsv-contact">
+              @if (hub().localDireccion.trim()) {
+                <li><strong>Dirección:</strong> {{ hub().localDireccion }}</li>
+              }
+              @if (hub().localTelefono.trim()) {
+                <li><strong>Teléfono:</strong> {{ hub().localTelefono }}</li>
+              }
+              @if (hub().localEmail.trim()) {
+                <li>
+                  <strong>Correo:</strong>
+                  <a [href]="'mailto:' + hub().localEmail">{{ hub().localEmail }}</a>
+                </li>
+              }
+            </ul>
+          </article>
+        </div>
+      </section>
+    }
+
+    @if (hub().faq.length) {
+      <section class="fsv-section fsv-section--alt" id="faq">
+        <div class="container">
+          <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
+            <h2 class="fsv-section__title">{{ hub().faqTitulo || 'Preguntas frecuentes' }}</h2>
+          </header>
+          <div class="fsv-faq reveal" avRevealOnScroll [revealDelay]="40">
+            @for (item of hub().faq; track item.pregunta) {
+              <details class="fsv-faq__item">
+                <summary>{{ item.pregunta }}</summary>
+                <p>{{ item.respuesta }}</p>
+              </details>
+            }
+          </div>
+        </div>
+      </section>
+    }
   </main>
 </div>

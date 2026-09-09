@@ -6,7 +6,10 @@ const {
   contarClasesContrato,
   resolverProgramaAutogeneracion,
 } = require('./programasContratoJornada');
-const { programasAutogeneracionContrato } = require('../constants/origenJornadaCap');
+const {
+  programasAutogeneracionContrato,
+  idsProgramasOrigenesActivosContrato,
+} = require('../constants/origenJornadaCap');
 const { clasesPorJornadaParaJornada } = require('../constants/municipiosPlanContrato');
 const {
   normalizarInstructoresPlan,
@@ -61,7 +64,10 @@ async function generarClasesFaltantesJornada(jornada, contrato, userLogin = '') 
   const contratoPlain =
     contrato && typeof contrato.toObject === 'function' ? contrato.toObject() : contrato || {};
   const planInst = normalizarInstructoresPlan(contratoPlain.instructoresPlan);
-  const cupos = cuposAutogeneracionClases(planInst, meta);
+  const programasOrigen = idsProgramasOrigenesActivosContrato(contratoPlain);
+  const cupos = programasOrigen.length
+    ? cuposAutogeneracionClases(planInst, meta, programasOrigen)
+    : [];
   const usarPares = cupos.length > 0;
   const programasContrato = usarPares ? [] : programasAutogeneracionContrato(contratoPlain);
 

@@ -31,7 +31,7 @@ function appendFormField(fd: FormData, k: string, v: unknown) {
     fd.append(k, String(v ?? ''));
     return;
   }
-  if (k === 'alertaPago' || k === 'alertaPagoFrecuencia') {
+  if (k === 'alertaPago' || k === 'alertaPagoFrecuencia' || k === 'nombre2') {
     fd.append(k, String(v ?? ''));
     return;
   }

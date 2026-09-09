@@ -35,6 +35,14 @@
           <span>Texto alternativo</span>
           <input type="text" class="psb-input" [(ngModel)]="slide.alt" placeholder="Publicidad" />
         </label>
+        <argo-portal-editor-imagen-prompt
+          [promptImagen]="slide.promptImagen || ''"
+          (promptImagenChange)="slide.promptImagen = $event"
+          [alt]="slide.alt"
+          [etiqueta]="'Publicidad inicio ' + (i + 1)"
+          (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+          (copyError)="avNotice.emit({ message: $event, error: true })"
+        />
         <label class="psb-field psb-field--plain">
           <span>Enlace al hacer clic (opcional)</span>
           <input type="text" class="psb-input" [(ngModel)]="slide.enlace" placeholder="https://..." />

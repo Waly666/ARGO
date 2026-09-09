@@ -7,6 +7,12 @@ const {
 } = require('./portalPromoHeroFields');
 const ENLACE_PORTAL_MINTRANSPORTE_MP =
   'https://www.mintransporte.gov.co/normatividad/proyectos-de-normatividad/mercancias-peligrosas/';
+const { promptFotoHorizontal } = require('../utils/portalImagenPrompt');
+
+function str(v, fb) {
+  const t = String(v ?? '').trim();
+  return t || fb;
+}
 
 
 
@@ -29,18 +35,21 @@ const ENLACE_PORTAL_MINTRANSPORTE_MP =
 
 
 
+
+const MERCANCIAS_PELIGROSAS_GUION_VERSION = 1;
 
 const MERCANCIAS_PELIGROSAS_DEFAULTS = {
-  kicker: 'Transporte seguro',
-  titulo: 'Mercancías peligrosas',
-  tituloLinea2: 'en Colombia',
-  subtitulo: 'Normativa • Seguridad • Transporte • Responsabilidades',
+  guionVersion: MERCANCIAS_PELIGROSAS_GUION_VERSION,
+  kicker: 'Curso · Normativa · Seguridad · Villavicencio',
+  titulo: 'Curso de Mercancías Peligrosas en Villavicencio, Meta',
+  tituloLinea2: '',
+  subtitulo: 'Normativa · Capacitación · Transporte terrestre · SERVIAL Colombia',
   heroLead:
-    'Conoce la normativa que regula su transporte y las responsabilidades de quienes participan en la cadena.',
+    'Capacitación para conductores y empresas que requieren formación en transporte de mercancías peligrosas en Colombia, con atención en Villavicencio, Meta y los Llanos Orientales.',
   heroParrafos: [
-    'Las mercancías peligrosas requieren controles especiales debido a los riesgos que pueden representar para las personas, los bienes, la infraestructura y el medio ambiente.',
-    'En Colombia, el transporte terrestre de mercancías peligrosas por carretera cuenta con una regulación específica que establece requisitos técnicos y de seguridad.',
-    'Nuestro objetivo: explicar esta normativa de una manera sencilla, organizada y fácil de consultar.',
+    'Las mercancías peligrosas requieren controles especiales por los riesgos que representan para las personas, los bienes, la infraestructura y el medio ambiente.',
+    'En Colombia, el transporte terrestre de mercancías peligrosas por carretera está regulado por el Decreto 1079 de 2015, las NTC y los lineamientos del Ministerio de Transporte.',
+    'Esta página organiza la normativa, el contenido del curso y las responsabilidades de conductores y empresas del sector transporte con el respaldo de SERVIAL Colombia.',
   ],
   heroPillarsLabel: 'Contenidos del curso',
   heroPillars: PROMO_HERO_PILARES_MP,
@@ -49,13 +58,13 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   theme: 'green',
   mostrarBadgeVirtual: true,
   virtualBadgeLabel: 'VIRTUAL',
-  ctaNormativaTexto: 'Conocer la normativa',
-  ctaClasificacionTexto: 'Ver clasificación',
-  ctaFaqTexto: 'Preguntas frecuentes',
-  ctaInicioTexto: 'Ver información completa',
+  ctaNormativaTexto: 'Información del curso de mercancías peligrosas',
+  ctaClasificacionTexto: 'Ver contenido del curso',
+  ctaFaqTexto: 'Preguntas sobre el curso',
+  ctaInicioTexto: 'Información del curso de mercancías peligrosas',
   ctaUrl: '/mercancias-peligrosas',
   enlaceCursoUrl: '',
-  enlaceCursoEtiqueta: 'Ir al curso de capacitación',
+  enlaceCursoEtiqueta: 'Inscribirme al curso',
   homeItems: [
     {
       numero: 1,
@@ -98,15 +107,55 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
     { id: 'documentos', label: 'Documentos PDF' },
   ],
   imagenes: [
-    { id: 'hero', etiqueta: 'Banner principal', url: '', alt: 'Transporte de mercancías peligrosas' },
-    { id: 'que-son', etiqueta: 'Sección ¿Qué son?', url: '', alt: 'Identificación de mercancías peligrosas' },
-    { id: 'normativa', etiqueta: 'Sección normativa', url: '', alt: 'Marco normativo del sector transporte' },
-    { id: 'clasificacion', etiqueta: 'Sección clasificación', url: '', alt: 'Clasificación de mercancías peligrosas' },
-    { id: 'seguridad', etiqueta: 'Sección seguridad', url: '', alt: 'Seguridad en el transporte' },
+    {
+      id: 'hero',
+      etiqueta: 'Banner principal',
+      url: '',
+      alt: "Curso de mercancías peligrosas en Villavicencio, Meta",
+      promptImagen: promptFotoHorizontal(
+        'Camión de carga o tanque con señalización de mercancías peligrosas en carretera de los Llanos; ambiente profesional de transporte terrestre.',
+      ),
+    },
+    {
+      id: 'que-son',
+      etiqueta: 'Sección ¿Qué son?',
+      url: '',
+      alt: "Capacitación en transporte de mercancías peligrosas en Colombia",
+      promptImagen: promptFotoHorizontal(
+        'Operario en bodega inspeccionando etiquetas, pictogramas y fichas de seguridad de materiales peligrosos.',
+      ),
+    },
+    {
+      id: 'normativa',
+      etiqueta: 'Sección normativa',
+      url: '',
+      alt: "Formación para conductores de mercancías peligrosas en SERVIAL",
+      promptImagen: promptFotoHorizontal(
+        'Mesa de trabajo con documentos legales del sector transporte y computador; ambiente de oficina técnica o cumplimiento normativo.',
+      ),
+    },
+    {
+      id: 'clasificacion',
+      etiqueta: 'Sección clasificación',
+      url: '',
+      alt: "Curso de mercancías peligrosas para empresas del Meta",
+      promptImagen: promptFotoHorizontal(
+        'Exhibición didáctica de clases de mercancías peligrosas con pictogramas de colores en un entorno de capacitación (sin texto legible específico).',
+      ),
+    },
+    {
+      id: 'seguridad',
+      etiqueta: 'Sección seguridad',
+      url: '',
+      alt: "Capacitación de mercancías peligrosas en los Llanos Orientales",
+      promptImagen: promptFotoHorizontal(
+        'Personal con equipo de emergencia ante un derrame controlado en patio logístico; sensación de prevención y respuesta segura.',
+      ),
+    },
   ],
-  queSonTitulo: '¿Qué son las mercancías peligrosas?',
+  queSonTitulo: 'Curso obligatorio de mercancías peligrosas en Colombia',
   queSonDefinicion:
-    'De acuerdo con el Decreto 1079 de 2015, las mercancías peligrosas son materiales que, durante actividades como fabricación, manejo, transporte, almacenamiento o uso, pueden generar riesgos para la salud de las personas o causar daños materiales.',
+    'El curso básico obligatorio de mercancías peligrosas es requerido para conductores que transportan estas cargas y para empresas de la cadena logística que deben garantizar cumplimiento normativo, formación y certificación según el Ministerio de Transporte. De acuerdo con el Decreto 1079 de 2015, las mercancías peligrosas son materiales que, durante fabricación, manejo, transporte, almacenamiento o uso, pueden generar riesgos para la salud de las personas o causar daños materiales.',
   queSonRiesgos: [
     'Inflamables',
     'Explosivas',
@@ -121,7 +170,7 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   queSonPorQue:
     'Porque el transporte de estas mercancías requiere que los riesgos sean identificados y comunicados correctamente. La normativa busca disminuir la posibilidad de accidentes y proteger:',
   queSonProtege: ['Personas', 'Medio ambiente', 'Infraestructura', 'Vehículos', 'Comunidades'],
-  normativaTitulo: 'Marco normativo',
+  normativaTitulo: 'Normativa del transporte de mercancías peligrosas en Colombia',
   normativaLead:
     'La principal referencia normativa para el transporte terrestre automotor de mercancías peligrosas por carretera se encuentra en el Decreto 1079 de 2015, Decreto Único Reglamentario del Sector Transporte. El Ministerio de Transporte señala que el antiguo Decreto 1609 de 2002 fue compilado en la Sección 8 del Capítulo 7, Título 1, Parte 2, Libro 2 del Decreto 1079 de 2015.',
   normativaDecretoTitulo: 'Decreto 1079 de 2015',
@@ -136,7 +185,7 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   actualizacionAviso: 'La normativa puede cambiar. Verifique siempre la versión vigente antes de una operación real.',
   actualizacionTexto:
     'El Ministerio de Transporte publicó en julio de 2026 un proyecto de decreto destinado a sustituir la sección del Decreto 1079 relacionada con el transporte terrestre automotor de mercancías peligrosas por carretera.',
-  clasificacionTitulo: 'Clasificación de las mercancías peligrosas',
+  clasificacionTitulo: 'Contenido del curso de transporte de mercancías peligrosas',
   clasificacionLead:
     'Las mercancías peligrosas se organizan internacionalmente en diferentes clases según el tipo de peligro que presentan.',
   clases: [
@@ -160,9 +209,9 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
     'Apoyar la respuesta ante emergencias',
     'Reducir errores durante el transporte',
   ],
-  documentacionTitulo: 'Documentación',
+  documentacionTitulo: 'Duración y certificación del curso de mercancías peligrosas',
   documentacionLead:
-    'La documentación es una parte fundamental del sistema de seguridad y permite conocer características y riesgos de la mercancía.',
+    'La duración y la certificación del curso básico obligatorio se rigen por la Resolución 1223 de 2014 y sus modificaciones. La documentación de transporte, los registros de capacitación y el cumplimiento ante el Ministerio de Transporte son parte esencial del proceso formativo.',
   documentacionItems: [
     'Documentos de transporte',
     'Información de identificación',
@@ -180,7 +229,7 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   tarjetaEmergenciaTexto:
     'Establecen criterios para preparar tarjetas con información clara para el transporte de materiales peligrosos.',
   tarjetaEmergenciaFuncion: 'Comunicar información de seguridad relevante ante una situación de emergencia.',
-  responsabilidadesTitulo: 'Responsabilidades en la cadena',
+  responsabilidadesTitulo: '¿Quién debe realizar el curso de mercancías peligrosas en Colombia?',
   responsabilidadesLead: 'La seguridad es responsabilidad de toda la cadena; no solo del conductor.',
   actores: [
     {
@@ -200,9 +249,9 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
       texto: 'Participa en la cadena y debe cumplir obligaciones de recepción y manejo de la mercancía.',
     },
   ],
-  capacitacionTitulo: 'Capacitación de conductores',
+  capacitacionTitulo: '¿Qué aprenderás en el curso de mercancías peligrosas?',
   capacitacionTexto:
-    'El Ministerio de Transporte relaciona la Resolución 1223 de 2014 con el curso básico obligatorio, modificada por las Resoluciones 2328 y 5747 de 2016. También dispone del SISCONMP para información de conductores.',
+    'El Ministerio de Transporte relaciona la Resolución 1223 de 2014 con el curso básico obligatorio, modificada por las Resoluciones 2328 y 5747 de 2016. En SERVIAL Colombia el programa aborda clasificación ONU, identificación, documentación, responsabilidades de la cadena logística, prevención de riesgos y respuesta ante emergencias, conforme a la normativa vigente.',
   capacitacionMensaje: 'La capacitación es un componente esencial de la prevención de riesgos.',
   vehiculosTitulo: 'Vehículos y seguridad',
   vehiculosLead:
@@ -226,9 +275,9 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   ],
   gestionCierre:
     'El Ministerio de Transporte presenta la gestión del riesgo como elemento fundamental para reducir accidentes y daños.',
-  internacionalTitulo: 'Normativa internacional',
+  internacionalTitulo: 'Capacitación en mercancías peligrosas para el Meta y los Llanos Orientales',
   internacionalTexto:
-    'La regulación colombiana tiene como referencia las Recomendaciones de las Naciones Unidas (Reglamentación Modelo / Libro Naranja), lo que permite estructura común en clasificación, identificación, etiquetado, embalaje y documentación.',
+    'Desde Villavicencio, SERVIAL Colombia brinda formación a conductores, empresas de transporte y organizaciones del Meta y los Llanos Orientales interesadas en fortalecer sus competencias para el transporte seguro de mercancías peligrosas.',
   internacionalAspectos: [
     'Clasificación',
     'Identificación',
@@ -236,7 +285,7 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
     'Embalaje',
     'Documentación',
   ],
-  modosTitulo: 'Diferentes modos de transporte',
+  modosTitulo: 'Modalidad del curso de mercancías peligrosas',
   modosLead: 'Cada modalidad puede estar sujeta a requisitos específicos según el Ministerio de Transporte.',
   modos: [
     { icono: 'truck', titulo: 'Terrestre', texto: 'Carretera y otros sistemas terrestres.' },
@@ -273,32 +322,29 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   ],
   faq: [
     {
-      pregunta: '¿Qué norma principal regula el transporte terrestre?',
+      pregunta: '¿Dónde realizar el curso de mercancías peligrosas en Villavicencio?',
       respuesta:
-        'El marco principal está en el Decreto 1079 de 2015, que compila la regulación del sector transporte y la sección de mercancías peligrosas por carretera.',
+        'En SERVIAL Colombia, con sede en Villavicencio, Meta, puede consultar la programación del curso básico obligatorio de mercancías peligrosas para conductores y empresas del sector transporte. Atendemos participantes de Villavicencio y municipios del departamento, con orientación sobre requisitos, inscripción y normativa vigente del Ministerio de Transporte.',
     },
     {
-      pregunta: '¿Qué era el Decreto 1609 de 2002?',
+      pregunta: '¿Quién debe realizar el curso de mercancías peligrosas?',
       respuesta:
-        'Reglamentó el transporte terrestre de mercancías peligrosas. Sus disposiciones fueron compiladas en el Decreto 1079 de 2015.',
+        'Deben capacitarse los conductores que transportan mercancías peligrosas por carretera, así como empresas transportadoras y actores de la cadena logística que deben cumplir la Resolución 1223 de 2014 y el marco del Decreto 1079 de 2015. La formación es un requisito para operar con seguridad y cumplir ante las autoridades.',
     },
     {
-      pregunta: '¿Qué es la NTC 1692?',
-      respuesta: 'Norma Técnica Colombiana sobre definiciones, clasificación, marcado, etiquetado y rotulado.',
-    },
-    {
-      pregunta: '¿Qué es la NTC 4532?',
-      respuesta: 'Norma sobre elaboración de tarjetas de emergencia para transporte de materiales peligrosos.',
-    },
-    {
-      pregunta: '¿Los conductores necesitan capacitación?',
+      pregunta: '¿Cuánto dura el curso de mercancías peligrosas?',
       respuesta:
-        'Sí. El Ministerio relaciona la Resolución 1223 de 2014 y modificaciones de 2016 con el curso básico obligatorio.',
+        'La duración del curso básico obligatorio está definida por el Ministerio de Transporte en la Resolución 1223 de 2014 y sus modificaciones. En SERVIAL Colombia la programación se ajusta a los requisitos vigentes; contáctenos para confirmar horarios, fechas y modalidad disponible en Villavicencio.',
     },
     {
-      pregunta: '¿La normativa puede cambiar?',
+      pregunta: '¿El curso tiene certificación?',
       respuesta:
-        'Sí. Consulte siempre la versión oficial vigente antes de decisiones operativas reales.',
+        'El curso básico obligatorio de mercancías peligrosas forma parte del marco de capacitación exigido para conductores según la normativa colombiana. Los detalles de certificación, registro y vigencia dependen de la programación y de los requisitos del Ministerio de Transporte; SERVIAL Colombia orienta este proceso al momento de la inscripción.',
+    },
+    {
+      pregunta: '¿SERVIAL atiende empresas del Meta y los Llanos Orientales?',
+      respuesta:
+        'Sí. Desde Villavicencio, SERVIAL Colombia atiende conductores y empresas de transporte del Meta y los Llanos Orientales que requieren formación en mercancías peligrosas. Puede consultar modalidad, cobertura e inscripción para flotas y trabajadores del sector transportador.',
     },
   ],
   glosario: [
@@ -327,6 +373,21 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   documentosLead:
     'Normativa y marco legal en PDF: decreto de transporte de carga, resolución SGA, Código Nacional de Tránsito y acuerdo UNECE.',
   documentosGrupos: JSON.parse(JSON.stringify(MERCANCIAS_PELIGROSAS_DOCUMENTOS_GRUPOS)),
+  seguridadTitulo: 'Seguridad y gestión del riesgo en el transporte de mercancías peligrosas',
+  faqTitulo: 'Preguntas frecuentes sobre el curso de mercancías peligrosas',
+  localTitulo: 'Curso de mercancías peligrosas en Villavicencio, Meta',
+  localTexto:
+    'SERVIAL Colombia ofrece capacitación en transporte de mercancías peligrosas para conductores, trabajadores y empresas en Villavicencio, Meta. Desde nuestra sede atendemos participantes de Villavicencio y diferentes municipios del Meta y los Llanos Orientales que requieren formación para el manejo y transporte seguro de mercancías peligrosas.',
+  localUbicacion: 'Calle 37B #19A-65, barrio Jordán, Villavicencio, Meta.',
+  localTelefono: '321 303 9595',
+  localAtencion: 'Villavicencio, Meta y Llanos Orientales.',
+  inscripcionesTitulo: 'Inscripciones al curso de mercancías peligrosas en Villavicencio',
+  inscripcionesTexto:
+    'Consulte fechas, modalidad y requisitos de inscripción para conductores y empresas. Nuestro equipo en Villavicencio le orientará sobre el curso básico obligatorio y la programación vigente.',
+  inscripcionesCtaTexto: 'Consultar curso en Villavicencio',
+  inscripcionesCtaUrl: '/cursos',
+  inscripcionesWhatsappTexto: 'Inscribirme por WhatsApp',
+  inscripcionesWhatsappUrl: 'https://wa.me/573213039595',
 };
 
 function mergeImagenes(raw, fb) {
@@ -339,6 +400,7 @@ function mergeImagenes(raw, fb) {
       url: r?.url?.trim() || item.url,
       urlAbsoluta: r?.urlAbsoluta?.trim() || item.urlAbsoluta,
       alt: r?.alt?.trim() || item.alt,
+      promptImagen: str(r?.promptImagen, item.promptImagen),
     };
   });
 }
@@ -361,16 +423,37 @@ function mergeDocumentosGrupos(raw, fallback) {
   return raw;
 }
 
-function mergeMercanciasPeligrosasLanding(
-  raw,
-) {
+
+function mercanciasPeligrosasNecesitaActualizarGuion(src) {
+  const v = Number(src.guionVersion) || 0;
+  if (v < MERCANCIAS_PELIGROSAS_GUION_VERSION) return true;
+  const titulo = String(src.titulo || '').trim();
+  if (titulo === 'Mercancías peligrosas') return true;
+  return String(src.queSonTitulo || '').trim() === '¿Qué son las mercancías peligrosas?';
+}
+
+function mergeMercanciasPeligrosasPreservandoUsuario(src, d) {
+  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
+  return {
+    ...JSON.parse(JSON.stringify(d)),
+    guionVersion: MERCANCIAS_PELIGROSAS_GUION_VERSION,
+    enlaceCursoUrl,
+    imagenes: mergeImagenes(src.imagenes, d.imagenes),
+  };
+}
+
+function mergeMercanciasPeligrosasLanding(raw) {
   const d = MERCANCIAS_PELIGROSAS_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
+  if (mercanciasPeligrosasNecesitaActualizarGuion(src)) {
+    return mergeMercanciasPeligrosasPreservandoUsuario(src, d);
+  }
   const str = (v, fb) => String(v ?? fb).trim() || fb;
   const arr = (v, fb) => (Array.isArray(v) && v.length ? v : fb);
 
   return {
     ...d,
+    guionVersion: MERCANCIAS_PELIGROSAS_GUION_VERSION,
     kicker: str(src.kicker, d.kicker),
     titulo: str(src.titulo, d.titulo),
     tituloLinea2: str(src.tituloLinea2, d.tituloLinea2),
@@ -459,7 +542,25 @@ function mergeMercanciasPeligrosasLanding(
     documentosTitulo: str(src.documentosTitulo, d.documentosTitulo),
     documentosLead: str(src.documentosLead, d.documentosLead),
     documentosGrupos: mergeDocumentosGrupos(src.documentosGrupos, d.documentosGrupos),
+    seguridadTitulo: str(src.seguridadTitulo, d.seguridadTitulo),
+    faqTitulo: str(src.faqTitulo, d.faqTitulo),
+    localTitulo: str(src.localTitulo, d.localTitulo),
+    localTexto: str(src.localTexto, d.localTexto),
+    localUbicacion: str(src.localUbicacion, d.localUbicacion),
+    localTelefono: str(src.localTelefono, d.localTelefono),
+    localAtencion: str(src.localAtencion, d.localAtencion),
+    inscripcionesTitulo: str(src.inscripcionesTitulo, d.inscripcionesTitulo),
+    inscripcionesTexto: str(src.inscripcionesTexto, d.inscripcionesTexto),
+    inscripcionesCtaTexto: str(src.inscripcionesCtaTexto, d.inscripcionesCtaTexto),
+    inscripcionesCtaUrl: str(src.inscripcionesCtaUrl, d.inscripcionesCtaUrl),
+    inscripcionesWhatsappTexto: str(src.inscripcionesWhatsappTexto, d.inscripcionesWhatsappTexto),
+    inscripcionesWhatsappUrl: str(src.inscripcionesWhatsappUrl, d.inscripcionesWhatsappUrl),
   };
 }
 
-module.exports = { MERCANCIAS_PELIGROSAS_DEFAULTS, mergeMercanciasPeligrosasLanding };
+module.exports = {
+  MERCANCIAS_PELIGROSAS_DEFAULTS,
+  mergeMercanciasPeligrosasLanding,
+  mercanciasPeligrosasNecesitaActualizarGuion,
+};
+

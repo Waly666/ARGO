@@ -94,6 +94,16 @@
           <span>Texto alternativo imagen</span>
           <input type="text" class="psb-input" [(ngModel)]="fundacion.hero.imagenAlt" />
         </label>
+        <div class="psb-field psb-field--span2">
+          <argo-portal-editor-imagen-prompt
+            [promptImagen]="fundacion.hero.promptImagen || ''"
+            (promptImagenChange)="fundacion.hero.promptImagen = $event"
+            [alt]="fundacion.hero.imagenAlt"
+            etiqueta="Imagen del encabezado Fundación"
+            (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+            (copyError)="avNotice.emit({ message: $event, error: true })"
+          />
+        </div>
         <label class="psb-field">
           <span>Pie de foto</span>
           <input type="text" class="psb-input" [(ngModel)]="fundacion.hero.imagenCaption" />

@@ -77,6 +77,14 @@ export const OCUPACIONES: CatalogOption[] = [
   { value: '5', label: '5) INDEPENDIENTE' },
 ];
 
+export const ACTORES_VIALES: CatalogOption[] = [
+  { value: '1', label: '1) PEATÓN' },
+  { value: '2', label: '2) CONDUCTOR' },
+  { value: '3', label: '3) CICLISTA' },
+  { value: '4', label: '4) MOTOCICLISTA' },
+  { value: '5', label: '5) PASAJERO' },
+];
+
 export const DISCAPACIDADES: CatalogOption[] = [
   { value: '1', label: '1) SORDERA PROFUNDA' },
   { value: '2', label: '2) HIPOACUSIA / BAJA AUDICIÓN' },

@@ -32,6 +32,8 @@ export interface PortalFundacionLanding {
     imagenUrl: string;
     imagenUrlAbsoluta?: string;
     imagenAlt: string;
+    /** Solo ERP */
+    promptImagen?: string;
     imagenCaption: string;
     btnSitioUrl: string;
     btnSitioLabel: string;

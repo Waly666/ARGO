@@ -18,6 +18,8 @@ export type PortalSeoPageKey =
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'manejoDefensivo'
+  | 'primerosAuxilios'
   | 'serviciosHub'
   | FinstruvialServicioSeoKey
   | 'blog'

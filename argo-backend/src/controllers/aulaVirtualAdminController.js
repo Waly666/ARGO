@@ -1503,6 +1503,166 @@ exports.quitarImagenTrabajoEnAlturasPortal = async (req, res, next) => {
   }
 };
 
+const { mergeManejoDefensivoLanding } = require('../constants/aulaVirtualManejoDefensivoDefaults');
+
+function urlManejoDefensivo(filename) {
+  return publicUrl('aula-virtual-manejo-defensivo', filename);
+}
+
+function quitarImagenManejoDefensivoAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-manejo-defensivo/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenManejoDefensivoPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const imagenId = String(req.body?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a actualizar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const md = mergeManejoDefensivoLanding(landing.manejoDefensivo);
+    const idx = md.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(400).json({ message: 'Imagen no reconocida en la configuración' });
+    }
+
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1280 });
+    const nuevaUrl = urlManejoDefensivo(req.file.filename);
+    quitarImagenManejoDefensivoAnterior(md.imagenes[idx].url);
+    md.imagenes[idx] = { ...md.imagenes[idx], url: nuevaUrl };
+    landing.manejoDefensivo = md;
+    await guardarConfigAula({ landing }, req.user);
+
+    const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+    res.json({
+      config: await obtenerConfigPortalAdmin(req),
+      imagenId,
+      url: nuevaUrl,
+      urlAbsoluta: publicUploadUrl(nuevaUrl) || nuevaUrl,
+      message: 'Imagen actualizada en la página de manejo defensivo',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenManejoDefensivoPortal = async (req, res, next) => {
+  try {
+    const imagenId = String(req.body?.imagenId || req.query?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a quitar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const md = mergeManejoDefensivoLanding(landing.manejoDefensivo);
+    const idx = md.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(404).json({ message: 'Imagen no encontrada' });
+    }
+
+    quitarImagenManejoDefensivoAnterior(md.imagenes[idx].url);
+    md.imagenes[idx] = { ...md.imagenes[idx], url: '' };
+    landing.manejoDefensivo = md;
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(req),
+      message: 'Imagen eliminada de la página de manejo defensivo',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+const { mergePrimerosAuxiliosLanding } = require('../constants/aulaVirtualPrimerosAuxiliosDefaults');
+
+function urlPrimerosAuxilios(filename) {
+  return publicUrl('aula-virtual-primeros-auxilios', filename);
+}
+
+function quitarImagenPrimerosAuxiliosAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-primeros-auxilios/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenPrimerosAuxiliosPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const imagenId = String(req.body?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a actualizar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const pa = mergePrimerosAuxiliosLanding(landing.primerosAuxilios);
+    const idx = pa.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(400).json({ message: 'Imagen no reconocida en la configuración' });
+    }
+
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1280 });
+    const nuevaUrl = urlPrimerosAuxilios(req.file.filename);
+    quitarImagenPrimerosAuxiliosAnterior(pa.imagenes[idx].url);
+    pa.imagenes[idx] = { ...pa.imagenes[idx], url: nuevaUrl };
+    landing.primerosAuxilios = pa;
+    await guardarConfigAula({ landing }, req.user);
+
+    const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+    res.json({
+      config: await obtenerConfigPortalAdmin(req),
+      imagenId,
+      url: nuevaUrl,
+      urlAbsoluta: publicUploadUrl(nuevaUrl) || nuevaUrl,
+      message: 'Imagen actualizada en la página de primeros auxilios',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenPrimerosAuxiliosPortal = async (req, res, next) => {
+  try {
+    const imagenId = String(req.body?.imagenId || req.query?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a quitar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const pa = mergePrimerosAuxiliosLanding(landing.primerosAuxilios);
+    const idx = pa.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(404).json({ message: 'Imagen no encontrada' });
+    }
+
+    quitarImagenPrimerosAuxiliosAnterior(pa.imagenes[idx].url);
+    pa.imagenes[idx] = { ...pa.imagenes[idx], url: '' };
+    landing.primerosAuxilios = pa;
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(req),
+      message: 'Imagen eliminada de la página de primeros auxilios',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
 const { validarArchivoGoogleSearchConsole } = require('../services/portalGoogleSearchConsole');
 const {
   subirLandingHeroImagen,

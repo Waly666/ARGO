@@ -33,6 +33,12 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'ClasesJornada'>;
 
+function nFotosEvidencia(item: ClaseJornada): number {
+  const arr = (item.fotosEvidencia || []).filter((f) => String(f?.url || '').trim());
+  if (arr.length) return arr.length;
+  return String(item.urlforo || '').trim() ? 1 : 0;
+}
+
 const ORIGEN_OPTS: { key: OrigenJornadaKey; label: string }[] = [
   { key: 'colegio', label: ORIGEN_JORNADA_LABELS.colegio },
   { key: 'estamento', label: ORIGEN_JORNADA_LABELS.estamento },
@@ -272,6 +278,7 @@ export default function ClasesJornadaScreen() {
             : '';
           const horarioLabel =
             horaIni && horaFin ? `${horaIni} – ${horaFin}` : horaIni || null;
+          const nFotos = nFotosEvidencia(item);
 
           let instructorChip: { label: string; icon: 'hand-left-outline' | 'person-outline' | 'checkmark-done-outline'; tone: 'mint' | 'deep' | 'soft' } | null =
             null;
@@ -310,7 +317,20 @@ export default function ClasesJornadaScreen() {
                 <View style={[styles.cardAccent, { backgroundColor: accent }]} />
                 <View style={styles.cardBody}>
                   <View style={styles.cardTop}>
-                    <DataChip label={estChip.label} icon={estChip.icon} tone={estChip.tone} />
+                    <View style={styles.cardTopChips}>
+                      <DataChip label={estChip.label} icon={estChip.icon} tone={estChip.tone} />
+                      <DataChip
+                        label={
+                          nFotos
+                            ? nFotos > 1
+                              ? `Con evidencia (${nFotos})`
+                              : 'Con evidencia'
+                            : 'Sin evidencia'
+                        }
+                        icon={nFotos ? 'camera' : 'camera-outline'}
+                        tone={nFotos ? 'mint' : 'slate'}
+                      />
+                    </View>
                     <ClaseIdChip id={item._id} />
                   </View>
 
@@ -556,10 +576,18 @@ const styles = StyleSheet.create({
   },
   cardTop: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 8,
     flexWrap: 'wrap',
+  },
+  cardTopChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    minWidth: 140,
   },
   metaBlock: {
     marginTop: 10,

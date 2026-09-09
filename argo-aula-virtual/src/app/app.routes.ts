@@ -80,6 +80,25 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'curso-manejo-defensivo',
+        loadComponent: () =>
+          import('./pages/manejo-defensivo/manejo-defensivo.component').then(
+            (m) => m.ManejoDefensivoComponent,
+          ),
+      },
+      {
+        path: 'primeros-auxilios',
+        redirectTo: 'curso-primeros-auxilios',
+        pathMatch: 'full',
+      },
+      {
+        path: 'curso-primeros-auxilios',
+        loadComponent: () =>
+          import('./pages/primeros-auxilios/primeros-auxilios.component').then(
+            (m) => m.PrimerosAuxiliosComponent,
+          ),
+      },
+      {
         path: 'blog',
         canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/blog/blog.component').then((m) => m.BlogComponent),

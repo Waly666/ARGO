@@ -87,3 +87,14 @@ export function getApiBaseUrl(): string {
 export function getUploadsBaseUrl(): string {
   return getApiBaseUrl().replace(/\/api\/?$/i, '/uploads');
 }
+
+/** URL pública de un archivo en /uploads del servidor configurado (local o producción). */
+export function urlArchivoEnServidor(ruta?: string | null): string | null {
+  const raw = String(ruta || '').trim();
+  if (!raw) return null;
+  if (raw.startsWith('data:')) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const rel = raw.replace(/^\/+/, '').replace(/^uploads\//i, '');
+  if (!rel) return null;
+  return `${getUploadsBaseUrl()}/${rel}`;
+}

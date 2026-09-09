@@ -1,0 +1,416 @@
+﻿<article class="Pa-page">
+  <av-portal-breadcrumbs [items]="breadcrumbs()" />
+
+  <av-portal-promo-banner-hero
+    sectionId="inicio"
+    theme="gold"
+    size="page-tall"
+    [showPhoto]="!!imagenUrl('hero')"
+    [photoUrl]="imagenUrl('hero')"
+    [photoAlt]="imagen('hero')?.alt || contenido().h1"
+    [logoUrl]="logoUrl()"
+    [logoAlt]="nombreCea()"
+    [kicker]="contenido().kicker"
+    [titleLine]="contenido().h1"
+    [titleAccent]="contenido().tituloLinea2"
+    [lead]="contenido().heroLead"
+    [showVirtualBadge]="false"
+    titleId="Pa-hero-title"
+  >
+    <div ppbh-actions class="ppbh-ctas">
+      @if (contenido().ctaInscribirseTexto) {
+        @if (isExternal(urlInscripcion())) {
+          <a class="btn btn-primary" [href]="urlInscripcion()" target="_blank" rel="noopener noreferrer">
+            {{ contenido().ctaInscribirseTexto }}
+          </a>
+        } @else {
+          <a class="btn btn-primary" [routerLink]="internalPath(urlInscripcion())">
+            {{ contenido().ctaInscribirseTexto }}
+          </a>
+        }
+      }
+      @if (contenido().virtual.ctaTexto) {
+        @if (isExternal(urlCtaModo(contenido().virtual))) {
+          <a class="btn btn-outline" [href]="urlCtaModo(contenido().virtual)" target="_blank" rel="noopener noreferrer">
+            {{ contenido().virtual.ctaTexto }}
+          </a>
+        } @else {
+          <a class="btn btn-outline" [routerLink]="internalPath(urlCtaModo(contenido().virtual))">
+            {{ contenido().virtual.ctaTexto }}
+          </a>
+        }
+      }
+      @if (contenido().presencial.ctaTexto) {
+        @if (isExternal(urlCtaModo(contenido().presencial))) {
+          <a class="btn btn-outline" [href]="urlCtaModo(contenido().presencial)" target="_blank" rel="noopener noreferrer">
+            {{ contenido().presencial.ctaTexto }}
+          </a>
+        } @else {
+          <a class="btn btn-outline" [routerLink]="internalPath(urlCtaModo(contenido().presencial))">
+            {{ contenido().presencial.ctaTexto }}
+          </a>
+        }
+      }
+      @if (contenido().ctaEmpresaTexto) {
+        @if (isExternal(contenido().ctaEmpresaUrl)) {
+          <a class="btn btn-outline" [href]="contenido().ctaEmpresaUrl" target="_blank" rel="noopener noreferrer">
+            {{ contenido().ctaEmpresaTexto }}
+          </a>
+        } @else {
+          <a class="btn btn-outline" [routerLink]="internalPath(contenido().ctaEmpresaUrl)">
+            {{ contenido().ctaEmpresaTexto }}
+          </a>
+        }
+      }
+      @if (whatsappHref(); as wa) {
+        <a class="btn Pa-wa" [href]="wa" target="_blank" rel="noopener noreferrer">
+          {{ contenido().ctaWhatsappTexto }}
+        </a>
+      }
+    </div>
+  </av-portal-promo-banner-hero>
+
+  <div class="container Pa-page__body">
+
+    <section class="Pa-block" aria-labelledby="Pa-confianza">
+      <h2 id="Pa-confianza">{{ contenido().confianzaTitulo }}</h2>
+      <p>{{ contenido().confianzaTexto }}</p>
+      <ul class="Pa-pilares">
+        @for (p of contenido().pilares; track p.titulo) {
+          <li>
+            <span class="Pa-pilares__icon" aria-hidden="true">{{ p.icono }}</span>
+            <strong>{{ p.titulo }}</strong>
+            <span>{{ p.texto }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-que-es">
+      <h2 id="Pa-que-es">{{ contenido().queEsTitulo }}</h2>
+      <p>{{ contenido().queEsTexto }}</p>
+      <div class="Pa-ciclo">
+        <ol>
+          @for (paso of contenido().cicloPasos; track paso; let last = $last) {
+            <li>
+              <span>{{ paso }}</span>
+              @if (!last) {
+                <span class="Pa-ciclo__arrow" aria-hidden="true">→</span>
+              }
+            </li>
+          }
+        </ol>
+        <p class="Pa-ciclo__frase">{{ contenido().cicloFrase }}</p>
+      </div>
+      @if (imagenUrl('infografia'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('infografia')?.alt || contenido().cicloFrase" width="960" height="420" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-aprenderas">
+      <h2 id="Pa-aprenderas">{{ contenido().aprenderasTitulo }}</h2>
+      <ul class="Pa-cards">
+        @for (item of contenido().aprendizajes; track item.numero + item.titulo) {
+          <li>
+            <span class="Pa-cards__num">{{ item.numero }}</span>
+            <h3>{{ item.titulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="Pa-block Pa-block--quote" aria-labelledby="Pa-frase-aprendizaje">
+      <blockquote id="Pa-frase-aprendizaje">
+        <p>{{ contenido().fraseAprendizaje }}</p>
+      </blockquote>
+      @if (imagenUrl('aprendizaje'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('aprendizaje')?.alt || contenido().fraseAprendizaje" width="960" height="480" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-modalidades">
+      <h2 id="Pa-modalidades">{{ contenido().modalidadesTitulo }}</h2>
+      <div class="Pa-modos">
+        @for (modo of [contenido().virtual, contenido().presencial]; track modo.titulo) {
+          <section class="Pa-modo">
+            <p class="Pa-kicker">{{ modo.kicker }}</p>
+            <h3>{{ modo.titulo }}</h3>
+            <p>{{ modo.lead }}</p>
+            @if (imagenUrl(modo.imagenId); as src) {
+              <figure>
+                <img [src]="src" [alt]="imagen(modo.imagenId)?.alt || modo.titulo" width="640" height="360" />
+              </figure>
+            }
+            <h4>Ideal para</h4>
+            <ul>
+              @for (item of modo.idealPara; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+            <h4>Incluye</h4>
+            <ul class="Pa-check">
+              @for (item of modo.incluye; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+            @if (modo.ctaTexto) {
+              @if (isExternal(urlCtaModo(modo))) {
+                <a class="btn btn-primary" [href]="urlCtaModo(modo)" target="_blank" rel="noopener noreferrer">{{ modo.ctaTexto }}</a>
+              } @else {
+                <a class="btn btn-primary" [routerLink]="internalPath(urlCtaModo(modo))">{{ modo.ctaTexto }}</a>
+              }
+            }
+          </section>
+        }
+      </div>
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-regional">
+      <h2 id="Pa-regional">{{ contenido().regionalTitulo }}</h2>
+      <p>{{ contenido().regionalTexto }}</p>
+      <ul class="Pa-chips">
+        @for (m of contenido().municipios; track m) {
+          <li>{{ m }}</li>
+        }
+      </ul>
+      @if (imagenUrl('regional'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('regional')?.alt || contenido().regionalTitulo" width="960" height="420" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-empresas">
+      <h2 id="Pa-empresas">{{ contenido().empresasTitulo }}</h2>
+      <p>{{ contenido().empresasTexto }}</p>
+      <ul class="Pa-chips">
+        @for (t of contenido().empresasTipos; track t) {
+          <li>{{ t }}</li>
+        }
+      </ul>
+      <div class="Pa-cta-box">
+        <h3>{{ contenido().empresasCtaTitulo }}</h3>
+        <p>{{ contenido().empresasCtaTexto }}</p>
+        @if (contenido().empresasCtaBoton) {
+          @if (isExternal(contenido().empresasCtaUrl)) {
+            <a class="btn btn-primary" [href]="contenido().empresasCtaUrl" target="_blank" rel="noopener noreferrer">
+              {{ contenido().empresasCtaBoton }}
+            </a>
+          } @else {
+            <a class="btn btn-primary" [routerLink]="internalPath(contenido().empresasCtaUrl)">
+              {{ contenido().empresasCtaBoton }}
+            </a>
+          }
+        }
+      </div>
+      @if (imagenUrl('empresas'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('empresas')?.alt || contenido().empresasTitulo" width="960" height="420" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-pesv">
+      <h2 id="Pa-pesv">{{ contenido().pesvTitulo }}</h2>
+      <p>{{ contenido().pesvLead }}</p>
+      <ul>
+        @for (item of contenido().pesvItems; track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+      @if (contenido().pesvEnlaceTexto) {
+        @if (isExternal(contenido().pesvEnlaceUrl)) {
+          <p>
+            <a [href]="contenido().pesvEnlaceUrl" target="_blank" rel="noopener noreferrer">{{ contenido().pesvEnlaceTexto }}</a>
+          </p>
+        } @else {
+          <p>
+            <a [routerLink]="internalPath(contenido().pesvEnlaceUrl)">{{ contenido().pesvEnlaceTexto }}</a>
+          </p>
+        }
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-metodologia">
+      <h2 id="Pa-metodologia">{{ contenido().metodologiaTitulo }}</h2>
+      <ol class="Pa-pasos">
+        @for (paso of contenido().metodologiaPasos; track paso.titulo; let i = $index) {
+          <li>
+            <span class="Pa-pasos__n">{{ i + 1 }}</span>
+            <h3>{{ paso.titulo }}</h3>
+            <p>{{ paso.texto }}</p>
+          </li>
+        }
+      </ol>
+      @if (imagenUrl('metodologia'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('metodologia')?.alt || contenido().metodologiaTitulo" width="960" height="360" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-audiencia">
+      <h2 id="Pa-audiencia">{{ contenido().audienciaTitulo }}</h2>
+      <ul class="Pa-audiencia">
+        @for (a of contenido().audiencias; track a.titulo) {
+          <li>
+            <span aria-hidden="true">{{ a.icono }}</span>
+            <strong>{{ a.titulo }}</strong>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-beneficios">
+      <h2 id="Pa-beneficios">{{ contenido().beneficiosTitulo }}</h2>
+      <ul class="Pa-check">
+        @for (b of contenido().beneficios; track b) {
+          <li>{{ b }}</li>
+        }
+      </ul>
+      @if (imagenUrl('beneficios'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('beneficios')?.alt || contenido().beneficiosTitulo" width="960" height="420" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-cert">
+      <h2 id="Pa-cert">{{ contenido().certificacionTitulo }}</h2>
+      <p>{{ contenido().certificacionTexto }}</p>
+      <dl class="Pa-dl">
+        <div><dt>Duración</dt><dd>{{ contenido().certificacion.duracion }}</dd></div>
+        <div><dt>Modalidad</dt><dd>{{ contenido().certificacion.modalidad }}</dd></div>
+        <div><dt>Evaluación</dt><dd>{{ contenido().certificacion.evaluacion }}</dd></div>
+        <div><dt>Certificado</dt><dd>{{ contenido().certificacion.certificado }}</dd></div>
+        <div><dt>Vigencia</dt><dd>{{ contenido().certificacion.vigencia }}</dd></div>
+        <div><dt>Entidad que certifica</dt><dd>{{ contenido().certificacion.entidad }}</dd></div>
+      </dl>
+      @if (imagenUrl('certificado'); as src) {
+        <figure class="Pa-figure Pa-figure--narrow">
+          <img [src]="src" [alt]="imagen('certificado')?.alt || contenido().certificacionTitulo" width="640" height="420" />
+        </figure>
+      }
+    </section>
+
+    <section class="Pa-block" aria-labelledby="Pa-instructores">
+      <h2 id="Pa-instructores">{{ contenido().instructoresTitulo }}</h2>
+      <p>{{ contenido().instructoresTexto }}</p>
+      <ul>
+        @for (item of contenido().instructoresItems; track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+      @if (imagenUrl('instructor'); as src) {
+        <figure class="Pa-figure Pa-figure--narrow">
+          <img [src]="src" [alt]="imagen('instructor')?.alt || contenido().instructoresTitulo" width="480" height="480" />
+        </figure>
+      }
+    </section>
+
+    @if (contenido().testimonios.length) {
+      <section class="Pa-block" aria-labelledby="Pa-testimonios">
+        <h2 id="Pa-testimonios">{{ contenido().testimoniosTitulo }}</h2>
+        <ul class="Pa-quotes">
+          @for (t of contenido().testimonios; track t.autor + t.texto) {
+            <li>
+              <p class="Pa-quotes__stars" [attr.aria-label]="t.estrellas + ' de 5'">{{ estrellas(t.estrellas) }}</p>
+              <blockquote>
+                <p>{{ t.texto }}</p>
+                <footer>{{ t.autor }}</footer>
+              </blockquote>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <av-portal-enlaces-relacionados
+      class="Pa-block"
+      [titulo]="contenido().enlacesRelacionadosTitulo"
+      [enlaces]="contenido().enlacesRelacionados"
+    />
+
+    <section class="Pa-block" aria-labelledby="Pa-faq">
+      <h2 id="Pa-faq">{{ contenido().faqTitulo }}</h2>
+      <div class="Pa-faq">
+        @for (item of contenido().faq; track item.pregunta) {
+          <details>
+            <summary>{{ item.pregunta }}</summary>
+            <p>{{ item.respuesta }}</p>
+          </details>
+        }
+      </div>
+    </section>
+
+    <section class="Pa-block Pa-close" aria-labelledby="Pa-cierre">
+      <h2 id="Pa-cierre">{{ contenido().ctaFinalTitulo }}</h2>
+      <p class="Pa-lead">{{ contenido().ctaFinalLead }}</p>
+      <p>{{ contenido().ctaFinalTexto }}</p>
+      <div class="Pa-ctas">
+        @if (contenido().ctaInscribirseTexto) {
+          @if (isExternal(urlInscripcion())) {
+            <a class="btn btn-primary" [href]="urlInscripcion()" target="_blank" rel="noopener noreferrer">
+              {{ contenido().ctaInscribirseTexto }}
+            </a>
+          } @else {
+            <a class="btn btn-primary" [routerLink]="internalPath(urlInscripcion())">
+              {{ contenido().ctaInscribirseTexto }}
+            </a>
+          }
+        }
+        @if (contenido().virtual.ctaTexto) {
+          @if (isExternal(urlCtaModo(contenido().virtual))) {
+            <a class="btn btn-outline" [href]="urlCtaModo(contenido().virtual)" target="_blank" rel="noopener noreferrer">
+              {{ contenido().virtual.ctaTexto }}
+            </a>
+          } @else {
+            <a class="btn btn-outline" [routerLink]="internalPath(urlCtaModo(contenido().virtual))">
+              {{ contenido().virtual.ctaTexto }}
+            </a>
+          }
+        }
+        @if (contenido().presencial.ctaTexto) {
+          @if (isExternal(urlCtaModo(contenido().presencial))) {
+            <a class="btn btn-outline" [href]="urlCtaModo(contenido().presencial)" target="_blank" rel="noopener noreferrer">
+              {{ contenido().presencial.ctaTexto }}
+            </a>
+          } @else {
+            <a class="btn btn-outline" [routerLink]="internalPath(urlCtaModo(contenido().presencial))">
+              {{ contenido().presencial.ctaTexto }}
+            </a>
+          }
+        }
+        @if (contenido().ctaEmpresaTexto) {
+          @if (isExternal(contenido().ctaEmpresaUrl)) {
+            <a class="btn btn-outline" [href]="contenido().ctaEmpresaUrl" target="_blank" rel="noopener noreferrer">
+              {{ contenido().ctaEmpresaTexto }}
+            </a>
+          } @else {
+            <a class="btn btn-outline" [routerLink]="internalPath(contenido().ctaEmpresaUrl)">
+              {{ contenido().ctaEmpresaTexto }}
+            </a>
+          }
+        }
+        @if (whatsappHref(); as wa) {
+          <a class="btn Pa-wa" [href]="wa" target="_blank" rel="noopener noreferrer">
+            {{ contenido().ctaWhatsappTexto }}
+          </a>
+        }
+      </div>
+      <p class="Pa-ubi">{{ contenido().ctaFinalUbicacion }}</p>
+      <p class="Pa-frase">{{ contenido().ctaFinalFrase }}</p>
+      @if (imagenUrl('cierre'); as src) {
+        <figure class="Pa-figure">
+          <img [src]="src" [alt]="imagen('cierre')?.alt || contenido().ctaFinalFrase" width="960" height="420" />
+        </figure>
+      }
+      <p class="Pa-seo-line">{{ contenido().footerSeoLine }}</p>
+    </section>
+  </div>
+</article>

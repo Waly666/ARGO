@@ -1,0 +1,29 @@
+<div class="pcc-card">
+  <label class="psb-field psb-field--plain">
+    <span>Título de la sección</span>
+    <input type="text" class="psb-input" [(ngModel)]="titulo" placeholder="Formación relacionada en SERVIAL" />
+  </label>
+  @for (enlace of enlaces; track $index; let i = $index) {
+    <div class="pcc-card pcc-card--nested">
+      <div class="pcc-card__head">
+        <strong>Enlace {{ i + 1 }}</strong>
+        <button type="button" class="psb-link" (click)="removeEnlace(i)">Quitar</button>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Texto introductorio (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="enlace.texto" />
+      </label>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Texto del enlace</span>
+          <input type="text" class="psb-input" [(ngModel)]="enlace.etiqueta" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>URL</span>
+          <input type="text" class="psb-input" [(ngModel)]="enlace.url" placeholder="/cursos-conduccion o https://..." />
+        </label>
+      </div>
+    </div>
+  }
+  <button type="button" class="psb-link" (click)="addEnlace()">+ Agregar enlace relacionado</button>
+</div>

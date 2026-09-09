@@ -369,11 +369,18 @@
         tabindex="0"
         (keydown.enter)="abrir(r)"
       >
-        <header class="card-title card-title--with-photo">
-          <div class="card-avatar" aria-hidden="true">
-            <img *ngIf="fotoUrl(r.urlFoto) as f" [src]="f" alt="" />
-            <span *ngIf="!r.urlFoto">{{ iniciales(r) }}</span>
-          </div>
+        <header class="card-title card-title--with-photo" [class.card-title--with-qr]="esJornadas()">
+          @if (esJornadas()) {
+            <argo-alumno-jornada-qr-thumb
+              [numDoc]="r.numDoc"
+              [nombre]="nombreCompleto(r)"
+            />
+          } @else {
+            <div class="card-avatar" aria-hidden="true">
+              <img *ngIf="fotoUrl(r.urlFoto) as f" [src]="f" alt="" />
+              <span *ngIf="!r.urlFoto">{{ iniciales(r) }}</span>
+            </div>
+          }
           <div class="card-title-text">
             <h3>{{ nombreCompleto(r) }}</h3>
             <div class="card-doc">

@@ -178,6 +178,26 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return raw || '/trabajo-en-alturas';
   });
 
+  manejoDefensivoCtaTexto = computed(() => {
+    const raw = this.landing().manejoDefensivo?.ctaInicioTexto?.trim() || '';
+    return raw || 'Conoce el curso de manejo defensivo';
+  });
+
+  manejoDefensivoCtaUrl = computed(() => {
+    const raw = this.landing().manejoDefensivo?.ctaUrl?.trim() || '';
+    return raw || '/curso-manejo-defensivo';
+  });
+
+  primerosAuxiliosCtaTexto = computed(() => {
+    const raw = this.landing().primerosAuxilios?.ctaInicioTexto?.trim() || '';
+    return raw || 'Conoce el curso de primeros auxilios';
+  });
+
+  primerosAuxiliosCtaUrl = computed(() => {
+    const raw = this.landing().primerosAuxilios?.ctaUrl?.trim() || '';
+    return raw || '/curso-primeros-auxilios';
+  });
+
   fotoInicioUrl(foto: { url?: string; urlAbsoluta?: string }) {
     return resolveUploadUrl(foto.urlAbsoluta || foto.url);
   }

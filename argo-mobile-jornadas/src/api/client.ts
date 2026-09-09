@@ -1,5 +1,6 @@
 import type { AuthUser, StaffLoginResponse } from './types';
 import { getApiBaseUrl } from '../config/apiBase';
+import * as FileSystem from 'expo-file-system/legacy';
 
 type TokenGetter = () => string | null;
 type UnauthorizedHandler = (message?: string) => void;
@@ -144,6 +145,63 @@ export async function apiPostForm<T>(
   if (!res.ok) {
     notifyUnauthorized(json, res.status, !!bearer);
     throw new Error((json as { message?: string })?.message ?? `${res.status}`);
+  }
+  return json as T;
+}
+
+/**
+ * Sube un archivo multipart al servidor.
+ * Expo 57 (winter fetch) rechaza `{ uri, name, type }` con
+ * "Unsupported FormDataPart implementation"; uploadAsync sí envía el archivo.
+ */
+export async function apiUploadFile<T>(
+  path: string,
+  fileUri: string,
+  fieldName: string,
+  opts?: { auth?: boolean; mimeType?: string },
+): Promise<T> {
+  const base = getApiBaseUrl();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-ARGO-Cliente': CLIENTE_JORNADAS,
+  };
+  const wantsAuth = opts?.auth !== false;
+  let bearer: string | null = null;
+  if (wantsAuth) {
+    bearer = tokenGetter();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
+  }
+
+  const uri = fileUri.startsWith('/') ? `file://${fileUri}` : fileUri;
+  let result: FileSystem.FileSystemUploadResult;
+  try {
+    result = await FileSystem.uploadAsync(
+      `${base}${path.startsWith('/') ? path : `/${path}`}`,
+      uri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName,
+        mimeType: opts?.mimeType || 'image/jpeg',
+        headers,
+      },
+    );
+  } catch (e) {
+    throw new Error(mensajeRed(e, base));
+  }
+
+  let json: unknown = null;
+  if (result.body) {
+    try {
+      json = JSON.parse(result.body);
+    } catch {
+      throw new Error(`Respuesta no JSON (${result.status})`);
+    }
+  }
+  if (result.status === 204) return undefined as T;
+  if (result.status < 200 || result.status >= 300) {
+    notifyUnauthorized(json, result.status, !!bearer);
+    throw new Error((json as { message?: string })?.message ?? `${result.status}`);
   }
   return json as T;
 }

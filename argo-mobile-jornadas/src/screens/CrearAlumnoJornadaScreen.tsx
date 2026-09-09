@@ -28,10 +28,12 @@ import {
   buscarColegios,
   buscarEstamentosPublicos,
   buscarTitulaciones,
+  fetchActoresViales,
   listarDepartamentos,
   type MunicipioDivipola,
 } from '../api/catalogosApi';
 import {
+  ACTORES_VIALES,
   DISCAPACIDADES,
   ESTADOS_CIVIL,
   ESTRATOS,
@@ -52,6 +54,7 @@ import { themeColors } from '../theme/colors';
 import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 import { ymdToday } from '../utils/fechaHelpers';
+import { edadCalculadaTexto, grupoEdadCalculadoTexto } from '../utils/edadHelpers';
 import { VOICE_PHRASES, type VoiceCommandDef } from '../voice/commands';
 import { useVoiceScreen } from '../voice/VoiceContext';
 import {
@@ -152,6 +155,8 @@ export default function CrearAlumnoJornadaScreen() {
   const [regimenSalud, setRegimenSalud] = useState('');
   const [nivelFormacion, setNivelFormacion] = useState('');
   const [ocupacion, setOcupacion] = useState('');
+  const [actorVial, setActorVial] = useState('');
+  const [actoresViales, setActoresViales] = useState(ACTORES_VIALES);
 
   const [correo, setCorreo] = useState('');
   const [celular, setCelular] = useState('');
@@ -268,6 +273,7 @@ export default function CrearAlumnoJornadaScreen() {
         ),
       )
       .catch(() => setOpcionesDepto([]));
+    void fetchActoresViales().then(setActoresViales).catch(() => setActoresViales(ACTORES_VIALES));
   }, []);
 
   function aplicarPdf417(data: CedulaPdf417Data) {
@@ -301,7 +307,7 @@ export default function CrearAlumnoJornadaScreen() {
     if (!isValidNumDocDigits(nd)) return 'Documento: 6 a 14 dígitos.';
     if (!expedida.trim()) return 'Indique el municipio de expedición.';
     if (!apellido1.trim() || !apellido2.trim()) return 'Ambos apellidos son obligatorios.';
-    if (!nombre1.trim() || !nombre2.trim()) return 'Ambos nombres son obligatorios.';
+    if (!nombre1.trim()) return 'El primer nombre es obligatorio.';
     if (!fechaNac.trim()) return 'Indique la fecha de nacimiento.';
     if (!genero) return 'Seleccione el género.';
     if (!tipoSangre) return 'Seleccione el tipo de sangre.';
@@ -311,6 +317,7 @@ export default function CrearAlumnoJornadaScreen() {
     if (!regimenSalud) return 'Seleccione el régimen de salud.';
     if (!nivelFormacion) return 'Seleccione el nivel de formación.';
     if (!ocupacion) return 'Seleccione la ocupación.';
+    if (!actorVial) return 'Seleccione el actor vial.';
     if (!emailOk(correo)) return 'Correo inválido.';
     if (!celularOk(celular)) return 'Celular: 10 dígitos que empiecen por 3.';
     if (!direccion.trim()) return 'Indique la dirección.';
@@ -378,7 +385,7 @@ export default function CrearAlumnoJornadaScreen() {
         numDoc: nd,
         expedida,
         nombre1: nombre1.trim(),
-        nombre2: nombre2.trim(),
+        nombre2: nombre2.trim() || undefined,
         apellido1: apellido1.trim(),
         apellido2: apellido2.trim(),
         fechaNac: fechaNac.trim(),
@@ -390,6 +397,7 @@ export default function CrearAlumnoJornadaScreen() {
         regimenSalud,
         nivelFormacion,
         ocupacion,
+        actorVial,
         correo: correo.trim(),
         celular: celular.replace(/\D/g, ''),
         direccion: direccion.trim(),
@@ -936,7 +944,7 @@ export default function CrearAlumnoJornadaScreen() {
             />
             <View style={{ height: 8 }} />
             <IconInput
-              label="Segundo nombre *"
+              label="Segundo nombre"
               icon="person-outline"
               voiceFieldId="nombre2"
               value={nombre2}
@@ -960,6 +968,28 @@ export default function CrearAlumnoJornadaScreen() {
             <ScaledText baseSize={15} style={styles.secTitle}>
               Datos personales
             </ScaledText>
+            <IconInput
+              label="Edad"
+              icon="calendar-outline"
+              value={edadCalculadaTexto(fechaNac)}
+              editable={false}
+              autoCapitalize="none"
+            />
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
+              Se calcula sola con la fecha de nacimiento.
+            </ScaledText>
+            <View style={{ height: 8 }} />
+            <IconInput
+              label="Grupo de edad"
+              icon="people-outline"
+              value={grupoEdadCalculadoTexto(fechaNac)}
+              editable={false}
+              autoCapitalize="none"
+            />
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
+              Primera infancia 0–5, infancia / niñez 6–13, juventud 14–28 (Ley 1622), adultez 29–59, personas mayores 60+.
+            </ScaledText>
+            <View style={{ height: 8 }} />
             <CatalogPickerField
               label="Género"
               required
@@ -1022,6 +1052,14 @@ export default function CrearAlumnoJornadaScreen() {
               options={OCUPACIONES}
               value={ocupacion}
               onChange={setOcupacion}
+            />
+            <View style={{ height: 8 }} />
+            <CatalogPickerField
+              label="Actor vial"
+              required
+              options={actoresViales}
+              value={actorVial}
+              onChange={setActorVial}
             />
           </SurfaceCard>
 

@@ -2,6 +2,14 @@
 
 import { mergePromoHeroTheme, PortalPromoHeroTheme } from '../../core/constants/portal-promo-hero-fields.util';
 import {
+  mergeEnlacesRelacionados,
+  PortalEnlaceRelacionado,
+} from '../../core/portal-enlace-relacionado.util';
+import {
+  SERVIAL_ENLACES_EXAMEN_TEORICO,
+  SERVIAL_ENLACES_TITULO,
+} from '../../core/constants/portal-enlaces-relacionados-servial';
+import {
   ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES,
   mergeNormogramaLanding,
   NORMOGRAMA_LANDING,
@@ -56,6 +64,8 @@ export interface PortalExamenTeoricoLanding {
   heroImagenUrl: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
 }
 
 export const EXAMEN_TEORICO_LANDING: PortalExamenTeoricoLanding = {
@@ -136,6 +146,8 @@ export const EXAMEN_TEORICO_LANDING: PortalExamenTeoricoLanding = {
   mostrarBadgeVirtual: false,
   heroImagenUrl: '',
   heroImagenAlt: '',
+  enlacesRelacionadosTitulo: SERVIAL_ENLACES_TITULO,
+  enlacesRelacionados: SERVIAL_ENLACES_EXAMEN_TEORICO.map((e) => ({ ...e })),
 };
 
 const ACENTOS: ExamenTeoricoAcento[] = ['blue', 'teal', 'orange', 'green', 'purple'];
@@ -228,5 +240,7 @@ export function mergeExamenTeoricoLanding(
     heroImagenUrl: String(src.heroImagenUrl ?? '').trim(),
     heroImagenUrlAbsoluta: String(src.heroImagenUrlAbsoluta ?? '').trim() || undefined,
     heroImagenAlt: String(src.heroImagenAlt ?? '').trim(),
+    enlacesRelacionadosTitulo: String(src.enlacesRelacionadosTitulo ?? d.enlacesRelacionadosTitulo).trim() || d.enlacesRelacionadosTitulo,
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
   };
 }

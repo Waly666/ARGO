@@ -1299,6 +1299,90 @@
   }
 }
 
+.section-manejo-defensivo {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 0%, var(--av-primary-a12, rgba(42, 95, 143, 0.12)), transparent 55%),
+    radial-gradient(ellipse at 88% 100%, var(--av-accent-a12, rgba(245, 196, 0, 0.12)), transparent 50%),
+    var(--av-page-body-light-bg, linear-gradient(180deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%));
+  padding: clamp(2.5rem, 5vw, 3.5rem) 0;
+}
+
+.kicker--md {
+  color: var(--av-section-white-kicker, var(--av-accent));
+  background: var(--av-accent-a12, rgba(245, 196, 0, 0.12));
+  border-color: var(--av-accent-a28, rgba(245, 196, 0, 0.28));
+}
+
+.exteor-title__line--md {
+  color: var(--av-accent, #f5c400);
+}
+
+.exteor-fecha--md {
+  border-color: var(--av-accent-a28, rgba(245, 196, 0, 0.45));
+  background: linear-gradient(135deg, var(--av-accent-a08, #fffbeb), #fff);
+
+  .exteor-fecha__icon {
+    color: var(--av-accent, #c99a00);
+  }
+}
+
+.exteor-cta__btn--md {
+  background: var(--av-btn-primary-bg, linear-gradient(135deg, #f5c400, #c99a00));
+  border-color: transparent;
+  color: var(--av-btn-primary-text, #0a0a0a) !important;
+  -webkit-text-fill-color: var(--av-btn-primary-text, #0a0a0a) !important;
+
+  &:hover {
+    filter: brightness(1.05);
+    color: var(--av-btn-primary-text, #0a0a0a) !important;
+    -webkit-text-fill-color: var(--av-btn-primary-text, #0a0a0a) !important;
+  }
+}
+
+.section-primeros-auxilios {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(220, 38, 38, 0.06), transparent 55%),
+    radial-gradient(ellipse at 88% 100%, var(--av-accent-a12, rgba(245, 196, 0, 0.12)), transparent 50%),
+    var(--av-page-body-light-bg, linear-gradient(180deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%));
+  padding: clamp(2.5rem, 5vw, 3.5rem) 0;
+}
+
+.kicker--pa {
+  color: var(--av-section-white-kicker, var(--av-accent));
+  background: var(--av-accent-a12, rgba(245, 196, 0, 0.12));
+  border-color: var(--av-accent-a28, rgba(245, 196, 0, 0.28));
+}
+
+.exteor-title__line--pa {
+  color: var(--servial-red, #dc2626);
+}
+
+.exteor-fecha--pa {
+  border-color: var(--av-accent-a28, rgba(245, 196, 0, 0.45));
+  background: linear-gradient(135deg, var(--av-accent-a08, #fffbeb), #fff);
+
+  .exteor-fecha__icon {
+    color: var(--servial-red, #dc2626);
+  }
+}
+
+.exteor-cta__btn--pa {
+  background: var(--av-btn-primary-bg, linear-gradient(135deg, #f5c400, #c99a00));
+  border-color: transparent;
+  color: var(--av-btn-primary-text, #0a0a0a) !important;
+  -webkit-text-fill-color: var(--av-btn-primary-text, #0a0a0a) !important;
+
+  &:hover {
+    filter: brightness(1.05);
+    color: var(--av-btn-primary-text, #0a0a0a) !important;
+    -webkit-text-fill-color: var(--av-btn-primary-text, #0a0a0a) !important;
+  }
+}
+
 .kicker--normativa {
   color: #1d4ed8;
   background: linear-gradient(135deg, #dbeafe, #eff6ff);
@@ -3120,6 +3204,45 @@ blockquote {
   }
 
   .exteor-cta__btn--mp {
+    background: linear-gradient(135deg, #f5c400, #c99a00);
+    border-color: #c99a00;
+    color: #0a0a0a !important;
+    -webkit-text-fill-color: #0a0a0a !important;
+
+    &:hover {
+      background: linear-gradient(135deg, #ffd633, #f5c400);
+      color: #0a0a0a !important;
+      -webkit-text-fill-color: #0a0a0a !important;
+    }
+  }
+
+  .section-manejo-defensivo {
+    background:
+      radial-gradient(ellipse at 12% 0%, rgba(30, 74, 122, 0.1), transparent 55%),
+      radial-gradient(ellipse at 88% 100%, rgba(245, 196, 0, 0.08), transparent 50%),
+      linear-gradient(180deg, #f8fafc 0%, #fff 45%, #f1f5f9 100%);
+  }
+
+  .kicker--md {
+    color: #8a6f00;
+    background: linear-gradient(135deg, #fef3c7, #fffbeb);
+    border-color: #f5c400;
+  }
+
+  .exteor-title__line--md {
+    color: var(--servial-red);
+  }
+
+  .exteor-fecha--md {
+    border-color: rgba(245, 196, 0, 0.45);
+    background: linear-gradient(135deg, #fffbeb, #fff);
+
+    .exteor-fecha__icon {
+      color: #c99a00;
+    }
+  }
+
+  .exteor-cta__btn--md {
     background: linear-gradient(135deg, #f5c400, #c99a00);
     border-color: #c99a00;
     color: #0a0a0a !important;

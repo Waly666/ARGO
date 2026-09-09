@@ -660,6 +660,68 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenManejoDefensivoPortal(
+    file: File,
+    imagenId: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    imagenId: string;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('imagenId', imagenId);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      imagenId: string;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/manejo-defensivo-imagen`, fd);
+  }
+
+  quitarImagenManejoDefensivoPortal(
+    imagenId: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/manejo-defensivo-imagen`,
+      { body: { imagenId } },
+    );
+  }
+
+  subirImagenPrimerosAuxiliosPortal(
+    file: File,
+    imagenId: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    imagenId: string;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('imagenId', imagenId);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      imagenId: string;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/primeros-auxilios-imagen`, fd);
+  }
+
+  quitarImagenPrimerosAuxiliosPortal(
+    imagenId: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/primeros-auxilios-imagen`,
+      { body: { imagenId } },
+    );
+  }
+
   subirImagenFinstruvialServiciosHubPortal(file: File): Observable<{
     config: PortalAulaConfig;
     url: string;

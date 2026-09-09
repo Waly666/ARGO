@@ -58,7 +58,7 @@ export const CONSULTA_CERT_SEO_KEYWORDS = [
 
 export const FUNDACION_SEO_TITLE = `${DEFAULT_CEA_NOMBRE} | ${SEO_BRAND} — ${SEO_SITE_SUFFIX}`;
 export const FUNDACION_SEO_DESCRIPTION =
-  `${DEFAULT_CEA_NOMBRE} en Villavicencio y el Meta: cursos de conducción, licencias A2, B1, C1, C2 y C3, manejo defensivo, seguridad vial y aula virtual certificada.`;
+  `${DEFAULT_CEA_NOMBRE} en Villavicencio y el Meta: cursos de conducción, categorías A2, B2, C1, C2 y C3, manejo defensivo, seguridad vial y aula virtual certificada.`;
 
 export const FUNDACION_SEO_KEYWORDS = [
   DEFAULT_CEA_NOMBRE,

@@ -186,6 +186,8 @@ export class ShellComponent implements OnInit, AfterViewInit {
     return [
       ...pages,
       ...serviciosEnlace,
+      { label: 'Manejo defensivo', route: '/curso-manejo-defensivo' },
+      { label: 'Primeros auxilios', route: '/curso-primeros-auxilios' },
       { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
       { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
       { label: 'Contacto', route: '/acerca', fragment: 'contacto' },

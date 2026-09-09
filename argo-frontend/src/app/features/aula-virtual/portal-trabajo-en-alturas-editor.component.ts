@@ -18,6 +18,10 @@ import {
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import {
+  copiarTextoPortapapeles,
+  promptImagenEfectivo,
+} from '../../core/utils/portal-imagen-prompt.util';
+import {
   addNavItem,
   PORTAL_EDITOR_ACENTOS,
   removeAt,
@@ -41,6 +45,7 @@ export class PortalTrabajoEnAlturasEditorComponent {
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   uploadingId = signal<string | null>(null);
+  copiadoPromptId = signal<string | null>(null);
   readonly acentos = PORTAL_EDITOR_ACENTOS;
 
   readonly removeItem = removeAt;
@@ -60,6 +65,26 @@ export class PortalTrabajoEnAlturasEditorComponent {
 
   previewUrl(img: TaImagen): string | null {
     return resolveUploadAssetUrl(img.urlAbsoluta || img.url);
+  }
+
+  async copiarPrompt(img: TaImagen) {
+    const text = promptImagenEfectivo(img);
+    if (!text) {
+      this.avNotice.emit({ message: 'No hay prompt para copiar', error: true });
+      return;
+    }
+    if (await copiarTextoPortapapeles(text)) {
+      this.copiadoPromptId.set(img.id);
+      this.avNotice.emit({ message: 'Prompt copiado' });
+      window.setTimeout(() => {
+        if (this.copiadoPromptId() === img.id) this.copiadoPromptId.set(null);
+      }, 2000);
+      return;
+    }
+    this.avNotice.emit({
+      message: 'No se pudo copiar. Seleccione el texto y use Ctrl+C.',
+      error: true,
+    });
   }
 
   onImagenSelected(ev: Event, imagenId: string) {

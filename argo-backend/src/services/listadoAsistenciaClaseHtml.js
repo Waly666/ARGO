@@ -11,6 +11,12 @@ const { informeGoogleFontsLinkHtml, informeDocumentoBaseCss, htmlEncabezadoEmpre
 const { fmtFecha, fmtFechaSolo } = require('../utils/timezoneColombia');
 const { informePrintToolbar } = require('./informePrintToolbar');
 const { mapaEtiquetasActorVial, textoActorVialAlumnoInforme } = require('./caracterizacionPoblacion');
+const {
+  htmlFotoEvidenciaClaseInforme,
+  cssFotoEvidenciaClaseInforme,
+  dataUrlFotoEvidenciaParaInforme,
+  primeraUrlFotoEvidencia,
+} = require('./fotoEvidenciaInformeHtml');
 
 function fmtHoraCorta(d) {
   if (!d) return '';
@@ -157,6 +163,8 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     label: 'Acciones del listado',
     pdfName: `listado-asistencia-${codContrato || 'clase'}`,
   });
+  const fotoSrc = await dataUrlFotoEvidenciaParaInforme(primeraUrlFotoEvidencia(claseRaw));
+  const fotoHtml = htmlFotoEvidenciaClaseInforme({ fotoEvidenciaDataUrl: fotoSrc });
 
   const filasHtml = filas.length
     ? filas
@@ -245,6 +253,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     td.asis-no { color: #64748b; font-weight: 500; }
     td.firma { height: 28px; min-width: 120px; }
     td.empty { text-align: center; color: #666; padding: 16px; }
+    ${cssFotoEvidenciaClaseInforme()}
     .firmas-pie {
       display: flex;
       gap: 40px;
@@ -286,6 +295,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     <div><span class="k">Municipio:</span> <span class="v">${esc(clase.municipioJornada || jornada?.municipio || '—')}</span></div>
     ${clase.carpaNombre ? `<div class="full"><span class="k">Carpa:</span> <span class="v">${esc(clase.carpaNombre)}</span></div>` : ''}
   </div>
+  ${fotoHtml}
   <p class="resumen">
     Inscritos: <strong>${filas.length}</strong>
     · Con asistencia registrada: <strong>${conAsistencia}</strong>

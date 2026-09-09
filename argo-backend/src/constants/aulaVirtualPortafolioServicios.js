@@ -4,6 +4,7 @@ const {
 } = require('./aulaVirtualFinstruvialServiciosDefaults');
 
 const SERVIAL_SERVICIOS_DEFAULTS = require('./aulaVirtualServialServiciosDefaults.json');
+const { SERVIAL_SERVICIOS_HUB_SEO } = require('./aulaVirtualServialServiciosHubSeo');
 
 const SLUGS = [
   'aulaVirtual',
@@ -78,7 +79,14 @@ function portafolioServiciosEsServial(tema) {
 }
 
 function portafolioServiciosDefaultsForTema(tema) {
-  return portafolioServiciosEsServial(tema) ? SERVIAL_SERVICIOS_DEFAULTS : FINSTRUVIAL_SERVICIOS_DEFAULTS;
+  if (!portafolioServiciosEsServial(tema)) return FINSTRUVIAL_SERVICIOS_DEFAULTS;
+  return {
+    ...SERVIAL_SERVICIOS_DEFAULTS,
+    hub: {
+      ...SERVIAL_SERVICIOS_DEFAULTS.hub,
+      ...SERVIAL_SERVICIOS_HUB_SEO,
+    },
+  };
 }
 
 function mergePortafolioServicios(raw, tema) {

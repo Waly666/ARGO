@@ -151,6 +151,7 @@ function mergeAcercaLanding(raw) {
       imagenUrl: str(heroSrc.imagenUrl, d.hero.imagenUrl),
       imagenUrlAbsoluta: heroSrc.imagenUrlAbsoluta?.trim() || d.hero.imagenUrlAbsoluta,
       imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
+      promptImagen: str(heroSrc.promptImagen, d.hero.promptImagen),
       imagenCaption: str(heroSrc.imagenCaption, d.hero.imagenCaption),
       pillarsLabel: extras.pillarsLabel,
       pillars: mergePromoHeroPillars(heroSrc.pillars, d.hero.pillars),

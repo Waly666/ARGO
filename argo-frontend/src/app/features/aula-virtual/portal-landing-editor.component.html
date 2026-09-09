@@ -104,6 +104,14 @@
       <div class="av-field">
         <label>Texto alternativo imagen hero</label>
         <input [(ngModel)]="landing.hero.imagenAlt" />
+        <argo-portal-editor-imagen-prompt
+          [promptImagen]="landing.hero.promptImagen || ''"
+          (promptImagenChange)="landing.hero.promptImagen = $event"
+          [alt]="landing.hero.imagenAlt"
+          etiqueta="Imagen hero del inicio"
+          (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+          (copyError)="avNotice.emit({ message: $event, error: true })"
+        />
       </div>
     </div>
   }

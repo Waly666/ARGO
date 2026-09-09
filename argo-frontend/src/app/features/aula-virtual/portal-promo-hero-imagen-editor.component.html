@@ -42,4 +42,12 @@
       placeholder="Ej. Equipo de formación en seguridad vial"
     />
   </label>
+  <argo-portal-editor-imagen-prompt
+    [promptImagen]="heroPromptText()"
+    (promptImagenChange)="onHeroPromptChange($event)"
+    [alt]="heroAltText()"
+    [etiqueta]="label"
+    (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+    (copyError)="avNotice.emit({ message: $event, error: true })"
+  />
 </div>

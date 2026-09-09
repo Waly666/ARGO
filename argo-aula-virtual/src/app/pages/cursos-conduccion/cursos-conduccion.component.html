@@ -16,75 +16,8 @@
 
   <av-cursos-conduccion-publicidad-slider [publicidad]="contenido().publicidad" />
 
-  @if (invitacion(); as inv) {
-    <section class="cc-section cc-section--invita">
-      <div class="container">
-        <div class="cc-invita">
-          <header class="cc-invita__head">
-            <p class="cc-kicker cc-kicker--dark">{{ inv.kicker }}</p>
-            <h2 class="cc-invita__title">{{ inv.titulo }}</h2>
-            <p class="cc-invita__lead">{{ inv.lead }}</p>
-            <p class="cc-invita__inst">{{ inv.institucion }}</p>
-          </header>
-
-          <div class="cc-invita__beneficios">
-            @for (b of inv.beneficios; track b.titulo + $index) {
-              <article class="cc-invita__card">
-                <av-portal-icon [icon]="b.icon" class="cc-invita__card-icon" size="1.5rem" color="currentColor" />
-                <h3>{{ b.titulo }}</h3>
-                <p>{{ b.texto }}</p>
-              </article>
-            }
-          </div>
-
-          <blockquote class="cc-invita__destacado">
-            <av-portal-icon icon="hand-raised" class="cc-invita__destacado-icon" size="1.25rem" color="currentColor" />
-            <p>{{ inv.destacado }}</p>
-          </blockquote>
-
-          <div class="cc-invita__pie">
-            <p class="cc-invita__cierre">{{ inv.cierre }}</p>
-            <p class="cc-invita__firma">{{ inv.firma }}</p>
-            <div class="cc-invita__actions">
-              @if (inv.btnCursos.trim()) {
-                <a routerLink="/cursos" class="btn btn-primary">{{ inv.btnCursos }}</a>
-              }
-              @if (inv.btnRegistro.trim()) {
-                <a routerLink="/registro" class="btn btn-outline cc-btn-outline">{{ inv.btnRegistro }}</a>
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  }
-
-  @if (contenido().resoluciones.length) {
-    <section class="cc-section cc-section--soft">
-      <div class="container">
-        <header class="cc-section__head">
-          <p class="cc-kicker cc-kicker--dark">Documentación</p>
-          <h2>Resoluciones</h2>
-          <p class="cc-section__lead">Descargue las resoluciones de habilitación ante el Ministerio de Transporte.</p>
-        </header>
-        <ul class="cc-resoluciones__list">
-          @for (res of contenido().resoluciones; track $index) {
-            <li class="cc-resolucion">
-              <span class="cc-resolucion__titulo">{{ res.titulo }}</span>
-              @if (resolucionUrl(res); as url) {
-                <a class="cc-resolucion__btn" [href]="url" target="_blank" rel="noopener noreferrer" download>
-                  Descargar {{ resolucionNombre(res) }}
-                </a>
-              }
-            </li>
-          }
-        </ul>
-      </div>
-    </section>
-  }
-
   @if (contenido().licencias.items.length) {
-    <section class="cc-section cc-section--light" id="licencias-conduccion">
+    <section class="cc-section cc-section--light" id="cursos-disponibles">
       <div class="container">
         <header class="cc-section__head cc-section__head--center cc-licencias-head">
           <p class="cc-kicker cc-kicker--accent">{{ contenido().licencias.kicker }}</p>
@@ -99,7 +32,12 @@
                 <span class="lic-card__head-glow" aria-hidden="true"></span>
                 <div class="lic-card__head-row">
                   <av-portal-icon [icon]="lic.icon" class="lic-card__icon" size="1.75rem" color="currentColor" />
-                  <h3 class="lic-card__code">{{ lic.titulo }}</h3>
+                  <div class="lic-card__head-text">
+                    @if (lic.subtitulo?.trim()) {
+                      <p class="lic-card__subtitulo">{{ lic.subtitulo }}</p>
+                    }
+                    <h3 class="lic-card__code">{{ lic.titulo }}</h3>
+                  </div>
                 </div>
               </div>
               <div class="lic-card__body">
@@ -151,4 +89,207 @@
       </div>
     </section>
   }
+
+  @if (invitacion(); as inv) {
+    <section class="cc-section cc-section--invita" id="que-aprenderas">
+      <div class="container">
+        <div class="cc-invita">
+          <header class="cc-invita__head">
+            @if (inv.kicker.trim()) {
+              <p class="cc-kicker cc-kicker--dark">{{ inv.kicker }}</p>
+            }
+            <h2 class="cc-invita__title">{{ inv.titulo }}</h2>
+            <p class="cc-invita__lead">{{ inv.lead }}</p>
+            @if (inv.institucion.trim()) {
+              <p class="cc-invita__inst">{{ inv.institucion }}</p>
+            }
+          </header>
+
+          <div class="cc-invita__beneficios">
+            @for (b of inv.beneficios; track b.titulo + $index) {
+              <article class="cc-invita__card">
+                <av-portal-icon [icon]="b.icon" class="cc-invita__card-icon" size="1.5rem" color="currentColor" />
+                <h3>{{ b.titulo }}</h3>
+                <p>{{ b.texto }}</p>
+              </article>
+            }
+          </div>
+
+          @if (inv.destacado.trim()) {
+            <blockquote class="cc-invita__destacado">
+              <av-portal-icon icon="hand-raised" class="cc-invita__destacado-icon" size="1.25rem" color="currentColor" />
+              <p>{{ inv.destacado }}</p>
+            </blockquote>
+          }
+
+          <div class="cc-invita__pie">
+            @if (inv.cierre.trim()) {
+              <p class="cc-invita__cierre">{{ inv.cierre }}</p>
+            }
+            @if (inv.firma.trim()) {
+              <p class="cc-invita__firma">{{ inv.firma }}</p>
+            }
+            <div class="cc-invita__actions">
+              @if (inv.btnCursos.trim()) {
+                <a routerLink="/cursos" class="btn btn-primary">{{ inv.btnCursos }}</a>
+              }
+              @if (inv.btnRegistro.trim()) {
+                <a routerLink="/registro" class="btn btn-outline cc-btn-outline">{{ inv.btnRegistro }}</a>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (contenido().metodologiaItems.length) {
+    <section class="cc-section cc-section--soft" id="metodologia">
+      <div class="container">
+        <header class="cc-section__head cc-section__head--center">
+          <h2>{{ contenido().metodologiaTitulo }}</h2>
+          <p class="cc-section__lead">{{ contenido().metodologiaLead }}</p>
+        </header>
+        <div class="cc-metodologia-grid">
+          @for (m of contenido().metodologiaItems; track m.titulo) {
+            <article class="cc-metodologia-card">
+              <h3>{{ m.titulo }}</h3>
+              <p>{{ m.texto }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="cc-section" id="requisitos">
+    <div class="container">
+      <header class="cc-section__head">
+        <h2>{{ contenido().requisitosTitulo }}</h2>
+        <p class="cc-section__lead">{{ contenido().requisitosLead }}</p>
+      </header>
+      <p class="cc-text">{{ contenido().requisitosTexto }}</p>
+      <p class="cc-requisitos-licencia">
+        {{ contenido().requisitosLicenciaTexto }}
+        <a [href]="contenido().requisitosBtnUrl" target="_blank" rel="noopener noreferrer">
+          {{ contenido().requisitosLicenciaEnlaceTexto }}
+        </a>
+      </p>
+      <a
+        class="btn btn-primary cc-requisitos-btn"
+        [href]="contenido().requisitosBtnUrl"
+        target="_blank"
+        rel="noopener noreferrer">
+        {{ contenido().requisitosBtnTexto }}
+      </a>
+    </div>
+  </section>
+
+  @if (contenido().resoluciones.length) {
+    <section class="cc-section cc-section--soft">
+      <div class="container">
+        <header class="cc-section__head">
+          <p class="cc-kicker cc-kicker--dark">Documentación</p>
+          <h2>Resoluciones</h2>
+          <p class="cc-section__lead">Descargue las resoluciones de habilitación ante el Ministerio de Transporte.</p>
+        </header>
+        <ul class="cc-resoluciones__list">
+          @for (res of contenido().resoluciones; track $index) {
+            <li class="cc-resolucion">
+              <span class="cc-resolucion__titulo">{{ res.titulo }}</span>
+              @if (resolucionUrl(res); as url) {
+                <a class="cc-resolucion__btn" [href]="url" target="_blank" rel="noopener noreferrer" download>
+                  Descargar {{ resolucionNombre(res) }}
+                </a>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  }
+
+  @if (contenido().seoTextoTitulo.trim() && contenido().seoTextoParrafos.length) {
+    <section class="cc-section cc-section--light" id="escuela-conduccion">
+      <div class="container cc-seo">
+        <h2>{{ contenido().seoTextoTitulo }}</h2>
+        @for (p of contenido().seoTextoParrafos; track p) {
+          <p class="cc-text">{{ p }}</p>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="cc-section cc-section--soft">
+    <div class="container">
+      <av-portal-enlaces-relacionados
+        [titulo]="contenido().enlacesRelacionadosTitulo"
+        [enlaces]="contenido().enlacesRelacionados"
+      />
+    </div>
+  </section>
+
+  @if (contenido().faq.length) {
+    <section class="cc-section" id="faq">
+      <div class="container">
+        <header class="cc-section__head cc-section__head--center">
+          <h2>{{ contenido().faqTitulo }}</h2>
+        </header>
+        <div class="cc-faq">
+          @for (item of contenido().faq; track item.pregunta) {
+            <details class="cc-faq__item">
+              <summary>{{ item.pregunta }}</summary>
+              <p>{{ item.respuesta }}</p>
+            </details>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="cc-section cc-section--invita cc-section--local" id="inscripciones">
+    <div class="container">
+      <header class="cc-section__head cc-section__head--center">
+        <h2>{{ contenido().inscripcionesTitulo }}</h2>
+        <p class="cc-section__lead">{{ contenido().inscripcionesLead }}</p>
+      </header>
+
+      <article class="cc-local">
+        <h3>{{ contenido().localTitulo }}</h3>
+        <p class="cc-text">{{ contenido().localLead }}</p>
+        <ul class="cc-local__datos">
+          <li>
+            <strong>Dirección:</strong>
+            {{ contenido().localDireccion }}
+          </li>
+          <li>
+            <strong>WhatsApp:</strong>
+            <a [href]="contenido().localWhatsAppUrl" target="_blank" rel="noopener noreferrer">
+              {{ contenido().localWhatsApp }}
+            </a>
+          </li>
+          <li>
+            <strong>Teléfono:</strong>
+            {{ contenido().localTelefono }}
+          </li>
+        </ul>
+        <div class="cc-local__actions">
+          <a
+            class="btn btn-outline cc-btn-outline"
+            [href]="contenido().localBtnMapsUrl"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().localBtnMapsTexto }}
+          </a>
+          <a
+            class="btn btn-primary"
+            [href]="contenido().localWhatsAppUrl"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().localBtnWhatsappTexto }}
+          </a>
+        </div>
+      </article>
+    </div>
+  </section>
 </div>

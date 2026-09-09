@@ -1,4 +1,5 @@
 <div class="ta-page">
+  <av-portal-breadcrumbs [items]="[{ label: 'Inicio', path: '/' }, { label: 'Trabajo en alturas' }]" />
   <av-portal-promo-banner-hero
     sectionId="inicio"
     [theme]="contenido().theme"
@@ -100,7 +101,7 @@
               <li>{{ r }}</li>
             }
           </ul>
-          <h3 class="ta-section__subtitle">¿A quién aplica?</h3>
+          <h3 class="ta-section__subtitle">{{ contenido().introAudienciaTitulo }}</h3>
           <ul class="ta-check-list">
             @for (a of contenido().introAudiencia; track a) {
               <li>{{ a }}</li>
@@ -321,6 +322,26 @@
         </div>
       </section>
     }
+
+    @if (contenido().localTitulo.trim()) {
+      <section class="ta-section ta-section--alt" id="ubicacion">
+        <div class="container">
+          <article class="ta-highlight reveal" avRevealOnScroll>
+            <h2 class="ta-section__title">{{ contenido().localTitulo }}</h2>
+            <p class="ta-text">{{ contenido().localTexto }}</p>
+          </article>
+        </div>
+      </section>
+    }
+
+    <section class="ta-section ta-section--alt">
+      <div class="container">
+        <av-portal-enlaces-relacionados
+          [titulo]="contenido().enlacesRelacionadosTitulo"
+          [enlaces]="contenido().enlacesRelacionados"
+        />
+      </div>
+    </section>
 
     <section class="ta-section" id="faq">
       <div class="container">

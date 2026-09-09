@@ -27,7 +27,7 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
   infoCards: [
     { icon: '📞', title: 'Llámenos', text: '321 303 9595', fuente: 'telefono' },
     { icon: '📍', title: 'Visítenos', text: 'Calle 37B # 19A-65 B. Jordan', fuente: 'direccion' },
-    { icon: '🎓', title: 'CEA habilitado', text: 'Categorías A2, B1, C1, C2 y C3', fuente: 'texto' },
+    { icon: '🎓', title: 'CEA habilitado', text: 'Categorías A2, B2, C1, C2 y C3', fuente: 'texto' },
   ],
   ofertas: {
     titulo: 'Capacitación integral en conducción y seguridad vial',
@@ -36,7 +36,7 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
       {
         icon: '🚗',
         title: 'Centro de Enseñanza Automovilística',
-        text: 'Licencias A2, B1, C1, C2 y C3 con instructores certificados y calidad TÜV Rheinland.',
+        text: 'Cursos A2, B2, C1, C2 y C3 con instructores certificados y calidad TÜV Rheinland.',
       },
       {
         icon: '🛣️',
@@ -92,7 +92,7 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
       { icon: '📊', title: 'Estudios de tránsito', url: '/servicios/estudios-diagnosticos-tecnicos' },
       { icon: '🖥️', title: 'Soluciones informáticas', url: '/servicios/herramientas-educativas-tecnologicas' },
       { icon: '🏍️', title: 'Licencia A2 (moto)', url: '/cursos' },
-      { icon: '🚗', title: 'Licencia B1 (particular)', url: '/cursos' },
+      { icon: '🚛', title: 'Curso B2 (servicio particular)', url: '/cursos-conduccion' },
       { icon: '🚌', title: 'Licencias C1, C2 y C3', url: '/cursos' },
       { icon: '🛡️', title: 'Manejo defensivo', url: '/cursos' },
       { icon: '☣️', title: 'Mercancías peligrosas', url: '/cursos' },
@@ -133,7 +133,7 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
     tabCapacitacion: 'Capacitación',
     tabCampanas: 'Servicios',
     capacitacion: [
-      'Licencias de conducción A2, B1, C1, C2 y C3 en nuestro CEA habilitado.',
+      'Cursos de conducción A2, B2, C1, C2 y C3 en nuestro CEA habilitado.',
       'Cursos libres: manejo defensivo, primeros auxilios, mercancías peligrosas y normas de tránsito.',
       'Programas técnicos por competencias laborales para el sector transportador.',
     ],
@@ -145,7 +145,7 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
   licencias: {
     kicker: 'Centro de Enseñanza Automovilística',
     titulo: 'Licencias de conducción',
-    lead: 'Tramite su licencia con instructores certificados — categorías A2, B1, C1, C2 y C3.',
+    lead: 'Formación para conductores con instructores certificados — categorías A2, B2, C1, C2 y C3.',
     items: [
       {
         icon: '🏍️',
@@ -160,10 +160,10 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
       },
       {
         icon: '🚗',
-        codigo: 'B1',
-        titulo: 'Automóvil particular',
-        incluye: ['Teoría y práctica', 'Simulador', 'Exámenes RUNT'],
-        licenciaLabel: 'Licencia B1',
+        codigo: 'B2',
+        titulo: 'Camiones, busetas y buses particulares',
+        incluye: ['Teoría y práctica', 'Taller', 'Exámenes RUNT'],
+        licenciaLabel: 'Categoría B2',
         valor: 'Consultar',
         btnTexto: 'Más información',
         btnUrl: '/acerca#contacto',
@@ -210,7 +210,7 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
       {
         pregunta: '¿Qué categorías de licencia puedo obtener?',
         respuesta:
-          'En nuestro CEA puede tramitar las categorías A2 (moto), B1 (particular), C1, C2 y C3 (servicio público), según los requisitos del RUNT.',
+          'En nuestro CEA ofrecemos formación para las categorías A2 (moto), B2 (servicio particular), C1, C2 y C3 (servicio público), según la habilitación vigente.',
       },
       {
         pregunta: '¿Cómo accedo al aula virtual?',

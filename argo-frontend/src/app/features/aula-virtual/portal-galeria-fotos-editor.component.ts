@@ -10,13 +10,14 @@ import {
 } from '../../core/constants/portal-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 const MAX_POR_LOTE = 30;
 
 @Component({
   selector: 'argo-portal-galeria-fotos-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent],
   templateUrl: './portal-galeria-fotos-editor.component.html',
   styleUrl: './portal-galeria-fotos-editor.component.scss',
 })

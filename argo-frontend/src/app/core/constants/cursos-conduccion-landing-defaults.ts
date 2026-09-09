@@ -22,6 +22,7 @@ export interface PortalCursosConduccionLicenciaItem {
   icon: string;
   codigo: string;
   titulo: string;
+  subtitulo?: string;
   incluye: string[];
   licenciaLabel: string;
   valor: string;
@@ -48,6 +49,8 @@ export interface PortalCursosConduccionPublicidadSlide {
   urlAbsoluta?: string;
   alt: string;
   enlace: string;
+  /** Solo ERP */
+  promptImagen?: string;
 }
 
 export interface PortalCursosConduccionPublicidad {
@@ -71,12 +74,27 @@ export interface PortalCursosConduccionInvitacion {
   btnRegistro: string;
 }
 
+import { PortalEnlaceRelacionado } from '../portal-enlace-relacionado.util';
+
+export interface PortalCursosConduccionFaqItem {
+  pregunta: string;
+  respuesta: string;
+}
+
+export interface PortalCursosConduccionMetodologiaItem {
+  titulo: string;
+  texto: string;
+}
+
 export interface PortalCursosConduccionLanding {
+  guionVersion?: number;
   hero: {
     kicker: string;
     imagenUrl: string;
     imagenUrlAbsoluta?: string;
     imagenAlt: string;
+    /** Solo ERP */
+    promptImagen?: string;
     pillarsLabel: string;
     pillars: PortalPromoHeroPillar[];
     mostrarBadgeVirtual: boolean;
@@ -94,6 +112,33 @@ export interface PortalCursosConduccionLanding {
   textoIntroCategorias?: string;
   /** @deprecated Usar licencias.items */
   categorias?: PortalCursosConduccionCategoria[];
+  metodologiaTitulo?: string;
+  metodologiaLead?: string;
+  metodologiaItems?: PortalCursosConduccionMetodologiaItem[];
+  requisitosTitulo?: string;
+  requisitosLead?: string;
+  requisitosTexto?: string;
+  requisitosLicenciaTexto?: string;
+  requisitosLicenciaEnlaceTexto?: string;
+  requisitosBtnTexto?: string;
+  requisitosBtnUrl?: string;
+  seoTextoTitulo?: string;
+  seoTextoParrafos?: string[];
+  faqTitulo?: string;
+  faq?: PortalCursosConduccionFaqItem[];
+  inscripcionesTitulo?: string;
+  inscripcionesLead?: string;
+  localTitulo?: string;
+  localLead?: string;
+  localDireccion?: string;
+  localWhatsApp?: string;
+  localWhatsAppUrl?: string;
+  localTelefono?: string;
+  localBtnMapsTexto?: string;
+  localBtnMapsUrl?: string;
+  localBtnWhatsappTexto?: string;
+  enlacesRelacionadosTitulo?: string;
+  enlacesRelacionados?: PortalEnlaceRelacionado[];
 }
 
 const INVITACION_DEFAULTS: PortalCursosConduccionInvitacion = {
@@ -214,6 +259,7 @@ const PUBLICIDAD_DEFAULTS: PortalCursosConduccionPublicidad = {
 };
 
 export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding = {
+  guionVersion: 1,
   hero: {
     kicker: 'Cursos de conducción',
     imagenUrl: '',
@@ -236,6 +282,34 @@ export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding =
     items: LICENCIAS_DEFAULTS.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
   },
   publicidad: { ...PUBLICIDAD_DEFAULTS, slides: [] },
+  metodologiaTitulo: 'Formación Teórica, Práctica y de Taller',
+  metodologiaLead: '',
+  metodologiaItems: [],
+  requisitosTitulo: 'Requisitos para realizar un Curso de Conducción',
+  requisitosLead: '',
+  requisitosTexto: '',
+  requisitosLicenciaTexto: '',
+  requisitosLicenciaEnlaceTexto: '',
+  requisitosBtnTexto: '',
+  requisitosBtnUrl: 'https://servial.com.co/licencias-de-conduccion/',
+  seoTextoTitulo: 'Escuela de Conducción en Villavicencio, Meta',
+  seoTextoParrafos: [],
+  faqTitulo: 'Preguntas Frecuentes sobre Cursos de Conducción',
+  faq: [],
+  inscripcionesTitulo: 'Inscripciones a Cursos de Conducción en Villavicencio',
+  inscripcionesLead: '',
+  localTitulo: 'Cursos de Conducción en Villavicencio, Meta',
+  localLead: '',
+  localDireccion: 'Calle 37B #19A-65, barrio Jordán, Villavicencio, Meta.',
+  localWhatsApp: '321 303 9595',
+  localWhatsAppUrl: 'https://wa.me/573213039595',
+  localTelefono: '316 406 3074',
+  localBtnMapsTexto: 'Cómo llegar a SERVIAL',
+  localBtnMapsUrl:
+    'https://www.google.com/maps/search/?api=1&query=Calle+37B+%2319A-65,+Villavicencio,+Meta,+Colombia',
+  localBtnWhatsappTexto: 'Consultar curso por WhatsApp',
+  enlacesRelacionadosTitulo: 'Formación relacionada en SERVIAL',
+  enlacesRelacionados: [],
 };
 
 function mergeInvitacion(
@@ -272,6 +346,7 @@ function mergeLicenciaItem(
     icon: item.icon?.trim() || fb.icon,
     codigo: item.codigo?.trim() || fb.codigo,
     titulo: item.titulo?.trim() || fb.titulo,
+    subtitulo: item.subtitulo?.trim() || fb.subtitulo,
     incluye: incluye.length ? incluye : [...fb.incluye],
     licenciaLabel: item.licenciaLabel?.trim() || fb.licenciaLabel,
     valor: item.valor?.trim() ?? fb.valor,
@@ -341,6 +416,7 @@ function mergePublicidad(
         urlAbsoluta: s.urlAbsoluta?.trim() || undefined,
         alt: s.alt?.trim() || 'Publicidad',
         enlace: s.enlace?.trim() || '',
+        promptImagen: s.promptImagen?.trim() || '',
       }))
       .filter((s) => s.url),
   };
@@ -357,6 +433,7 @@ export function mergeCursosConduccionLanding(
       imagenUrl: raw.hero?.imagenUrl?.trim() || d.hero.imagenUrl,
       imagenUrlAbsoluta: raw.hero?.imagenUrlAbsoluta?.trim() || undefined,
       imagenAlt: raw.hero?.imagenAlt?.trim() || d.hero.imagenAlt,
+      promptImagen: raw.hero?.promptImagen?.trim() || d.hero.promptImagen || '',
       pillarsLabel: raw.hero?.pillarsLabel?.trim() || d.hero.pillarsLabel,
       pillars: mergePromoHeroPillars(raw.hero?.pillars, d.hero.pillars),
       mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
@@ -379,5 +456,34 @@ export function mergeCursosConduccionLanding(
         }))
       : d.resoluciones.map((r) => ({ ...r })),
     publicidad: mergePublicidad(raw.publicidad),
+    guionVersion: raw.guionVersion ?? d.guionVersion,
+    metodologiaTitulo: raw.metodologiaTitulo?.trim() || d.metodologiaTitulo || '',
+    metodologiaLead: raw.metodologiaLead?.trim() || d.metodologiaLead || '',
+    metodologiaItems: raw.metodologiaItems?.length ? raw.metodologiaItems : d.metodologiaItems || [],
+    requisitosTitulo: raw.requisitosTitulo?.trim() || d.requisitosTitulo || '',
+    requisitosLead: raw.requisitosLead?.trim() || d.requisitosLead || '',
+    requisitosTexto: raw.requisitosTexto?.trim() || d.requisitosTexto || '',
+    requisitosLicenciaTexto: raw.requisitosLicenciaTexto?.trim() || d.requisitosLicenciaTexto || '',
+    requisitosLicenciaEnlaceTexto:
+      raw.requisitosLicenciaEnlaceTexto?.trim() || d.requisitosLicenciaEnlaceTexto || '',
+    requisitosBtnTexto: raw.requisitosBtnTexto?.trim() || d.requisitosBtnTexto || '',
+    requisitosBtnUrl: raw.requisitosBtnUrl?.trim() || d.requisitosBtnUrl || '',
+    seoTextoTitulo: raw.seoTextoTitulo?.trim() || d.seoTextoTitulo || '',
+    seoTextoParrafos: raw.seoTextoParrafos?.length ? raw.seoTextoParrafos : d.seoTextoParrafos || [],
+    faqTitulo: raw.faqTitulo?.trim() || d.faqTitulo || '',
+    faq: raw.faq?.length ? raw.faq : d.faq || [],
+    inscripcionesTitulo: raw.inscripcionesTitulo?.trim() || d.inscripcionesTitulo || '',
+    inscripcionesLead: raw.inscripcionesLead?.trim() || d.inscripcionesLead || '',
+    localTitulo: raw.localTitulo?.trim() || d.localTitulo || '',
+    localLead: raw.localLead?.trim() || d.localLead || '',
+    localDireccion: raw.localDireccion?.trim() || d.localDireccion || '',
+    localWhatsApp: raw.localWhatsApp?.trim() || d.localWhatsApp || '',
+    localWhatsAppUrl: raw.localWhatsAppUrl?.trim() || d.localWhatsAppUrl || '',
+    localTelefono: raw.localTelefono?.trim() || d.localTelefono || '',
+    localBtnMapsTexto: raw.localBtnMapsTexto?.trim() || d.localBtnMapsTexto || '',
+    localBtnMapsUrl: raw.localBtnMapsUrl?.trim() || d.localBtnMapsUrl || '',
+    localBtnWhatsappTexto: raw.localBtnWhatsappTexto?.trim() || d.localBtnWhatsappTexto || '',
+    enlacesRelacionadosTitulo: raw.enlacesRelacionadosTitulo?.trim() || d.enlacesRelacionadosTitulo || '',
+    enlacesRelacionados: raw.enlacesRelacionados?.length ? raw.enlacesRelacionados : d.enlacesRelacionados || [],
   };
 }

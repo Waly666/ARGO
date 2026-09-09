@@ -277,32 +277,41 @@ export function buildServialEvaluacionJornadas(profile) {
 }
 
 export function buildServialServiciosHub(profile) {
-  const titulo = truncateTitle(`Servicios de capacitación y CEA | ${marca(profile)}`);
+  const titulo = truncateTitle(`Servicios de Capacitación en Villavicencio | ${marca(profile)}`);
   const descripcion = truncate(
-    `Portafolio de ${cea(profile)}: licencias de conducción, cursos no formales, aula virtual, asesoría en trámites, consultoría y estudios de tránsito en ${loc(profile)}.`,
+    `Conoce los servicios y cursos de ${marca(profile)} en Villavicencio, Meta: conducción, seguridad vial, transporte y formación especializada para personas y empresas.`,
   );
   return {
     titulo,
     descripcion,
     keywords: kw(profile, [
-      'servicios Servial Colombia',
-      'CEA Villavicencio',
-      'cursos no formales',
-      'aula virtual',
-      'asesoría tránsito',
+      'servicios SERVIAL Villavicencio',
+      'cursos en Villavicencio',
+      'capacitaciones en Villavicencio',
+      'capacitación empresarial Villavicencio',
+      'cursos de seguridad vial Villavicencio',
+      'formación para conductores Villavicencio',
     ]),
   };
 }
 
 export function buildServialServicioAulaVirtual(profile) {
-  const titulo = truncateTitle(`Aula virtual Servial | cursos en línea`);
+  const titulo = truncateTitle('Aula Virtual y Cursos Online | SERVIAL Colombia');
   const descripcion = truncate(
-    `Aula virtual de ${cea(profile)}: cursos en línea de normas de tránsito, seguridad vial y capacitación para conductores y empresas. Estudie desde cualquier lugar. ${loc(profile)}.`,
+    'Acceda al Aula Virtual de SERVIAL Colombia: cursos online en seguridad vial, tránsito, transporte y formación especializada para estudiantes y empresas en todo el país.',
   );
   return {
     titulo,
     descripcion,
-    keywords: kw(profile, ['aula virtual Servial', 'cursos en línea Villavicencio', 'campus virtual conductores']),
+    keywords: kw(profile, [
+      'aula virtual SERVIAL',
+      'cursos virtuales SERVIAL',
+      'cursos virtuales Villavicencio',
+      'capacitación virtual Villavicencio',
+      'cursos online Colombia',
+      'cursos seguridad vial virtuales',
+      'cursos virtuales Meta',
+    ]),
   };
 }
 

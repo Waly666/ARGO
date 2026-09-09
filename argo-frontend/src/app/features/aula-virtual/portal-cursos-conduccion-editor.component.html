@@ -58,6 +58,14 @@
         <span>Texto alternativo de la imagen (accesibilidad)</span>
         <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.hero.imagenAlt" />
       </label>
+      <argo-portal-editor-imagen-prompt
+        [promptImagen]="cursosConduccion.hero.promptImagen || ''"
+        (promptImagenChange)="cursosConduccion.hero.promptImagen = $event"
+        [alt]="cursosConduccion.hero.imagenAlt"
+        etiqueta="Imagen del encabezado Cursos de conducción"
+        (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+        (copyError)="avNotice.emit({ message: $event, error: true })"
+      />
     </div>
 
     <h3 class="psb-subtitle">Carrusel de publicidad (debajo del encabezado)</h3>
@@ -95,6 +103,14 @@
               <span>Texto alternativo</span>
               <input type="text" class="psb-input" [(ngModel)]="slide.alt" placeholder="Publicidad" />
             </label>
+            <argo-portal-editor-imagen-prompt
+              [promptImagen]="slide.promptImagen || ''"
+              (promptImagenChange)="slide.promptImagen = $event"
+              [alt]="slide.alt"
+              [etiqueta]="'Publicidad ' + (i + 1)"
+              (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+              (copyError)="avNotice.emit({ message: $event, error: true })"
+            />
             <label class="psb-field psb-field--plain">
               <span>Enlace al hacer clic (opcional)</span>
               <input type="text" class="psb-input" [(ngModel)]="slide.enlace" placeholder="https://..." />
@@ -263,6 +279,10 @@
             <input type="text" class="psb-input" [(ngModel)]="item.titulo" placeholder="Categoría A2" />
           </label>
         </div>
+        <label class="psb-field psb-field--plain">
+          <span>Subtítulo (opcional, ej. Curso B2 en Villavicencio)</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.subtitulo" />
+        </label>
         <p class="psb-hint">Incluye (una línea por ítem)</p>
         @for (linea of item.incluye; track $index; let j = $index) {
           <div class="pcc-inline-row">
@@ -300,5 +320,41 @@
       </div>
     }
     <button type="button" class="psb-link" (click)="addLicencia()">+ Añadir licencia</button>
+
+    <h3 class="psb-subtitle">Enlaces relacionados (SEO interno)</h3>
+    <av-portal-editor-enlaces-relacionados
+      [titulo]="cursosConduccion.enlacesRelacionadosTitulo || 'Formación relacionada en SERVIAL'"
+      [enlaces]="enlacesRelacionadosEdit()"
+    />
+
+    <h3 class="psb-subtitle">Bloque SEO y local</h3>
+    <div class="pcc-card">
+      <label class="psb-field psb-field--plain">
+        <span>Título bloque SEO</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.seoTextoTitulo" />
+      </label>
+      <p class="psb-hint">Párrafos SEO (uno por línea)</p>
+      @for (p of cursosConduccion.seoTextoParrafos || []; track $index; let i = $index) {
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.seoTextoParrafos![i]"></textarea>
+      }
+      <label class="psb-field psb-field--plain">
+        <span>Título FAQ</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.faqTitulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Dirección local</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.localDireccion" />
+      </label>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>WhatsApp</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.localWhatsApp" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Teléfono</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.localTelefono" />
+        </label>
+      </div>
+    </div>
   </div>
 </div>

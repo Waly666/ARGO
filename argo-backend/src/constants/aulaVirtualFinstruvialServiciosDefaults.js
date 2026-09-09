@@ -311,6 +311,8 @@ function mergePagina(slug, raw, defaults) {
 
     heroImagenAlt: str(src.heroImagenAlt, d.heroImagenAlt),
 
+    heroImagenPrompt: str(src.heroImagenPrompt, d.heroImagenPrompt),
+
     heroVideoYoutubeUrl: str(src.heroVideoYoutubeUrl, d.heroVideoYoutubeUrl),
 
     ctaPrincipal: str(src.ctaPrincipal, d.ctaPrincipal),
@@ -509,6 +511,50 @@ function mergeFinstruvialServicios(raw, paginasDefaults = {}, configDefaults = F
       heroImagenUrlAbsoluta: src.hub?.heroImagenUrlAbsoluta?.trim() || d.hub.heroImagenUrlAbsoluta,
 
       heroImagenAlt: str(src.hub?.heroImagenAlt, d.hub.heroImagenAlt),
+
+      heroImagenPrompt: str(src.hub?.heroImagenPrompt, d.hub.heroImagenPrompt),
+
+      guionVersion: Number(src.hub?.guionVersion) || Number(d.hub.guionVersion) || 0,
+
+      seoTextoTitulo: str(src.hub?.seoTextoTitulo, d.hub.seoTextoTitulo || ''),
+
+      seoTextoParrafos: Array.isArray(src.hub?.seoTextoParrafos) && src.hub.seoTextoParrafos.length
+        ? src.hub.seoTextoParrafos
+        : d.hub.seoTextoParrafos || [],
+
+      localTitulo: str(src.hub?.localTitulo, d.hub.localTitulo || ''),
+
+      localTexto: str(src.hub?.localTexto, d.hub.localTexto || ''),
+
+      localDireccion: str(src.hub?.localDireccion, d.hub.localDireccion || ''),
+
+      localTelefono: str(src.hub?.localTelefono, d.hub.localTelefono || ''),
+
+      localEmail: str(src.hub?.localEmail, d.hub.localEmail || ''),
+
+      faqTitulo: str(src.hub?.faqTitulo, d.hub.faqTitulo || 'Preguntas frecuentes'),
+
+      faq: Array.isArray(src.hub?.faq) && src.hub.faq.length ? src.hub.faq : d.hub.faq || [],
+
+      tarjetas: Array.isArray(src.hub?.tarjetas) && src.hub.tarjetas.length
+        ? src.hub.tarjetas
+        : d.hub.tarjetas || [],
+
+      heroStats: Array.isArray(src.hub?.heroStats) && src.hub.heroStats.length
+        ? src.hub.heroStats
+        : d.hub.heroStats || [],
+
+      formacionImagenUrl: str(src.hub?.formacionImagenUrl, d.hub.formacionImagenUrl || ''),
+
+      formacionImagenUrlAbsoluta: src.hub?.formacionImagenUrlAbsoluta?.trim() || d.hub.formacionImagenUrlAbsoluta,
+
+      formacionImagenAlt: str(src.hub?.formacionImagenAlt, d.hub.formacionImagenAlt || ''),
+
+      formacionImagen2Url: str(src.hub?.formacionImagen2Url, d.hub.formacionImagen2Url || ''),
+
+      formacionImagen2UrlAbsoluta: src.hub?.formacionImagen2UrlAbsoluta?.trim() || d.hub.formacionImagen2UrlAbsoluta,
+
+      formacionImagen2Alt: str(src.hub?.formacionImagen2Alt, d.hub.formacionImagen2Alt || ''),
 
     },
 

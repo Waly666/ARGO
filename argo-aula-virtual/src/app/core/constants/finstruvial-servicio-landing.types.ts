@@ -9,6 +9,8 @@ export interface PortalFinstruvialServicioImagen {
   url: string;
   urlAbsoluta?: string;
   alt: string;
+  /** Solo ERP: prompt para generar la imagen (no se publica). */
+  promptImagen?: string;
 }
 
 export interface PortalFinstruvialServicioBloque {
@@ -55,7 +57,16 @@ export interface PortalFinstruvialServicioMedio {
   caption?: string;
 }
 
+export interface PortalFinstruvialServicioCatalogoOverride {
+  /** Palabras clave para coincidir en el nombre del curso (insensible a mayúsculas). */
+  patron: string;
+  titulo: string;
+  url: string;
+  cta: string;
+}
+
 export interface PortalFinstruvialServicioLanding {
+  guionVersion?: number;
   slug: FinstruvialServicioSlug;
   activa: boolean;
   menuLabel: string;
@@ -113,8 +124,15 @@ export interface PortalFinstruvialServicioLanding {
   gamificacionTitulo: string;
   gamificacionItems: string[];
   formulaAprendizaje: string;
+  pilaresSeccionKicker: string;
+  pilaresSeccionTitulo: string;
   pilaresEducativos: PortalFinstruvialServicioBloque[];
+  rutaAprendizajeKicker: string;
+  rutaAprendizajeTitulo: string;
+  rutaAprendizajeLead: string;
+  rutaAprendizajeImagenId: string;
   rutaAprendizaje: string[];
+  seoTextoImagenId: string;
   experienciaItems: PortalFinstruvialServicioBloque[];
   experienciaSeccionKicker: string;
   experienciaSeccionTitulo: string;
@@ -146,18 +164,60 @@ export interface PortalFinstruvialServicioLanding {
   imagenes: PortalFinstruvialServicioImagen[];
   videos: PortalFinstruvialServicioImagen[];
   metaDescription: string;
+  seoTextoTitulo: string;
+  seoTextoParrafos: string[];
+  localTitulo: string;
+  localTexto: string;
+  faqTitulo: string;
+  faq: PortalServiciosHubFaq[];
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: { texto?: string; etiqueta: string; url: string }[];
+  catalogoOverrides: PortalFinstruvialServicioCatalogoOverride[];
+}
+
+export interface PortalServiciosHubTarjeta {
+  icon: string;
+  titulo: string;
+  lead: string;
+  url: string;
+  cta: string;
+  externo?: boolean;
+}
+
+export interface PortalServiciosHubFaq {
+  pregunta: string;
+  respuesta: string;
 }
 
 export interface PortalFinstruvialServiciosHub {
+  guionVersion?: number;
   kicker: string;
   tituloLinea: string;
   tituloAcento: string;
   lead: string;
   gridTitulo: string;
   gridLead: string;
+  seoTextoTitulo: string;
+  seoTextoParrafos: string[];
+  localTitulo: string;
+  localTexto: string;
+  localDireccion: string;
+  localTelefono: string;
+  localEmail: string;
+  faqTitulo: string;
+  faq: PortalServiciosHubFaq[];
+  tarjetas: PortalServiciosHubTarjeta[];
+  heroStats: string[];
+  formacionImagenUrl: string;
+  formacionImagenUrlAbsoluta?: string;
+  formacionImagenAlt: string;
+  formacionImagen2Url: string;
+  formacionImagen2UrlAbsoluta?: string;
+  formacionImagen2Alt: string;
   heroImagenUrl: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
+  heroImagenPrompt?: string;
 }
 
 export interface PortalFinstruvialServiciosConfig {

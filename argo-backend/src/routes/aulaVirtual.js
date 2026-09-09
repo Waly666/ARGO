@@ -18,6 +18,8 @@ const {
   aulaVirtualExamenTeorico,
   aulaVirtualMercanciasPeligrosas,
   aulaVirtualTrabajoEnAlturas,
+  aulaVirtualManejoDefensivo,
+  aulaVirtualPrimerosAuxilios,
   aulaVirtualBlog,
   aulaVirtualBlogHero,
   aulaVirtualPqrHero,
@@ -60,6 +62,7 @@ router.get('/config', ctrl.configPublica);
 router.get('/legal/autorizacion-datos', ctrl.autorizacionDatosLegal);
 router.get('/catalogos/tipos-doc', ctrl.catalogosTiposDoc);
 router.get('/catalogos/generos', ctrl.catalogosGeneros);
+router.get('/catalogos/actores-viales', ctrl.catalogosActoresViales);
 router.get('/catalogos/departamentos', ctrl.catalogosDepartamentos);
 router.get('/catalogos/municipios-buscar', ctrl.catalogosBuscarMunicipios);
 router.get('/catalogos/municipio/:codMunicipio', ctrl.catalogosMunicipio);
@@ -405,6 +408,32 @@ router.delete(
   requireAuth,
   configPortal,
   admin.quitarImagenTrabajoEnAlturasPortal,
+);
+router.post(
+  '/admin/portal/manejo-defensivo-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualManejoDefensivo.single('imagen'),
+  admin.subirImagenManejoDefensivoPortal,
+);
+router.delete(
+  '/admin/portal/manejo-defensivo-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenManejoDefensivoPortal,
+);
+router.post(
+  '/admin/portal/primeros-auxilios-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualPrimerosAuxilios.single('imagen'),
+  admin.subirImagenPrimerosAuxiliosPortal,
+);
+router.delete(
+  '/admin/portal/primeros-auxilios-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenPrimerosAuxiliosPortal,
 );
 
 router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);

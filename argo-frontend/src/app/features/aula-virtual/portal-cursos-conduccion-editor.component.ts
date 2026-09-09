@@ -10,13 +10,16 @@ import {
   PortalCursosConduccionLanding,
   PortalCursosConduccionPublicidadSlide,
 } from '../../core/constants/cursos-conduccion-landing-defaults';
+import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.util';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalEditorEnlacesRelacionadosComponent } from './portal-editor-enlaces-relacionados.component';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-cursos-conduccion-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent, PortalEditorEnlacesRelacionadosComponent],
   templateUrl: './portal-cursos-conduccion-editor.component.html',
   styleUrl: './portal-cursos-conduccion-editor.component.scss',
 })
@@ -35,6 +38,16 @@ export class PortalCursosConduccionEditorComponent {
 
   restaurarDefaults() {
     Object.assign(this.cursosConduccion, mergeCursosConduccionLanding(CURSOS_CONDUCCION_LANDING_DEFAULTS));
+  }
+
+  enlacesRelacionadosEdit(): PortalEnlaceRelacionado[] {
+    if (!this.cursosConduccion.enlacesRelacionados) {
+      this.cursosConduccion.enlacesRelacionados = [];
+    }
+    if (!this.cursosConduccion.enlacesRelacionadosTitulo) {
+      this.cursosConduccion.enlacesRelacionadosTitulo = 'Formación relacionada en SERVIAL';
+    }
+    return this.cursosConduccion.enlacesRelacionados;
   }
 
   totalPublicidad(): number {

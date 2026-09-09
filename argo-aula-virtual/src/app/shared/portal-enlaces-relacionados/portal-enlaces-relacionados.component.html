@@ -1,0 +1,21 @@
+@if (titulo.trim() && enlaces.length) {
+  <section class="per-section" [attr.id]="sectionId">
+    <h2 class="per-section__title">{{ titulo }}</h2>
+    <ul class="per-list">
+      @for (e of enlaces; track e.etiqueta + e.url) {
+        <li class="per-list__item">
+          @if (e.texto?.trim()) {
+            <span class="per-list__texto">{{ e.texto }}</span>
+          }
+          @if (esExterno(e.url)) {
+            <a class="per-list__link" [href]="e.url" target="_blank" rel="noopener noreferrer">
+              {{ e.etiqueta }}
+            </a>
+          } @else {
+            <a class="per-list__link" [routerLink]="ruta(e.url)">{{ e.etiqueta }}</a>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

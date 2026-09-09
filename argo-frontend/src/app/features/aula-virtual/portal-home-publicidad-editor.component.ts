@@ -10,11 +10,12 @@ import {
   PortalPublicidadSlide,
 } from '../../core/constants/portal-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-home-publicidad-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent],
   templateUrl: './portal-home-publicidad-editor.component.html',
   styleUrl: './portal-home-publicidad-editor.component.scss',
 })

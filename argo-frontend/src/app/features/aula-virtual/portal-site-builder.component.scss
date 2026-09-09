@@ -10,6 +10,10 @@
   overflow: hidden;
   background: rgba(6, 16, 41, 0.55);
 
+  &:has(argo-catalogo-enum-buscar.dropdown-open) {
+    overflow: visible;
+  }
+
   &--preview {
     grid-template-columns: 240px minmax(280px, 1fr) minmax(300px, 380px);
   }
@@ -145,6 +149,10 @@
   overflow: auto;
   max-height: 78vh;
   min-width: 0;
+
+  &:has(argo-catalogo-enum-buscar.dropdown-open) {
+    overflow: visible;
+  }
 }
 
 .psb-head {

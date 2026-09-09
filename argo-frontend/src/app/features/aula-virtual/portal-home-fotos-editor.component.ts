@@ -10,11 +10,12 @@ import {
   PortalHomeFoto,
 } from '../../core/constants/portal-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
+import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 @Component({
   selector: 'argo-portal-home-fotos-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent],
   templateUrl: './portal-home-fotos-editor.component.html',
   styleUrl: './portal-home-fotos-editor.component.scss',
 })

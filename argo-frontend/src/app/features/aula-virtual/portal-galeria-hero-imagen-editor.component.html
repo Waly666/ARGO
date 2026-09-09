@@ -42,4 +42,12 @@
       [(ngModel)]="galeria.heroImagenAlt"
       placeholder="Ej. Instalaciones del centro de formación" />
   </label>
+  <argo-portal-editor-imagen-prompt
+    [promptImagen]="galeria.heroImagenPrompt || ''"
+    (promptImagenChange)="galeria.heroImagenPrompt = $event"
+    [alt]="galeria.heroImagenAlt || ''"
+    etiqueta="Imagen del encabezado Galería"
+    (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+    (copyError)="avNotice.emit({ message: $event, error: true })"
+  />
 </div>

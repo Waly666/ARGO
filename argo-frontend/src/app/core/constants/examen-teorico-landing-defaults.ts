@@ -55,6 +55,8 @@ export interface PortalExamenTeoricoLanding {
   heroImagenUrl: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
+  /** Solo ERP */
+  heroImagenPrompt?: string;
 }
 
 export const EXAMEN_TEORICO_LANDING_DEFAULTS: PortalExamenTeoricoLanding = {
@@ -227,5 +229,6 @@ export function mergeExamenTeoricoLanding(
     heroImagenUrl: String(src.heroImagenUrl ?? '').trim(),
     heroImagenUrlAbsoluta: String(src.heroImagenUrlAbsoluta ?? '').trim() || undefined,
     heroImagenAlt: String(src.heroImagenAlt ?? '').trim(),
+    heroImagenPrompt: String(src.heroImagenPrompt ?? '').trim(),
   };
 }

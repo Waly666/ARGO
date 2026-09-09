@@ -1,0 +1,321 @@
+{
+  "guionVersion": 2,
+  "kicker": "27 horas • 9 módulos • 17 videos • Virtual • Presencial • Mixto",
+  "titulo": "Primeros Auxilios",
+  "tituloLinea2": "Saber qué hacer cambia la respuesta.",
+  "subtitulo": "RCP, trauma, vía aérea y atención inicial de emergencias en Villavicencio, Meta y Colombia",
+  "h1": "Curso de Primeros Auxilios Virtual y Presencial en Villavicencio, Meta y Colombia",
+  "idProgramaVinculado": "",
+  "nombreProgramaVinculado": "",
+  "heroLead": "Aprende a reconocer emergencias, priorizar riesgos y actuar de forma organizada mediante una formación de 27 horas en RCP, trauma, vía aérea y atención inicial de emergencias. Nuestro Curso de Primeros Auxilios en Villavicencio está diseñado para personas, trabajadores, conductores, brigadistas, empresas y organizaciones. El programa puede realizarse en modalidad virtual, presencial o mixta, con cobertura presencial principalmente en Villavicencio y el Meta y acceso virtual para participantes de los Llanos Orientales y diferentes regiones de Colombia.",
+  "ctaInscribirseTexto": "Inscribirme al curso",
+  "ctaInscribirseUrl": "/cursos",
+  "ctaEmpresaTexto": "Capacitación para empresas",
+  "ctaEmpresaUrl": "/acerca",
+  "ctaWhatsappTexto": "Hablar por WhatsApp",
+  "ctaInicioTexto": "Conoce el curso de Primeros Auxilios",
+  "ctaUrl": "/curso-primeros-auxilios",
+  "homeItems": [
+    {
+      "numero": 1,
+      "icon": "heart-pulse",
+      "acento": "teal",
+      "titulo": "27 horas en 9 módulos",
+      "texto": "Formación estructurada en RCP, trauma, vía aérea y atención inicial de emergencias con 17 videos y evaluaciones."
+    },
+    {
+      "numero": 2,
+      "icon": "document",
+      "acento": "blue",
+      "titulo": "Virtual, presencial o mixto",
+      "texto": "Accede desde cualquier región de Colombia o capacítate presencialmente en Villavicencio y el Meta."
+    },
+    {
+      "numero": 3,
+      "icon": "users",
+      "acento": "green",
+      "titulo": "Personas y empresas",
+      "texto": "Dirigido a trabajadores, conductores, brigadistas, instituciones educativas y organizaciones del sector público y privado."
+    }
+  ],
+  "confianzaTitulo": "Curso de Primeros Auxilios en Villavicencio y Meta",
+  "confianzaTexto": "La formación presencial está dirigida especialmente a participantes y organizaciones de Villavicencio y diferentes municipios del Meta. El programa puede desarrollarse para personas particulares, empresas, trabajadores, brigadistas, conductores, instituciones educativas, entidades públicas y organizaciones privadas. Según programación y cobertura, pueden desarrollarse capacitaciones en diferentes municipios del departamento.",
+  "pilares": [
+    { "icono": "⏱", "titulo": "27 horas", "texto": "9 módulos de formación estructurada." },
+    { "icono": "💻", "titulo": "Virtual", "texto": "Acceso desde cualquier región de Colombia." },
+    { "icono": "👨‍🏫", "titulo": "Presencial", "texto": "Prácticas y acompañamiento en Villavicencio y Meta." },
+    { "icono": "🔀", "titulo": "Mixto", "texto": "Combina aprendizaje virtual con actividades presenciales." }
+  ],
+  "queEsTitulo": "Formación en emergencias para personas y empresas",
+  "queEsTexto": "Nuestro Curso de Primeros Auxilios en Villavicencio está diseñado para personas, trabajadores, conductores, brigadistas, empresas y organizaciones que desean fortalecer sus conocimientos para responder ante situaciones de emergencia. El programa puede realizarse en modalidad virtual, presencial o mixta, con cobertura presencial principalmente en Villavicencio y el Meta y acceso virtual para participantes de los Llanos Orientales y diferentes regiones de Colombia.",
+  "cicloPasos": ["Reconocer", "Priorizar", "Organizar", "Actuar"],
+  "cicloFrase": "Saber qué hacer cambia la respuesta cuando cada segundo cuenta.",
+  "aprenderasTitulo": "Curso Virtual de Primeros Auxilios en Colombia",
+  "aprendizajes": [
+    { "numero": "01", "titulo": "RCP", "texto": "Reanimación cardiopulmonar, paro cardiorrespiratorio y cadena de supervivencia." },
+    { "numero": "02", "titulo": "Trauma", "texto": "Valoración inicial y manejo seguro de lesiones traumáticas." },
+    { "numero": "03", "titulo": "Vía aérea", "texto": "Apertura y protección de la vía aérea en situaciones críticas." },
+    { "numero": "04", "titulo": "Emergencias cardiovasculares", "texto": "Reconocimiento y respuesta ante eventos cardíacos agudos." },
+    { "numero": "05", "titulo": "Emergencias respiratorias", "texto": "Atención inicial ante dificultad respiratoria y obstrucción." },
+    { "numero": "06", "titulo": "Emergencias neurológicas", "texto": "Signos de alerta y actuación ante eventos neurológicos agudos." },
+    { "numero": "07", "titulo": "Quemaduras", "texto": "Clasificación y atención inicial de lesiones por calor." },
+    { "numero": "08", "titulo": "Intoxicaciones", "texto": "Reconocimiento y respuesta ante exposición a sustancias tóxicas." },
+    { "numero": "09", "titulo": "Atención inicial de emergencias", "texto": "Organización de la respuesta hasta la llegada de ayuda especializada." }
+  ],
+  "fraseAprendizaje": "Todo dentro de una estructura de 9 módulos y 27 horas de formación.",
+  "modalidadesTitulo": "Elige cómo realizar tu Curso de Primeros Auxilios",
+  "virtual": {
+    "kicker": "💻 Virtual para Colombia",
+    "titulo": "Accede desde cualquier región del país",
+    "lead": "Acceso a contenidos, videos, escenarios, retos y evaluaciones desde diferentes regiones del país.",
+    "idealPara": [
+      "Participantes fuera de Villavicencio",
+      "Empresas con personal en varias ciudades",
+      "Brigadistas y trabajadores en campo",
+      "Organizaciones de los Llanos Orientales"
+    ],
+    "incluye": [
+      "9 módulos y 27 horas de formación",
+      "17 videos y contenidos interactivos",
+      "Escenarios y retos de aprendizaje",
+      "Evaluaciones de conocimiento",
+      "Acceso desde cualquier región de Colombia"
+    ],
+    "ctaTexto": "Curso virtual",
+    "ctaUrl": "/cursos",
+    "imagenId": "virtual"
+  },
+  "presencial": {
+    "kicker": "👨‍🏫 Presencial en Villavicencio y Meta",
+    "titulo": "Prácticas con acompañamiento del instructor",
+    "lead": "Prácticas, demostraciones, análisis de casos y acompañamiento directo del instructor en Villavicencio y municipios del Meta según programación.",
+    "idealPara": [
+      "Personas de Villavicencio",
+      "Empresas del Meta",
+      "Brigadas y equipos de trabajo",
+      "Instituciones educativas y entidades públicas"
+    ],
+    "incluye": [
+      "Demostraciones prácticas",
+      "Análisis de casos reales",
+      "Acompañamiento del instructor",
+      "Actividades de simulación",
+      "Capacitación empresarial in situ"
+    ],
+    "ctaTexto": "Capacitación presencial en Villavicencio",
+    "ctaUrl": "/acerca",
+    "imagenId": "presencial"
+  },
+  "regionalTitulo": "Capacitación en Primeros Auxilios para los Llanos Orientales",
+  "regionalTexto": "La ubicación estratégica de Villavicencio permite proyectar programas de capacitación hacia diferentes zonas de los Llanos Orientales, atendiendo las necesidades de empresas y organizaciones que requieren fortalecer su preparación frente a emergencias. La modalidad virtual amplía esta posibilidad para participantes que no pueden desplazarse hasta Villavicencio.",
+  "municipios": [
+    "Villavicencio",
+    "Acacías",
+    "Restrepo",
+    "Cumaral",
+    "Granada",
+    "Puerto López",
+    "Puerto Gaitán",
+    "Llanos Orientales",
+    "Meta",
+    "Colombia"
+  ],
+  "empresasTitulo": "Curso de Primeros Auxilios para Empresas en Villavicencio y Meta",
+  "empresasTexto": "Las empresas pueden solicitar capacitaciones adaptadas a sus trabajadores y características operacionales. La formación puede resultar especialmente útil para organizaciones que requieren fortalecer la preparación frente a emergencias en el entorno laboral.",
+  "empresasTipos": [
+    "Empresas de transporte",
+    "Logística",
+    "Construcción",
+    "Servicios",
+    "Instituciones educativas",
+    "Entidades públicas",
+    "Personal operativo",
+    "Brigadas",
+    "Personal de Seguridad y Salud en el Trabajo",
+    "Organizaciones con trabajadores en campo"
+  ],
+  "empresasCtaTitulo": "¿Necesitas capacitar a tu equipo?",
+  "empresasCtaTexto": "Podemos estructurar una propuesta empresarial adaptada a tu organización en Villavicencio, el Meta y otras zonas según cobertura.",
+  "empresasCtaBoton": "Solicitar propuesta empresarial",
+  "empresasCtaUrl": "/acerca",
+  "pesvTitulo": "Curso de RCP y Primeros Auxilios en Villavicencio",
+  "pesvLead": "Uno de los componentes centrales del programa es la reanimación cardiopulmonar – RCP. El participante estudia conceptos relacionados con paro cardiorrespiratorio, cadena de supervivencia, compresiones torácicas, ventilaciones, desfibrilación y reconocimiento de situaciones críticas. Este contenido forma parte integral del Curso de Primeros Auxilios en Villavicencio y Meta.",
+  "pesvItems": [
+    "Paro cardiorrespiratorio",
+    "Cadena de supervivencia",
+    "Compresiones torácicas",
+    "Ventilaciones",
+    "Desfibrilación",
+    "Reconocimiento de situaciones críticas"
+  ],
+  "pesvEnlaceTexto": "",
+  "pesvEnlaceUrl": "",
+  "metodologiaTitulo": "Modalidad mixta",
+  "metodologiaPasos": [
+    {
+      "titulo": "Combina aprendizaje virtual con actividades prácticas presenciales",
+      "texto": "La modalidad mixta integra contenidos en línea, videos, escenarios y evaluaciones con sesiones presenciales de práctica, demostración y acompañamiento del instructor en Villavicencio y el Meta según programación."
+    }
+  ],
+  "audienciaTitulo": "¿A quién está dirigido el curso?",
+  "audiencias": [
+    { "icono": "👤", "titulo": "Personas particulares" },
+    { "icono": "🏢", "titulo": "Empresas y organizaciones" },
+    { "icono": "👷", "titulo": "Trabajadores" },
+    { "icono": "🦺", "titulo": "Brigadistas" },
+    { "icono": "🚗", "titulo": "Conductores" },
+    { "icono": "🎓", "titulo": "Instituciones educativas" },
+    { "icono": "🏛", "titulo": "Entidades públicas" },
+    { "icono": "🤝", "titulo": "Organizaciones privadas" }
+  ],
+  "beneficiosTitulo": "Contenidos del programa",
+  "beneficios": [
+    "RCP y cadena de supervivencia",
+    "Trauma y valoración inicial",
+    "Manejo de la vía aérea",
+    "Emergencias cardiovasculares y respiratorias",
+    "Emergencias neurológicas",
+    "Quemaduras e intoxicaciones",
+    "Atención inicial de emergencias",
+    "27 horas en 9 módulos con 17 videos"
+  ],
+  "certificacionTitulo": "Intensidad y estructura del programa",
+  "certificacionTexto": "El programa tiene una intensidad total de 27 horas distribuidas en 9 módulos, con contenidos en modalidad virtual, presencial o mixta según la programación acordada.",
+  "certificacion": {
+    "duracion": "27 horas en 9 módulos",
+    "modalidad": "Virtual • Presencial • Mixto",
+    "evaluacion": "Evaluaciones y retos de aprendizaje según el programa",
+    "certificado": "Según condiciones del programa y cumplimiento de requisitos",
+    "vigencia": "Consulte vigencia según normativa aplicable",
+    "entidad": "Institución formadora"
+  },
+  "instructoresTitulo": "Formación con acompañamiento especializado",
+  "instructoresTexto": "El programa se desarrolla con instructores capacitados en primeros auxilios, RCP y atención inicial de emergencias, con metodología orientada a la práctica y la toma de decisiones en situaciones reales.",
+  "instructoresItems": [
+    "Instructores certificados en primeros auxilios",
+    "Metodología práctica y participativa",
+    "Análisis de casos y simulación",
+    "Acompañamiento en modalidad presencial y mixta"
+  ],
+  "testimoniosTitulo": "",
+  "testimonios": [],
+  "faqTitulo": "Preguntas frecuentes sobre el Curso de Primeros Auxilios",
+  "faq": [
+    {
+      "pregunta": "¿Dónde puedo hacer un Curso de Primeros Auxilios en Villavicencio?",
+      "respuesta": "El programa puede desarrollarse presencialmente en Villavicencio según programación y también dispone de modalidad virtual."
+    },
+    {
+      "pregunta": "¿Existe un Curso de Primeros Auxilios virtual en Colombia?",
+      "respuesta": "Sí. La modalidad virtual permite acceder al programa desde diferentes ciudades y departamentos de Colombia."
+    },
+    {
+      "pregunta": "¿Hay capacitación de Primeros Auxilios para empresas en el Meta?",
+      "respuesta": "Sí. Pueden desarrollarse jornadas empresariales en Villavicencio y otros municipios del Meta según cobertura y programación."
+    },
+    {
+      "pregunta": "¿El curso incluye RCP?",
+      "respuesta": "Sí. El programa incluye contenidos relacionados con RCP, paro cardiorrespiratorio y cadena de supervivencia."
+    },
+    {
+      "pregunta": "¿Cuánto dura el curso?",
+      "respuesta": "El programa tiene una intensidad total de 27 horas distribuidas en 9 módulos."
+    },
+    {
+      "pregunta": "¿El Curso de Primeros Auxilios está disponible para los Llanos Orientales?",
+      "respuesta": "Sí. La modalidad virtual permite atender participantes de diferentes municipios de los Llanos Orientales, mientras que la modalidad presencial se programa según ubicación y cobertura."
+    }
+  ],
+  "ctaFinalTitulo": "Curso de Primeros Auxilios en Villavicencio, Meta y Colombia",
+  "ctaFinalLead": "Prepárate para reconocer lo urgente, organizar tu respuesta y tomar mejores decisiones cuando cada segundo cuenta.",
+  "ctaFinalTexto": "27 horas • 9 módulos • Virtual • Presencial • Mixto",
+  "ctaFinalUbicacion": "Villavicencio • Meta • Llanos Orientales • Colombia",
+  "ctaFinalFrase": "Formación en Primeros Auxilios • RCP • Atención Inicial de Emergencias • Capacitación Empresarial",
+  "footerSeoLine": "Curso de Primeros Auxilios en Villavicencio • Curso de Primeros Auxilios Meta • Curso Virtual de Primeros Auxilios Colombia • RCP • Atención Inicial de Emergencias • Capacitación Empresarial",
+  "imagenes": [
+    {
+      "id": "hero",
+      "etiqueta": "Hero — curso en Villavicencio",
+      "url": "",
+      "alt": "Curso de Primeros Auxilios en Villavicencio Meta",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Instructor de primeros auxilios y participantes adultos en un centro de capacitación en Villavicencio, Meta, Colombia; ambiente profesional de curso de emergencias. Luz natural. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "infografia",
+      "etiqueta": "Infografía — cadena de supervivencia",
+      "url": "",
+      "alt": "Cadena de supervivencia en curso de Primeros Auxilios",
+      "promptImagen": "Infografía horizontal 16:9 (1920×1080), diseño limpio y profesional. Cadena de supervivencia en primeros auxilios: reconocer, llamar, RCP, desfibrilación. Paleta azul marino profundo, acento dorado y un toque de rojo. Sin marcas, sin logos, sin marca de agua."
+    },
+    {
+      "id": "aprendizaje",
+      "etiqueta": "RCP — práctica",
+      "url": "",
+      "alt": "Curso de RCP y Primeros Auxilios en Villavicencio",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Práctica de RCP con maniquí en un curso de primeros auxilios; instructor y participante adulto en Villavicencio, Meta, Colombia. Luz natural. Sin texto, sin logos, sin marcas."
+    },
+    {
+      "id": "virtual",
+      "etiqueta": "Modalidad virtual",
+      "url": "",
+      "alt": "Curso virtual de Primeros Auxilios en Colombia",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Adulto tomando un curso virtual de primeros auxilios en portátil, en casa u oficina en Colombia; pantalla con clase genérica sin texto legible. Luz natural. Sin logos."
+    },
+    {
+      "id": "presencial",
+      "etiqueta": "Modalidad presencial",
+      "url": "",
+      "alt": "Curso de Primeros Auxilios en Villavicencio Meta",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Aula de capacitación presencial en primeros auxilios: instructor frente a grupo de adultos con material didáctico en Villavicencio, Meta, Colombia. Sin logos."
+    },
+    {
+      "id": "regional",
+      "etiqueta": "Llanos Orientales",
+      "url": "",
+      "alt": "Capacitación en Primeros Auxilios en los Llanos Orientales",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Paisaje de los Llanos Orientales de Colombia con carretera y cielo amplio; sensación de capacitación en emergencias en la región. Sin texto, sin logos."
+    },
+    {
+      "id": "empresas",
+      "etiqueta": "Capacitación empresarial",
+      "url": "",
+      "alt": "Capacitación de Primeros Auxilios para empresas en Villavicencio",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Capacitación empresarial en primeros auxilios: grupo de trabajadores adultos en salón o patio industrial en Villavicencio, Meta; uniformes discretos sin logos."
+    },
+    {
+      "id": "metodologia",
+      "etiqueta": "Modalidad mixta",
+      "url": "",
+      "alt": "Curso de Primeros Auxilios en Meta Colombia",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Participante combinando estudio en portátil con práctica presencial de primeros auxilios con instructor en Villavicencio, Meta. Sin logos."
+    },
+    {
+      "id": "beneficios",
+      "etiqueta": "Atención de emergencias",
+      "url": "",
+      "alt": "Atención inicial de emergencias en curso de Primeros Auxilios",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Instructor demostrando valoración inicial de emergencia a participantes en curso de primeros auxilios; ambiente formativo profesional en Colombia. Sin logos."
+    },
+    {
+      "id": "certificado",
+      "etiqueta": "Certificación",
+      "url": "",
+      "alt": "Certificación del curso de Primeros Auxilios",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Persona adulta sosteniendo certificado genérico de capacitación en primeros auxilios, sin nombres ni logos reales; ambiente institucional sobrio en Colombia."
+    },
+    {
+      "id": "instructor",
+      "etiqueta": "Instructor",
+      "url": "",
+      "alt": "Instructor de Primeros Auxilios en Villavicencio",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Instructor de primeros auxilios explicando RCP en aula de capacitación en Villavicencio, Meta; gesto claro, vestimenta profesional. Sin logos."
+    },
+    {
+      "id": "cierre",
+      "etiqueta": "Cierre",
+      "url": "",
+      "alt": "Curso de Primeros Auxilios Villavicencio Meta Colombia",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Grupo de participantes tras capacitación en primeros auxilios, ambiente positivo y profesional en Villavicencio, Meta, Colombia. Sin logos."
+    }
+  ]
+}

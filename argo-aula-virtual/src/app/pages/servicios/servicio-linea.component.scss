@@ -52,6 +52,16 @@
     --fsv-blue: #1d4ed8;
     --fsv-blue-soft: #eef2ff;
   }
+
+  &--aula-guion {
+    --fsv-gold: #f5c400;
+    --fsv-gold-soft: #fff8d6;
+    --fsv-navy: #0b1b47;
+    background:
+      radial-gradient(ellipse at 0% 0%, rgba(29, 78, 216, 0.06), transparent 42%),
+      radial-gradient(ellipse at 100% 12%, rgba(245, 196, 0, 0.07), transparent 38%),
+      #f8fafc;
+  }
 }
 
 .container {
@@ -1752,5 +1762,301 @@
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  }
+}
+
+.fsv-section--seo-text {
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  border-block: 1px solid #e2e8f0;
+}
+
+.fsv-seo-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(1.5rem, 4vw, 2.75rem);
+  align-items: center;
+
+  &__copy .fsv-section-head {
+    text-align: left;
+    margin-bottom: 1rem;
+  }
+
+  &__copy .fsv-article__body {
+    max-width: none;
+    margin: 0;
+  }
+
+  &__media {
+    display: grid;
+    gap: 0.85rem;
+    align-content: start;
+  }
+}
+
+.fsv-media-card {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--fsv-shadow-sm);
+  background: #fff;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    min-height: 180px;
+  }
+
+  &--main img {
+    min-height: 240px;
+  }
+
+  &--placeholder {
+    display: grid;
+    place-items: center;
+    gap: 0.35rem;
+    min-height: 200px;
+    padding: 1.25rem;
+    text-align: center;
+    background:
+      linear-gradient(145deg, #eff6ff 0%, #fff 55%, #fff8d6 100%);
+    border-color: #bfdbfe;
+  }
+
+  &__icon {
+    font-size: 2rem;
+  }
+
+  &__label {
+    margin: 0;
+    font-weight: 800;
+    color: var(--fsv-ink);
+    font-size: 0.95rem;
+  }
+
+  &__hint {
+    font-size: 0.78rem;
+    color: var(--fsv-muted);
+    line-height: 1.4;
+  }
+}
+
+.fsv-section--ruta {
+  background:
+    linear-gradient(135deg, rgba(11, 27, 71, 0.03) 0%, rgba(29, 78, 216, 0.04) 100%);
+}
+
+.fsv-ruta {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  align-items: center;
+
+  &__intro .fsv-section-head {
+    text-align: left;
+    margin-bottom: 1.25rem;
+  }
+
+  &__intro .fsv-section-head__lead {
+    max-width: 42rem;
+    margin-top: 0.75rem;
+    line-height: 1.65;
+    color: var(--fsv-muted);
+  }
+
+  &__timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  &__step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--fsv-shadow-sm);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+
+    &:hover {
+      transform: translateX(4px);
+      border-color: #93c5fd;
+      box-shadow: var(--fsv-shadow-md);
+    }
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: #1e293b;
+    background: linear-gradient(135deg, #ffe566 0%, var(--fsv-gold, #f5c400) 100%);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--fsv-blue);
+  }
+
+  &__media {
+    position: relative;
+  }
+
+  &__frame {
+    margin: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+    background: #fff;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+
+    &--placeholder {
+      display: grid;
+      place-items: center;
+      gap: 0.5rem;
+      min-height: 320px;
+      padding: 2rem;
+      text-align: center;
+      background:
+        linear-gradient(160deg, #eff6ff 0%, #fff 50%, #fff8d6 100%);
+      color: var(--fsv-muted);
+
+      span {
+        font-size: 2.5rem;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--fsv-ink);
+      }
+    }
+  }
+
+  &__glow {
+    position: absolute;
+    inset: auto -8% -8% 12%;
+    height: 40%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245, 196, 0, 0.22), transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+.fsv-page--aula-guion {
+  .fsv-card--pilar {
+    border-top: 3px solid var(--fsv-gold, #f5c400);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--fsv-shadow-md);
+    }
+  }
+
+  #experiencia-educativa .fsv-card {
+    border-radius: 16px;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--fsv-shadow-md);
+    }
+  }
+
+  .fsv-section--catalog {
+    background:
+      linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  }
+}
+
+.fsv-highlight {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 1.5rem 1.25rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.fsv-highlight__text {
+  margin: 0.75rem 0 0;
+  line-height: 1.65;
+  color: var(--fsv-muted, #64748b);
+}
+
+.fsv-faq {
+  max-width: 760px;
+  margin-inline: auto;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.fsv-faq__item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.85rem 1rem;
+
+  summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--fsv-ink);
+  }
+
+  p {
+    margin: 0.65rem 0 0;
+    line-height: 1.6;
+    color: var(--fsv-muted, #64748b);
+  }
+}
+
+@media (max-width: 900px) {
+  .fsv-seo-split,
+  .fsv-ruta {
+    grid-template-columns: 1fr;
+  }
+
+  .fsv-seo-split__media {
+    order: -1;
+  }
+
+  .fsv-ruta__media {
+    max-width: 420px;
+    margin-inline: auto;
   }
 }

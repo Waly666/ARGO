@@ -13,6 +13,6 @@ export const SPLASH_BG = '#FFFFFF';
  */
 export const APP_BRANDING = {
   tituloApp: 'AULA VIRTUAL',
-  nombreEmpresaFallback: 'CEA SERVIAL COLOMBIA',
+  nombreEmpresaFallback: 'FINSTRUVIAL',
   logo: require('../../assets/branding/logo.png') as ImageSourcePropType,
 } as const;

@@ -7,6 +7,7 @@ import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import {
@@ -22,7 +23,14 @@ import { CursosConduccionPublicidadSliderComponent } from './cursos-conduccion-p
 @Component({
   selector: 'av-cursos-conduccion',
   standalone: true,
-  imports: [CommonModule, RouterLink, PortalIconComponent, CursosConduccionPublicidadSliderComponent, PortalPromoBannerHeroComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    PortalIconComponent,
+    PortalEnlacesRelacionadosComponent,
+    CursosConduccionPublicidadSliderComponent,
+    PortalPromoBannerHeroComponent,
+  ],
   templateUrl: './cursos-conduccion.component.html',
   styleUrl: './cursos-conduccion.component.scss',
 })

@@ -1959,25 +1959,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   planInstError = signal('');
   comboInstructorPlan = viewChild<CatalogoEnumBuscarComponent>('comboInstructorPlan');
 
+  /** Catálogo JOR completo (tipo jornadas de capacitación), no solo los de orígenes. */
   programasParaInstructoresContrato = computed(() => {
+    const list = [...this.programasJornada()].sort((a, b) => {
+      const ca = String(a?.codigoProg || '').trim();
+      const cb = String(b?.codigoProg || '').trim();
+      return ca.localeCompare(cb, 'es', { numeric: true, sensitivity: 'base' });
+    });
     const ids: string[] = [];
     const seen = new Set<string>();
-    for (const o of this.origenesContratoUi) {
-      if (!this.origenAlumnoActivo(o.key)) continue;
-      if (this.certOrigenTipo(o.key) === 'por_clase') {
-        for (const id of this.certOrigenRowIds(o.key)) {
-          const s = String(id).trim();
-          if (!s || seen.has(s)) continue;
-          seen.add(s);
-          ids.push(s);
-        }
-      } else {
-        const g = String(this.certOrigenProgramaId(o.key) || '').trim();
-        if (g && !seen.has(g)) {
-          seen.add(g);
-          ids.push(g);
-        }
-      }
+    for (const p of list) {
+      const id = this.programaOptionValue(p);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
     }
     return ids;
   });
@@ -2076,8 +2071,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const permitidos = new Set(this.programasParaInstructoresContrato().map((id) => String(id).trim()));
     const idProgramas = this.planInstProgramas().filter((id) => permitidos.has(String(id).trim()));
     if (!permitidos.size) {
-      const msg =
-        'Primero elija los programas en los orígenes de alumnos (arriba). Luego marque los que dicta este instructor.';
+      const msg = this.programasJornadaLoading()
+        ? 'Espere a que carguen los programas JOR del catálogo.'
+        : 'No hay programas de jornadas de capacitación (código JOR) en el catálogo.';
       this.planInstError.set(msg);
       this.mostrarMsg(msg, 'warn', 'Programas del instructor');
       return;
@@ -2709,7 +2705,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   urlFotoEvidencia(path?: string | null): string {
     if (!path) return '';
     if (/^https?:\/\//i.test(path)) return path;
-    return `${environment.uploadsUrl}/${path.replace(/^\/+/, '')}`;
+    const rel = String(path).replace(/^\/+/, '').replace(/^uploads\//i, '');
+    return `${environment.uploadsUrl}/${rel}`;
+  }
+
+  fotosEvidenciaClaseActiva() {
+    const c = this.claseActiva();
+    type FotoEv = NonNullable<ClaseJornadaDto['fotosEvidencia']>[number];
+    if (!c) return [] as FotoEv[];
+    const arr = (c.fotosEvidencia || []).filter(
+      (f: FotoEv) => !!String(f?.url || '').trim(),
+    );
+    if (arr.length) return arr;
+    if (c.urlforo) return [{ url: c.urlforo, nombre: 'Evidencia' }] as FotoEv[];
+    return [] as FotoEv[];
   }
 
   urlEvidenciaJornada(path?: string | null): string {
@@ -2988,11 +2997,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         'jornada',
         idJornada,
         (p) => this.zipProgreso.set(p),
-        `paquete-entrega_${cod}_${new Date().toISOString().slice(0, 10)}.zip`,
+        `entrega_${String(cod).replace(/[^\w.\-]+/g, '_').slice(0, 28)}_${new Date().toISOString().slice(0, 10)}.zip`,
       );
       this.zipProgresoOpen.set(false);
       this.mostrarMsg(
-        'Paquete de entrega descargado. Revise informe/, certificados/, evidencia/, imagenes/ y evidencia-fotografica-adicional/.',
+        'Paquete de entrega descargado. Revise informe/, certificados/, evidencia/, imagenes/ y fotos-extra/.',
         'ok',
         'Paquete de entrega',
       );
@@ -3061,26 +3070,64 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const files = [...(input.files || [])];
     const id = this.claseSel();
-    if (!file || !id) return;
+    input.value = '';
+    if (!files.length || !id) return;
+    const cupo = 8 - this.fotosEvidenciaClaseActiva().length;
+    if (cupo <= 0) {
+      this.mostrarMsg('Esta clase ya tiene 8 fotos de evidencia.', 'warn', 'Evidencia');
+      return;
+    }
+    const lote = files.slice(0, cupo);
     this.subiendoFotoEvidencia.set(true);
-    this.jornadaSvc.subirFotoEvidenciaClase(id, file).subscribe({
-      next: (c) => {
-        this.claseActiva.set(c);
-        this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
-        this.modalHoraFin.set(isoAHoraInput(c.horaFin));
-        this.modalHorarioManual.set(c.horarioManual === true);
+    const subir = (i: number) => {
+      if (i >= lote.length) {
         this.subiendoFotoEvidencia.set(false);
         this.recargarClases();
-        this.mostrarMsg('Foto de evidencia guardada.', 'ok', 'Evidencia');
-      },
-      error: (e) => {
-        this.subiendoFotoEvidencia.set(false);
-        this.mostrarMsg(e?.error?.message || 'No se pudo subir la foto.', 'error', 'Error');
-      },
+        this.mostrarMsg(
+          lote.length > 1 ? `${lote.length} fotos de evidencia guardadas.` : 'Foto de evidencia guardada.',
+          'ok',
+          'Evidencia',
+        );
+        return;
+      }
+      this.jornadaSvc.subirFotoEvidenciaClase(id, lote[i]).subscribe({
+        next: (c) => {
+          this.claseActiva.set(c);
+          this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
+          this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+          this.modalHorarioManual.set(c.horarioManual === true);
+          subir(i + 1);
+        },
+        error: (e) => {
+          this.subiendoFotoEvidencia.set(false);
+          this.mostrarMsg(e?.error?.message || 'No se pudo subir la foto.', 'error', 'Error');
+        },
+      });
+    };
+    subir(0);
+  }
+
+  async quitarFotoEvidenciaClase(fotoId?: string) {
+    const id = this.claseSel();
+    const fid = String(fotoId || '').trim();
+    if (!id || !fid) return;
+    const ok = await this.confirmSvc.open({
+      title: 'Quitar foto',
+      message: '¿Quitar esta foto de evidencia de la clase?',
+      variant: 'danger',
+      confirmLabel: 'Sí, quitar',
     });
-    input.value = '';
+    if (!ok) return;
+    this.jornadaSvc.eliminarFotoEvidenciaClase(id, fid).subscribe({
+      next: (c) => {
+        this.claseActiva.set(c);
+        this.recargarClases();
+        this.mostrarMsg('Foto quitada.', 'ok', 'Evidencia');
+      },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo quitar la foto.', 'error', 'Error'),
+    });
   }
 
   /** Admin/gestor: siempre. Instructor (operar): EN PROCESO o FINALIZADO (corrección). */

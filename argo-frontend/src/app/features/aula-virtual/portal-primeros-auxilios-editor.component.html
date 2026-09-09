@@ -1,0 +1,587 @@
+﻿<div class="psb-stack">
+  <div class="ple-toolbar">
+    <p class="psb-note">
+      Página <strong>/curso-primeros-auxilios</strong>. El <strong>H1</strong> es el encabezado visible en el portal.
+      El título SEO y la meta descripción se editan en <strong>SEO (Google)</strong>.
+      Google no usa meta keywords. No invente testimonios ni certificaciones.
+    </p>
+    <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarDefaults()">
+      Restaurar textos por defecto
+    </button>
+  </div>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Encabezado / H1</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H1 (visible en la página)</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.h1" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Subtítulo</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.heroLead"></textarea>
+    </label>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta (inicio)</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título teaser inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Acento teaser inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Subtítulo del teaser en inicio</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.subtitulo" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Curso del catálogo (botón Inscríbete)</h3>
+    <p class="psb-note">
+      Elija el programa virtual publicado que corresponde a esta página. Al pulsar
+      <strong>Inscríbete</strong> el visitante irá a esa ficha (<code>/cursos/…</code>).
+    </p>
+    <argo-catalogo-enum-buscar
+      label="Curso correspondiente"
+      placeholder="Seleccione o escriba…"
+      [textoInicial]="primerosAuxilios.nombreProgramaVinculado || ''"
+      [modoCombo]="true"
+      [remoto]="false"
+      [minLength]="1"
+      [opcionesLocales]="opcionesCursos()"
+      (seleccionado)="onCursoPick($event)"
+      (limpiado)="onCursoLimpiar()"
+    />
+    @if (primerosAuxilios.idProgramaVinculado) {
+      <p class="psb-muted">
+        Enlace: <strong>/cursos/{{ primerosAuxilios.idProgramaVinculado }}</strong>
+      </p>
+    }
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Botones del encabezado</h3>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Inscribirse (texto)</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaInscribirseTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Inscribirse (URL de respaldo)</span>
+        <input
+          type="text"
+          class="psb-input"
+          [(ngModel)]="primerosAuxilios.ctaInscribirseUrl"
+          placeholder="/cursos"
+          [disabled]="!!primerosAuxilios.idProgramaVinculado"
+        />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Capacitación empresa (texto)</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaEmpresaTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Capacitación empresa (URL)</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaEmpresaUrl" placeholder="/acerca" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>WhatsApp (texto)</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaWhatsappTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Botón del teaser en inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaInicioTexto" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>URL del teaser en inicio</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaUrl" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Teaser en la página de inicio</h3>
+    @for (item of primerosAuxilios.homeItems; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Ítem {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(primerosAuxilios.homeItems, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Acento</span>
+            <select class="psb-input" [(ngModel)]="item.acento">
+              @for (a of acentos; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir ítem del inicio</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Bloque de confianza</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.confianzaTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <textarea class="psb-input" rows="4" [(ngModel)]="primerosAuxilios.confianzaTexto"></textarea>
+    </label>
+    @for (p of primerosAuxilios.pilares; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Pilar {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(primerosAuxilios.pilares, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.icono" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="p.titulo" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <input type="text" class="psb-input" [(ngModel)]="p.texto" />
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addPilar()">+ Añadir pilar</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — ¿Qué es el Primeros auxilios?</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.queEsTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <textarea class="psb-input" rows="4" [(ngModel)]="primerosAuxilios.queEsTexto"></textarea>
+    </label>
+    <p class="psb-muted">Ciclo (Observar → Actuar)</p>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.cicloPasos" addLabel="+ Añadir paso del ciclo" />
+    <label class="psb-field psb-field--plain">
+      <span>Frase del ciclo</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.cicloFrase" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — ¿Qué aprenderás?</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.aprenderasTitulo" />
+    </label>
+    @for (item of primerosAuxilios.aprendizajes; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>{{ item.numero || i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(primerosAuxilios.aprendizajes, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addAprendizaje()">+ Añadir aprendizaje</button>
+    <label class="psb-field psb-field--plain">
+      <span>Frase de la imagen central</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.fraseAprendizaje" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Modalidades</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.modalidadesTitulo" />
+    </label>
+    <h4>Curso virtual</h4>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.virtual.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.virtual.titulo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Lead</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.virtual.lead"></textarea>
+    </label>
+    <p class="psb-muted">Ideal para</p>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.virtual.idealPara" addLabel="+ Añadir público" />
+    <p class="psb-muted">Incluye</p>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.virtual.incluye" addLabel="+ Añadir ítem" />
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.virtual.ctaTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.virtual.ctaUrl" />
+      </label>
+    </div>
+
+    <h4>Curso presencial</h4>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.presencial.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.presencial.titulo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Lead</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.presencial.lead"></textarea>
+    </label>
+    <p class="psb-muted">Territorios / público</p>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.presencial.idealPara" addLabel="+ Añadir territorio" />
+    <p class="psb-muted">Incluye</p>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.presencial.incluye" addLabel="+ Añadir ítem" />
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.presencial.ctaTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.presencial.ctaUrl" />
+      </label>
+    </div>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Enfoque regional</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.regionalTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="primerosAuxilios.regionalTexto"></textarea>
+    </label>
+    <p class="psb-muted">Mencione solo municipios donde realmente preste el servicio.</p>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.municipios" addLabel="+ Añadir municipio o región" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Empresas</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.empresasTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="primerosAuxilios.empresasTexto"></textarea>
+    </label>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.empresasTipos" addLabel="+ Añadir tipo de organización" />
+    <label class="psb-field psb-field--plain">
+      <span>CTA título</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.empresasCtaTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>CTA texto</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.empresasCtaTexto"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.empresasCtaBoton" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.empresasCtaUrl" />
+      </label>
+    </div>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Gestión del riesgo vial / PESV</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.pesvTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Lead</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.pesvLead"></textarea>
+    </label>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.pesvItems" addLabel="+ Añadir programa" />
+    <label class="psb-field psb-field--plain">
+      <span>Texto del enlace PESV</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.pesvEnlaceTexto" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>URL del enlace PESV</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.pesvEnlaceUrl" placeholder="/servicios" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Metodología</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.metodologiaTitulo" />
+    </label>
+    @for (paso of primerosAuxilios.metodologiaPasos; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Paso {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(primerosAuxilios.metodologiaPasos, i)">Eliminar</button>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="paso.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <input type="text" class="psb-input" [(ngModel)]="paso.texto" />
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addMetodologiaPaso()">+ Añadir paso</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — ¿A quién está dirigido?</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.audienciaTitulo" />
+    </label>
+    @for (a of primerosAuxilios.audiencias; track $index; let i = $index) {
+      <div class="ple-list__row">
+        <input type="text" class="psb-input" style="max-width:4rem" [(ngModel)]="a.icono" />
+        <input type="text" class="psb-input" [(ngModel)]="a.titulo" />
+        <button type="button" class="psb-icon-btn" (click)="removeItem(primerosAuxilios.audiencias, i)">×</button>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addAudiencia()">+ Añadir audiencia</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Beneficios</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.beneficiosTitulo" />
+    </label>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.beneficios" addLabel="+ Añadir beneficio" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Certificación (datos reales)</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.certificacionTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="primerosAuxilios.certificacionTexto"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Duración</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.certificacion.duracion" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Modalidad</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.certificacion.modalidad" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Evaluación</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.certificacion.evaluacion" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Vigencia</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.certificacion.vigencia" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Certificado (condiciones reales)</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.certificacion.certificado"></textarea>
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Entidad que certifica</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.certificacion.entidad" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Instructores</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.instructoresTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="primerosAuxilios.instructoresTexto"></textarea>
+    </label>
+    <argo-portal-editor-string-list [items]="primerosAuxilios.instructoresItems" addLabel="+ Añadir aspecto" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Testimonios (solo auténticos)</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.testimoniosTitulo" />
+    </label>
+    <p class="psb-note">Si la lista está vacía, el bloque no se muestra en el sitio. No use testimonios inventados.</p>
+    @for (t of primerosAuxilios.testimonios; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Testimonio {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(primerosAuxilios.testimonios, i)">Eliminar</button>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="3" [(ngModel)]="t.texto"></textarea>
+        </label>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Nombre – Empresa / Ciudad</span>
+            <input type="text" class="psb-input" [(ngModel)]="t.autor" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Estrellas (1-5)</span>
+            <input type="number" min="1" max="5" class="psb-input" [(ngModel)]="t.estrellas" />
+          </label>
+        </div>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addTestimonio()">+ Añadir testimonio real</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Preguntas frecuentes</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.faqTitulo" />
+    </label>
+    <argo-portal-editor-faq-list [items]="primerosAuxilios.faq" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">H2 — Llamado final</h3>
+    <label class="psb-field psb-field--plain">
+      <span>H2</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaFinalTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Lead</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.ctaFinalLead"></textarea>
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaFinalTexto" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Ubicación</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaFinalUbicacion" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Frase de campaña</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaFinalFrase" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Línea SEO del pie de esta página</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.footerSeoLine" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Imágenes de la página</h3>
+    <p class="psb-note">
+      Suba fotografías originales cuando sea posible (WebP o JPG). Cada imagen se guarda al subirla.
+      El texto alternativo sí aparece en el sitio. El prompt es solo para copiar y generar la foto
+      (horizontal 16:9); no se muestra en la página pública.
+      Ruta: <strong>/curso-primeros-auxilios</strong>
+    </p>
+    @for (img of primerosAuxilios.imagenes; track img.id) {
+      <div class="psb-imagen-slot">
+        <div class="psb-imagen-slot__head">
+          <strong>{{ img.etiqueta }}</strong>
+          <span class="psb-muted">id: {{ img.id }}</span>
+        </div>
+        @if (previewUrl(img); as src) {
+          <img class="psb-imagen-slot__preview" [src]="src" [alt]="img.alt" />
+        } @else {
+          <div class="psb-imagen-slot__empty">Sin imagen (se mostrará un recuadro o infografía en HTML)</div>
+        }
+        <label class="psb-field psb-field--plain">
+          <span>Texto alternativo (alt)</span>
+          <input type="text" class="psb-input" [(ngModel)]="img.alt" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Prompt para generar imagen (horizontal 16:9) — no sale en el sitio</span>
+          <textarea class="psb-input psb-prompt" rows="4" [(ngModel)]="img.promptImagen"></textarea>
+        </label>
+        <div class="psb-imagen-slot__actions">
+          <button type="button" class="psb-btn psb-btn--ghost" (click)="copiarPrompt(img)">
+            {{ copiadoPromptId() === img.id ? 'Copiado' : 'Copiar prompt' }}
+          </button>
+          <label class="psb-btn psb-btn--secondary">
+            {{ uploadingId() === img.id ? 'Subiendo…' : 'Subir imagen' }}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              [disabled]="uploadingId() === img.id"
+              (change)="onImagenSelected($event, img.id)"
+            />
+          </label>
+          @if (img.url) {
+            <button type="button" class="psb-btn psb-btn--ghost" [disabled]="uploadingId() === img.id" (click)="quitarImagen(img.id)">
+              Quitar imagen
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </section>
+</div>

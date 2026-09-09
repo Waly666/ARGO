@@ -48,6 +48,7 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       regimenSalud: a.regimenSalud || '',
       nivelFormacion: a.nivelFormacion || '',
       ocupacion: a.ocupacion || '',
+      actorVial: a.actorVial || '',
       discapacidad: a.discapacidad || '9',
       munOrigen: a.munOrigen || a.codMunicipio || '',
       codMunicipio: a.codMunicipio || a.munOrigen || '',

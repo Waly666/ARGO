@@ -1,0 +1,341 @@
+{
+  "kicker": "Seguridad vial · Villavicencio · Meta · Colombia",
+  "titulo": "Manejo Defensivo",
+  "tituloLinea2": "Anticípate al riesgo",
+  "subtitulo": "Curso virtual y presencial para conductores y empresas",
+  "h1": "Curso de Manejo Defensivo Virtual y Presencial",
+  "idProgramaVinculado": "",
+  "nombreProgramaVinculado": "",
+  "heroLead": "Fortalece tus competencias para anticipar riesgos, tomar decisiones seguras y prevenir siniestros viales. Capacitación dirigida a conductores, motociclistas, empresas, organizaciones y responsables de seguridad vial en Villavicencio, Meta, Llanos Orientales y toda Colombia.",
+  "ctaInscribirseTexto": "Inscríbete al curso",
+  "ctaInscribirseUrl": "/cursos",
+  "ctaEmpresaTexto": "Solicita capacitación para tu empresa",
+  "ctaEmpresaUrl": "/acerca",
+  "ctaWhatsappTexto": "Hablar por WhatsApp",
+  "ctaInicioTexto": "Conoce el curso de manejo defensivo",
+  "ctaUrl": "/curso-manejo-defensivo",
+  "homeItems": [
+    {
+      "numero": 1,
+      "icon": "shield-check",
+      "acento": "teal",
+      "titulo": "Prevención real del riesgo",
+      "texto": "Identificar peligros, anticiparse a otros actores viales y decidir para reducir la probabilidad de un siniestro."
+    },
+    {
+      "numero": 2,
+      "icon": "document",
+      "acento": "blue",
+      "titulo": "Virtual y presencial",
+      "texto": "Formación en línea para toda Colombia y capacitación práctica en Villavicencio, Meta y los Llanos Orientales."
+    },
+    {
+      "numero": 3,
+      "icon": "users",
+      "acento": "green",
+      "titulo": "Personas y empresas",
+      "texto": "Conductores, motociclistas, flotas y programas de seguridad vial empresarial, incluido el PESV cuando corresponda."
+    }
+  ],
+  "confianzaTitulo": "Capacitación orientada a la prevención real del riesgo vial",
+  "confianzaTexto": "El manejo defensivo va mucho más allá de conocer las normas de tránsito. Consiste en desarrollar la capacidad de identificar peligros, anticiparse a los errores de otros actores viales y tomar decisiones que reduzcan la probabilidad y gravedad de un siniestro. Nuestro curso integra conocimientos de seguridad vial, percepción del riesgo y comportamiento seguro para transformar la forma en que las personas conducen.",
+  "pilares": [
+    { "icono": "🛡", "titulo": "Prevención", "texto": "Reducir la probabilidad y la gravedad de un siniestro." },
+    { "icono": "👁", "titulo": "Percepción del riesgo", "texto": "Ver con tiempo lo que otros aún no advierten." },
+    { "icono": "🚘", "titulo": "Conducción segura", "texto": "Hábitos que protegen al conductor y a los demás." },
+    { "icono": "🧠", "titulo": "Toma de decisiones", "texto": "Elegir la alternativa con menor riesgo." }
+  ],
+  "queEsTitulo": "¿Qué es el manejo defensivo y por qué es importante?",
+  "queEsTexto": "El manejo defensivo o conducción defensiva es una estrategia de conducción orientada a prevenir siniestros viales mediante la observación permanente del entorno, la anticipación de riesgos y la adopción de decisiones seguras. Un conductor defensivo no solamente cumple las normas: aprende a reconocer situaciones potencialmente peligrosas antes de que se conviertan en una emergencia.",
+  "cicloPasos": ["Observar", "Identificar", "Anticipar", "Decidir", "Actuar"],
+  "cicloFrase": "Conductor defensivo = conductor que se anticipa al riesgo",
+  "aprenderasTitulo": "¿Qué aprenderás en el Curso de Manejo Defensivo?",
+  "aprendizajes": [
+    { "numero": "01", "titulo": "Percepción del riesgo", "texto": "Identificar anticipadamente vehículos, peatones, motociclistas, ciclistas, condiciones de infraestructura y situaciones que pueden desencadenar un siniestro." },
+    { "numero": "02", "titulo": "Gestión de la velocidad", "texto": "Comprender cómo la velocidad afecta el tiempo de reacción, la distancia de frenado y la gravedad de las lesiones." },
+    { "numero": "03", "titulo": "Distancia de seguridad", "texto": "Aplicar criterios seguros de seguimiento que permitan disponer del tiempo necesario para reaccionar." },
+    { "numero": "04", "titulo": "Observación y anticipación", "texto": "Desarrollar técnicas de exploración visual de la vía y reconocimiento temprano de amenazas." },
+    { "numero": "05", "titulo": "Intersecciones y puntos de conflicto", "texto": "Reconocer riesgos asociados con cruces, giros, glorietas, convergencias y divergencias." },
+    { "numero": "06", "titulo": "Adelantamientos seguros", "texto": "Evaluar visibilidad, velocidad, espacio disponible y comportamiento de otros vehículos antes de realizar una maniobra." },
+    { "numero": "07", "titulo": "Conducción nocturna", "texto": "Gestionar adecuadamente visibilidad, iluminación, fatiga y velocidad." },
+    { "numero": "08", "titulo": "Distracción", "texto": "Reconocer los riesgos generados por teléfonos celulares, dispositivos y otras fuentes de pérdida de atención." },
+    { "numero": "09", "titulo": "Fatiga y somnolencia", "texto": "Identificar señales tempranas de fatiga y adoptar decisiones preventivas." },
+    { "numero": "10", "titulo": "Lluvia y condiciones adversas", "texto": "Adaptar velocidad, distancia y maniobras ante lluvia, baja adherencia, poca visibilidad y otras condiciones ambientales." },
+    { "numero": "11", "titulo": "Actores viales vulnerables", "texto": "Mejorar la convivencia segura con peatones, ciclistas y motociclistas." },
+    { "numero": "12", "titulo": "Respuesta ante situaciones críticas", "texto": "Aprender principios preventivos para enfrentar acontecimientos inesperados sin incrementar el riesgo." }
+  ],
+  "fraseAprendizaje": "Aprender a conducir defensivamente es aprender a leer el riesgo antes de que ocurra.",
+  "modalidadesTitulo": "Elige cómo realizar tu Curso de Manejo Defensivo",
+  "virtual": {
+    "kicker": "💻 Curso virtual",
+    "titulo": "Capacítate desde cualquier lugar de Colombia",
+    "lead": "Ideal para conductores, motociclistas, empresas, trabajadores y organizaciones con personal en diferentes ciudades.",
+    "idealPara": [
+      "Conductores",
+      "Motociclistas",
+      "Empresas",
+      "Trabajadores",
+      "Organizaciones con personal en diferentes ciudades",
+      "Programas de formación empresarial"
+    ],
+    "incluye": [
+      "Acceso en línea",
+      "Contenidos audiovisuales",
+      "Evaluaciones",
+      "Material didáctico",
+      "Seguimiento de aprendizaje",
+      "Certificación, cuando corresponda"
+    ],
+    "ctaTexto": "Quiero hacer el curso virtual",
+    "ctaUrl": "/cursos",
+    "imagenId": "virtual"
+  },
+  "presencial": {
+    "kicker": "👨‍🏫 Curso presencial",
+    "titulo": "Formación práctica y participativa",
+    "lead": "Disponible especialmente para organizaciones, empresas y grupos en Villavicencio, Meta, Llanos Orientales y otras ciudades de Colombia según programación.",
+    "idealPara": [
+      "Villavicencio",
+      "Meta",
+      "Llanos Orientales",
+      "Otras ciudades de Colombia según programación"
+    ],
+    "incluye": [
+      "Instructor",
+      "Talleres",
+      "Análisis de casos",
+      "Percepción de peligros",
+      "Evaluación de conocimientos",
+      "Actividades prácticas",
+      "Capacitación empresarial"
+    ],
+    "ctaTexto": "Solicitar capacitación presencial",
+    "ctaUrl": "/acerca",
+    "imagenId": "presencial"
+  },
+  "regionalTitulo": "Curso de Manejo Defensivo en Villavicencio, Meta y los Llanos Orientales",
+  "regionalTexto": "Villavicencio es uno de los principales centros empresariales, logísticos y de transporte de los Llanos Orientales. Las dinámicas de movilidad de la región exigen conductores preparados para enfrentar diferentes entornos urbanos y carreteros. Nuestro programa puede orientarse a conductores y organizaciones de la región y de Colombia.",
+  "municipios": [
+    "Villavicencio",
+    "Acacías",
+    "Restrepo",
+    "Cumaral",
+    "Puerto López",
+    "Granada",
+    "Puerto Gaitán",
+    "otros municipios del Meta",
+    "Llanos Orientales",
+    "Colombia"
+  ],
+  "empresasTitulo": "Capacitación de Manejo Defensivo para Empresas",
+  "empresasTexto": "Las organizaciones que operan vehículos o cuentan con trabajadores que conducen necesitan fortalecer permanentemente sus competencias para la gestión del riesgo vial. El curso de manejo defensivo para empresas puede adaptarse a distintos sectores y tamaños de flota.",
+  "empresasTipos": [
+    "Empresas de transporte",
+    "Empresas de logística",
+    "Contratistas",
+    "Entidades públicas",
+    "Empresas de servicios",
+    "Organizaciones con flotas",
+    "Motociclistas laborales",
+    "Conductores comerciales",
+    "Trabajadores que utilizan vehículos durante su jornada"
+  ],
+  "empresasCtaTitulo": "¿Necesitas capacitar 10, 20, 50 o más conductores?",
+  "empresasCtaTexto": "Podemos estructurar una capacitación ajustada a las características de tu organización.",
+  "empresasCtaBoton": "Solicitar propuesta empresarial",
+  "empresasCtaUrl": "/acerca",
+  "pesvTitulo": "Fortalece la gestión del riesgo vial de tu organización",
+  "pesvLead": "El curso puede incorporarse dentro de programas de capacitación en seguridad vial para conductores y de la gestión empresarial del riesgo.",
+  "pesvItems": [
+    "Seguridad vial",
+    "Prevención de riesgos",
+    "Formación de conductores",
+    "Conducción segura",
+    "Gestión de flotas",
+    "Cultura vial",
+    "Actualización de competencias",
+    "Acciones relacionadas con el Plan Estratégico de Seguridad Vial – PESV, cuando corresponda"
+  ],
+  "pesvEnlaceTexto": "Conoce nuestros servicios relacionados con el Plan Estratégico de Seguridad Vial – PESV.",
+  "pesvEnlaceUrl": "/servicios",
+  "metodologiaTitulo": "Una metodología basada en situaciones reales de conducción",
+  "metodologiaPasos": [
+    { "titulo": "Conocer", "texto": "Comprender los principios de seguridad vial." },
+    { "titulo": "Observar", "texto": "Aprender a explorar correctamente el entorno vial." },
+    { "titulo": "Identificar", "texto": "Reconocer peligros antes de que se materialicen." },
+    { "titulo": "Anticipar", "texto": "Prever posibles comportamientos de otros actores." },
+    { "titulo": "Decidir", "texto": "Seleccionar la alternativa con menor riesgo." },
+    { "titulo": "Actuar", "texto": "Ejecutar una maniobra segura." }
+  ],
+  "audienciaTitulo": "¿Quién puede realizar el Curso de Manejo Defensivo?",
+  "audiencias": [
+    { "icono": "🚗", "titulo": "Conductores particulares" },
+    { "icono": "🚚", "titulo": "Conductores de vehículos de carga" },
+    { "icono": "🚌", "titulo": "Conductores de transporte" },
+    { "icono": "🏍", "titulo": "Motociclistas" },
+    { "icono": "🚐", "titulo": "Conductores empresariales" },
+    { "icono": "🏢", "titulo": "Empresas y organizaciones" },
+    { "icono": "👷", "titulo": "Trabajadores que conducen por motivos laborales" },
+    { "icono": "🦺", "titulo": "Responsables de seguridad vial y SST" }
+  ],
+  "beneficiosTitulo": "Beneficios de aprender Manejo Defensivo",
+  "beneficios": [
+    "Mejorar la percepción de peligros.",
+    "Reconocer situaciones de alto riesgo.",
+    "Adoptar decisiones preventivas.",
+    "Gestionar adecuadamente la velocidad.",
+    "Mejorar los hábitos de conducción.",
+    "Fortalecer la cultura de seguridad vial.",
+    "Reducir conductas inseguras.",
+    "Proteger al conductor, pasajeros y demás actores viales."
+  ],
+  "certificacionTitulo": "Certificación del Curso de Manejo Defensivo",
+  "certificacionTexto": "Al finalizar satisfactoriamente el proceso de formación y cumplir las condiciones establecidas para el programa, el participante podrá recibir la certificación correspondiente.",
+  "certificacion": {
+    "duracion": "Indique la intensidad horaria real del programa",
+    "modalidad": "Virtual / Presencial",
+    "evaluacion": "Indique si aplica evaluación y sus condiciones",
+    "certificado": "Indique las condiciones reales de certificación (asistencia, aprobación, etc.)",
+    "vigencia": "Indique si aplica vigencia",
+    "entidad": "Nombre de la institución que certifica"
+  },
+  "instructoresTitulo": "Formación orientada por especialistas en seguridad vial",
+  "instructoresTexto": "Presente aquí la experiencia real de la organización y de sus instructores. Complete formación, trayectoria y áreas de especialidad con información verificable.",
+  "instructoresItems": [
+    "Formación en seguridad vial",
+    "Experiencia profesional",
+    "Áreas de especialidad",
+    "Experiencia en capacitación",
+    "Investigación y movilidad",
+    "Gestión del riesgo"
+  ],
+  "testimoniosTitulo": "Personas y organizaciones que fortalecen su seguridad vial",
+  "testimonios": [],
+  "faqTitulo": "Preguntas frecuentes sobre el Curso de Manejo Defensivo",
+  "faq": [
+    {
+      "pregunta": "¿Qué es un curso de manejo defensivo?",
+      "respuesta": "Es una formación orientada a desarrollar conocimientos y habilidades para identificar peligros, anticiparse a situaciones críticas y adoptar decisiones de conducción más seguras."
+    },
+    {
+      "pregunta": "¿El curso puede realizarse virtualmente?",
+      "respuesta": "Sí. El programa puede ofrecerse mediante modalidad virtual, permitiendo la participación de personas y organizaciones ubicadas en diferentes regiones de Colombia."
+    },
+    {
+      "pregunta": "¿Hay curso presencial en Villavicencio?",
+      "respuesta": "Sí, cuando exista programación o se acuerde capacitación para empresas y grupos en Villavicencio y el Meta."
+    },
+    {
+      "pregunta": "¿El curso está disponible para empresas?",
+      "respuesta": "Sí. Se pueden desarrollar jornadas de formación para conductores, trabajadores y organizaciones."
+    },
+    {
+      "pregunta": "¿El curso sirve para motociclistas?",
+      "respuesta": "El programa puede incorporar contenidos específicos de percepción del riesgo y conducción segura dirigidos a motociclistas."
+    },
+    {
+      "pregunta": "¿Dónde se realizan las capacitaciones?",
+      "respuesta": "La oferta presencial puede concentrarse en Villavicencio, Meta y los Llanos Orientales y ampliarse a otras ciudades de Colombia según disponibilidad."
+    },
+    {
+      "pregunta": "¿Entregan certificado?",
+      "respuesta": "Indique aquí la condición real de certificación, requisitos de asistencia, evaluación y aprobación."
+    },
+    {
+      "pregunta": "¿Cuánto dura el curso?",
+      "respuesta": "Indique aquí la intensidad horaria real del programa."
+    }
+  ],
+  "ctaFinalTitulo": "La seguridad comienza antes de poner el vehículo en movimiento",
+  "ctaFinalLead": "Conducir defensivamente significa aprender a anticiparse al riesgo y tomar decisiones que protejan la vida.",
+  "ctaFinalTexto": "Realiza nuestro Curso de Manejo Defensivo Virtual o Presencial.",
+  "ctaFinalUbicacion": "Villavicencio | Meta | Llanos Orientales | Colombia",
+  "ctaFinalFrase": "Anticípate al riesgo. Conduce para proteger la vida.",
+  "footerSeoLine": "Cursos de Seguridad Vial | Manejo Defensivo | Capacitación Empresarial | PESV | Formación de Conductores",
+  "imagenes": [
+    {
+      "id": "hero",
+      "etiqueta": "Hero (conductor o instructor)",
+      "url": "",
+      "alt": "Curso de manejo defensivo para conductores en Villavicencio Meta",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Instructor de conducción y un conductor adulto junto a un automóvil en un centro de formación vial; atmósfera profesional de curso de manejo defensivo. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "infografia",
+      "etiqueta": "Infografía: observar → actuar",
+      "url": "",
+      "alt": "Ciclo del manejo defensivo: observar, identificar, anticipar, decidir y actuar",
+      "promptImagen": "Infografía horizontal 16:9 (1920×1080), diseño limpio y profesional. Ciclo del manejo defensivo en cinco pasos: observar, identificar, anticipar, decidir y actuar. Iconos simples, flechas claras, fondo oscuro. Paleta azul marino profundo, acento dorado y un toque de rojo. Sin marcas, sin logos, sin marca de agua, sin texto ilegible de relleno."
+    },
+    {
+      "id": "aprendizaje",
+      "etiqueta": "Imagen central de aprendizaje",
+      "url": "",
+      "alt": "Identificación de riesgos en curso de conducción defensiva",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Vista desde el asiento del conductor identificando riesgos en la vía: tráfico, motocicletas y peatones; manos en el volante, concentración. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "virtual",
+      "etiqueta": "Curso virtual",
+      "url": "",
+      "alt": "Curso de manejo defensivo virtual en Colombia",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Adulto tomando un curso de manejo defensivo en un portátil, en casa u oficina; en la pantalla se intuye una clase (sin texto legible). Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "presencial",
+      "etiqueta": "Curso presencial",
+      "url": "",
+      "alt": "Capacitación presencial de manejo defensivo en Villavicencio",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Aula de capacitación presencial: instructor frente a un grupo de conductores adultos, pizarra o proyección, ambiente profesional. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "regional",
+      "etiqueta": "Enfoque regional",
+      "url": "",
+      "alt": "Capacitación de manejo defensivo en Meta y Llanos Orientales",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Carretera de los Llanos Orientales con cielo amplio y sabana; sensación de formación vial en Meta, Colombia. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "empresas",
+      "etiqueta": "Capacitación empresarial",
+      "url": "",
+      "alt": "Capacitación empresarial en manejo defensivo y seguridad vial",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Capacitación empresarial a conductores de flota: grupo de adultos en salón o patio de vehículos, uniformes discretos, sin logos. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "metodologia",
+      "etiqueta": "Metodología",
+      "url": "",
+      "alt": "Metodología del curso de conducción defensiva",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Taller práctico: instructor y alumnos analizando un caso de seguridad vial alrededor de una mesa, materiales didácticos genéricos. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "beneficios",
+      "etiqueta": "Beneficios",
+      "url": "",
+      "alt": "Conductor aplicando percepción del riesgo en el curso de manejo defensivo",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Conductor profesional aplicando percepción del riesgo, mirada atenta al entorno, vehículo en movimiento suave, día despejado. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "certificado",
+      "etiqueta": "Certificado",
+      "url": "",
+      "alt": "Certificación del curso de manejo defensivo",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Persona adulta sosteniendo un certificado de capacitación genérico (sin nombres ni logos reales), ambiente institucional sobrio. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "instructor",
+      "etiqueta": "Instructor",
+      "url": "",
+      "alt": "Instructor de seguridad vial en curso de manejo defensivo",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Instructor de seguridad vial explicando en un aula o junto a un vehículo, gesto claro, vestimenta profesional, plano horizontal. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    },
+    {
+      "id": "cierre",
+      "etiqueta": "Cierre",
+      "url": "",
+      "alt": "Anticípate al riesgo. Conduce para proteger la vida.",
+      "promptImagen": "Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Fotografía inspiradora de un conductor al atardecer en una vía de Meta; sensación de anticiparse al riesgo y proteger la vida. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua."
+    }
+  ]
+}

@@ -319,6 +319,35 @@ function origenEsCertPorClase(contrato, origenRaw) {
 }
 
 /**
+ * Unión de programas de los orígenes activos (por clase + programa global).
+ * Lista permitida al autogenerar: el plan de instructores no añade programas extra.
+ */
+function idsProgramasOrigenesActivosContrato(contrato) {
+  const origenes = normalizarOrigenesContrato(contrato?.origenesAlumnos);
+  const map = normalizarCertificacionOrigen(contrato?.certificacionOrigen, contrato);
+  const out = [];
+  const seen = new Set();
+  for (const k of ORIGENES_JORNADA_CAP) {
+    if (!origenes[k]) continue;
+    const row = map[k] || map.operativo;
+    if (normalizarTipoCertContrato(row?.tipoCertificado) === TIPO_CERTIFICADO_POR_CLASE) {
+      for (const id of normalizeIdProgramasOrigen(row?.idProgramas)) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.push(id);
+      }
+    } else {
+      const g = String(row?.idProgramaCertificacion || '').trim();
+      if (g && !seen.has(g)) {
+        seen.add(g);
+        out.push(g);
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * Programas para autogenerar clases: solo si hay exactamente un origen activo por_clase.
  * Con varios orígenes por_clase el instructor elige origen y programa al operar.
  */
@@ -417,5 +446,6 @@ module.exports = {
   idsProgramasPorClaseOrigen,
   origenEsCertPorClase,
   programasAutogeneracionContrato,
+  idsProgramasOrigenesActivosContrato,
   unionIdProgramasPorClase,
 };

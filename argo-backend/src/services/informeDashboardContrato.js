@@ -18,6 +18,12 @@ const {
   mapaEtiquetasActorVial,
   textoActorVialAlumnoInforme,
 } = require('./caracterizacionPoblacion');
+const {
+  primeraUrlFotoEvidencia,
+  resolverDataUrlFotosClases,
+  htmlFotoEvidenciaClaseInforme,
+  cssFotoEvidenciaClaseInforme,
+} = require('./fotoEvidenciaInformeHtml');
 
 function toObjectId(raw) {
   if (!raw) return null;
@@ -384,6 +390,7 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       duracionLabel: fmtDuracionInforme(duracionSegundos),
       alumnosInscritos: alumnosConFlag.length,
       alumnosCertificados: alumnosConFlag.filter((a) => a.certificado).length,
+      fotoEvidenciaUrl: primeraUrlFotoEvidencia(cl),
       alumnos: alumnosConFlag.sort((a, b) =>
         a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' }),
       ),
@@ -1440,6 +1447,14 @@ function htmlEncabezadoClase(cl) {
   <p class="clase-section-sub">${esc(stats)}</p>`;
 }
 
+function htmlBloqueClase(cl) {
+  return `<section class="clase-bloque">
+  ${htmlEncabezadoClase(cl)}
+  ${htmlFotoEvidenciaClaseInforme(cl)}
+  ${htmlTablaAlumnos(cl.alumnos)}
+</section>`;
+}
+
 function htmlTablaDesarrolloInstructor(clases) {
   const rows = (clases || [])
     .map(
@@ -1497,6 +1512,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   const titulo = alcanceTitulo(alcance, data);
   const { atPageCssPara } = require('./configPaginasInformes');
   const atPage = await atPageCssPara('informe_contrato_jornadas');
+  await resolverDataUrlFotosClases(data.porClase);
 
   let cuerpo = '';
 
@@ -1512,6 +1528,12 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
       cuerpo += `<h3 class="jornada-section-title">Instructor · ${esc(inst.instructorNombre)}</h3>`;
       cuerpo += `<p class="jornada-section-sub">${inst.clasesDictadas} dictada(s) / ${inst.numClases} clase(s) · ${inst.alumnosCapacitados} capacitado(s) · ${inst.alumnosCertificados || 0} certificado(s) · duración ${esc(inst.duracionLabel || '—')}</p>`;
       cuerpo += htmlTablaDesarrolloInstructor(clases);
+      if (clases.length) {
+        cuerpo += `<h3 class="chart-section-title chart-section-title--sub">Clases y alumnos</h3>`;
+        for (const cl of clases) {
+          cuerpo += htmlBloqueClase(cl);
+        }
+      }
     }
   } else if (alcance === 'programa') {
     cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
@@ -1520,15 +1542,13 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
       cuerpo += `<p class="programa-section-sub">${p.numClases} clase(s) · ${p.alumnosCapacitados} capacitado(s) · ${p.alumnosCertificados} certificado(s)</p>`;
       const clases = (data.porClase || []).filter((cl) => cl.idPrograma === p.idPrograma);
       for (const cl of clases) {
-        cuerpo += htmlEncabezadoClase(cl);
-        cuerpo += htmlTablaAlumnos(cl.alumnos);
+        cuerpo += htmlBloqueClase(cl);
       }
     }
   } else if (alcance === 'clase') {
     cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
     for (const cl of data.porClase || []) {
-      cuerpo += htmlEncabezadoClase(cl);
-      cuerpo += htmlTablaAlumnos(cl.alumnos);
+      cuerpo += htmlBloqueClase(cl);
     }
   } else {
     // contrato o jornada
@@ -1540,8 +1560,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
       cuerpo += htmlEncabezadoJornada(j);
       cuerpo += `<h3 class="chart-section-title chart-section-title--sub">Clases y alumnos</h3>`;
       for (const cl of j.clases || []) {
-        cuerpo += htmlEncabezadoClase(cl);
-        cuerpo += htmlTablaAlumnos(cl.alumnos);
+        cuerpo += htmlBloqueClase(cl);
       }
       if (indiceJornada < jornadasInforme.length - 1) {
         cuerpo += `<div class="page-break" aria-hidden="true"></div>`;
@@ -1705,7 +1724,9 @@ ${informeGoogleFontsLinkHtml()}
   .programa-section-title { margin: 18px 0 4px; padding: 10px 12px; border-left: 5px solid #7c3aed; border-radius: 0 8px 8px 0; background: linear-gradient(90deg, #ede9fe, #f7f5ff); color: #5b21b6; font-size: 12pt; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; box-shadow: 0 1px 3px rgba(15,23,42,.08); break-after: avoid; page-break-after: avoid; }
   .programa-section-sub { margin: 0 0 10px 12px; font-size: 9pt; color: #64748b; }
   .clase-section-title { margin: 12px 0 4px; padding: 8px 11px; border-left: 4px solid #b45309; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #fdecd7, #fff8ef); color: #9a3412; font-size: 10.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; break-after: avoid; page-break-after: avoid; }
-  .clase-section-sub { margin: 0 0 8px 11px; font-size: 8.5pt; color: #64748b; }
+  .clase-section-sub { margin: 0 0 8px 11px; font-size: 8.5pt; color: #64748b; break-after: avoid; page-break-after: avoid; }
+  .clase-bloque { margin: 0 0 14px; }
+  ${cssFotoEvidenciaClaseInforme()}
   .page-break { break-after: page; page-break-after: always; height: 0; }
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 16px; }
   .charts-grid--compact { gap: 8px; margin: 6px 0 10px; }

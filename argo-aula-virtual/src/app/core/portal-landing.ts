@@ -54,6 +54,16 @@ import {
   type PortalTrabajoEnAlturasLanding,
 } from '../pages/trabajo-en-alturas/trabajo-en-alturas-content';
 import {
+  MANEJO_DEFENSIVO_LANDING,
+  mergeManejoDefensivoLanding,
+  type PortalManejoDefensivoLanding,
+} from '../pages/manejo-defensivo/manejo-defensivo-content';
+import {
+  PRIMEROS_AUXILIOS_LANDING,
+  mergePrimerosAuxiliosLanding,
+  type PortalPrimerosAuxiliosLanding,
+} from '../pages/primeros-auxilios/primeros-auxilios-content';
+import {
   APP_MOBILE,
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
@@ -257,6 +267,8 @@ export interface PortalLandingConfig {
   examenTeorico: PortalExamenTeoricoLanding;
   mercanciasPeligrosas: PortalMercanciasPeligrosasLanding;
   trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
+  manejoDefensivo: PortalManejoDefensivoLanding;
+  primerosAuxilios: PortalPrimerosAuxiliosLanding;
   servicios: { titulo: string; items: { icon: string; title: string; url?: string }[] };
   valores: { titulo: string; lead: string; items: { title: string; text: string }[] };
   testimonios: {
@@ -473,6 +485,12 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   trabajoEnAlturas: JSON.parse(
     JSON.stringify(TRABAJO_EN_ALTURAS_LANDING),
   ) as PortalTrabajoEnAlturasLanding,
+  manejoDefensivo: JSON.parse(
+    JSON.stringify(MANEJO_DEFENSIVO_LANDING),
+  ) as PortalManejoDefensivoLanding,
+  primerosAuxilios: JSON.parse(
+    JSON.stringify(PRIMEROS_AUXILIOS_LANDING),
+  ) as PortalPrimerosAuxiliosLanding,
   servicios: { titulo: 'Todo lo que necesita tu empresa en seguridad vial', items: [...SERVICIOS_EMPRESA] },
   valores: { titulo: '¡Somos tu mejor opción!', lead: '', items: [...VALORES] },
   testimonios: {
@@ -720,6 +738,8 @@ export function mergePortalLanding(
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
+    manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo),
+    primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios),
     servicios: esServial
       ? { ...d.servicios }
       : {

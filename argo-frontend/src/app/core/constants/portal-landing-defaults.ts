@@ -32,6 +32,16 @@ import {
   PortalTrabajoEnAlturasLanding,
 } from './trabajo-en-alturas-landing-defaults';
 import {
+  MANEJO_DEFENSIVO_LANDING,
+  mergeManejoDefensivoLanding,
+  PortalManejoDefensivoLanding,
+} from './manejo-defensivo-landing-defaults';
+import {
+  PRIMEROS_AUXILIOS_LANDING,
+  mergePrimerosAuxiliosLanding,
+  PortalPrimerosAuxiliosLanding,
+} from './primeros-auxilios-landing-defaults';
+import {
   EVALUACION_JORNADAS_LANDING_DEFAULTS,
   mergeEvaluacionJornadasLanding,
   PortalEvaluacionJornadasLanding,
@@ -128,6 +138,8 @@ export interface PortalPopupConfig {
   imagenUrl: string;
   imagenUrlAbsoluta?: string;
   imagenAlt: string;
+  /** Solo ERP: prompt para generar la foto. No se muestra en el portal. */
+  promptImagen?: string;
   mostrarBotonContinuar: boolean;
   textoBotonContinuar: string;
   mostrarBotonCerrar: boolean;
@@ -147,6 +159,8 @@ export interface PortalConsultaCertificadosConfig {
   heroImagenUrl: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
+  /** Solo ERP */
+  heroImagenPrompt?: string;
 }
 
 export interface PortalAsistentePaginaConfig {
@@ -193,6 +207,8 @@ export interface PortalGaleriaFoto {
   url: string;
   urlAbsoluta?: string;
   leyenda: string;
+  /** Solo ERP */
+  promptImagen?: string;
   tipo: 'imagen' | 'video';
   orden: number;
 }
@@ -208,6 +224,8 @@ export interface PortalGaleriaLanding {
   heroImagenUrl?: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt?: string;
+  /** Solo ERP */
+  heroImagenPrompt?: string;
   fotos: PortalGaleriaFoto[];
 }
 
@@ -215,6 +233,8 @@ export interface PortalHomeFoto {
   url: string;
   urlAbsoluta?: string;
   leyenda: string;
+  /** Solo ERP */
+  promptImagen?: string;
 }
 
 export interface PortalFotosInicioLanding {
@@ -229,6 +249,8 @@ export interface PortalPublicidadSlide {
   urlAbsoluta?: string;
   alt: string;
   enlace: string;
+  /** Solo ERP */
+  promptImagen?: string;
 }
 
 export interface PortalPublicidadLanding {
@@ -255,6 +277,8 @@ export interface PortalLandingConfig {
     ctaLlamarUrl: string;
     mostrarBotonLlamar: boolean;
     imagenAlt: string;
+    /** Solo ERP */
+    promptImagen?: string;
     eyebrow: string;
     eyebrowServial: string;
     subEyebrow: string;
@@ -296,6 +320,8 @@ export interface PortalLandingConfig {
   examenTeorico: PortalExamenTeoricoLanding;
   mercanciasPeligrosas: PortalMercanciasPeligrosasLanding;
   trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
+  manejoDefensivo: PortalManejoDefensivoLanding;
+  primerosAuxilios: PortalPrimerosAuxiliosLanding;
   finstruvialServicios: PortalFinstruvialServiciosConfig;
   servicios: { titulo: string; items: LandingServicioItem[] };
   valores: { titulo: string; lead: string; items: LandingItemBasico[] };
@@ -331,6 +357,8 @@ export interface PortalLandingConfig {
     heroImagenUrl: string;
     heroImagenUrlAbsoluta?: string;
     heroImagenAlt: string;
+    /** Solo ERP */
+    heroImagenPrompt?: string;
   };
   galeria: PortalGaleriaLanding;
   fotosInicio: PortalFotosInicioLanding;
@@ -538,6 +566,12 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   trabajoEnAlturas: JSON.parse(
     JSON.stringify(TRABAJO_EN_ALTURAS_LANDING),
   ) as PortalTrabajoEnAlturasLanding,
+  manejoDefensivo: JSON.parse(
+    JSON.stringify(MANEJO_DEFENSIVO_LANDING),
+  ) as PortalManejoDefensivoLanding,
+  primerosAuxilios: JSON.parse(
+    JSON.stringify(PRIMEROS_AUXILIOS_LANDING),
+  ) as PortalPrimerosAuxiliosLanding,
   finstruvialServicios: JSON.parse(
     JSON.stringify(FINSTRUVIAL_SERVICIOS_DEFAULTS),
   ) as PortalFinstruvialServiciosConfig,
@@ -918,6 +952,7 @@ function mergePublicidad(
         urlAbsoluta: s.urlAbsoluta?.trim() || undefined,
         alt: s.alt?.trim() || 'Publicidad',
         enlace: s.enlace?.trim() || '',
+        promptImagen: s.promptImagen?.trim() || '',
       }))
       .filter((s) => s.url),
   };
@@ -952,6 +987,8 @@ export function mergePortalLanding(
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
+    manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo),
+    primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios),
     finstruvialServicios: mergePortafolioServicios(raw.finstruvialServicios, tema),
     servicios: {
       ...d.servicios,
@@ -985,12 +1022,14 @@ export function mergePortalLanding(
       mostrarBadgeVirtual: raw.blog?.mostrarBadgeVirtual === true,
       heroImagenUrl: raw.blog?.heroImagenUrl?.trim() || d.blog.heroImagenUrl,
       heroImagenAlt: raw.blog?.heroImagenAlt?.trim() || d.blog.heroImagenAlt,
+      heroImagenPrompt: raw.blog?.heroImagenPrompt?.trim() || d.blog.heroImagenPrompt || '',
     },
     galeria: {
       ...d.galeria,
       ...raw.galeria,
       theme: raw.galeria?.theme || d.galeria.theme,
       mostrarBadgeVirtual: raw.galeria?.mostrarBadgeVirtual === true,
+      heroImagenPrompt: raw.galeria?.heroImagenPrompt?.trim() || d.galeria.heroImagenPrompt || '',
       fotos: raw.galeria?.fotos?.length ? raw.galeria.fotos : d.galeria.fotos,
     },
     fotosInicio: {

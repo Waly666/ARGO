@@ -732,10 +732,9 @@ export class ContratoInformesDashboardComponent implements OnChanges {
 
   private nombreFallbackPaqueteContrato(): string {
     const c = this.contrato();
-    const cod = this.slugNombreArchivo(c?.codContrato || 'sin-codigo', 32);
-    const empresa = this.slugNombreArchivo(c?.cliente || 'empresa-contratante', 48);
+    const cod = this.slugNombreArchivo(c?.codContrato || 'sin-codigo', 24);
     const stamp = new Date().toISOString().slice(0, 10);
-    return `paquete-entrega-contrato_${cod}_${empresa}_${stamp}.zip`;
+    return `entrega_${cod}_${stamp}.zip`;
   }
 
   private emitirProgresoEntrega(open: boolean, progreso?: CertZipProgreso): void {
@@ -774,7 +773,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
       );
       this.emitirProgresoEntrega(false);
       this.msg.set(
-        'Paquete de entrega del contrato descargado. En cada jornada verá evidencia/ e evidencia-fotografica-adicional/.',
+        'Paquete de entrega del contrato descargado. En cada jornada verá evidencia/, imagenes/ y fotos-extra/.',
       );
     } catch (e: unknown) {
       const texto = e instanceof Error ? e.message : 'No se pudo generar el paquete de entrega.';
