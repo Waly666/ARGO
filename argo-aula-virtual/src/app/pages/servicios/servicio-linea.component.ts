@@ -100,6 +100,7 @@ export class ServicioLineaComponent implements OnInit {
     const layoutSplit =
       s.estilo === 'academy' ||
       s.estilo === 'tech' ||
+      s.slug === 'peridata' ||
       s.slug === 'capacitacionSensibilizacion' ||
       s.slug === 'estudiosDiagnosticosTecnicos' ||
       s.slug === 'herramientasEducativasTecnologicas' ||
