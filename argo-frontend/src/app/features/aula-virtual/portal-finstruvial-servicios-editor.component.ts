@@ -125,6 +125,7 @@ export class PortalFinstruvialServiciosEditorComponent {
     if (!Array.isArray(p.productoMedios)) p.productoMedios = [];
     if (!Array.isArray(p.videos)) p.videos = [];
     if (!Array.isArray(p.modulosPlataforma)) p.modulosPlataforma = [];
+    if (!Array.isArray(p.guiasPlataforma)) p.guiasPlataforma = [];
     if (!Array.isArray(p.pilaresEducativos)) p.pilaresEducativos = [];
     if (!Array.isArray(p.rutaAprendizaje)) p.rutaAprendizaje = [];
     if (!Array.isArray(p.publicos)) p.publicos = [];
@@ -427,6 +428,15 @@ export class PortalFinstruvialServiciosEditorComponent {
       titulo: '',
       texto: '',
       imagenId,
+    } satisfies PortalFinstruvialServicioBloque);
+  }
+
+  addGuiaPlataforma() {
+    this.paginaActiva().guiasPlataforma.push({
+      icon: '📌',
+      titulo: '',
+      texto: '',
+      youtubeUrl: '',
     } satisfies PortalFinstruvialServicioBloque);
   }
 

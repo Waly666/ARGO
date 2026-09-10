@@ -738,7 +738,31 @@ export const FINSTRUVIAL_SERVICIOS_WIREFRAME: Partial<
     modulosPlataformaKicker: 'Plataforma',
     modulosPlataformaTitulo: 'Así funciona el aula virtual',
     modulosPlataformaLead:
-      'Conozca las secciones del campus virtual: desde el tablero de inicio hasta sus certificados y foros de curso.',
+      'Vea los tutoriales en video y conozca las secciones del campus virtual: tablero, cursos, certificados y más.',
+    guiasPlataformaKicker: 'Tutoriales en video',
+    guiasPlataformaTitulo: 'Aprenda a usar el aula virtual paso a paso',
+    guiasPlataformaLead:
+      'Configure enlaces de YouTube para explicar registro, matrícula y pago de cursos.',
+    guiasPlataforma: [
+      {
+        icon: '📝',
+        titulo: 'Registro en el aula virtual',
+        texto: 'Cómo crear su cuenta y acceder por primera vez al campus virtual.',
+        youtubeUrl: '',
+      },
+      {
+        icon: '📚',
+        titulo: 'Matricularse en un curso',
+        texto: 'Cómo elegir un programa del catálogo e inscribirse desde la tienda o el aula virtual.',
+        youtubeUrl: '',
+      },
+      {
+        icon: '💳',
+        titulo: 'Pago de matrícula',
+        texto: 'Cómo realizar el pago de su matrícula y confirmar su inscripción al curso.',
+        youtubeUrl: '',
+      },
+    ],
     modulosPlataforma: [
       {
         icon: '📊',

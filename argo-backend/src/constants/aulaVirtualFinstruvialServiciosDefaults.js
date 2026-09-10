@@ -235,6 +235,14 @@ function mergePagina(slug, raw, defaults) {
 
     modulosPlataformaLead: '',
 
+    guiasPlataformaKicker: '',
+
+    guiasPlataformaTitulo: '',
+
+    guiasPlataformaLead: '',
+
+    guiasPlataforma: [],
+
     modulosPlataforma: [],
 
     cierreQuote: '',
@@ -421,6 +429,14 @@ function mergePagina(slug, raw, defaults) {
     modulosPlataformaTitulo: str(src.modulosPlataformaTitulo, d.modulosPlataformaTitulo),
 
     modulosPlataformaLead: str(src.modulosPlataformaLead, d.modulosPlataformaLead),
+
+    guiasPlataformaKicker: str(src.guiasPlataformaKicker, d.guiasPlataformaKicker),
+
+    guiasPlataformaTitulo: str(src.guiasPlataformaTitulo, d.guiasPlataformaTitulo),
+
+    guiasPlataformaLead: str(src.guiasPlataformaLead, d.guiasPlataformaLead),
+
+    guiasPlataforma: arr(src.guiasPlataforma, d.guiasPlataforma),
 
     modulosPlataforma: arr(src.modulosPlataforma, d.modulosPlataforma),
 

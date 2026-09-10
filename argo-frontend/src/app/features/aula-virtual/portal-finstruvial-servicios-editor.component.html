@@ -991,6 +991,56 @@
           <argo-portal-field-label tag="p" label="Texto introductorio" />
           <textarea class="psb-input" rows="2" [(ngModel)]="p.modulosPlataformaLead"></textarea>
         </label>
+
+        <p class="fsv-subsection-title">Tutoriales en video (YouTube)</p>
+        <p class="psb-hint">
+          Enlaces para explicar registro, matrícula y pago. Se muestran destacados en el portal antes de las capturas de pantalla.
+        </p>
+          <div class="psb-grid2">
+            <label class="psb-field psb-field--plain">
+              <span>Etiqueta tutoriales</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.guiasPlataformaKicker" placeholder="Tutoriales en video" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Título tutoriales</span>
+              <input type="text" class="psb-input" [(ngModel)]="p.guiasPlataformaTitulo" placeholder="Aprenda a usar el aula virtual paso a paso" />
+            </label>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <argo-portal-field-label tag="p" label="Texto introductorio tutoriales" />
+            <textarea class="psb-input" rows="2" [(ngModel)]="p.guiasPlataformaLead"></textarea>
+          </label>
+          @for (g of p.guiasPlataforma; track $index; let i = $index) {
+            <div class="ple-list__row ple-list__row--stack">
+              <div class="psb-grid3">
+                <label class="psb-field psb-field--plain">
+                  <span>Icono</span>
+                  <input type="text" class="psb-input" [(ngModel)]="p.guiasPlataforma[i].icon" />
+                </label>
+                <label class="psb-field psb-field--plain">
+                  <span>Título del tutorial</span>
+                  <input type="text" class="psb-input" [(ngModel)]="p.guiasPlataforma[i].titulo" placeholder="Registro, matrícula, pago…" />
+                </label>
+                <label class="psb-field psb-field--plain psb-field--span2">
+                  <argo-portal-field-label tag="p" label="Descripción" />
+                  <textarea class="psb-input" rows="2" [(ngModel)]="p.guiasPlataforma[i].texto"></textarea>
+                </label>
+                <label class="psb-field psb-field--plain psb-field--span3">
+                  <span>Enlace YouTube</span>
+                  <input
+                    type="url"
+                    class="psb-input"
+                    [(ngModel)]="p.guiasPlataforma[i].youtubeUrl"
+                    placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
+                  />
+                </label>
+              </div>
+              <button type="button" class="psb-icon-btn" (click)="removeItem(p.guiasPlataforma, i)">×</button>
+            </div>
+          }
+        <button type="button" class="psb-link" (click)="addGuiaPlataforma()">+ Añadir tutorial en video</button>
+
+        <p class="fsv-subsection-title">Módulos del campus (capturas)</p>
         @for (m of p.modulosPlataforma; track $index; let i = $index) {
           <div class="ple-list__row ple-list__row--stack">
             <div class="psb-grid3">

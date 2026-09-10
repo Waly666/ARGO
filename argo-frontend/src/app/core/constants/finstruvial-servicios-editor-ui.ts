@@ -128,7 +128,8 @@ const GRUPO_META_BASE: Record<
   modulosPlataforma: {
     icono: '💻',
     titulo: 'Así funciona el aula virtual',
-    descripcion: 'Capturas y descripción de tablero, cursos, certificados, etc.',
+    descripcion:
+      'Tutoriales en YouTube (registro, matrícula, pago) y capturas de tablero, cursos, certificados, etc.',
     ancla: 'plataforma',
   },
   metodologia: {
