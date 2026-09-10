@@ -1,10 +1,13 @@
 import { PortalPaginaKey } from './portal-site';
 import {
+  LegacyConsultaAsistente,
   PortalAsistenteConfig,
   PortalAsistentePaginaConfig,
   PortalAsistenteViewConfig,
   PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT,
-} from './portal-landing';
+} from './portal-asistente.types';
+
+export type { LegacyConsultaAsistente } from './portal-asistente.types';
 
 export const PORTAL_ASISTENTE_PAGINAS: {
   key: PortalPaginaKey;
@@ -32,14 +35,11 @@ export const PORTAL_ASISTENTE_PAGINAS: {
   { key: 'acerca', titulo: 'Acerca de', descripcion: 'Contacto e información' },
 ];
 
-const ASISTENTE_PAGINA_KEYS = PORTAL_ASISTENTE_PAGINAS.map((p) => p.key);
-
-export type LegacyConsultaAsistente = {
-  asistenteActivo?: boolean;
-  asistenteTexto?: string;
-  asistenteVideoUrl?: string;
-  asistenteVideoUrlAbsoluta?: string;
-};
+function asistentePaginaKeys(): PortalPaginaKey[] {
+  return Array.isArray(PORTAL_ASISTENTE_PAGINAS)
+    ? PORTAL_ASISTENTE_PAGINAS.map((p) => p.key)
+    : [];
+}
 
 function textoDefaultPagina(key: PortalPaginaKey): string {
   return key === 'consultaCertificados' ? PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT : '';
@@ -47,7 +47,7 @@ function textoDefaultPagina(key: PortalPaginaKey): string {
 
 export function defaultAsistentePaginas(): Record<PortalPaginaKey, PortalAsistentePaginaConfig> {
   const paginas = {} as Record<PortalPaginaKey, PortalAsistentePaginaConfig>;
-  for (const key of ASISTENTE_PAGINA_KEYS) {
+  for (const key of asistentePaginaKeys()) {
     paginas[key] = { activo: false, texto: textoDefaultPagina(key) };
   }
   return paginas;
@@ -61,7 +61,7 @@ export function mergePortalAsistente(
   const srcPaginas: Partial<Record<PortalPaginaKey, Partial<PortalAsistentePaginaConfig>>> =
     raw?.paginas && typeof raw.paginas === 'object' ? raw.paginas : {};
 
-  for (const key of ASISTENTE_PAGINA_KEYS) {
+  for (const key of asistentePaginaKeys()) {
     const pageSrc = srcPaginas[key];
     paginas[key] = {
       activo: pageSrc?.activo === true,

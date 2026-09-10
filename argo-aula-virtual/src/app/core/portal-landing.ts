@@ -2,6 +2,17 @@ import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaul
 import { DEFAULT_CEA_NOMBRE } from './portal-brand-defaults';
 import { PortalPaginaKey } from './portal-site';
 import { defaultAsistentePaginas, mergePortalAsistente, type LegacyConsultaAsistente } from './portal-asistente.util';
+import type {
+  PortalAsistenteConfig,
+  PortalAsistentePaginaConfig,
+  PortalAsistenteViewConfig,
+} from './portal-asistente.types';
+export type {
+  PortalAsistenteConfig,
+  PortalAsistentePaginaConfig,
+  PortalAsistenteViewConfig,
+} from './portal-asistente.types';
+export { PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT } from './portal-asistente.types';
 import {
   ACERCA_LANDING_DEFAULTS,
   mergeAcercaLanding,
@@ -347,25 +358,6 @@ export interface PortalLandingConfig {
   servialPlantillaBase?: ServialPlantillaInicioSnapshot | null;
 }
 
-export interface PortalAsistentePaginaConfig {
-  activo: boolean;
-  texto: string;
-}
-
-export interface PortalAsistenteConfig {
-  videoUrl: string;
-  videoUrlAbsoluta?: string;
-  paginas: Record<PortalPaginaKey, PortalAsistentePaginaConfig>;
-}
-
-/** Formato que consume el componente flotante del asistente. */
-export interface PortalAsistenteViewConfig {
-  asistenteActivo: boolean;
-  asistenteTexto: string;
-  asistenteVideoUrl: string;
-  asistenteVideoUrlAbsoluta?: string;
-}
-
 export type PortalPopupFrecuencia = 'primera_vez' | 'cada_recarga_sesion';
 
 export interface PortalConsultaCertificadosConfig {
@@ -381,27 +373,6 @@ export interface PortalConsultaCertificadosConfig {
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
 }
-
-export const PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT = `🚘 FORMACIÓN QUE ABRE CAMINOS Y GENERA CONFIANZA
-
-En nuestro Centro de Enseñanza Automovilística, trabajamos con el compromiso de brindar una formación integral, responsable y de alta calidad.
-
-Contamos con los requisitos y reconocimientos correspondientes ante las entidades competentes, incluyendo el sector de Transporte y Educación, además de certificaciones de calidad que respaldan nuestros procesos de formación.
-
-🎓 Ofrecemos cursos orientados a la formación y actualización de conductores, con programas que buscan responder a las necesidades del sector empresarial y laboral.
-
-⛽ Formación con enfoque empresarial: contamos con cursos y procesos de capacitación válidos para los requisitos aplicables en procesos relacionados con ECOPETROL, de acuerdo con las condiciones y exigencias correspondientes.
-
-Nuestro propósito es formar conductores responsables, competentes y preparados para asumir los retos de la movilidad y del sector productivo.
-
-📚 Capacítate con una institución que trabaja por tu seguridad, tu formación y tu futuro.
-
-Centro de Enseñanza Automovilística
-✅ Formación
-✅ Calidad
-✅ Seguridad vial
-✅ Capacitación para el sector empresarial
-✅ Cursos y certificaciones conforme a la normativa aplicable`;
 
 export interface PortalPopupConfig {
   activo: boolean;
