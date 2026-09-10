@@ -4,7 +4,10 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { finstruvialPortafolioActivo, finstruvialServiciosActivos } from '../../core/constants/finstruvial-servicios-defaults';
-import { finstruvialServicioPublicRoute } from '../../core/constants/finstruvial-servicios.constants';
+import {
+  finstruvialServicioPublicRoute,
+  resolverUrlLineaServicio,
+} from '../../core/constants/finstruvial-servicios.constants';
 import { PortalServiciosHubTarjeta } from '../../core/constants/finstruvial-servicio-landing.types';
 import { portalHeroImagenPublicUrl } from '../../core/portal-hero-imagen.util';
 import { mergePortalLanding } from '../../core/portal-landing';
@@ -45,8 +48,14 @@ export class ServiciosHubComponent implements OnInit {
   );
 
   tarjetas = computed(() => {
+    const paginas = this.servicios().paginas;
     const custom = this.hub().tarjetas?.filter((t) => t.titulo?.trim() && t.url?.trim());
-    if (custom?.length) return custom;
+    if (custom?.length) {
+      return custom.map((t) => ({
+        ...t,
+        url: resolverUrlLineaServicio(t.url, paginas),
+      }));
+    }
     return finstruvialServiciosActivos(this.servicios()).map((p) => ({
       icon: p.hubIcon,
       titulo: p.menuLabel,

@@ -32,6 +32,7 @@ import { mergePqrLanding, PQR_LANDING_DEFAULTS, type PortalPqrLanding } from './
 import {
   FINSTRUVIAL_SERVICIOS_DEFAULTS,
 } from './constants/finstruvial-servicios-defaults';
+import { resolverUrlLineaServicio } from './constants/finstruvial-servicios.constants';
 import type { PortalFinstruvialServiciosConfig } from './constants/finstruvial-servicio-landing.types';
 import { mergePortafolioServicios, portafolioServiciosEsServial } from './portafolio-servicios.util';
 import type { PortalTemaLike } from './portal-theme-css.util';
@@ -673,6 +674,11 @@ export function mergePortalLanding(
   const esServial = portafolioServiciosEsServial(tema);
   const d = esServial ? buildServialLandingDefaults(servialLandingFactory(), raw) : PORTAL_LANDING_FALLBACK;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
+  const finstruvialServicios = mergePortafolioServicios(raw.finstruvialServicios, tema);
+  const serviciosItems = mergeServiciosItems(raw.servicios?.items, d.servicios.items).map((item) => ({
+    ...item,
+    url: item.url ? resolverUrlLineaServicio(item.url, finstruvialServicios.paginas) : item.url,
+  }));
   return {
     ...d,
     instBarTag: raw.instBarTag?.trim() || d.instBarTag,
@@ -712,7 +718,7 @@ export function mergePortalLanding(
     servicios: {
       ...d.servicios,
       ...raw.servicios,
-      items: mergeServiciosItems(raw.servicios?.items, d.servicios.items),
+      items: serviciosItems,
     },
     valores: {
       ...d.valores,
@@ -810,7 +816,7 @@ export function mergePortalLanding(
     pqr: mergePqrLanding(raw.pqr),
     jornadasCapacitacion: mergeJornadasCapacitacionLanding(raw.jornadasCapacitacion),
     evaluacionJornadas: mergeEvaluacionJornadasLanding(raw.evaluacionJornadas),
-    finstruvialServicios: mergePortafolioServicios(raw.finstruvialServicios, tema),
+    finstruvialServicios,
     asistente: mergePortalAsistente(
       raw.asistente,
       raw.consultaCertificados as LegacyConsultaAsistente | undefined,

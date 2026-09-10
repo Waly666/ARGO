@@ -92,3 +92,16 @@ export function finstruvialServicioSlugFromRouteSegment(
   }
   return FINSTRUVIAL_SERVICIO_ROUTE_SEGMENT[normalized] ?? null;
 }
+
+/** Reescribe enlaces /servicios/{slug-legacy} con la URL pública configurada en ERP. */
+export function resolverUrlLineaServicio(
+  url: string,
+  paginas?: FinstruvialServicioPaginasRouteMap,
+): string {
+  const trimmed = url?.trim() || '';
+  const match = trimmed.match(/^\/servicios\/([^/?#]+)/i);
+  if (!match) return trimmed;
+  const slug = finstruvialServicioSlugFromRouteSegment(match[1], paginas);
+  if (!slug) return trimmed;
+  return finstruvialServicioPublicRoute(slug, paginas?.[slug]?.routeSegment);
+}

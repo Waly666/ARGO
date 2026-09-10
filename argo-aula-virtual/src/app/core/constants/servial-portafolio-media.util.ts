@@ -28,11 +28,23 @@ function pickPaginaMedia(
   const videos = pickImagenes(raw.videos);
   const hasHero = raw.heroImagenUrl?.trim() || raw.heroImagenUrlAbsoluta?.trim();
   const hasVideo = raw.heroVideoYoutubeUrl?.trim();
-  if (!imagenes?.length && !videos?.length && !hasHero && !hasVideo && raw.activa === undefined) {
+  const routeSegment = raw.routeSegment?.trim();
+  const menuLabel = raw.menuLabel?.trim();
+  if (
+    !imagenes?.length &&
+    !videos?.length &&
+    !hasHero &&
+    !hasVideo &&
+    raw.activa === undefined &&
+    !routeSegment &&
+    !menuLabel
+  ) {
     return undefined;
   }
   return {
     activa: raw.activa,
+    ...(routeSegment ? { routeSegment } : {}),
+    ...(menuLabel ? { menuLabel } : {}),
     heroImagenUrl: raw.heroImagenUrl?.trim() || '',
     heroImagenUrlAbsoluta: raw.heroImagenUrlAbsoluta?.trim() || '',
     heroVideoYoutubeUrl: raw.heroVideoYoutubeUrl?.trim() || '',
@@ -69,7 +81,7 @@ function pickHubMedia(
   } as PortalFinstruvialServiciosConfig['hub'];
 }
 
-/** Conserva solo fotos/videos y visibilidad; los textos vienen de los defaults Servial. */
+/** Conserva fotos/videos, visibilidad y overrides de ERP (slug, nombre en menú). */
 export function servialPortafolioMediaOnly(
   raw?: Partial<PortalFinstruvialServiciosConfig> | null,
 ): Partial<PortalFinstruvialServiciosConfig> | null {

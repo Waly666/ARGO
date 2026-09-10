@@ -5,6 +5,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import {
+  finstruvialServicioDefaultRouteSegment,
+  finstruvialServicioPublicRoute,
+  finstruvialServicioRouteSegmentFrom,
   finstruvialServicioSlugFromRouteSegment,
 } from '../../core/constants/finstruvial-servicios.constants';
 import { finstruvialPortafolioActivo } from '../../core/constants/finstruvial-servicios-defaults';
@@ -299,6 +302,7 @@ export class ServicioLineaComponent implements OnInit {
       if (c) {
         this.applySeo(c);
         this.redirigirSiInactivo();
+        this.redirigirSiSlugCanonico();
       }
       this.cargarCatalogoCursos();
     });
@@ -309,6 +313,7 @@ export class ServicioLineaComponent implements OnInit {
         this.actualizarSlugDesdeRuta(this.route.snapshot.paramMap.get('slug') || '');
         this.applySeo(c);
         this.redirigirSiInactivo();
+        this.redirigirSiSlugCanonico();
         this.cargarCatalogoCursos();
       },
       error: () => this.seo.applyServicioLinea(null, this.slug()),
@@ -326,6 +331,17 @@ export class ServicioLineaComponent implements OnInit {
       const destino = finstruvialPortafolioActivo(landing.finstruvialServicios) ? '/servicios' : '/';
       void this.router.navigateByUrl(destino);
     }
+  }
+
+  /** Si entró por slug legacy (p. ej. peridata), redirige a la URL canónica configurada en ERP. */
+  private redirigirSiSlugCanonico() {
+    const s = this.servicio();
+    if (!s) return;
+    const segment = (this.route.snapshot.paramMap.get('slug') || '').trim().toLowerCase();
+    const canon = finstruvialServicioRouteSegmentFrom(s.slug, s.routeSegment).toLowerCase();
+    const legacy = finstruvialServicioDefaultRouteSegment(s.slug).toLowerCase();
+    if (segment !== legacy || canon === legacy) return;
+    void this.router.navigateByUrl(finstruvialServicioPublicRoute(s.slug, s.routeSegment), { replaceUrl: true });
   }
 
   private cargarCatalogoCursos() {
