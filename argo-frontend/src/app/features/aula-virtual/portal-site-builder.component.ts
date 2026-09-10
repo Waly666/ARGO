@@ -10,6 +10,7 @@ import {
   PORTAL_FUENTES,
   PORTAL_HOME_SECCIONES_LABELS,
   PORTAL_PAGINA_META,
+  paginaSoportaMenuServicios,
   PortalHomeConfig,
   PortalSiteConfig,
 } from '../../core/constants/portal-site-defaults';
@@ -198,6 +199,7 @@ export class PortalSiteBuilderComponent {
   plantillaInicioSaving = signal(false);
 
   readonly paginaMeta = PORTAL_PAGINA_META;
+  readonly paginaSoportaMenuServicios = paginaSoportaMenuServicios;
   readonly fuentes = PORTAL_FUENTES;
 
   readonly portalSeoEditor = environment.portalSeoEditor;
@@ -722,6 +724,11 @@ export class PortalSiteBuilderComponent {
   togglePagina(key: string, activa: boolean) {
     const p = this.site.paginas[key as keyof typeof this.site.paginas];
     if (p) p.activa = activa;
+  }
+
+  setMenuGrupo(key: string, grupo: 'principal' | 'servicios') {
+    const p = this.site.paginas[key as keyof typeof this.site.paginas];
+    if (p) p.menuGrupo = grupo;
   }
 
   toggleSeccion(id: string, activa: boolean) {

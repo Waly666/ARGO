@@ -49,7 +49,7 @@
 
     @if (finstruvialLineaSlug(panel()); as slug) {
       <p class="psb-note">
-        Página pública en <strong>{{ finstruvialServicioRoute(slug) }}</strong>. Edite textos e imágenes; pulse
+        Página pública en <strong>{{ finstruvialServicioRoute(slug, ensureFinstruvialServiciosLanding().paginas[slug]?.routeSegment) }}</strong>. Edite textos e imágenes; pulse
         <strong>Publicar cambios</strong> para guardar los textos.
       </p>
       @for (linea of [slug]; track linea) {
@@ -141,6 +141,16 @@
                   <label class="psb-check psb-check--card">
                     <input type="checkbox" [checked]="pg.activa" (change)="togglePagina(p.key, $any($event.target).checked)" />
                     Mostrar esta página en el sitio
+                  </label>
+                }
+                @if (paginaSoportaMenuServicios(p.key) && site.paginas.servicios?.activa !== false) {
+                  <label class="psb-check psb-check--card">
+                    <input
+                      type="checkbox"
+                      [checked]="pg.menuGrupo === 'servicios'"
+                      (change)="setMenuGrupo(p.key, $any($event.target).checked ? 'servicios' : 'principal')"
+                    />
+                    Mostrar en el submenú «Servicios» (en lugar del menú principal)
                   </label>
                 }
               </article>

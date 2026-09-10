@@ -27,10 +27,21 @@ export type PortalPaginaKey =
   | 'blog'
   | 'acerca';
 
+export type PortalMenuGrupo = 'principal' | 'servicios';
+
 export interface PortalPaginaConfig {
   activa: boolean;
   etiquetaMenu: string;
   ruta: string;
+  /** Submenú donde aparece el enlace. Por defecto: menú principal. */
+  menuGrupo?: PortalMenuGrupo;
+}
+
+/** Páginas que pueden mostrarse dentro del submenú «Servicios». */
+export const PORTAL_PAGINAS_MENU_SERVICIOS: PortalPaginaKey[] = ['cursosConduccion'];
+
+export function paginaSoportaMenuServicios(key: PortalPaginaKey): boolean {
+  return PORTAL_PAGINAS_MENU_SERVICIOS.includes(key);
 }
 
 export type PortalHeroEstilo = 'starfield' | 'servial-mesh' | 'educarte-mesh';
@@ -235,7 +246,10 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
         activa: true,
         etiquetaMenu: m.titulo,
         ruta: PORTAL_PAGINA_RUTAS[m.key],
+        menuGrupo: m.key === 'cursosConduccion' ? 'servicios' : 'principal',
       };
+    } else if (!paginas[m.key].menuGrupo) {
+      paginas[m.key].menuGrupo = m.key === 'cursosConduccion' ? 'servicios' : 'principal';
     }
   }
   return {

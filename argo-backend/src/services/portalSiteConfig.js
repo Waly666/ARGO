@@ -28,6 +28,10 @@ function normalizarPaginas(raw, navFallback = {}) {
       activa: item.activa !== false,
       etiquetaMenu: str(item.etiquetaMenu, fb.etiquetaMenu) || fb.etiquetaMenu,
       ruta: fb.ruta,
+      menuGrupo:
+        item.menuGrupo === 'servicios' || item.menuGrupo === 'principal'
+          ? item.menuGrupo
+          : fb.menuGrupo || 'principal',
     };
   }
   return out;

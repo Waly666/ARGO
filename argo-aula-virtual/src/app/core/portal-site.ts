@@ -80,6 +80,17 @@ export function etiquetaPagina(config: PortalConfig | null, key: PortalPaginaKey
   return config?.site?.paginas?.[key]?.etiquetaMenu?.trim() || fallback;
 }
 
+export function menuGrupoPagina(config: PortalConfig | null, key: PortalPaginaKey): 'principal' | 'servicios' {
+  const grupo = config?.site?.paginas?.[key]?.menuGrupo;
+  if (grupo === 'servicios' || grupo === 'principal') return grupo;
+  if (key === 'cursosConduccion') return 'servicios';
+  return 'principal';
+}
+
+export function paginaEnMenuServicios(config: PortalConfig | null, key: PortalPaginaKey): boolean {
+  return menuGrupoPagina(config, key) === 'servicios';
+}
+
 export function rutaPagina(key: PortalPaginaKey): string {
   return RUTA_PAGINA[key];
 }

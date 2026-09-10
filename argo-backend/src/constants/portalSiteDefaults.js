@@ -68,6 +68,7 @@ function paginasDefault(nav = {}) {
       activa: true,
       etiquetaMenu: nav.cursosConduccion || 'Cursos conducción',
       ruta: '/cursos-conduccion',
+      menuGrupo: 'servicios',
     },
     examenTeorico: {
       activa: true,

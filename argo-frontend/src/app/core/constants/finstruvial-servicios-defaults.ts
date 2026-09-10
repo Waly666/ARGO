@@ -1,6 +1,8 @@
 import {
   FINSTRUVIAL_SERVICIO_SLUGS,
   FinstruvialServicioSlug,
+  finstruvialServicioDefaultRouteSegment,
+  finstruvialServicioRouteSegmentFrom,
 } from './finstruvial-servicios.constants';
 import {
   PortalFinstruvialServicioBloque,
@@ -80,6 +82,9 @@ function paginaFromWireframe(
   return {
     slug,
     activa: wire.activa !== false,
+    routeSegment:
+      finstruvialServicioRouteSegmentFrom(slug, wire.routeSegment) ||
+      finstruvialServicioDefaultRouteSegment(slug),
     menuLabel,
     estilo: wire.estilo || 'default',
     kicker: wire.kicker || '',
@@ -567,6 +572,7 @@ export function mergeFinstruvialServicioLanding(
   return {
     slug,
     activa: src.activa !== false && d.activa !== false,
+    routeSegment: finstruvialServicioRouteSegmentFrom(slug, str(src.routeSegment, d.routeSegment)),
     menuLabel: str(src.menuLabel, d.menuLabel),
     estilo: resolveEstilo(slug, src.estilo, d.estilo, wireframe),
     kicker: str(src.kicker, d.kicker),

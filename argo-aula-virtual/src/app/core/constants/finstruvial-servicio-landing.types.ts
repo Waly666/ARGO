@@ -69,6 +69,8 @@ export interface PortalFinstruvialServicioLanding {
   guionVersion?: number;
   slug: FinstruvialServicioSlug;
   activa: boolean;
+  /** Segmento de URL público bajo /servicios/ (editable en ERP). */
+  routeSegment: string;
   menuLabel: string;
   estilo: FinstruvialServicioEstilo;
   kicker: string;

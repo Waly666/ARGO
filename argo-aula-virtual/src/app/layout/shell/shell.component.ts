@@ -8,13 +8,20 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { CardWaveService } from '../../core/card-wave.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalConfigService } from '../../core/portal-config.service';
-import { etiquetaPagina, paginaActiva, clavePaginaPorRuta, type PortalPaginaKey } from '../../core/portal-site';
+import {
+  etiquetaPagina,
+  paginaActiva,
+  paginaEnMenuServicios,
+  clavePaginaPorRuta,
+  rutaPagina,
+  type PortalPaginaKey,
+} from '../../core/portal-site';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { asistenteVistaParaPagina } from '../../core/portal-asistente.util';
 import { PortalThemeService } from '../../core/portal-theme.service';
 import {
-  FINSTRUVIAL_SERVICIO_ROUTE,
+  finstruvialServicioPublicRoute,
 } from '../../core/constants/finstruvial-servicios.constants';
 import { finstruvialPortafolioActivo, finstruvialServiciosActivos } from '../../core/constants/finstruvial-servicios-defaults';
 import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.component';
@@ -125,13 +132,22 @@ export class ShellComponent implements OnInit, AfterViewInit {
       { key: 'blog', route: '/blog', label: etiquetaPagina(cfg, 'blog', nav.blog) },
       { key: 'acerca', route: '/acerca', label: etiquetaPagina(cfg, 'acerca', nav.acerca) },
     ];
-    return items.filter((i) => paginaActiva(cfg, i.key));
+    const servicios = this.landing().finstruvialServicios;
+    const submenuServicios =
+      paginaActiva(cfg, 'servicios') && finstruvialPortafolioActivo(servicios);
+    return items.filter((i) => {
+      if (!paginaActiva(cfg, i.key)) return false;
+      if (submenuServicios && paginaEnMenuServicios(cfg, i.key)) return false;
+      return true;
+    });
   });
 
   navEntries = computed((): ShellNavEntry[] => {
     const items = this.navItems();
+    const cfg = this.config();
+    const nav = this.landing().nav;
     const servicios = this.landing().finstruvialServicios;
-    if (!paginaActiva(this.config(), 'servicios') || !finstruvialPortafolioActivo(servicios)) {
+    if (!paginaActiva(cfg, 'servicios') || !finstruvialPortafolioActivo(servicios)) {
       return items.map((item) => ({ kind: 'link' as const, ...item }));
     }
     const submenu: ShellNavEntry = {
@@ -139,12 +155,13 @@ export class ShellComponent implements OnInit, AfterViewInit {
       key: 'servicios',
       label: servicios.menuLabel || 'Nuestros servicios',
       hubRoute: '/servicios',
-      children: finstruvialServiciosActivos(servicios)
-        .filter((p) => !!FINSTRUVIAL_SERVICIO_ROUTE[p.slug])
-        .map((p) => ({
-          route: FINSTRUVIAL_SERVICIO_ROUTE[p.slug],
+      children: [
+        ...finstruvialServiciosActivos(servicios).map((p) => ({
+          route: finstruvialServicioPublicRoute(p.slug, p.routeSegment),
           label: p.menuLabel,
         })),
+        ...this.enlacesMenuServicios(cfg, nav),
+      ],
     };
     const entries: ShellNavEntry[] = [];
     for (const item of items) {
@@ -212,11 +229,20 @@ export class ShellComponent implements OnInit, AfterViewInit {
   footerServiciosLinks = computed((): FooterServicioEnlace[] => {
     if (finstruvialPortafolioActivo(this.landing().finstruvialServicios)) {
       const servicios = this.landing().finstruvialServicios;
-      return finstruvialServiciosActivos(servicios).map((p) => ({
-        label: p.menuLabel,
-        route: FINSTRUVIAL_SERVICIO_ROUTE[p.slug],
-        external: false,
-      }));
+      const cfg = this.config();
+      const nav = this.landing().nav;
+      return [
+        ...finstruvialServiciosActivos(servicios).map((p) => ({
+          label: p.menuLabel,
+          route: finstruvialServicioPublicRoute(p.slug, p.routeSegment),
+          external: false,
+        })),
+        ...this.enlacesMenuServicios(cfg, nav).map((e) => ({
+          label: e.label,
+          route: e.route,
+          external: false,
+        })),
+      ];
     }
     const labels = Array.isArray(this.footerServicios()) ? this.footerServicios() : [];
     return labels.map((label) => {
@@ -312,8 +338,23 @@ export class ShellComponent implements OnInit, AfterViewInit {
   }
 
   serviciosSubmenuActivo(): boolean {
-    const url = this.rutaActual();
-    return url === '/servicios' || url.startsWith('/servicios/');
+    const url = this.rutaActual().split('?')[0].split('#')[0];
+    if (url === '/servicios' || url.startsWith('/servicios/')) return true;
+    const cfg = this.config();
+    return this.enlacesMenuServicios(cfg, this.landing().nav).some((e) => e.route === url);
+  }
+
+  private enlacesMenuServicios(
+    cfg: ReturnType<typeof this.config>,
+    nav: ReturnType<typeof this.landing>['nav'],
+  ): { route: string; label: string }[] {
+    const extras: PortalPaginaKey[] = ['cursosConduccion'];
+    return extras
+      .filter((key) => paginaActiva(cfg, key) && paginaEnMenuServicios(cfg, key))
+      .map((key) => ({
+        route: rutaPagina(key),
+        label: etiquetaPagina(cfg, key, nav[key as keyof typeof nav] as string),
+      }));
   }
 
   private devolverFocoMenu() {

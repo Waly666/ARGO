@@ -5,7 +5,7 @@
         Portafolio en <strong>/servicios</strong> y nombre del menú «Nuestros servicios». Las imágenes se guardan al
         subirlas; los textos al publicar el sitio.
       } @else {
-        Página <strong>{{ routes[lineaActiva()] }}</strong>. Edite todos los textos e imágenes de esta línea. Las
+        Página <strong>{{ rutaPublicaLinea() }}</strong>. Edite todos los textos e imágenes de esta línea. Las
         imágenes se guardan al subirlas; los textos al publicar el sitio.
       }
     </p>
@@ -278,6 +278,23 @@
       <label class="psb-field psb-field--plain psb-field--highlight">
         <span>Nombre de la página (menú, tarjetas y título público)</span>
         <input type="text" class="psb-input" [(ngModel)]="p.menuLabel" placeholder="Ej. Capacitación y Sensibilización" />
+      </label>
+      <label class="psb-field psb-field--plain psb-field--highlight">
+        <span>URL de la página (slug)</span>
+        <input
+          type="text"
+          class="psb-input"
+          [(ngModel)]="p.routeSegment"
+          (blur)="normalizarRouteSegmentActiva()"
+          placeholder="asesoria-transito"
+        />
+        <small class="psb-note">
+          Solo letras, números y guiones. La URL pública quedará en
+          <strong>{{ rutaPublicaLinea() }}</strong>.
+          @if (routeSegmentDuplicado()) {
+            <span class="fsv-slug-warn">Este slug ya lo usa otra línea activa; elija uno distinto.</span>
+          }
+        </small>
       </label>
       <label class="psb-field psb-field--plain">
         <span>Texto del botón en la tarjeta del portafolio</span>

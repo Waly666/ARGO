@@ -59,7 +59,7 @@ export class ServicioLineaComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
   cursosCatalogo = signal<CursoVirtual[]>([]);
-  slug = signal(finstruvialServicioSlugFromRouteSegment(this.route.snapshot.paramMap.get('slug') || ''));
+  slug = signal<ReturnType<typeof finstruvialServicioSlugFromRouteSegment>>(null);
 
   landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
   servicio = computed(() => {
@@ -293,7 +293,7 @@ export class ServicioLineaComponent implements OnInit {
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
-      this.slug.set(finstruvialServicioSlugFromRouteSegment(params.get('slug') || ''));
+      this.actualizarSlugDesdeRuta(params.get('slug') || '');
       const c = this.config();
       if (c) {
         this.applySeo(c);
@@ -305,12 +305,18 @@ export class ServicioLineaComponent implements OnInit {
     this.api.config().subscribe({
       next: (c) => {
         this.config.set(c);
+        this.actualizarSlugDesdeRuta(this.route.snapshot.paramMap.get('slug') || '');
         this.applySeo(c);
         this.redirigirSiInactivo();
         this.cargarCatalogoCursos();
       },
       error: () => this.seo.applyServicioLinea(null, this.slug()),
     });
+  }
+
+  private actualizarSlugDesdeRuta(segment: string) {
+    const paginas = this.landing().finstruvialServicios?.paginas;
+    this.slug.set(finstruvialServicioSlugFromRouteSegment(segment, paginas));
   }
 
   private redirigirSiInactivo() {

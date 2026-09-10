@@ -88,6 +88,64 @@ function arr(val, fallback) {
 
 }
 
+
+
+const FINSTRUVIAL_SERVICIO_ROUTE_SEGMENT_DEFAULT = {
+
+  aulaVirtual: 'aula-virtual',
+
+  peridata: 'peridata',
+
+  capacitacionSensibilizacion: 'capacitacion-sensibilizacion',
+
+  estudiosDiagnosticosTecnicos: 'estudios-diagnosticos-tecnicos',
+
+  herramientasEducativasTecnologicas: 'herramientas-educativas-tecnologicas',
+
+  inventariosViales: 'inventarios-viales',
+
+  planeacionGestionVial: 'planeacion-gestion-vial',
+
+};
+
+
+
+function defaultRouteSegment(slug) {
+
+  return FINSTRUVIAL_SERVICIO_ROUTE_SEGMENT_DEFAULT[slug] || slug;
+
+}
+
+
+
+function normalizeRouteSegment(raw) {
+
+  return String(raw ?? '')
+
+    .trim()
+
+    .toLowerCase()
+
+    .normalize('NFD')
+
+    .replace(/[\u0300-\u036f]/g, '')
+
+    .replace(/[^a-z0-9]+/g, '-')
+
+    .replace(/^-+|-+$/g, '');
+
+}
+
+
+
+function routeSegmentFrom(slug, routeSegment) {
+
+  const custom = normalizeRouteSegment(routeSegment);
+
+  return custom || defaultRouteSegment(slug);
+
+}
+
 const ESTILO_WIREFRAME_POR_SLUG = {
   aulaVirtual: 'academy',
   peridata: 'tech',
@@ -112,6 +170,8 @@ function mergePagina(slug, raw, defaults) {
     activa: true,
 
     menuLabel: FINSTRUVIAL_SERVICIO_MENU_LABELS[slug] || slug,
+
+    routeSegment: defaultRouteSegment(slug),
 
     kicker: '',
 
@@ -298,6 +358,8 @@ function mergePagina(slug, raw, defaults) {
     activa: src.activa !== false && d.activa !== false,
 
     menuLabel: str(src.menuLabel, d.menuLabel),
+
+    routeSegment: routeSegmentFrom(slug, str(src.routeSegment, d.routeSegment)),
 
     kicker: str(src.kicker, d.kicker),
 

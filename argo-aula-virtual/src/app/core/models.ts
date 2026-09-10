@@ -115,10 +115,13 @@ export interface MaterialCohorteAlumno {
   descripcion?: string;
 }
 
+export type PortalMenuGrupo = 'principal' | 'servicios';
+
 export interface PortalPaginaConfig {
   activa: boolean;
   etiquetaMenu: string;
   ruta: string;
+  menuGrupo?: PortalMenuGrupo;
 }
 
 export interface PortalTemaConfig {

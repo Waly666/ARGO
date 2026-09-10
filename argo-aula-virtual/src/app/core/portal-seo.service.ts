@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 
 import {
-  FINSTRUVIAL_SERVICIO_ROUTE,
+  finstruvialServicioPublicRoute,
   FinstruvialServicioSlug,
 } from './constants/finstruvial-servicios.constants';
 import { mergeFinstruvialServicios } from './constants/finstruvial-servicios-defaults';
@@ -788,7 +788,7 @@ export class PortalSeoService {
     const fallbackKeywords = esAulaVirtualServial
       ? 'aula virtual SERVIAL, cursos virtuales SERVIAL, cursos virtuales Villavicencio, capacitación virtual Villavicencio, cursos online Colombia, cursos seguridad vial virtuales, capacitación virtual seguridad vial, cursos virtuales Meta, SERVIAL Colombia'
       : `${BLOG_SEO_KEYWORDS}, ${p.menuLabel}, seguridad vial, FINSTRUVIAL`;
-    const route = FINSTRUVIAL_SERVICIO_ROUTE[slug];
+    const route = finstruvialServicioPublicRoute(slug, p.routeSegment);
     const url = this.pageUrl(route);
     const seo = this.resolvedSeo(config, finstruvialServicioSeoKey(slug), {
       pageTitle: fallbackTitle,

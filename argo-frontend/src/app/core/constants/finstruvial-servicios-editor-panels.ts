@@ -1,4 +1,7 @@
-import { FinstruvialServicioSlug, FINSTRUVIAL_SERVICIO_ROUTE } from './finstruvial-servicios.constants';
+import {
+  FinstruvialServicioSlug,
+  finstruvialServicioPublicRoute,
+} from './finstruvial-servicios.constants';
 
 /** Paneles del constructor del sitio → slug interno de la línea. */
 export const FINSTRUVIAL_SERVICIO_BUILDER_PANELS = {
@@ -58,6 +61,9 @@ export function finstruvialServicioSlugFromBuilderPanel(
   return (FINSTRUVIAL_SERVICIO_BUILDER_PANELS as Record<string, FinstruvialServicioSlug>)[panel] ?? null;
 }
 
-export function finstruvialServicioRoute(slug: FinstruvialServicioSlug): string {
-  return FINSTRUVIAL_SERVICIO_ROUTE[slug];
+export function finstruvialServicioRoute(
+  slug: FinstruvialServicioSlug,
+  routeSegment?: string,
+): string {
+  return finstruvialServicioPublicRoute(slug, routeSegment);
 }

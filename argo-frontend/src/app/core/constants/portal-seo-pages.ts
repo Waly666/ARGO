@@ -1,7 +1,7 @@
 /** Catálogo SEO editable por página — editor del sitio web (ERP). */
 
 import {
-  FINSTRUVIAL_SERVICIO_ROUTE,
+  finstruvialServicioPublicRoute,
   FINSTRUVIAL_SERVICIO_SLUGS,
   FinstruvialServicioSlug,
 } from './finstruvial-servicios.constants';
@@ -69,7 +69,7 @@ function buildFinstruvialSeoCatalog(): PortalSeoPageMeta[] {
     return {
       key: finstruvialServicioSeoKey(slug),
       label: p.menuLabel,
-      ruta: FINSTRUVIAL_SERVICIO_ROUTE[slug],
+      ruta: finstruvialServicioPublicRoute(slug, p.routeSegment),
       grupo: 'FINSTRUVIAL',
       hint: `Línea de servicio. Si deja los campos vacíos, se usa el «Texto para Google» de ${p.menuLabel} en el editor del portafolio.`,
       defaultTitulo: `${titulo} | FINSTRUVIAL`,

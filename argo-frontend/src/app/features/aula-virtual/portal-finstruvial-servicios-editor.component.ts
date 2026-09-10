@@ -4,9 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import {
-  FINSTRUVIAL_SERVICIO_ROUTE,
   FINSTRUVIAL_SERVICIO_SLUGS,
   FinstruvialServicioSlug,
+  finstruvialServicioPublicRoute,
+  finstruvialServicioRouteSegmentFrom,
 } from '../../core/constants/finstruvial-servicios.constants';
 import {
   FINSTRUVIAL_SERVICIO_BUILDER_MENU,
@@ -80,7 +81,6 @@ export class PortalFinstruvialServiciosEditorComponent {
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   readonly slugs = FINSTRUVIAL_SERVICIO_SLUGS;
-  readonly routes = FINSTRUVIAL_SERVICIO_ROUTE;
   readonly lineasMenu = FINSTRUVIAL_SERVICIO_BUILDER_MENU;
   readonly removeItem = removeAt;
 
@@ -124,6 +124,9 @@ export class PortalFinstruvialServiciosEditorComponent {
     if (!Array.isArray(p.bloques)) p.bloques = [];
     if (!Array.isArray(p.productoMedios)) p.productoMedios = [];
     if (!Array.isArray(p.videos)) p.videos = [];
+    if (!p.routeSegment?.trim()) {
+      p.routeSegment = finstruvialServicioRouteSegmentFrom(slug, p.routeSegment);
+    }
     if (!Array.isArray(p.modulosPlataforma)) p.modulosPlataforma = [];
     if (!Array.isArray(p.guiasPlataforma)) p.guiasPlataforma = [];
     if (!Array.isArray(p.pilaresEducativos)) p.pilaresEducativos = [];
@@ -196,10 +199,31 @@ export class PortalFinstruvialServiciosEditorComponent {
     queueMicrotask(() => document.getElementById(`fsv-grupo-${grupo}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
+  rutaPublicaLinea(slug: FinstruvialServicioSlug = this.lineaActiva()): string {
+    const p = this.finstruvialServicios?.paginas?.[slug];
+    return finstruvialServicioPublicRoute(slug, p?.routeSegment);
+  }
+
   vistaPreviaPagina(): string {
     const base = (this.portalUrl || '').replace(/\/+$/, '');
     if (!base) return '';
-    return `${base}${this.routes[this.lineaActiva()]}`;
+    return `${base}${this.rutaPublicaLinea()}`;
+  }
+
+  normalizarRouteSegmentActiva(): void {
+    const p = this.paginaActiva();
+    p.routeSegment = finstruvialServicioRouteSegmentFrom(p.slug, p.routeSegment);
+  }
+
+  routeSegmentDuplicado(): boolean {
+    const p = this.paginaActiva();
+    const seg = finstruvialServicioRouteSegmentFrom(p.slug, p.routeSegment);
+    const paginas = this.finstruvialServicios?.paginas;
+    if (!paginas) return false;
+    return FINSTRUVIAL_SERVICIO_SLUGS.some((slug) => {
+      if (slug === p.slug || paginas[slug]?.activa === false) return false;
+      return finstruvialServicioRouteSegmentFrom(slug, paginas[slug]?.routeSegment) === seg;
+    });
   }
 
   portafolioVisible(): boolean {
