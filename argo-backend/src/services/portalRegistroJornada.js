@@ -58,6 +58,7 @@ function buildAlumnoPayload(alumno, numDoc) {
     nombre2: nombreMayusculas(alumno?.nombre2),
     fechaNac: alumno?.fechaNac || '',
     genero: alumno?.genero || '',
+    actorVial: String(alumno?.actorVial || '').trim(),
     celular: alumno?.celular || '',
     direccion: alumno?.direccion || '',
     munOrigen: alumno?.munOrigen || '',
@@ -96,6 +97,11 @@ async function validarDatosRegistroJornada({ email, alumno }) {
       err.status = 400;
       throw err;
     }
+    if (!payload.actorVial) {
+      const err = new Error('Seleccione el actor vial');
+      err.status = 400;
+      throw err;
+    }
     return { mail, numDoc, alumnoPayload: payload, alumnoExistente: false };
   }
 
@@ -113,6 +119,7 @@ async function validarDatosRegistroJornada({ email, alumno }) {
         nombre2: alumno?.nombre2 || da.nombre2,
         fechaNac: alumno?.fechaNac || (da.fechaNac ? new Date(da.fechaNac).toISOString().slice(0, 10) : ''),
         genero: alumno?.genero || da.genero,
+        actorVial: alumno?.actorVial || da.actorVial,
         celular: alumno?.celular || da.celular,
         direccion: alumno?.direccion || da.direccion,
         munOrigen: alumno?.munOrigen || da.munOrigen,
@@ -159,6 +166,7 @@ async function crearOActualizarAlumnoJornada({ email, alumno, consentimiento }) 
       nombre2: nombreMayusculas(alumno.nombre2),
       fechaNac: alumno.fechaNac ? new Date(alumno.fechaNac) : null,
       genero: alumno.genero || '',
+      actorVial: alumno.actorVial || '',
       correo: mail,
       celular: alumno.celular || '',
       direccion: alumno.direccion || '',
@@ -174,6 +182,7 @@ async function crearOActualizarAlumnoJornada({ email, alumno, consentimiento }) 
     if (mail) da.correo = mail;
     if (alumno.celular) da.celular = String(alumno.celular).trim();
     if (alumno.direccion) da.direccion = String(alumno.direccion).trim();
+    if (!da.actorVial && alumno.actorVial) da.actorVial = String(alumno.actorVial).trim();
     if (alumno.expedida) da.expedida = String(alumno.expedida).trim();
     if (empresaIdValido) da.empresaId = empresaIdValido;
     if (alumno.codMunicipio || alumno.munOrigen) {

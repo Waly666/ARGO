@@ -14,7 +14,14 @@ import { payloadAutorizacionDatos } from '../../core/autorizacion-datos.constant
 import { AulaApiService } from '../../core/aula-api.service';
 import { PortalConfig } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
-import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
+import {
+  ACTOR_VIAL_FALLBACK,
+  catEtiqueta,
+  catValor,
+  etiquetaGenero,
+  GENEROS_FALLBACK,
+  TIPOS_DOC_FALLBACK,
+} from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
@@ -55,6 +62,7 @@ export class JornadasCapacitacionComponent implements OnInit {
 
   tiposDoc = signal<Record<string, unknown>[]>([]);
   generos = signal<Record<string, unknown>[]>([]);
+  actoresViales = signal<Record<string, unknown>[]>([]);
   departamentos = signal<{ codDepto: string; nombreDepto: string }[]>([]);
   municipiosExp = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
   municipiosOrigen = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
@@ -76,6 +84,7 @@ export class JornadasCapacitacionComponent implements OnInit {
     celular: '',
     direccion: '',
     genero: '',
+    actorVial: '',
     fechaNac: '',
     codMunicipio: '',
     munOrigen: '',
@@ -119,6 +128,10 @@ export class JornadasCapacitacionComponent implements OnInit {
     this.catalogs.generos().subscribe({
       next: (rows) => this.generos.set(rows?.length ? rows : GENEROS_FALLBACK),
       error: () => this.generos.set(GENEROS_FALLBACK),
+    });
+    this.catalogs.actoresViales().subscribe({
+      next: (rows) => this.actoresViales.set(rows?.length ? rows : ACTOR_VIAL_FALLBACK),
+      error: () => this.actoresViales.set(ACTOR_VIAL_FALLBACK),
     });
     this.catalogs.departamentos().subscribe({
       next: (rows) => this.departamentos.set(rows || []),
@@ -298,6 +311,7 @@ export class JornadasCapacitacionComponent implements OnInit {
           this.form.nombre1 = String(a['nombre1'] || '');
           this.form.nombre2 = String(a['nombre2'] || '');
           this.form.genero = String(a['genero'] || '').toUpperCase();
+          this.form.actorVial = String(a['actorVial'] || '').trim();
           this.form.fechaNac = String(a['fechaNac'] || '');
           this.form.codMunicipio = String(a['codMunicipio'] || a['munOrigen'] || '');
           this.form.munOrigen = String(a['munOrigen'] || a['codMunicipio'] || '');
@@ -366,6 +380,10 @@ export class JornadasCapacitacionComponent implements OnInit {
     }
     if (!this.aceptaAutorizacion()) {
       this.error.set('Debe aceptar la autorización de tratamiento de datos personales.');
+      return;
+    }
+    if (!this.alumnoEnArgo() && !String(this.form.actorVial || '').trim()) {
+      this.error.set('Seleccione el actor vial.');
       return;
     }
     this.loading.set(true);
