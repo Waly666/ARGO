@@ -56,9 +56,23 @@ function servialPortafolioMediaOnly(raw) {
       : [];
     const hasHero = p.heroImagenUrl?.trim() || p.heroImagenUrlAbsoluta?.trim();
     const hasVideo = p.heroVideoYoutubeUrl?.trim();
-    if (!imagenes.length && !videos.length && !hasHero && !hasVideo && p.activa === undefined) continue;
+    const routeSegment = p.routeSegment?.trim();
+    const menuLabel = p.menuLabel?.trim();
+    if (
+      !imagenes.length &&
+      !videos.length &&
+      !hasHero &&
+      !hasVideo &&
+      p.activa === undefined &&
+      !routeSegment &&
+      !menuLabel
+    ) {
+      continue;
+    }
     paginas[slug] = {
       activa: p.activa,
+      ...(routeSegment ? { routeSegment } : {}),
+      ...(menuLabel ? { menuLabel } : {}),
       heroImagenUrl: p.heroImagenUrl?.trim() || '',
       heroImagenUrlAbsoluta: p.heroImagenUrlAbsoluta?.trim() || '',
       heroVideoYoutubeUrl: p.heroVideoYoutubeUrl?.trim() || '',
