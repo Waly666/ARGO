@@ -12,6 +12,7 @@ import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
 import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { manejoDefensivoDefaultsForTema } from '../../core/constants/servial-seo-landing-defaults';
 import {
   imagenManejoDefensivoPorId,
   MdImagen,
@@ -41,7 +42,11 @@ export class ManejoDefensivoComponent implements OnInit {
   config = signal<PortalConfig | null>(null);
 
   contenido = computed(() =>
-    mergeManejoDefensivoLanding(mergePortalLanding(this.config()?.landing).manejoDefensivo),
+    mergeManejoDefensivoLanding(
+      mergePortalLanding(this.config()?.landing, this.config()?.site?.tema).manejoDefensivo,
+      manejoDefensivoDefaultsForTema(this.config()?.site?.tema),
+      this.config()?.site?.tema,
+    ),
   );
 
   breadcrumbs = computed(() => [

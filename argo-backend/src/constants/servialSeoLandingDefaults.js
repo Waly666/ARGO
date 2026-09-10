@@ -1,6 +1,7 @@
 const { portafolioServiciosEsServial } = require('./aulaVirtualPortafolioServicios');
 
 const SERVIAL_MD_PATCH = {
+  theme: 'gold',
   kicker: 'Servial Colombia · CEA · Villavicencio · Meta',
   subtitulo: 'Curso libre virtual y presencial — Servial Colombia',
   heroLead:
@@ -94,6 +95,10 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+const SERVIAL_PA_PATCH = {
+  theme: 'gold',
+};
+
 function manejoDefensivoDefaultsForTema(tema) {
   const { MANEJO_DEFENSIVO_DEFAULTS } = require('./aulaVirtualManejoDefensivoDefaults');
   if (!portafolioServiciosEsServial(tema)) return MANEJO_DEFENSIVO_DEFAULTS;
@@ -120,8 +125,15 @@ function trabajoEnAlturasDefaultsForTema(tema) {
   return { ...clone(TRABAJO_EN_ALTURAS_DEFAULTS), ...SERVIAL_TA_PATCH };
 }
 
+function primerosAuxiliosDefaultsForTema(tema) {
+  const { PRIMEROS_AUXILIOS_DEFAULTS } = require('./aulaVirtualPrimerosAuxiliosDefaults');
+  if (!portafolioServiciosEsServial(tema)) return PRIMEROS_AUXILIOS_DEFAULTS;
+  return { ...clone(PRIMEROS_AUXILIOS_DEFAULTS), ...SERVIAL_PA_PATCH };
+}
+
 module.exports = {
   manejoDefensivoDefaultsForTema,
   mercanciasPeligrosasDefaultsForTema,
   trabajoEnAlturasDefaultsForTema,
+  primerosAuxiliosDefaultsForTema,
 };

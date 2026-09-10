@@ -4,11 +4,11 @@
 :host {
   display: block;
   font-family: var(--av-font-sans);
-  --Pa-red: var(--servial-red, #dc2626);
+  --Pa-accent: var(--servial-red, var(--av-primary, #3b82f6));
 }
 
 :host ::ng-deep .ppbh__title-accent {
-  color: var(--Pa-red);
+  color: var(--Pa-accent);
 }
 
 .Pa-page {
@@ -89,7 +89,7 @@
   font-family: var(--av-font-display, var(--av-font-sans));
   font-size: clamp(1.35rem, 2.4vw, 1.8rem);
   line-height: 1.25;
-  color: var(--Pa-red);
+  color: var(--Pa-accent);
 
   &::after {
     content: '';
@@ -98,7 +98,7 @@
     height: 3px;
     margin-top: 0.65rem;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--Pa-red), var(--av-accent, #f5c400));
+    background: linear-gradient(90deg, var(--Pa-accent), var(--av-accent, #f5c400));
   }
 }
 
@@ -157,7 +157,7 @@
 .Pa-cards__num {
   display: inline-block;
   font-weight: 800;
-  color: var(--Pa-red);
+  color: var(--Pa-accent);
   margin-bottom: 0.35rem;
 }
 
@@ -199,7 +199,7 @@
 .Pa-block--quote blockquote {
   margin: 0;
   padding: 1.2rem 1.4rem;
-  border-left: 4px solid var(--Pa-red);
+  border-left: 4px solid var(--Pa-accent);
   background: #fff;
   border-radius: 0 14px 14px 0;
   font-size: 1.15rem;
@@ -400,7 +400,7 @@
 .Pa-frase {
   font-size: 1.1rem;
   font-weight: 800;
-  color: var(--Pa-red) !important;
+  color: var(--Pa-accent) !important;
 }
 
 .Pa-seo-line {

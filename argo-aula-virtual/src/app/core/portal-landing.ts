@@ -80,6 +80,10 @@ import {
   type PortalPrimerosAuxiliosLanding,
 } from '../pages/primeros-auxilios/primeros-auxilios-content';
 import {
+  manejoDefensivoDefaultsForTema,
+  primerosAuxiliosDefaultsForTema,
+} from './constants/servial-seo-landing-defaults';
+import {
   APP_MOBILE,
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
@@ -713,8 +717,8 @@ export function mergePortalLanding(
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
-    manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo),
-    primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios),
+    manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo, manejoDefensivoDefaultsForTema(tema), tema),
+    primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios, primerosAuxiliosDefaultsForTema(tema), tema),
     servicios: {
       ...d.servicios,
       ...raw.servicios,

@@ -64,6 +64,10 @@ import { mergePortafolioServicios, portafolioServiciosEsServial } from '../utils
 import type { PortalTemaLike } from '../utils/portal-theme-css-base.util';
 import { SERVIAL_LANDING_DEFAULTS } from './servial-landing-defaults';
 import { buildServialLandingDefaults } from '../utils/servial-plantilla-inicio.util';
+import {
+  manejoDefensivoDefaultsForTema,
+  primerosAuxiliosDefaultsForTema,
+} from './servial-seo-landing-defaults';
 import { PortalPromoHeroTheme } from './portal-promo-hero-fields.util';
 
 export type { PortalCursosConduccionLanding };
@@ -988,8 +992,8 @@ export function mergePortalLanding(
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
-    manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo),
-    primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios),
+    manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo, manejoDefensivoDefaultsForTema(tema), tema),
+    primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios, primerosAuxiliosDefaultsForTema(tema), tema),
     finstruvialServicios: mergePortafolioServicios(raw.finstruvialServicios, tema),
     servicios: {
       ...d.servicios,

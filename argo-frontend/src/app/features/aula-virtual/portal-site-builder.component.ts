@@ -48,6 +48,10 @@ import {
   mergePrimerosAuxiliosLanding,
   PortalPrimerosAuxiliosLanding,
 } from '../../core/constants/primeros-auxilios-landing-defaults';
+import {
+  manejoDefensivoDefaultsForTema,
+  primerosAuxiliosDefaultsForTema,
+} from '../../core/constants/servial-seo-landing-defaults';
 import { PORTAL_ASISTENTE_PAGINAS } from '../../core/utils/portal-asistente.util';
 import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
@@ -420,10 +424,15 @@ export class PortalSiteBuilderComponent {
       this.portalForm.landing = mergePortalLanding();
     }
     if (!this.portalForm.landing.manejoDefensivo) {
-      this.portalForm.landing.manejoDefensivo = mergePortalLanding().manejoDefensivo;
+      this.portalForm.landing.manejoDefensivo = mergePortalLanding(
+        null,
+        this.portalForm.site?.tema,
+      ).manejoDefensivo;
     } else {
       this.portalForm.landing.manejoDefensivo = mergeManejoDefensivoLanding(
         this.portalForm.landing.manejoDefensivo,
+        manejoDefensivoDefaultsForTema(this.portalForm.site?.tema),
+        this.portalForm.site?.tema,
       );
     }
     return this.portalForm.landing.manejoDefensivo;
@@ -434,10 +443,15 @@ export class PortalSiteBuilderComponent {
       this.portalForm.landing = mergePortalLanding();
     }
     if (!this.portalForm.landing.primerosAuxilios) {
-      this.portalForm.landing.primerosAuxilios = mergePortalLanding().primerosAuxilios;
+      this.portalForm.landing.primerosAuxilios = mergePortalLanding(
+        null,
+        this.portalForm.site?.tema,
+      ).primerosAuxilios;
     } else {
       this.portalForm.landing.primerosAuxilios = mergePrimerosAuxiliosLanding(
         this.portalForm.landing.primerosAuxilios,
+        primerosAuxiliosDefaultsForTema(this.portalForm.site?.tema),
+        this.portalForm.site?.tema,
       );
     }
     return this.portalForm.landing.primerosAuxilios;

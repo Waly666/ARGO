@@ -56,11 +56,19 @@ function mergeCertificacion(raw, fb) {
   };
 }
 
-function mergeManejoDefensivoLanding(raw) {
-  const d = MANEJO_DEFENSIVO_DEFAULTS;
+const HERO_THEMES = ['gold', 'green', 'violet', 'blue'];
+
+function mergePromoHeroTheme(v, fb) {
+  const t = String(v ?? '').trim();
+  return HERO_THEMES.includes(t) ? t : fb;
+}
+
+function mergeManejoDefensivoLanding(raw, defaults = MANEJO_DEFENSIVO_DEFAULTS) {
+  const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
   return {
     ...d,
+    theme: mergePromoHeroTheme(src.theme, d.theme || 'blue'),
     kicker: str(src.kicker, d.kicker),
     titulo: str(src.titulo, d.titulo),
     tituloLinea2: str(src.tituloLinea2, d.tituloLinea2),

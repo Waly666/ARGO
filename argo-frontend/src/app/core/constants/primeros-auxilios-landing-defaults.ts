@@ -1,5 +1,17 @@
 ﻿/** Página /curso-primeros-auxilios — contenido editable desde el ERP. */
 
+import { mergeEnlacesRelacionados, PortalEnlaceRelacionado } from '../portal-enlace-relacionado.util';
+import {
+  mergePromoHeroTheme,
+  type PortalPromoHeroTheme,
+} from './portal-promo-hero-fields.util';
+import type { PortalTemaLike } from '../utils/portal-theme-css-base.util';
+import { portafolioServiciosEsServial } from '../utils/portafolio-servicios.util';
+import {
+  FINSTRUVIAL_ENLACES_PRIMEROS_AUXILIOS,
+  FINSTRUVIAL_ENLACES_TITULO,
+} from './portal-enlaces-relacionados-finstruvial';
+
 export interface PaImagen {
   id: string;
   etiqueta: string;
@@ -76,6 +88,7 @@ export const PRIMEROS_AUXILIOS_GUION_VERSION = 2;
 export interface PortalPrimerosAuxiliosLanding {
   /** Incrementar al publicar un guion nuevo; fuerza actualización de textos guardados en BD. */
   guionVersion?: number;
+  theme: PortalPromoHeroTheme;
   kicker: string;
   titulo: string;
   tituloLinea2: string;
@@ -143,6 +156,8 @@ export interface PortalPrimerosAuxiliosLanding {
   ctaFinalUbicacion: string;
   ctaFinalFrase: string;
   footerSeoLine: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
   imagenes: PaImagen[];
 }
 
@@ -248,8 +263,9 @@ export const PRIMEROS_AUXILIOS_IMAGENES: PaImagen[] = [
 ];
 
 export const PRIMEROS_AUXILIOS_LANDING: PortalPrimerosAuxiliosLanding = {
-  "guionVersion": 2,
-  "kicker": "27 horas • 9 módulos • 17 videos • Virtual • Presencial • Mixto",
+  guionVersion: 2,
+  theme: 'blue',
+  kicker: '27 horas • 9 módulos • 17 videos • Virtual • Presencial • Mixto',
   "titulo": "Primeros Auxilios",
   "tituloLinea2": "Saber qué hacer cambia la respuesta.",
   "subtitulo": "RCP, trauma, vía aérea y atención inicial de emergencias en Villavicencio, Meta y Colombia",
@@ -561,7 +577,10 @@ export const PRIMEROS_AUXILIOS_LANDING: PortalPrimerosAuxiliosLanding = {
   "ctaFinalTexto": "27 horas • 9 módulos • Virtual • Presencial • Mixto",
   "ctaFinalUbicacion": "Villavicencio • Meta • Llanos Orientales • Colombia",
   "ctaFinalFrase": "Formación en Primeros Auxilios • RCP • Atención Inicial de Emergencias • Capacitación Empresarial",
-  "footerSeoLine": "Curso de Primeros Auxilios en Villavicencio • Curso de Primeros Auxilios Meta • Curso Virtual de Primeros Auxilios Colombia • RCP • Atención Inicial de Emergencias • Capacitación Empresarial",
+  footerSeoLine:
+    'Curso de Primeros Auxilios en Villavicencio • Curso de Primeros Auxilios Meta • Curso Virtual de Primeros Auxilios Colombia • RCP • Atención Inicial de Emergencias • Capacitación Empresarial',
+  enlacesRelacionadosTitulo: FINSTRUVIAL_ENLACES_TITULO,
+  enlacesRelacionados: FINSTRUVIAL_ENLACES_PRIMEROS_AUXILIOS.map((e) => ({ ...e })),
   imagenes: PRIMEROS_AUXILIOS_IMAGENES.map((img) => ({ ...img })),
 };
 
@@ -656,15 +675,34 @@ function mergePrimerosAuxiliosPreservandoUsuario(
   return out;
 }
 
-export function mergePrimerosAuxiliosLanding(raw?: Partial<PortalPrimerosAuxiliosLanding> | null): PortalPrimerosAuxiliosLanding {
-  const d = PRIMEROS_AUXILIOS_LANDING;
+function mergePrimerosAuxiliosTheme(
+  src: Partial<PortalPrimerosAuxiliosLanding>,
+  d: PortalPrimerosAuxiliosLanding,
+  tema?: PortalTemaLike | null,
+): PortalPromoHeroTheme {
+  const rawTheme = String(src.theme ?? '').trim();
+  if (!portafolioServiciosEsServial(tema) && rawTheme === 'gold') {
+    return d.theme;
+  }
+  return mergePromoHeroTheme(src.theme, d.theme);
+}
+
+export function mergePrimerosAuxiliosLanding(
+  raw?: Partial<PortalPrimerosAuxiliosLanding> | null,
+  defaults: PortalPrimerosAuxiliosLanding = PRIMEROS_AUXILIOS_LANDING,
+  tema?: PortalTemaLike | null,
+): PortalPrimerosAuxiliosLanding {
+  const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
   if (primerosAuxiliosNecesitaActualizarGuion(src)) {
-    return mergePrimerosAuxiliosPreservandoUsuario(src, d);
+    const out = mergePrimerosAuxiliosPreservandoUsuario(src, d);
+    out.theme = mergePrimerosAuxiliosTheme(src, d, tema);
+    return out;
   }
   return {
     ...d,
     guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
+    theme: mergePrimerosAuxiliosTheme(src, d, tema),
     kicker: str(src.kicker, d.kicker),
     titulo: str(src.titulo, d.titulo),
     tituloLinea2: str(src.tituloLinea2, d.tituloLinea2),
@@ -731,6 +769,8 @@ export function mergePrimerosAuxiliosLanding(raw?: Partial<PortalPrimerosAuxilio
     ctaFinalUbicacion: str(src.ctaFinalUbicacion, d.ctaFinalUbicacion),
     ctaFinalFrase: str(src.ctaFinalFrase, d.ctaFinalFrase),
     footerSeoLine: str(src.footerSeoLine, d.footerSeoLine),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     imagenes: mergeImagenes(src.imagenes, d.imagenes),
   };
 }

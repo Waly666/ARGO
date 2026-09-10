@@ -5,9 +5,15 @@ import {
   PortalEnlaceRelacionado,
 } from '../../core/portal-enlace-relacionado.util';
 import {
-  SERVIAL_ENLACES_MANEJO_DEFENSIVO,
-  SERVIAL_ENLACES_TITULO,
-} from '../../core/constants/portal-enlaces-relacionados-servial';
+  FINSTRUVIAL_ENLACES_MANEJO_DEFENSIVO,
+  FINSTRUVIAL_ENLACES_TITULO,
+} from '../../core/constants/portal-enlaces-relacionados-finstruvial';
+import {
+  mergePromoHeroTheme,
+  type PortalPromoHeroTheme,
+} from '../../core/constants/portal-promo-hero-fields.util';
+import { portafolioServiciosEsServial } from '../../core/portafolio-servicios.util';
+import type { PortalTemaLike } from '../../core/portal-theme-css.util';
 
 export interface MdImagen {
   id: string;
@@ -81,6 +87,7 @@ export interface MdCertificacion {
 }
 
 export interface PortalManejoDefensivoLanding {
+  theme: PortalPromoHeroTheme;
   kicker: string;
   titulo: string;
   tituloLinea2: string;
@@ -279,6 +286,7 @@ export const MANEJO_DEFENSIVO_IMAGENES: MdImagen[] = [
 ];
 
 export const MANEJO_DEFENSIVO_LANDING: PortalManejoDefensivoLanding = {
+  theme: 'blue',
   kicker: 'Seguridad vial · Villavicencio · Meta · Colombia',
   titulo: 'Manejo Defensivo',
   tituloLinea2: 'Anticípate al riesgo',
@@ -597,8 +605,8 @@ export const MANEJO_DEFENSIVO_LANDING: PortalManejoDefensivoLanding = {
   ctaFinalFrase: 'Anticípate al riesgo. Conduce para proteger la vida.',
   footerSeoLine:
     'Cursos de Seguridad Vial | Manejo Defensivo | Capacitación Empresarial | PESV | Formación de Conductores',
-  enlacesRelacionadosTitulo: SERVIAL_ENLACES_TITULO,
-  enlacesRelacionados: SERVIAL_ENLACES_MANEJO_DEFENSIVO.map((e) => ({ ...e })),
+  enlacesRelacionadosTitulo: FINSTRUVIAL_ENLACES_TITULO,
+  enlacesRelacionados: FINSTRUVIAL_ENLACES_MANEJO_DEFENSIVO.map((e) => ({ ...e })),
   imagenes: MANEJO_DEFENSIVO_IMAGENES.map((img) => ({ ...img })),
 };
 
@@ -656,11 +664,28 @@ function mergeCertificacion(raw: unknown, fb: MdCertificacion): MdCertificacion 
   };
 }
 
-export function mergeManejoDefensivoLanding(raw?: Partial<PortalManejoDefensivoLanding> | null): PortalManejoDefensivoLanding {
-  const d = MANEJO_DEFENSIVO_LANDING;
+function mergeManejoDefensivoTheme(
+  src: Partial<PortalManejoDefensivoLanding>,
+  d: PortalManejoDefensivoLanding,
+  tema?: PortalTemaLike | null,
+): PortalPromoHeroTheme {
+  const rawTheme = String(src.theme ?? '').trim();
+  if (!portafolioServiciosEsServial(tema) && rawTheme === 'gold') {
+    return d.theme;
+  }
+  return mergePromoHeroTheme(src.theme, d.theme);
+}
+
+export function mergeManejoDefensivoLanding(
+  raw?: Partial<PortalManejoDefensivoLanding> | null,
+  defaults: PortalManejoDefensivoLanding = MANEJO_DEFENSIVO_LANDING,
+  tema?: PortalTemaLike | null,
+): PortalManejoDefensivoLanding {
+  const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
   return {
     ...d,
+    theme: mergeManejoDefensivoTheme(src, d, tema),
     kicker: str(src.kicker, d.kicker),
     titulo: str(src.titulo, d.titulo),
     tituloLinea2: str(src.tituloLinea2, d.tituloLinea2),

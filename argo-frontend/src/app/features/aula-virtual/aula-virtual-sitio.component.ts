@@ -12,6 +12,10 @@ import { mergeMercanciasPeligrosasLanding } from '../../core/constants/mercancia
 import { mergeTrabajoEnAlturasLanding } from '../../core/constants/trabajo-en-alturas-landing-defaults';
 import { mergeManejoDefensivoLanding } from '../../core/constants/manejo-defensivo-landing-defaults';
 import { mergePrimerosAuxiliosLanding } from '../../core/constants/primeros-auxilios-landing-defaults';
+import {
+  manejoDefensivoDefaultsForTema,
+  primerosAuxiliosDefaultsForTema,
+} from '../../core/constants/servial-seo-landing-defaults';
 import { mergePortafolioServicios } from '../../core/utils/portafolio-servicios.util';
 import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
 import { PORTAL_PLANTILLAS, PortalPlantilla } from '../../core/constants/portal-plantillas';
@@ -109,11 +113,15 @@ export class AulaVirtualSitioComponent implements OnInit {
     if (this.portalForm.landing?.manejoDefensivo) {
       this.portalForm.landing.manejoDefensivo = mergeManejoDefensivoLanding(
         this.portalForm.landing.manejoDefensivo,
+        manejoDefensivoDefaultsForTema(this.portalForm.site?.tema),
+        this.portalForm.site?.tema,
       );
     }
     if (this.portalForm.landing?.primerosAuxilios) {
       this.portalForm.landing.primerosAuxilios = mergePrimerosAuxiliosLanding(
         this.portalForm.landing.primerosAuxilios,
+        primerosAuxiliosDefaultsForTema(this.portalForm.site?.tema),
+        this.portalForm.site?.tema,
       );
     }
     if (this.portalForm.landing?.finstruvialServicios) {

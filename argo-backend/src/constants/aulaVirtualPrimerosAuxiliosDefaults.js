@@ -95,8 +95,15 @@ function mergePrimerosAuxiliosPreservandoUsuario(src, d) {
   return out;
 }
 
-function mergePrimerosAuxiliosLanding(raw) {
-  const d = PRIMEROS_AUXILIOS_DEFAULTS;
+const HERO_THEMES = ['gold', 'green', 'violet', 'blue'];
+
+function mergePromoHeroTheme(v, fb) {
+  const t = String(v ?? '').trim();
+  return HERO_THEMES.includes(t) ? t : fb;
+}
+
+function mergePrimerosAuxiliosLanding(raw, defaults = PRIMEROS_AUXILIOS_DEFAULTS) {
+  const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
   if (primerosAuxiliosNecesitaActualizarGuion(src)) {
     return mergePrimerosAuxiliosPreservandoUsuario(src, d);
@@ -104,6 +111,7 @@ function mergePrimerosAuxiliosLanding(raw) {
   return {
     ...d,
     guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
+    theme: mergePromoHeroTheme(src.theme, d.theme || 'blue'),
     kicker: str(src.kicker, d.kicker),
     titulo: str(src.titulo, d.titulo),
     tituloLinea2: str(src.tituloLinea2, d.tituloLinea2),

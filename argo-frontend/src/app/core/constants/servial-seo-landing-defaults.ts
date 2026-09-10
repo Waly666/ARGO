@@ -9,9 +9,18 @@ import {
   type PortalMercanciasPeligrosasLanding,
 } from './mercancias-peligrosas-landing-defaults';
 import {
+  PRIMEROS_AUXILIOS_LANDING,
+  type PortalPrimerosAuxiliosLanding,
+} from './primeros-auxilios-landing-defaults';
+import {
   TRABAJO_EN_ALTURAS_LANDING,
   type PortalTrabajoEnAlturasLanding,
 } from './trabajo-en-alturas-landing-defaults';
+import {
+  SERVIAL_ENLACES_MANEJO_DEFENSIVO,
+  SERVIAL_ENLACES_PRIMEROS_AUXILIOS,
+  SERVIAL_ENLACES_TITULO,
+} from './portal-enlaces-relacionados-servial';
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -19,6 +28,7 @@ function clone<T>(value: T): T {
 
 export const SERVIAL_MANEJO_DEFENSIVO_LANDING: PortalManejoDefensivoLanding = {
   ...clone(MANEJO_DEFENSIVO_LANDING),
+  theme: 'gold',
   kicker: 'Servial Colombia · CEA · Villavicencio · Meta',
   subtitulo: 'Curso libre virtual y presencial — Servial Colombia',
   heroLead:
@@ -40,6 +50,15 @@ export const SERVIAL_MANEJO_DEFENSIVO_LANDING: PortalManejoDefensivoLanding = {
   ctaFinalUbicacion: 'Servial Colombia · Villavicencio · Meta · Colombia',
   footerSeoLine:
     'Servial Colombia | Manejo defensivo | CEA Villavicencio | Cursos libres | Seguridad vial | Sector transportador',
+  enlacesRelacionadosTitulo: SERVIAL_ENLACES_TITULO,
+  enlacesRelacionados: SERVIAL_ENLACES_MANEJO_DEFENSIVO.map((e) => ({ ...e })),
+};
+
+export const SERVIAL_PRIMEROS_AUXILIOS_LANDING: PortalPrimerosAuxiliosLanding = {
+  ...clone(PRIMEROS_AUXILIOS_LANDING),
+  theme: 'gold',
+  enlacesRelacionadosTitulo: SERVIAL_ENLACES_TITULO,
+  enlacesRelacionados: SERVIAL_ENLACES_PRIMEROS_AUXILIOS.map((e) => ({ ...e })),
 };
 
 export const SERVIAL_MERCANCIAS_PELIGROSAS_LANDING: PortalMercanciasPeligrosasLanding = {
@@ -130,4 +149,10 @@ export function trabajoEnAlturasDefaultsForTema(
   tema?: PortalTemaLike | null,
 ): PortalTrabajoEnAlturasLanding {
   return portafolioServiciosEsServial(tema) ? SERVIAL_TRABAJO_EN_ALTURAS_LANDING : TRABAJO_EN_ALTURAS_LANDING;
+}
+
+export function primerosAuxiliosDefaultsForTema(
+  tema?: PortalTemaLike | null,
+): PortalPrimerosAuxiliosLanding {
+  return portafolioServiciosEsServial(tema) ? SERVIAL_PRIMEROS_AUXILIOS_LANDING : PRIMEROS_AUXILIOS_LANDING;
 }
