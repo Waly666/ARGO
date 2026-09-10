@@ -695,7 +695,9 @@ export function mergeFinstruvialServicios(
 export function finstruvialServiciosLista(
   config: PortalFinstruvialServiciosConfig,
 ): PortalFinstruvialServicioLanding[] {
-  return FINSTRUVIAL_SERVICIO_SLUGS.map((slug) => config.paginas[slug]);
+  return FINSTRUVIAL_SERVICIO_SLUGS.map((slug) => config.paginas[slug]).filter(
+    (p): p is PortalFinstruvialServicioLanding => !!p,
+  );
 }
 
 export function finstruvialPortafolioActivo(config: PortalFinstruvialServiciosConfig): boolean {

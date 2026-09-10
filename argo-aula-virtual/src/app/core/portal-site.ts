@@ -92,7 +92,7 @@ export function seccionHomeVisible(config: PortalConfig | null, id: string): boo
 
 export function ordenSeccionesHome(config: PortalConfig | null): string[] {
   const orden = config?.site?.home?.orden;
-  if (orden?.length) {
+  if (Array.isArray(orden) && orden.length) {
     const set = new Set(DEFAULT_HOME_ORDER);
     const out: string[] = [];
     for (const id of orden) {

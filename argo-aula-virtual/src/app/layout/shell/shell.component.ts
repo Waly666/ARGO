@@ -139,10 +139,12 @@ export class ShellComponent implements OnInit, AfterViewInit {
       key: 'servicios',
       label: servicios.menuLabel || 'Nuestros servicios',
       hubRoute: '/servicios',
-      children: finstruvialServiciosActivos(servicios).map((p) => ({
-        route: FINSTRUVIAL_SERVICIO_ROUTE[p.slug],
-        label: p.menuLabel,
-      })),
+      children: finstruvialServiciosActivos(servicios)
+        .filter((p) => !!FINSTRUVIAL_SERVICIO_ROUTE[p.slug])
+        .map((p) => ({
+          route: FINSTRUVIAL_SERVICIO_ROUTE[p.slug],
+          label: p.menuLabel,
+        })),
     };
     const entries: ShellNavEntry[] = [];
     for (const item of items) {
@@ -216,7 +218,8 @@ export class ShellComponent implements OnInit, AfterViewInit {
         external: false,
       }));
     }
-    return this.footerServicios().map((label) => {
+    const labels = Array.isArray(this.footerServicios()) ? this.footerServicios() : [];
+    return labels.map((label) => {
       const href = FOOTER_SERVICIO_HREF[label.trim().toLowerCase()] || '/#servicios-empresa';
       if (href.startsWith('http')) {
         return { label, href, external: true };

@@ -69,30 +69,35 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   playerFrame = viewChild<ElementRef<HTMLIFrameElement>>('playerFrame');
 
-  totalInscritos = computed(() => this.cursos().length);
-  totalEnProgreso = computed(() => this.cursos().filter((c) => this.enProgreso(c)).length);
-  totalCompletados = computed(() => this.cursos().filter((c) => this.completado(c)).length);
+  totalInscritos = computed(() => this.cursosLista().length);
+  totalEnProgreso = computed(() => this.cursosLista().filter((c) => this.enProgreso(c)).length);
+  totalCompletados = computed(() => this.cursosLista().filter((c) => this.completado(c)).length);
   totalCertificados = computed(() => this.certificados().length);
 
+  private cursosLista(): CursoVirtual[] {
+    const rows = this.cursos();
+    return Array.isArray(rows) ? rows : [];
+  }
+
   cursosContinuar = computed(() =>
-    [...this.cursos()]
+    [...this.cursosLista()]
       .filter((c) => this.enProgreso(c) || (this.pct(c) === 0 && c.tienePaquete))
       .sort((a, b) => this.pct(b) - this.pct(a))
       .slice(0, 4),
   );
 
   cursosConPuntajes = computed(() =>
-    [...this.cursos()]
+    [...this.cursosLista()]
       .filter((c) => this.tieneHistorialPuntajes(c))
       .sort((a, b) => (this.mejorNota(b) ?? -1) - (this.mejorNota(a) ?? -1)),
   );
 
   cursosParaPuntajes = computed(() =>
-    [...this.cursos()].sort((a, b) => this.pct(b) - this.pct(a) || String(a.nombreProg).localeCompare(String(b.nombreProg), 'es')),
+    [...this.cursosLista()].sort((a, b) => this.pct(b) - this.pct(a) || String(a.nombreProg).localeCompare(String(b.nombreProg), 'es')),
   );
 
   resumenPuntajesGlobal = computed(() => {
-    const cs = this.cursos();
+    const cs = this.cursosLista();
     let leccionesAprobadas = 0;
     let leccionesTotal = 0;
     let leccionesConNota = 0;
@@ -375,7 +380,7 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   cargarCursos() {
     this.api.misCursos().subscribe({
-      next: (rows) => this.cursos.set(rows),
+      next: (rows) => this.cursos.set(Array.isArray(rows) ? rows : []),
       error: () => this.cursos.set([]),
     });
   }

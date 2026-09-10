@@ -651,6 +651,10 @@ function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): Po
   };
 }
 
+function ensureStringArray(val: unknown, fallback: string[] = []): string[] {
+  return Array.isArray(val) ? val.map((item) => String(item)) : fallback;
+}
+
 function mergeServiciosItems(
   rawItems: { icon: string; title: string; url?: string }[] | undefined,
   defaults: { icon: string; title: string; url?: string }[],
@@ -719,9 +723,15 @@ export function mergePortalLanding(
         ? raw.licencias.items.map((item, i) => ({
             ...d.licencias.items[i],
             ...item,
-            incluye: item.incluye?.length ? item.incluye : d.licencias.items[i]?.incluye || [],
+            incluye: ensureStringArray(
+              item.incluye,
+              ensureStringArray(d.licencias.items[i]?.incluye),
+            ),
           }))
-        : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+        : d.licencias.items.map((item) => ({
+            ...item,
+            incluye: ensureStringArray(item.incluye),
+          })),
     },
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
@@ -797,7 +807,10 @@ export function mergePortalLanding(
       capacitacion: raw.pilares?.capacitacion?.length ? raw.pilares.capacitacion : d.pilares.capacitacion,
       campanas: raw.pilares?.campanas?.length ? raw.pilares.campanas : d.pilares.campanas,
     },
-    footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
+    footerServicios: ensureStringArray(
+      raw.footerServicios?.length ? raw.footerServicios : null,
+      ensureStringArray(d.footerServicios),
+    ),
     fundacion: mergeFundacionLanding(raw.fundacion),
     acerca: mergeAcercaLanding(raw.acerca),
     cursosConduccion: mergeCursosConduccionLanding(raw.cursosConduccion),

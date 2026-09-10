@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { PortalAuthService } from '../../core/portal-auth.service';
@@ -59,7 +59,6 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 })
 export class ActivarRegistroComponent implements OnInit {
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private api = inject(AulaApiService);
   private auth = inject(PortalAuthService);
 
@@ -80,9 +79,21 @@ export class ActivarRegistroComponent implements OnInit {
 
     this.api.registroConfirmar(pendingId, codigo, linkToken || undefined).subscribe({
       next: (res) => {
-        this.auth.setSession(res.token, res.usuario, res.alumno);
-        this.loading.set(false);
-        void this.router.navigateByUrl('/aula');
+        const token = String(res?.token || '').trim();
+        const usuario = res?.usuario;
+        const alumno = res?.alumno;
+        if (!token || !usuario?.email || !alumno?.nombreCompleto) {
+          this.loading.set(false);
+          this.error.set('La respuesta del servidor no es válida. Intente iniciar sesión con su correo.');
+          return;
+        }
+        try {
+          this.auth.setSession(token, usuario, alumno);
+          this.loading.set(false);
+        } catch {
+          this.loading.set(false);
+          this.error.set('No se pudo guardar la sesión en este navegador. Intente iniciar sesión manualmente.');
+        }
       },
       error: (e) => {
         this.loading.set(false);

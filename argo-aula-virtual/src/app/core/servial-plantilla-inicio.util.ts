@@ -69,9 +69,16 @@ export function buildServialLandingDefaults(
             ? snap.licencias.items.map((item, i) => ({
                 ...factory.licencias.items[i],
                 ...item,
-                incluye: item.incluye?.length ? item.incluye : factory.licencias.items[i]?.incluye || [],
+                incluye: Array.isArray(item.incluye)
+                  ? item.incluye
+                  : Array.isArray(factory.licencias.items[i]?.incluye)
+                    ? factory.licencias.items[i].incluye
+                    : [],
               }))
-            : factory.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+            : factory.licencias.items.map((item) => ({
+                ...item,
+                incluye: Array.isArray(item.incluye) ? item.incluye : [],
+              })),
         }
       : factory.licencias,
     servicios: snap.servicios ? { ...factory.servicios, ...snap.servicios } : factory.servicios,
