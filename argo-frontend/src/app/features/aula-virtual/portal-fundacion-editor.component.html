@@ -6,6 +6,8 @@
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
 
+  <argo-portal-seo-legend />
+
   <div class="pfe-nav">
     @for (b of [
       { id: 'hero', label: 'Encabezado' },
@@ -25,7 +27,7 @@
   @if (bloque() === 'hero') {
     <div class="pfe-block">
       <label class="psb-field psb-field--full">
-        <span>Etiqueta superior (kicker)</span>
+        <argo-portal-field-label tag="p" label="Etiqueta superior (kicker)" />
         <input type="text" class="psb-input" [(ngModel)]="fundacion.hero.kicker" />
       </label>
       <label class="psb-field psb-field--full">
@@ -39,7 +41,7 @@
         <span class="psb-hint">Vacío = «{{ nombreEmpresa || 'Nombre de la empresa' }}»</span>
       </label>
       <label class="psb-field psb-field--full">
-        <span>Texto introductorio</span>
+        <argo-portal-field-label tag="p" label="Texto introductorio" />
         <textarea class="psb-input" rows="3" [(ngModel)]="fundacion.hero.lead"></textarea>
       </label>
       <argo-portal-promo-hero-fields-editor

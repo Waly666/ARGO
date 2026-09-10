@@ -183,6 +183,62 @@
   border: 1px solid rgba(96, 165, 250, 0.2);
 }
 
+.psb-plantilla-toolbar {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: rgba(245, 196, 0, 0.08);
+  border: 1px solid rgba(245, 196, 0, 0.25);
+}
+
+.psb-plantilla-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+
+  .psb-btn--servial {
+    @include portal-site-editor-shared.portal-editor-button-reset;
+
+    border: none !important;
+    background: linear-gradient(180deg, #f5c400, #d4a800) !important;
+    color: #0b1b47 !important;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(245, 196, 0, 0.28);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(180deg, #ffd54f, #f5c400) !important;
+      color: #071428 !important;
+    }
+  }
+
+  .psb-btn--servial-outline {
+    @include portal-site-editor-shared.portal-editor-button-reset;
+
+    background: rgba(42, 95, 143, 0.35) !important;
+    border: 1px solid rgba(245, 196, 0, 0.45) !important;
+    color: #fde68a !important;
+
+    &:hover:not(:disabled) {
+      background: rgba(42, 95, 143, 0.55) !important;
+      border-color: rgba(245, 196, 0, 0.65) !important;
+      color: #fef3c7 !important;
+    }
+  }
+}
+
+.psb-plantilla-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(245, 196, 0, 0.15);
+  border: 1px solid rgba(245, 196, 0, 0.35);
+}
+
 .psb-progress {
   margin-bottom: 1rem;
 

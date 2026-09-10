@@ -582,6 +582,10 @@ function normalizarLanding(input, tema) {
     evaluacionJornadas: mergeEvaluacionJornadasLanding(evaluacionJornadasSrc),
     finstruvialServicios: normalizarFinstruvialServicios(src.finstruvialServicios, tema),
     asistente: normalizarAsistente(src.asistente, consultaCertSrc),
+    servialPlantillaBase:
+      src.servialPlantillaBase && typeof src.servialPlantillaBase === 'object'
+        ? src.servialPlantillaBase
+        : null,
   };
 }
 

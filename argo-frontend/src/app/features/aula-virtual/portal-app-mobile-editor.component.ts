@@ -7,10 +7,16 @@ import { PortalLandingConfig } from '../../core/constants/portal-landing-default
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
 
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+
 @Component({
   selector: 'argo-portal-app-mobile-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    PortalFieldLabelComponent,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './portal-app-mobile-editor.component.html',
   styleUrl: './portal-app-mobile-editor.component.scss',
 })

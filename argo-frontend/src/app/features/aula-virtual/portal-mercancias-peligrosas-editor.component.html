@@ -8,28 +8,31 @@
     </button>
   </div>
 
+
+  <argo-portal-seo-legend />
+
   <section class="psb-card">
     <h3 class="psb-card__title">Encabezado (hero)</h3>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
-        <span>Etiqueta pequeña</span>
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 1)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 2)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 2" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Subtítulo</span>
+      <argo-portal-field-label tag="p" label="Subtítulo" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.subtitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto principal del inicio</span>
+      <argo-portal-field-label tag="p" label="Texto principal del inicio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.heroLead"></textarea>
     </label>
     <argo-portal-promo-hero-fields-editor
@@ -89,11 +92,11 @@
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Frase final de la página</span>
+      <argo-portal-field-label tag="p" label="Frase final de la página" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.fraseFinal" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Aviso legal / disclaimer</span>
+      <argo-portal-field-label tag="p" label="Aviso legal / disclaimer" />
       <textarea class="psb-input" rows="4" [(ngModel)]="mercanciasPeligrosas.disclaimer"></textarea>
     </label>
   </section>
@@ -164,7 +167,7 @@
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.queSonTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Definición</span>
+      <argo-portal-field-label tag="p" label="Definición" />
       <textarea class="psb-input" rows="3" [(ngModel)]="mercanciasPeligrosas.queSonDefinicion"></textarea>
     </label>
     <p class="psb-note">Tipos de riesgo</p>
@@ -184,7 +187,7 @@
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.normativaTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="3" [(ngModel)]="mercanciasPeligrosas.normativaLead"></textarea>
     </label>
     <label class="psb-field psb-field--plain">
@@ -213,7 +216,7 @@
           </label>
         </div>
         <label class="psb-field psb-field--plain">
-          <span>Detalle</span>
+          <argo-portal-field-label tag="p" label="Detalle" />
           <textarea class="psb-input" rows="2" [(ngModel)]="ntc.texto"></textarea>
         </label>
       </div>
@@ -240,7 +243,7 @@
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.clasificacionTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.clasificacionLead"></textarea>
     </label>
     @for (clase of mercanciasPeligrosas.clases; track $index; let i = $index) {
@@ -260,7 +263,7 @@
           </label>
         </div>
         <label class="psb-field psb-field--plain">
-          <span>Descripción</span>
+          <argo-portal-field-label tag="p" label="Descripción" />
           <textarea class="psb-input" rows="2" [(ngModel)]="clase.texto"></textarea>
         </label>
       </div>
@@ -284,7 +287,7 @@
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.documentacionTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.documentacionLead"></textarea>
     </label>
     <argo-portal-editor-string-list [items]="mercanciasPeligrosas.documentacionItems" addLabel="+ Añadir tipo de documento" />
@@ -321,7 +324,7 @@
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.responsabilidadesTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.responsabilidadesLead"></textarea>
     </label>
     @for (actor of mercanciasPeligrosas.actores; track $index; let i = $index) {
@@ -358,7 +361,7 @@
   <section class="psb-card">
     <h3 class="psb-card__title">Seguridad y gestión del riesgo</h3>
     <label class="psb-field psb-field--plain">
-      <span>Título de la sección (H2)</span>
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.seguridadTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
@@ -433,7 +436,7 @@
           </label>
         </div>
         <label class="psb-field psb-field--plain">
-          <span>Descripción</span>
+          <argo-portal-field-label tag="p" label="Descripción" />
           <textarea class="psb-input" rows="2" [(ngModel)]="modo.texto"></textarea>
         </label>
       </div>
@@ -478,11 +481,11 @@
   <section class="psb-card">
     <h3 class="psb-card__title">SEO local e inscripciones</h3>
     <label class="psb-field psb-field--plain">
-      <span>Título bloque Villavicencio (H2)</span>
+      <argo-portal-field-label tag="H2" label="Título bloque Villavicencio" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto bloque Villavicencio</span>
+      <argo-portal-field-label tag="p" label="Texto bloque Villavicencio" />
       <textarea class="psb-input" rows="3" [(ngModel)]="mercanciasPeligrosas.localTexto"></textarea>
     </label>
     <div class="psb-grid3">
@@ -500,11 +503,11 @@
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Título inscripciones (H2)</span>
+      <argo-portal-field-label tag="H2" label="Título inscripciones" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto inscripciones</span>
+      <argo-portal-field-label tag="p" label="Texto inscripciones" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.inscripcionesTexto"></textarea>
     </label>
     <div class="psb-grid2">
@@ -532,7 +535,7 @@
   <section class="psb-card">
     <h3 class="psb-card__title">Preguntas frecuentes</h3>
     <label class="psb-field psb-field--plain">
-      <span>Título de la sección FAQ (H2)</span>
+      <argo-portal-field-label tag="H2" label="Título de la sección FAQ" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.faqTitulo" />
     </label>
     <argo-portal-editor-faq-list [items]="mercanciasPeligrosas.faq" />
@@ -551,7 +554,7 @@
           <input type="text" class="psb-input" [(ngModel)]="term.titulo" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Definición</span>
+          <argo-portal-field-label tag="p" label="Definición" />
           <textarea class="psb-input" rows="2" [(ngModel)]="term.texto"></textarea>
         </label>
       </div>
@@ -566,7 +569,7 @@
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.fuentesTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.fuentesLead"></textarea>
     </label>
     @for (fuente of mercanciasPeligrosas.fuentes; track $index; let i = $index) {
@@ -595,11 +598,11 @@
   <section class="psb-card">
     <h3 class="psb-card__title">Biblioteca de documentos PDF</h3>
     <label class="psb-field psb-field--plain">
-      <span>Título de la sección</span>
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.documentosTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.documentosLead"></textarea>
     </label>
     @for (grupo of mercanciasPeligrosas.documentosGrupos; track $index; let gi = $index) {
@@ -614,7 +617,7 @@
             <input type="text" class="psb-input" [(ngModel)]="grupo.id" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Etiqueta (kicker)</span>
+            <argo-portal-field-label tag="p" label="Etiqueta (kicker)" />
             <input type="text" class="psb-input" [(ngModel)]="grupo.kicker" />
           </label>
         </div>
@@ -637,7 +640,7 @@
               <input type="text" class="psb-input" [(ngModel)]="doc.titulo" />
             </label>
             <label class="psb-field psb-field--plain">
-              <span>Descripción</span>
+              <argo-portal-field-label tag="p" label="Descripción" />
               <textarea class="psb-input" rows="2" [(ngModel)]="doc.descripcion"></textarea>
             </label>
             <div class="psb-grid2">

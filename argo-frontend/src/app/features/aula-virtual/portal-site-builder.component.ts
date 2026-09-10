@@ -14,7 +14,22 @@ import {
   PortalSiteConfig,
 } from '../../core/constants/portal-site-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
-import { mergePortalLanding, PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT } from '../../core/constants/portal-landing-defaults';
+import {
+  mergePortalLanding,
+  PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT,
+  PORTAL_LANDING_DEFAULTS,
+  type PortalLandingConfig,
+} from '../../core/constants/portal-landing-defaults';
+import { SERVIAL_LANDING_DEFAULTS } from '../../core/constants/servial-landing-defaults';
+import {
+  aplicarServialPlantillaFabrica,
+  snapshotServialPlantillaInicio,
+} from '../../core/utils/servial-plantilla-inicio.util';
+import { portafolioServiciosEsServial } from '../../core/utils/portafolio-servicios.util';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+import { PortalSeoTagComponent } from './portal-seo-tag.component';
+import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { mergeExamenTeoricoLanding, PortalExamenTeoricoLanding } from '../../core/constants/examen-teorico-landing-defaults';
 import {
   mergeMercanciasPeligrosasLanding,
@@ -135,30 +150,33 @@ interface GuiaPaso {
   selector: 'argo-portal-site-builder',
   standalone: true,
   imports: [
+    PortalAcercaEditorComponent,
+    PortalAppMobileEditorComponent,
+    PortalCursosConduccionEditorComponent,
+    PortalExamenTeoricoEditorComponent,
+    PortalFieldLabelComponent,
+    PortalFinstruvialServiciosEditorComponent,
+    PortalFundacionEditorComponent,
+    PortalGaleriaFotosEditorComponent,
+    PortalGaleriaHeroImagenEditorComponent,
+    PortalGoogleSearchConsoleEditorComponent,
+    PortalHomeFotosEditorComponent,
+    PortalHomePublicidadEditorComponent,
+    PortalLandingEditorComponent,
+    PortalManejoDefensivoEditorComponent,
+    PortalMercanciasPeligrosasEditorComponent,
+    PortalPopupEditorComponent,
+    PortalPrimerosAuxiliosEditorComponent,
+    PortalPromoHeroFieldsEditorComponent,
+    PortalPromoHeroImagenEditorComponent,
+    PortalSeoEditorComponent,
+    PortalSeoLegendComponent,
+    PortalSeoTagComponent,
+    PortalSitePreviewComponent,
+    PortalTrabajoEnAlturasEditorComponent,
     CommonModule,
     FormsModule,
     RouterLink,
-    PortalLandingEditorComponent,
-    PortalFundacionEditorComponent,
-    PortalCursosConduccionEditorComponent,
-    PortalExamenTeoricoEditorComponent,
-    PortalMercanciasPeligrosasEditorComponent,
-    PortalTrabajoEnAlturasEditorComponent,
-    PortalManejoDefensivoEditorComponent,
-    PortalPrimerosAuxiliosEditorComponent,
-    PortalFinstruvialServiciosEditorComponent,
-    PortalGaleriaFotosEditorComponent,
-    PortalGaleriaHeroImagenEditorComponent,
-    PortalPromoHeroImagenEditorComponent,
-    PortalHomeFotosEditorComponent,
-    PortalHomePublicidadEditorComponent,
-    PortalAcercaEditorComponent,
-    PortalPromoHeroFieldsEditorComponent,
-    PortalPopupEditorComponent,
-    PortalAppMobileEditorComponent,
-    PortalGoogleSearchConsoleEditorComponent,
-    PortalSeoEditorComponent,
-    PortalSitePreviewComponent,
   ],
   templateUrl: './portal-site-builder.component.html',
   styleUrl: './portal-site-builder.component.scss',
@@ -167,6 +185,7 @@ export class PortalSiteBuilderComponent {
   private svc = inject(AulaVirtualAdminService);
   private auth = inject(AuthService);
   private doc = inject(DOCUMENT);
+  private confirm = inject(ConfirmDialogService);
 
   readonly esAdmin = this.auth.isAdmin;
 
@@ -176,6 +195,7 @@ export class PortalSiteBuilderComponent {
 
   heroUploading = signal(false);
   asistenteVideoUploading = signal(false);
+  plantillaInicioSaving = signal(false);
 
   readonly paginaMeta = PORTAL_PAGINA_META;
   readonly fuentes = PORTAL_FUENTES;
@@ -903,6 +923,76 @@ export class PortalSiteBuilderComponent {
         error: (e) => {
           this.avNotice.emit({
             message: e?.error?.message || 'No se pudo quitar el video personalizado',
+            error: true,
+          });
+        },
+      });
+  }
+
+  esSitioServial(): boolean {
+    return portafolioServiciosEsServial(this.portalForm.site?.tema);
+  }
+
+  tienePlantillaInicioGuardada(): boolean {
+    return !!this.landing.servialPlantillaBase;
+  }
+
+  private servialLandingFactory(): PortalLandingConfig {
+    return { ...PORTAL_LANDING_DEFAULTS, ...SERVIAL_LANDING_DEFAULTS } as PortalLandingConfig;
+  }
+
+  guardarPlantillaInicioServial() {
+    const merged = mergePortalLanding(this.landing, this.portalForm.site?.tema);
+    this.landing.servialPlantillaBase = snapshotServialPlantillaInicio(merged);
+    this.plantillaInicioSaving.set(true);
+    this.svc
+      .guardarPortal(this.portalForm)
+      .pipe(finalize(() => this.plantillaInicioSaving.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.applyPortalConfig(res.config);
+          this.avNotice.emit({
+            message:
+              res.message ||
+              'Plantilla del inicio guardada. Los textos actuales quedan como base del sitio Servial.',
+          });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo guardar la plantilla del inicio',
+            error: true,
+          });
+        },
+      });
+  }
+
+  async restaurarPlantillaFabricaServial() {
+    const ok = await this.confirm.open({
+      title: 'Restaurar plantilla Servial',
+      message:
+        '¿Volver los textos del inicio a la plantilla de fábrica Servial? Esta acción guarda de inmediato en el servidor.',
+      variant: 'warn',
+      confirmLabel: 'Sí, restaurar',
+    });
+    if (!ok) return;
+
+    aplicarServialPlantillaFabrica(this.landing, this.servialLandingFactory());
+    this.portalForm.heroTitulo = 'Obtenga su licencia de conducción';
+    this.portalForm.heroSubtitulo =
+      'Únicos con calidad certificada. Aprenda a su ritmo con cursos interactivos, capacitación certificada y acompañamiento profesional.';
+
+    this.plantillaInicioSaving.set(true);
+    this.svc
+      .guardarPortal(this.portalForm)
+      .pipe(finalize(() => this.plantillaInicioSaving.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.applyPortalConfig(res.config);
+          this.avNotice.emit({ message: res.message || 'Plantilla de fábrica Servial restaurada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo restaurar la plantilla',
             error: true,
           });
         },

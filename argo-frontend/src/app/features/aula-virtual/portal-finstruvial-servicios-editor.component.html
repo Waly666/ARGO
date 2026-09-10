@@ -11,6 +11,9 @@
     </p>
   </div>
 
+
+  <argo-portal-seo-legend />
+
   @if (modo === 'hub') {
   <section class="psb-card fsv-visibilidad">
     <div class="fsv-visibilidad__head">
@@ -69,11 +72,11 @@
     </label>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
-        <span>Etiqueta pequeña</span>
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 1)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.tituloLinea" />
       </label>
       <label class="psb-field psb-field--plain">
@@ -464,7 +467,7 @@
           <input type="text" class="psb-input" [(ngModel)]="p.introKicker" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="p.introTitulo" />
         </label>
       </div>
@@ -552,7 +555,7 @@
                 <input type="text" class="psb-input" [(ngModel)]="p.pilaresEducativos[i].titulo" placeholder="SABER, SABER HACER, SER…" />
               </label>
               <label class="psb-field psb-field--plain psb-field--span2">
-                <span>Descripción</span>
+                <argo-portal-field-label tag="p" label="Descripción" />
                 <textarea class="psb-input" rows="2" [(ngModel)]="p.pilaresEducativos[i].texto"></textarea>
               </label>
             </div>
@@ -866,7 +869,7 @@
           <input type="text" class="psb-input" [(ngModel)]="p.productoKicker" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="p.productoNombre" />
         </label>
       </div>
@@ -928,7 +931,7 @@
           <input type="text" class="psb-input" [(ngModel)]="p.experienciaSeccionKicker" placeholder="Metodología o Carpas interactivas" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="p.experienciaSeccionTitulo" placeholder="Experiencia educativa o Actividades en campo" />
         </label>
       </div>
@@ -985,7 +988,7 @@
           </label>
         </div>
         <label class="psb-field psb-field--plain">
-          <span>Texto introductorio</span>
+          <argo-portal-field-label tag="p" label="Texto introductorio" />
           <textarea class="psb-input" rows="2" [(ngModel)]="p.modulosPlataformaLead"></textarea>
         </label>
         @for (m of p.modulosPlataforma; track $index; let i = $index) {
@@ -1000,7 +1003,7 @@
                 <input type="text" class="psb-input" [(ngModel)]="p.modulosPlataforma[i].titulo" placeholder="Tablero, Tus cursos…" />
               </label>
               <label class="psb-field psb-field--plain psb-field--span2">
-                <span>Descripción</span>
+                <argo-portal-field-label tag="p" label="Descripción" />
                 <textarea class="psb-input" rows="2" [(ngModel)]="p.modulosPlataforma[i].texto"></textarea>
               </label>
               <label class="psb-field psb-field--plain">
@@ -1167,7 +1170,7 @@
             <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaKicker" placeholder="Ecosistema" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Título de la sección</span>
+            <argo-portal-field-label tag="H2" label="Título de la sección" />
             <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaTitulo" placeholder="Tecnología para aprender" />
           </label>
         </div>
@@ -1226,7 +1229,7 @@
             <input type="text" class="psb-input" [(ngModel)]="p.gamificacionKicker" placeholder="Gamificación" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Título de la sección</span>
+            <argo-portal-field-label tag="H2" label="Título de la sección" />
             <input type="text" class="psb-input" [(ngModel)]="p.gamificacionTitulo" placeholder="Aprender jugando" />
           </label>
         </div>
@@ -1320,7 +1323,7 @@
               <input type="text" class="psb-input" [(ngModel)]="p.listaServicios[i].titulo" />
             </label>
             <label class="psb-field psb-field--plain">
-              <span>Descripción</span>
+              <argo-portal-field-label tag="p" label="Descripción" />
               <textarea class="psb-input" rows="2" [(ngModel)]="p.listaServicios[i].texto"></textarea>
             </label>
           </div>

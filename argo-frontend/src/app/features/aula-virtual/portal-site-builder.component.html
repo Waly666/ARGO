@@ -36,6 +36,10 @@
   </aside>
 
   <div class="psb-main">
+    @if (panel() !== 'panel') {
+      <argo-portal-seo-legend />
+    }
+
     @if (panelInfo(); as info) {
       <header class="psb-head">
         <h2>{{ info.title }}</h2>
@@ -331,9 +335,39 @@
       @case ('contenido') {
         <p class="psb-note">
           Elija una sección abajo para editar sus textos. Los cambios se ven en la vista previa de la derecha.
+          Pulse <strong>Publicar cambios</strong> para que el sitio público los muestre.
           Para subir el APK use
           <button type="button" class="psb-link" (click)="setPanel('appMobile')">App móvil Android</button>.
         </p>
+        @if (esSitioServial()) {
+          <div class="psb-plantilla-toolbar">
+            <p class="psb-hint">
+              <strong>Plantilla Servial:</strong> «Publicar» aplica los textos al sitio en vivo.
+              «Guardar como plantilla» conserva una copia base por si quiere restaurar su versión personalizada después.
+              @if (tienePlantillaInicioGuardada()) {
+                <span class="psb-plantilla-badge">Plantilla personalizada guardada</span>
+              }
+            </p>
+            <div class="psb-plantilla-actions">
+              <button
+                type="button"
+                class="psb-btn psb-btn--servial"
+                [disabled]="plantillaInicioSaving()"
+                (click)="guardarPlantillaInicioServial()"
+              >
+                {{ plantillaInicioSaving() ? 'Guardando…' : '💾 Guardar como plantilla del inicio' }}
+              </button>
+              <button
+                type="button"
+                class="psb-btn psb-btn--servial-outline"
+                [disabled]="plantillaInicioSaving()"
+                (click)="restaurarPlantillaFabricaServial()"
+              >
+                ↩ Restaurar plantilla de fábrica
+              </button>
+            </div>
+          </div>
+        }
         <argo-portal-landing-editor
           [landing]="landing"
           [portalUrl]="portalUrl"
@@ -518,20 +552,20 @@
           />
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
-              <span>Etiqueta pequeña</span>
+              <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
               <input type="text" class="psb-input" [(ngModel)]="landing.blog.kicker" placeholder="Blog" />
             </label>
             <label class="psb-field psb-field--plain psb-field--span2">
-              <span>Título de la página</span>
+              <argo-portal-field-label tag="H1" label="Título de la página" />
               <input type="text" class="psb-input" [(ngModel)]="landing.blog.titulo" placeholder="Noticias y artículos" />
             </label>
           </div>
           <label class="psb-field psb-field--plain">
-            <span>Texto introductorio</span>
+            <argo-portal-field-label tag="p" label="Texto introductorio" />
             <textarea class="psb-input" rows="3" [(ngModel)]="landing.blog.lead"></textarea>
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Título cuando no hay artículos</span>
+            <argo-portal-field-label tag="H3" label="Título cuando no hay artículos" />
             <input type="text" class="psb-input" [(ngModel)]="landing.blog.emptyTitulo" />
           </label>
           <label class="psb-field psb-field--plain">
@@ -548,7 +582,7 @@
         <div class="psb-stack">
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
-              <span>Etiqueta pequeña</span>
+              <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
               <input type="text" class="psb-input" [(ngModel)]="landing.galeria.kicker" placeholder="Galería" />
             </label>
             <label class="psb-field psb-field--plain psb-field--span2">
@@ -557,7 +591,7 @@
             </label>
           </div>
           <label class="psb-field psb-field--plain">
-            <span>Texto introductorio</span>
+            <argo-portal-field-label tag="p" label="Texto introductorio" />
             <textarea class="psb-input" rows="3" [(ngModel)]="landing.galeria.lead"></textarea>
           </label>
           <label class="psb-field psb-field--plain">
@@ -652,13 +686,33 @@
           <hr class="psb-divider" />
 
           <h3 class="psb-subtitle">Texto grande de la página principal</h3>
-          <p class="psb-hint">Es la frase animada que aparece en el banner del inicio (no es el nombre de la empresa).</p>
+          @if (esSitioServial()) {
+            <p class="psb-hint">
+              En Servial el banner usa dos líneas de título (H1): la primera se edita en
+              <button type="button" class="psb-link" (click)="setPanel('contenido')">Textos del inicio → Botones del banner</button>
+              («Línea Centro de Enseñanza…»); la segunda dorada animada es el campo de abajo.
+            </p>
+          } @else {
+            <p class="psb-hint">Es la frase animada que aparece en el banner del inicio (no es el nombre de la empresa).</p>
+          }
           <label class="psb-field psb-field--plain">
-            <span>Frase principal del banner</span>
+            <span>
+              @if (esSitioServial()) {
+                <argo-portal-seo-tag tag="H1" /> Línea 2 del título (dorada, animada)
+              } @else {
+                <argo-portal-seo-tag tag="H1" /> Frase principal del banner
+              }
+            </span>
             <input type="text" class="psb-input" [(ngModel)]="portalForm.heroTitulo" placeholder="Ej. Capacitación en seguridad vial" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Texto debajo del banner</span>
+            <span>
+              @if (esSitioServial()) {
+                <argo-portal-seo-tag tag="p" /> Párrafo debajo del banner
+              } @else {
+                <argo-portal-seo-tag tag="p" /> Texto debajo del banner
+              }
+            </span>
             <textarea class="psb-input" rows="2" [(ngModel)]="portalForm.heroSubtitulo" placeholder="Una oración que explique qué ofrece su institución"></textarea>
           </label>
           <p class="psb-hint">

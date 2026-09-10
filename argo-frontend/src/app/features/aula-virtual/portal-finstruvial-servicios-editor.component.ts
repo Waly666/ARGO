@@ -45,16 +45,22 @@ import {
 } from './portal-finstruvial-medios-panel.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+
 @Component({
   selector: 'argo-portal-finstruvial-servicios-editor',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    PortalPromoHeroFieldsEditorComponent,
+    PortalEditorImagenPromptComponent,
+    PortalFieldLabelComponent,
     PortalFinstruvialEditorSeccionComponent,
     PortalFinstruvialMediosPanelComponent,
-    PortalEditorImagenPromptComponent,
+    PortalPromoHeroFieldsEditorComponent,
+    PortalSeoLegendComponent,
+    CommonModule,
+    FormsModule,
   ],
   templateUrl: './portal-finstruvial-servicios-editor.component.html',
   styleUrl: './portal-finstruvial-servicios-editor.component.scss',

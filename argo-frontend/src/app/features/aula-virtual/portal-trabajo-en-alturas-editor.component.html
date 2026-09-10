@@ -8,28 +8,31 @@
     </button>
   </div>
 
+
+  <argo-portal-seo-legend />
+
   <section class="psb-card">
     <h3 class="psb-card__title">Encabezado (hero)</h3>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
-        <span>Etiqueta pequeña</span>
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 1)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.titulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 2)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 2" />
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.tituloLinea2" />
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Subtítulo</span>
+      <argo-portal-field-label tag="p" label="Subtítulo" />
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.subtitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto principal del inicio</span>
+      <argo-portal-field-label tag="p" label="Texto principal del inicio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.heroLead"></textarea>
     </label>
     <argo-portal-promo-hero-fields-editor
@@ -83,7 +86,7 @@
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.fraseFinal" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Aviso legal / disclaimer</span>
+      <argo-portal-field-label tag="p" label="Aviso legal / disclaimer" />
       <textarea class="psb-input" rows="4" [(ngModel)]="trabajoEnAlturas.disclaimer"></textarea>
     </label>
   </section>
@@ -173,7 +176,7 @@
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.normativaTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="3" [(ngModel)]="trabajoEnAlturas.normativaLead"></textarea>
     </label>
     <p class="psb-note">Datos destacados</p>
@@ -193,7 +196,7 @@
             <input type="text" class="psb-input" [(ngModel)]="dest.valor" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Detalle</span>
+            <argo-portal-field-label tag="p" label="Detalle" />
             <input type="text" class="psb-input" [(ngModel)]="dest.detalle" />
           </label>
         </div>
@@ -259,7 +262,7 @@
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.metodologiaTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.metodologiaLead"></textarea>
     </label>
     @for (item of trabajoEnAlturas.metodologiaItems; track $index; let i = $index) {
@@ -273,7 +276,7 @@
           <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Descripción</span>
+          <argo-portal-field-label tag="p" label="Descripción" />
           <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
         </label>
       </div>
@@ -288,7 +291,7 @@
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.evaluacionTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.evaluacionLead"></textarea>
     </label>
     <argo-portal-editor-string-list [items]="trabajoEnAlturas.evaluacionDetalles" addLabel="+ Añadir detalle de EPI" />
@@ -301,7 +304,7 @@
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.sectorTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.sectorLead"></textarea>
     </label>
     @for (op of trabajoEnAlturas.sectorOperaciones; track $index; let i = $index) {
@@ -315,7 +318,7 @@
           <input type="text" class="psb-input" [(ngModel)]="op.titulo" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Descripción</span>
+          <argo-portal-field-label tag="p" label="Descripción" />
           <textarea class="psb-input" rows="2" [(ngModel)]="op.texto"></textarea>
         </label>
       </div>
@@ -330,7 +333,7 @@
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.tresCTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.tresCLead"></textarea>
     </label>
     @for (item of trabajoEnAlturas.tresCItems; track $index; let i = $index) {
@@ -344,7 +347,7 @@
           <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Descripción</span>
+          <argo-portal-field-label tag="p" label="Descripción" />
           <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
         </label>
       </div>
@@ -356,11 +359,11 @@
     <h3 class="psb-card__title">Módulos del curso (referencia)</h3>
     <p class="psb-note">Lista de módulos para referencia o futura sección en la página.</p>
     <label class="psb-field psb-field--plain">
-      <span>Título de la sección</span>
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.modulosTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.modulosLead"></textarea>
     </label>
     @for (mod of trabajoEnAlturas.modulos; track $index; let i = $index) {
@@ -412,11 +415,11 @@
   <section class="psb-card">
     <h3 class="psb-card__title">Biblioteca de documentos PDF</h3>
     <label class="psb-field psb-field--plain">
-      <span>Título de la sección</span>
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.documentosTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.documentosLead"></textarea>
     </label>
     @for (grupo of trabajoEnAlturas.documentosGrupos; track $index; let gi = $index) {
@@ -431,7 +434,7 @@
             <input type="text" class="psb-input" [(ngModel)]="grupo.id" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Etiqueta (kicker)</span>
+            <argo-portal-field-label tag="p" label="Etiqueta (kicker)" />
             <input type="text" class="psb-input" [(ngModel)]="grupo.kicker" />
           </label>
         </div>
@@ -454,7 +457,7 @@
               <input type="text" class="psb-input" [(ngModel)]="doc.titulo" />
             </label>
             <label class="psb-field psb-field--plain">
-              <span>Descripción</span>
+              <argo-portal-field-label tag="p" label="Descripción" />
               <textarea class="psb-input" rows="2" [(ngModel)]="doc.descripcion"></textarea>
             </label>
             <div class="psb-grid2">

@@ -7,6 +7,8 @@
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
 
+  <argo-portal-seo-legend />
+
   <argo-portal-promo-hero-imagen-editor
     pageKey="examenTeorico"
     [hero]="examenTeorico"
@@ -19,7 +21,7 @@
   <h3 class="psb-subtitle">Sección del inicio</h3>
   <div class="pete-card">
     <label class="psb-field psb-field--plain">
-      <span>Etiqueta (kicker)</span>
+      <argo-portal-field-label tag="p" label="Etiqueta (kicker)" />
       <input type="text" class="psb-input" [(ngModel)]="examenTeorico.kicker" />
     </label>
     <div class="psb-grid2">
@@ -121,7 +123,7 @@
         <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Subtítulo</span>
+        <argo-portal-field-label tag="p" label="Subtítulo" />
         <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.subtitulo" />
       </label>
     </div>
@@ -130,7 +132,7 @@
       <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.titulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="examenTeorico.normograma.lead"></textarea>
     </label>
   </div>
@@ -192,7 +194,7 @@
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="examenTeorico.resolucionesLead"></textarea>
     </label>
   </div>

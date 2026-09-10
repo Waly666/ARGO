@@ -7,6 +7,8 @@
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
 
+  <argo-portal-seo-legend />
+
   <div class="pae-nav">
     @for (b of [
       { id: 'hero', label: 'Encabezado' },
@@ -103,7 +105,7 @@
           <input type="text" class="psb-input" [(ngModel)]="acerca.quienes.kicker" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="acerca.quienes.titulo" />
         </label>
       </div>
@@ -126,7 +128,7 @@
           <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.kicker" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.titulo" />
         </label>
       </div>
@@ -168,12 +170,12 @@
           <input type="text" class="psb-input" [(ngModel)]="acerca.valores.kicker" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="acerca.valores.titulo" />
         </label>
       </div>
       <label class="psb-field psb-field--plain">
-        <span>Texto introductorio</span>
+        <argo-portal-field-label tag="p" label="Texto introductorio" />
         <textarea class="psb-input" rows="2" [(ngModel)]="acerca.valores.lead"></textarea>
       </label>
       @for (v of acerca.valores.items; track $index; let i = $index) {

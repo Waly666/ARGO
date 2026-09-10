@@ -20,14 +20,20 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+
 @Component({
   selector: 'argo-portal-primeros-auxilios-editor',
   standalone: true,
   imports: [
+    PortalEditorFaqListComponent,
+    PortalEditorStringListComponent,
+    PortalFieldLabelComponent,
+    PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
-    PortalEditorStringListComponent,
-    PortalEditorFaqListComponent,
     CatalogoEnumBuscarComponent,
   ],
   templateUrl: './portal-primeros-auxilios-editor.component.html',

@@ -83,8 +83,8 @@ export class AulaVirtualSitioComponent implements OnInit {
     this.svc.obtenerPortal().subscribe({
       next: (p) => {
         Object.assign(this.portalForm, p);
-        this.portalForm.landing = mergePortalLanding(p.landing);
         this.portalForm.site = mergePortalSiteDefaults(p.site);
+        this.portalForm.landing = mergePortalLanding(p.landing, this.portalForm.site?.tema);
         this.portalPublicUrlConfigured.set(p.portalPublicUrl || '');
       },
       error: () => this.toast('No se pudo cargar la configuración del sitio', true),

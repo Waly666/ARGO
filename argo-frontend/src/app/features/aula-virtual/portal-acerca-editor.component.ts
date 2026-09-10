@@ -16,10 +16,20 @@ import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt
 
 type AcercaBloque = 'hero' | 'quienes' | 'contacto' | 'valores' | 'cta';
 
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
 @Component({
   selector: 'argo-portal-acerca-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent, PortalEditorImagenPromptComponent],
+  imports: [
+    PortalEditorImagenPromptComponent,
+    PortalFieldLabelComponent,
+    PortalPromoHeroFieldsEditorComponent,
+    PortalSeoLegendComponent,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './portal-acerca-editor.component.html',
   styleUrl: './portal-acerca-editor.component.scss',
 })

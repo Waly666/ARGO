@@ -1,0 +1,28 @@
+<div class="psb-grid3">
+  <label class="psb-field psb-field--plain">
+    <argo-portal-field-label tag="p" label="Etiqueta pequeña (kicker)" />
+    <input type="text" class="psb-input" [(ngModel)]="hero.kicker" />
+  </label>
+  <label class="psb-field psb-field--plain">
+    <argo-portal-field-label tag="H1" label="Título — línea 1" />
+    <input type="text" class="psb-input" [(ngModel)]="hero.titulo" />
+  </label>
+  @if (showTituloLinea2) {
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="H1" label="Título — línea 2" />
+      <input type="text" class="psb-input" [(ngModel)]="hero.tituloLinea2" />
+    </label>
+  }
+</div>
+@if (showSubtitulo) {
+  <label class="psb-field psb-field--plain">
+    <argo-portal-field-label tag="p" label="Subtítulo" />
+    <input type="text" class="psb-input" [(ngModel)]="hero.subtitulo" />
+  </label>
+}
+@if (showHeroLead) {
+  <label class="psb-field psb-field--plain">
+    <argo-portal-field-label tag="p" label="Texto principal del inicio" />
+    <textarea class="psb-input" rows="2" [(ngModel)]="hero.heroLead"></textarea>
+  </label>
+}

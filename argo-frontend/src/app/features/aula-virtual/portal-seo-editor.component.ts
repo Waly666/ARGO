@@ -55,10 +55,17 @@ const GRUPO_ICONS: Record<string, string> = {
 
 type CharState = 'empty' | 'ok' | 'warn' | 'over';
 
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+
 @Component({
   selector: 'argo-portal-seo-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent],
+  imports: [
+    PortalFieldLabelComponent,
+    CommonModule,
+    FormsModule,
+    FormModalComponent,
+  ],
   templateUrl: './portal-seo-editor.component.html',
   styleUrl: './portal-seo-editor.component.scss',
 })

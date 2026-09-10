@@ -10,6 +10,9 @@
     </button>
   </div>
 
+
+  <argo-portal-seo-legend />
+
   <section class="psb-card">
     <h3 class="psb-card__title">Encabezado / H1</h3>
     <label class="psb-field psb-field--plain">
@@ -17,7 +20,7 @@
       <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.h1" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Subtítulo</span>
+      <argo-portal-field-label tag="p" label="Subtítulo" />
       <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.heroLead"></textarea>
     </label>
     <div class="psb-grid3">

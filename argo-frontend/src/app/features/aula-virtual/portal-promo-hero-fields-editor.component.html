@@ -2,7 +2,7 @@
   @if (showTitle) {
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
-        <span>Etiqueta superior (kicker)</span>
+        <argo-portal-field-label tag="p" label="Etiqueta superior (kicker)" />
         <input type="text" class="psb-input" [(ngModel)]="hero.kicker" />
       </label>
       @if (showTheme) {
@@ -18,11 +18,11 @@
     </div>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 1)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="hero.tituloLinea" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título (línea 2 / acento)</span>
+        <argo-portal-field-label tag="H1" label="Título — línea 2 / acento" />
         <input type="text" class="psb-input" [(ngModel)]="hero.tituloAcento" />
         @if (tituloAcentoHint) {
           <span class="psb-hint">{{ tituloAcentoHint }}</span>
@@ -33,7 +33,7 @@
 
   @if (showLead) {
     <label class="psb-field psb-field--plain">
-      <span>Texto introductorio</span>
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
       <textarea class="psb-input" rows="3" [(ngModel)]="hero.lead"></textarea>
       <span class="psb-hint">Puede usar <code>{{ '{' }}nombreCea{{ '}' }}</code> para insertar el nombre de la empresa.</span>
     </label>
@@ -67,11 +67,11 @@
         <input type="text" class="psb-input" [(ngModel)]="hero.highlightIcon" placeholder="trophy" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título destacado</span>
+        <argo-portal-field-label tag="H3" label="Título destacado" />
         <input type="text" class="psb-input" [(ngModel)]="hero.highlightTitle" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Subtítulo</span>
+        <argo-portal-field-label tag="p" label="Subtítulo destacado" />
         <input type="text" class="psb-input" [(ngModel)]="hero.highlightSubtitle" />
       </label>
     </div>

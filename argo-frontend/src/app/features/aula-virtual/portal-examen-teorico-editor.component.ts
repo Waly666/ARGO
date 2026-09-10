@@ -12,10 +12,19 @@ import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/a
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
 @Component({
   selector: 'argo-portal-examen-teorico-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalPromoHeroImagenEditorComponent],
+  imports: [
+    PortalFieldLabelComponent,
+    PortalPromoHeroImagenEditorComponent,
+    PortalSeoLegendComponent,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './portal-examen-teorico-editor.component.html',
   styleUrl: './portal-examen-teorico-editor.component.scss',
 })

@@ -10,6 +10,7 @@ import {
   addStringItem,
   removeAt,
 } from './portal-landing-editor-helpers';
+import { PortalFieldLabelComponent } from './portal-field-label.component';
 
 export interface PortalPromoHeroEditorModel {
   kicker?: string;
@@ -35,7 +36,11 @@ export interface PortalPromoHeroEditorModel {
 @Component({
   selector: 'argo-portal-promo-hero-fields-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    PortalFieldLabelComponent,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './portal-promo-hero-fields-editor.component.html',
   styleUrl: './portal-promo-hero-fields-editor.component.scss',
 })

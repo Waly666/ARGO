@@ -56,8 +56,10 @@ import {
   FINSTRUVIAL_SERVICIOS_DEFAULTS,
 } from './finstruvial-servicios-defaults';
 import type { PortalFinstruvialServiciosConfig } from './finstruvial-servicio-landing.types';
-import { mergePortafolioServicios } from '../utils/portafolio-servicios.util';
+import { mergePortafolioServicios, portafolioServiciosEsServial } from '../utils/portafolio-servicios.util';
 import type { PortalTemaLike } from '../utils/portal-theme-css-base.util';
+import { SERVIAL_LANDING_DEFAULTS } from './servial-landing-defaults';
+import { buildServialLandingDefaults } from '../utils/servial-plantilla-inicio.util';
 import { PortalPromoHeroTheme } from './portal-promo-hero-fields.util';
 
 export type { PortalCursosConduccionLanding };
@@ -379,6 +381,7 @@ export interface PortalLandingConfig {
   jornadasCapacitacion: PortalJornadasCapacitacionLanding;
   evaluacionJornadas: PortalEvaluacionJornadasLanding;
   asistente: PortalAsistenteConfig;
+  servialPlantillaBase?: import('../utils/servial-plantilla-inicio.util').ServialPlantillaInicioSnapshot | null;
 }
 
 export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
@@ -962,11 +965,16 @@ export function mergePortalLanding(
   raw?: Partial<PortalLandingConfig> | null,
   tema?: PortalTemaLike | null,
 ): PortalLandingConfig {
-  const d = PORTAL_LANDING_DEFAULTS;
+  const esServial = portafolioServiciosEsServial(tema);
+  const factory = esServial
+    ? ({ ...PORTAL_LANDING_DEFAULTS, ...SERVIAL_LANDING_DEFAULTS } as PortalLandingConfig)
+    : PORTAL_LANDING_DEFAULTS;
+  const d = esServial ? buildServialLandingDefaults(factory, raw) : PORTAL_LANDING_DEFAULTS;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
   return {
     ...d,
     ...raw,
+    servialPlantillaBase: raw.servialPlantillaBase ?? null,
     ofertas: { ...d.ofertas, ...raw.ofertas, items: raw.ofertas?.items?.length ? raw.ofertas.items : d.ofertas.items },
     beneficios: {
       ...d.beneficios,

@@ -13,10 +13,20 @@ import { environment } from '../../../environments/environment';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
 @Component({
   selector: 'argo-portal-fundacion-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent, PortalEditorImagenPromptComponent],
+  imports: [
+    PortalEditorImagenPromptComponent,
+    PortalFieldLabelComponent,
+    PortalPromoHeroFieldsEditorComponent,
+    PortalSeoLegendComponent,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './portal-fundacion-editor.component.html',
   styleUrl: './portal-fundacion-editor.component.scss',
 })

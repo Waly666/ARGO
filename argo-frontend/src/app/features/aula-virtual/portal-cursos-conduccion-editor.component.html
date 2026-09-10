@@ -7,6 +7,8 @@
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
 
+  <argo-portal-seo-legend />
+
   <div class="pcc-stack">
     <h3 class="psb-subtitle">Encabezado de la página</h3>
     <label class="psb-field psb-field--plain">
@@ -149,7 +151,7 @@
     <h3 class="psb-subtitle">Bloque motivacional (después del encabezado)</h3>
     <div class="pcc-card">
       <label class="psb-field psb-field--plain">
-        <span>Etiqueta pequeña</span>
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
@@ -178,7 +180,7 @@
             </label>
           </div>
           <label class="psb-field psb-field--plain">
-            <span>Descripción</span>
+            <argo-portal-field-label tag="p" label="Descripción" />
             <textarea class="psb-input" rows="2" [(ngModel)]="b.texto"></textarea>
           </label>
           <button type="button" class="psb-link" (click)="removeBeneficio($index)">Quitar tarjeta</button>
@@ -245,16 +247,16 @@
     <div class="pcc-card">
       <div class="psb-grid2">
         <label class="psb-field psb-field--plain">
-          <span>Etiqueta pequeña</span>
+          <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
           <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.licencias.kicker" />
         </label>
         <label class="psb-field psb-field--plain">
-          <span>Título de la sección</span>
+          <argo-portal-field-label tag="H2" label="Título de la sección" />
           <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.licencias.titulo" />
         </label>
       </div>
       <label class="psb-field psb-field--plain">
-        <span>Texto introductorio</span>
+        <argo-portal-field-label tag="p" label="Texto introductorio" />
         <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.licencias.lead"></textarea>
       </label>
     </div>
@@ -275,7 +277,7 @@
             <input type="text" class="psb-input" [(ngModel)]="item.codigo" placeholder="A2" />
           </label>
           <label class="psb-field psb-field--plain">
-            <span>Título tarjeta</span>
+            <argo-portal-field-label tag="H3" label="Título tarjeta" />
             <input type="text" class="psb-input" [(ngModel)]="item.titulo" placeholder="Categoría A2" />
           </label>
         </div>

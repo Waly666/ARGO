@@ -26,6 +26,10 @@ import { mergePortafolioServicios, portafolioServiciosEsServial } from './portaf
 import type { PortalTemaLike } from './portal-theme-css.util';
 import { SERVIAL_LANDING_DEFAULTS } from './constants/servial-landing-defaults';
 import { mergePromoHeroPillars, type PortalPromoHeroTheme } from './constants/portal-promo-hero-fields.util';
+import {
+  buildServialLandingDefaults,
+  type ServialPlantillaInicioSnapshot,
+} from './servial-plantilla-inicio.util';
 
 export type { PortalFinstruvialServiciosConfig };
 
@@ -339,6 +343,8 @@ export interface PortalLandingConfig {
   evaluacionJornadas: PortalEvaluacionJornadasLanding;
   finstruvialServicios: PortalFinstruvialServiciosConfig;
   asistente: PortalAsistenteConfig;
+  /** Snapshot de textos del inicio Servial (plantilla personalizada del cliente). */
+  servialPlantillaBase?: ServialPlantillaInicioSnapshot | null;
 }
 
 export interface PortalAsistentePaginaConfig {
@@ -689,111 +695,86 @@ function mergePublicidad(
   };
 }
 
+function servialLandingFactory(): PortalLandingConfig {
+  return {
+    ...PORTAL_LANDING_FALLBACK,
+    ...SERVIAL_LANDING_DEFAULTS,
+  } as PortalLandingConfig;
+}
+
 export function mergePortalLanding(
   raw?: Partial<PortalLandingConfig> | null,
   tema?: PortalTemaLike | null,
 ): PortalLandingConfig {
   const esServial = portafolioServiciosEsServial(tema);
-  const d = esServial
-    ? ({
-        ...PORTAL_LANDING_FALLBACK,
-        ...SERVIAL_LANDING_DEFAULTS,
-      } as PortalLandingConfig)
-    : PORTAL_LANDING_FALLBACK;
+  const d = esServial ? buildServialLandingDefaults(servialLandingFactory(), raw) : PORTAL_LANDING_FALLBACK;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
   return {
     ...d,
-    ...(esServial ? {} : raw),
-    instBarTag: esServial ? d.instBarTag : raw.instBarTag?.trim() || d.instBarTag,
-    quoteText: esServial ? d.quoteText : raw.quoteText?.trim() || d.quoteText,
-    quoteLabel: esServial ? d.quoteLabel : raw.quoteLabel?.trim() || d.quoteLabel,
-    metaDescription: esServial ? d.metaDescription : raw.metaDescription?.trim() || d.metaDescription,
-    metaKeywords: esServial ? d.metaKeywords : raw.metaKeywords?.trim() || d.metaKeywords,
-    ofertas: esServial
-      ? { ...d.ofertas, items: d.ofertas.items.map((item) => ({ ...item })) }
-      : { ...d.ofertas, ...raw.ofertas, items: raw.ofertas?.items?.length ? raw.ofertas.items : d.ofertas.items },
-    beneficios: esServial
-      ? { ...d.beneficios, items: d.beneficios.items.map((item) => ({ ...item })) }
-      : {
-          ...d.beneficios,
-          ...raw.beneficios,
-          items: raw.beneficios?.items?.length ? raw.beneficios.items : d.beneficios.items,
-        },
-    licencias: esServial
-      ? {
-          ...d.licencias,
-          items: d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
-        }
-      : {
-          ...d.licencias,
-          ...raw.licencias,
-          items: raw.licencias?.items?.length
-            ? raw.licencias.items.map((item, i) => ({
-                ...d.licencias.items[i],
-                ...item,
-                incluye: item.incluye?.length ? item.incluye : d.licencias.items[i]?.incluye || [],
-              }))
-            : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
-        },
+    instBarTag: raw.instBarTag?.trim() || d.instBarTag,
+    quoteText: raw.quoteText?.trim() || d.quoteText,
+    quoteLabel: raw.quoteLabel?.trim() || d.quoteLabel,
+    metaDescription: raw.metaDescription?.trim() || d.metaDescription,
+    metaKeywords: raw.metaKeywords?.trim() || d.metaKeywords,
+    servialPlantillaBase: raw.servialPlantillaBase ?? null,
+    ofertas: { ...d.ofertas, ...raw.ofertas, items: raw.ofertas?.items?.length ? raw.ofertas.items : d.ofertas.items },
+    beneficios: {
+      ...d.beneficios,
+      ...raw.beneficios,
+      items: raw.beneficios?.items?.length ? raw.beneficios.items : d.beneficios.items,
+    },
+    licencias: {
+      ...d.licencias,
+      ...raw.licencias,
+      items: raw.licencias?.items?.length
+        ? raw.licencias.items.map((item, i) => ({
+            ...d.licencias.items[i],
+            ...item,
+            incluye: item.incluye?.length ? item.incluye : d.licencias.items[i]?.incluye || [],
+          }))
+        : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+    },
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
     manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo),
     primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios),
-    servicios: esServial
-      ? { ...d.servicios }
-      : {
-          ...d.servicios,
-          ...raw.servicios,
-          items: mergeServiciosItems(raw.servicios?.items, d.servicios.items),
-        },
-    valores: esServial
-      ? { ...d.valores, items: d.valores.items.map((item) => ({ ...item })) }
-      : {
-          ...d.valores,
-          ...raw.valores,
-          items: raw.valores?.items?.length ? raw.valores.items : d.valores.items,
-        },
-    testimonios: esServial
-      ? { ...d.testimonios, items: d.testimonios.items.map((item) => ({ ...item })) }
-      : {
-          ...d.testimonios,
-          ...raw.testimonios,
-          items: raw.testimonios?.items?.length ? raw.testimonios.items : d.testimonios.items,
-        },
-    pasos: esServial
-      ? { ...d.pasos, items: d.pasos.items.map((item) => ({ ...item })) }
-      : {
-          ...d.pasos,
-          ...raw.pasos,
-          items: raw.pasos?.items?.length ? raw.pasos.items : d.pasos.items,
-        },
-    appMobile: esServial
-      ? {
-          ...d.appMobile,
-          apkUrl: raw.appMobile?.apkUrl?.trim() || d.appMobile.apkUrl,
-          apkNombre: raw.appMobile?.apkNombre?.trim() || d.appMobile.apkNombre,
-        }
-      : {
-          ...d.appMobile,
-          ...raw.appMobile,
-          features: raw.appMobile?.features?.length ? raw.appMobile.features : d.appMobile.features,
-        },
-    faq: esServial
-      ? { ...d.faq, items: d.faq.items.map((item) => ({ ...item })) }
-      : {
-          ...d.faq,
-          ...raw.faq,
-          items: raw.faq?.items?.length ? raw.faq.items : d.faq.items,
-        },
-    cursos: esServial ? { ...d.cursos } : { ...d.cursos, ...raw.cursos },
-    catalogo: esServial ? { ...d.catalogo } : { ...d.catalogo, ...raw.catalogo },
-    hero: esServial ? { ...d.hero } : { ...d.hero, ...raw.hero },
-    infoCards: esServial ? d.infoCards.map((card) => ({ ...card })) : raw.infoCards?.length ? raw.infoCards : d.infoCards,
+    servicios: {
+      ...d.servicios,
+      ...raw.servicios,
+      items: mergeServiciosItems(raw.servicios?.items, d.servicios.items),
+    },
+    valores: {
+      ...d.valores,
+      ...raw.valores,
+      items: raw.valores?.items?.length ? raw.valores.items : d.valores.items,
+    },
+    testimonios: {
+      ...d.testimonios,
+      ...raw.testimonios,
+      items: raw.testimonios?.items?.length ? raw.testimonios.items : d.testimonios.items,
+    },
+    pasos: {
+      ...d.pasos,
+      ...raw.pasos,
+      items: raw.pasos?.items?.length ? raw.pasos.items : d.pasos.items,
+    },
+    appMobile: {
+      ...d.appMobile,
+      ...raw.appMobile,
+      features: raw.appMobile?.features?.length ? raw.appMobile.features : d.appMobile.features,
+    },
+    faq: {
+      ...d.faq,
+      ...raw.faq,
+      items: raw.faq?.items?.length ? raw.faq.items : d.faq.items,
+    },
+    cursos: { ...d.cursos, ...raw.cursos },
+    catalogo: { ...d.catalogo, ...raw.catalogo },
+    hero: { ...d.hero, ...raw.hero },
+    infoCards: raw.infoCards?.length ? raw.infoCards : d.infoCards,
     nav: { ...d.nav, ...raw.nav },
-    footer: esServial
-      ? { ...d.footer, copyright: raw.footer?.copyright?.trim() || d.footer.copyright }
-      : { ...d.footer, ...raw.footer },
+    footer: { ...d.footer, ...raw.footer },
     blog: {
       ...d.blog,
       ...raw.blog,
@@ -821,20 +802,13 @@ export function mergePortalLanding(
       ...raw.carreras,
       items: raw.carreras?.items?.length ? raw.carreras.items : d.carreras.items,
     },
-    pilares: esServial
-      ? {
-          tabCapacitacion: d.pilares.tabCapacitacion,
-          tabCampanas: d.pilares.tabCampanas,
-          capacitacion: [...d.pilares.capacitacion],
-          campanas: [...d.pilares.campanas],
-        }
-      : {
-          tabCapacitacion: raw.pilares?.tabCapacitacion ?? d.pilares.tabCapacitacion,
-          tabCampanas: raw.pilares?.tabCampanas ?? d.pilares.tabCampanas,
-          capacitacion: raw.pilares?.capacitacion?.length ? raw.pilares.capacitacion : d.pilares.capacitacion,
-          campanas: raw.pilares?.campanas?.length ? raw.pilares.campanas : d.pilares.campanas,
-        },
-    footerServicios: esServial ? [...d.footerServicios] : raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
+    pilares: {
+      tabCapacitacion: raw.pilares?.tabCapacitacion ?? d.pilares.tabCapacitacion,
+      tabCampanas: raw.pilares?.tabCampanas ?? d.pilares.tabCampanas,
+      capacitacion: raw.pilares?.capacitacion?.length ? raw.pilares.capacitacion : d.pilares.capacitacion,
+      campanas: raw.pilares?.campanas?.length ? raw.pilares.campanas : d.pilares.campanas,
+    },
+    footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
     fundacion: mergeFundacionLanding(raw.fundacion),
     acerca: mergeAcercaLanding(raw.acerca),
     cursosConduccion: mergeCursosConduccionLanding(raw.cursosConduccion),

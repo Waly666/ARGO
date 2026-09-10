@@ -22,15 +22,21 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+
 @Component({
   selector: 'argo-portal-manejo-defensivo-editor',
   standalone: true,
   imports: [
+    PortalEditorEnlacesRelacionadosComponent,
+    PortalEditorFaqListComponent,
+    PortalEditorStringListComponent,
+    PortalFieldLabelComponent,
+    PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
-    PortalEditorStringListComponent,
-    PortalEditorFaqListComponent,
-    PortalEditorEnlacesRelacionadosComponent,
     CatalogoEnumBuscarComponent,
   ],
   templateUrl: './portal-manejo-defensivo-editor.component.html',

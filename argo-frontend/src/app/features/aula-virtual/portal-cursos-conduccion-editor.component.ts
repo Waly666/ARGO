@@ -16,10 +16,20 @@ import { environment } from '../../../environments/environment';
 import { PortalEditorEnlacesRelacionadosComponent } from './portal-editor-enlaces-relacionados.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
+import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+
 @Component({
   selector: 'argo-portal-cursos-conduccion-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalEditorImagenPromptComponent, PortalEditorEnlacesRelacionadosComponent],
+  imports: [
+    PortalEditorEnlacesRelacionadosComponent,
+    PortalEditorImagenPromptComponent,
+    PortalFieldLabelComponent,
+    PortalSeoLegendComponent,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './portal-cursos-conduccion-editor.component.html',
   styleUrl: './portal-cursos-conduccion-editor.component.scss',
 })
