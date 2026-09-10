@@ -94,6 +94,15 @@
           </select>
         </div>
         <div class="field">
+          <label>Actor vial @if (!alumnoEnArgo()) { * }</label>
+          <select [(ngModel)]="form.actorVial">
+            <option value="">Seleccione…</option>
+            @for (a of actoresViales(); track catValor(a)) {
+              <option [value]="catValor(a)">{{ catEtiqueta(a) }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
           <label>Fecha nacimiento</label>
           <input type="date" [(ngModel)]="form.fechaNac" />
         </div>

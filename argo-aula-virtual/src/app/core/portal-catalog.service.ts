@@ -30,6 +30,10 @@ export class PortalCatalogService {
     return this.http.get<Record<string, unknown>[]>(`${this.base}/generos`);
   }
 
+  actoresViales(): Observable<Record<string, unknown>[]> {
+    return this.http.get<Record<string, unknown>[]>(`${this.base}/actores-viales`);
+  }
+
   departamentos(): Observable<DeptoDivipola[]> {
     return this.http.get<DeptoDivipola[]>(`${this.base}/departamentos`);
   }

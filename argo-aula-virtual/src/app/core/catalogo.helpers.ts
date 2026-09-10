@@ -3,6 +3,7 @@ export function catValor(item: Record<string, unknown>): string {
   const v =
     item['idTipoDoc'] ??
     item['idGenero'] ??
+    item['idActorVial'] ??
     item['id'] ??
     item['codigo'] ??
     item['_id'];
@@ -41,4 +42,12 @@ export const TIPOS_DOC_FALLBACK: Record<string, unknown>[] = [
 export const GENEROS_FALLBACK: Record<string, unknown>[] = [
   { idGenero: 'M', descripcion: 'M' },
   { idGenero: 'F', descripcion: 'F' },
+];
+
+export const ACTOR_VIAL_FALLBACK: Record<string, unknown>[] = [
+  { idActorVial: '1', descripcion: '1) PEATÓN' },
+  { idActorVial: '2', descripcion: '2) CONDUCTOR' },
+  { idActorVial: '3', descripcion: '3) CICLISTA' },
+  { idActorVial: '4', descripcion: '4) MOTOCICLISTA' },
+  { idActorVial: '5', descripcion: '5) PASAJERO' },
 ];
