@@ -131,7 +131,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   navEntries = computed((): ShellNavEntry[] => {
     const items = this.navItems();
     const servicios = this.landing().finstruvialServicios;
-    if (!finstruvialPortafolioActivo(servicios)) {
+    if (!paginaActiva(this.config(), 'servicios') || !finstruvialPortafolioActivo(servicios)) {
       return items.map((item) => ({ kind: 'link' as const, ...item }));
     }
     const submenu: ShellNavEntry = {
@@ -175,7 +175,8 @@ export class ShellComponent implements OnInit, AfterViewInit {
         label: etiquetaPagina(cfg, p.key, nav[p.key as keyof typeof nav] as string),
         route: p.route,
       }));
-    const serviciosEnlace: FooterEnlace[] = finstruvialPortafolioActivo(this.landing().finstruvialServicios)
+    const serviciosEnlace: FooterEnlace[] =
+      paginaActiva(cfg, 'servicios') && finstruvialPortafolioActivo(this.landing().finstruvialServicios)
         ? [
             {
               label: this.landing().finstruvialServicios.menuLabel || 'Servicios',
@@ -183,11 +184,23 @@ export class ShellComponent implements OnInit, AfterViewInit {
             },
           ]
         : [{ label: 'Servicios', route: '/', fragment: 'servicios-empresa' }];
+    const extras: FooterEnlace[] = [];
+    if (paginaActiva(cfg, 'manejoDefensivo')) {
+      extras.push({
+        label: etiquetaPagina(cfg, 'manejoDefensivo', 'Manejo defensivo'),
+        route: '/curso-manejo-defensivo',
+      });
+    }
+    if (paginaActiva(cfg, 'primerosAuxilios')) {
+      extras.push({
+        label: etiquetaPagina(cfg, 'primerosAuxilios', 'Primeros auxilios'),
+        route: '/curso-primeros-auxilios',
+      });
+    }
     return [
       ...pages,
       ...serviciosEnlace,
-      { label: 'Manejo defensivo', route: '/curso-manejo-defensivo' },
-      { label: 'Primeros auxilios', route: '/curso-primeros-auxilios' },
+      ...extras,
       { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
       { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
       { label: 'Contacto', route: '/acerca', fragment: 'contacto' },
@@ -221,10 +234,26 @@ export class ShellComponent implements OnInit, AfterViewInit {
   nombreCea = computed(() => this.config()?.nombreCea || DEFAULT_CEA_NOMBRE);
 
   paginaActivaConsulta = computed(() => paginaActiva(this.config(), 'consultaCertificados'));
+  paginaActivaJornadas = computed(() => paginaActiva(this.config(), 'jornadasCapacitacion'));
+  paginaActivaEvaluacionJornadas = computed(() => paginaActiva(this.config(), 'evaluacionJornadas'));
+  paginaActivaPqr = computed(() => paginaActiva(this.config(), 'pqr'));
+  paginaActivaManejoDefensivo = computed(() => paginaActiva(this.config(), 'manejoDefensivo'));
+  paginaActivaPrimerosAuxilios = computed(() => paginaActiva(this.config(), 'primerosAuxilios'));
+  paginaActivaServicios = computed(() => paginaActiva(this.config(), 'servicios'));
 
   etiquetaConsultaCertificados = computed(() =>
     etiquetaPagina(this.config(), 'consultaCertificados', this.landing().nav.consultaCertificados),
   );
+
+  etiquetaJornadas = computed(() =>
+    etiquetaPagina(this.config(), 'jornadasCapacitacion', 'Jornadas de capacitación'),
+  );
+
+  etiquetaEvaluacionJornadas = computed(() =>
+    etiquetaPagina(this.config(), 'evaluacionJornadas', 'Evaluación de satisfacción'),
+  );
+
+  etiquetaPqr = computed(() => etiquetaPagina(this.config(), 'pqr', 'PQR'));
 
   /** Texto junto al logo en el header (marca corta). */
   brandMarca = computed(() =>

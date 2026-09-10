@@ -69,6 +69,47 @@ function paginasDefault(nav = {}) {
       etiquetaMenu: nav.cursosConduccion || 'Cursos conducción',
       ruta: '/cursos-conduccion',
     },
+    examenTeorico: {
+      activa: true,
+      etiquetaMenu: nav.examenTeorico || 'Examen teórico',
+      ruta: '/examen-teorico',
+    },
+    mercanciasPeligrosas: {
+      activa: true,
+      etiquetaMenu: nav.mercanciasPeligrosas || 'Mercancías peligrosas',
+      ruta: '/mercancias-peligrosas',
+    },
+    trabajoEnAlturas: {
+      activa: true,
+      etiquetaMenu: nav.trabajoEnAlturas || 'Trabajo en alturas',
+      ruta: '/trabajo-en-alturas',
+    },
+    manejoDefensivo: {
+      activa: true,
+      etiquetaMenu: nav.manejoDefensivo || 'Manejo defensivo',
+      ruta: '/curso-manejo-defensivo',
+    },
+    primerosAuxilios: {
+      activa: true,
+      etiquetaMenu: nav.primerosAuxilios || 'Primeros auxilios',
+      ruta: '/curso-primeros-auxilios',
+    },
+    servicios: {
+      activa: true,
+      etiquetaMenu: nav.servicios || 'Portafolio de servicios',
+      ruta: '/servicios',
+    },
+    jornadasCapacitacion: {
+      activa: true,
+      etiquetaMenu: nav.jornadasCapacitacion || 'Jornadas de capacitación',
+      ruta: '/jornadas-capacitacion',
+    },
+    evaluacionJornadas: {
+      activa: true,
+      etiquetaMenu: nav.evaluacionJornadas || 'Evaluación de jornadas',
+      ruta: '/evaluacion-jornadas',
+    },
+    pqr: { activa: true, etiquetaMenu: nav.pqr || 'PQR', ruta: '/pqr' },
     blog: { activa: true, etiquetaMenu: nav.blog || 'Blog', ruta: '/blog' },
     galeria: { activa: true, etiquetaMenu: nav.galeria || 'Galería', ruta: '/galeria' },
     acerca: { activa: true, etiquetaMenu: nav.acerca || 'Acerca de', ruta: '/acerca' },

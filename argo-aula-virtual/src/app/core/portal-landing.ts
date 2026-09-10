@@ -1,7 +1,7 @@
 import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaults';
 import { DEFAULT_CEA_NOMBRE } from './portal-brand-defaults';
 import { PortalPaginaKey } from './portal-site';
-import { mergePortalAsistente, type LegacyConsultaAsistente } from './portal-asistente.util';
+import { defaultAsistentePaginas, mergePortalAsistente, type LegacyConsultaAsistente } from './portal-asistente.util';
 import {
   ACERCA_LANDING_DEFAULTS,
   mergeAcercaLanding,
@@ -616,18 +616,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   ) as PortalFinstruvialServiciosConfig,
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
-    paginas: {
-      home: { activo: false, texto: '' },
-      tienda: { activo: false, texto: '' },
-      cursos: { activo: false, texto: '' },
-      aula: { activo: false, texto: '' },
-      fundacion: { activo: false, texto: '' },
-      consultaCertificados: { activo: false, texto: PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT },
-      cursosConduccion: { activo: false, texto: '' },
-      galeria: { activo: false, texto: '' },
-      blog: { activo: false, texto: '' },
-      acerca: { activo: false, texto: '' },
-    },
+    paginas: defaultAsistentePaginas(),
   },
 };
 

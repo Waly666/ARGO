@@ -5,7 +5,11 @@ import {
   PortalFundacionLanding,
 } from './fundacion-landing-defaults';
 import { PortalPaginaKey } from './portal-site-defaults';
-import { mergePortalAsistente, type LegacyConsultaAsistente } from '../utils/portal-asistente.util';
+import {
+  defaultAsistentePaginas,
+  mergePortalAsistente,
+  type LegacyConsultaAsistente,
+} from '../utils/portal-asistente.util';
 import {
   CURSOS_CONDUCCION_LANDING_DEFAULTS,
   mergeCursosConduccionLanding,
@@ -912,18 +916,7 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   ) as PortalEvaluacionJornadasLanding,
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
-    paginas: {
-      home: { activo: false, texto: '' },
-      tienda: { activo: false, texto: '' },
-      cursos: { activo: false, texto: '' },
-      aula: { activo: false, texto: '' },
-      fundacion: { activo: false, texto: '' },
-      consultaCertificados: { activo: false, texto: PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT },
-      cursosConduccion: { activo: false, texto: '' },
-      galeria: { activo: false, texto: '' },
-      blog: { activo: false, texto: '' },
-      acerca: { activo: false, texto: '' },
-    },
+    paginas: defaultAsistentePaginas(),
   },
 };
 

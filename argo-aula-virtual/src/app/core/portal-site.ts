@@ -8,6 +8,15 @@ export type PortalPaginaKey =
   | 'fundacion'
   | 'consultaCertificados'
   | 'cursosConduccion'
+  | 'examenTeorico'
+  | 'mercanciasPeligrosas'
+  | 'trabajoEnAlturas'
+  | 'manejoDefensivo'
+  | 'primerosAuxilios'
+  | 'servicios'
+  | 'jornadasCapacitacion'
+  | 'evaluacionJornadas'
+  | 'pqr'
   | 'galeria'
   | 'blog'
   | 'acerca';
@@ -20,6 +29,15 @@ const RUTA_PAGINA: Record<PortalPaginaKey, string> = {
   fundacion: '/fundacion',
   consultaCertificados: '/consulta-certificados',
   cursosConduccion: '/cursos-conduccion',
+  examenTeorico: '/examen-teorico',
+  mercanciasPeligrosas: '/mercancias-peligrosas',
+  trabajoEnAlturas: '/trabajo-en-alturas',
+  manejoDefensivo: '/curso-manejo-defensivo',
+  primerosAuxilios: '/curso-primeros-auxilios',
+  servicios: '/servicios',
+  jornadasCapacitacion: '/jornadas-capacitacion',
+  evaluacionJornadas: '/evaluacion-jornadas',
+  pqr: '/pqr',
   galeria: '/galeria',
   blog: '/blog',
   acerca: '/acerca',
@@ -124,6 +142,8 @@ export function clavePaginaPorRuta(path: string): PortalPaginaKey | null {
   if (base === '/' || base === '') return 'home';
   if (base.startsWith('/cursos/')) return 'cursos';
   if (base === '/blog' || base.startsWith('/blog/')) return 'blog';
+  if (base === '/primeros-auxilios') return 'primerosAuxilios';
+  if (base === '/servicios' || base.startsWith('/servicios/')) return 'servicios';
   for (const [key, ruta] of Object.entries(RUTA_PAGINA)) {
     if (ruta !== '/' && base === ruta) return key as PortalPaginaKey;
   }

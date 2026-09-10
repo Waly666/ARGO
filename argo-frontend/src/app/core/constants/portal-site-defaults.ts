@@ -14,6 +14,15 @@ export type PortalPaginaKey =
   | 'fundacion'
   | 'consultaCertificados'
   | 'cursosConduccion'
+  | 'examenTeorico'
+  | 'mercanciasPeligrosas'
+  | 'trabajoEnAlturas'
+  | 'manejoDefensivo'
+  | 'primerosAuxilios'
+  | 'servicios'
+  | 'jornadasCapacitacion'
+  | 'evaluacionJornadas'
+  | 'pqr'
   | 'galeria'
   | 'blog'
   | 'acerca';
@@ -124,6 +133,28 @@ export const PORTAL_HOME_SECCIONES_LABELS: Record<string, string> = {
   pilares: 'Capacitación y campañas',
 };
 
+export const PORTAL_PAGINA_RUTAS: Record<PortalPaginaKey, string> = {
+  home: '/',
+  tienda: '/tienda',
+  cursos: '/cursos',
+  aula: '/aula',
+  fundacion: '/fundacion',
+  acerca: '/acerca',
+  consultaCertificados: '/consulta-certificados',
+  cursosConduccion: '/cursos-conduccion',
+  examenTeorico: '/examen-teorico',
+  mercanciasPeligrosas: '/mercancias-peligrosas',
+  trabajoEnAlturas: '/trabajo-en-alturas',
+  manejoDefensivo: '/curso-manejo-defensivo',
+  primerosAuxilios: '/curso-primeros-auxilios',
+  servicios: '/servicios',
+  jornadasCapacitacion: '/jornadas-capacitacion',
+  evaluacionJornadas: '/evaluacion-jornadas',
+  pqr: '/pqr',
+  blog: '/blog',
+  galeria: '/galeria',
+};
+
 export const PORTAL_PAGINA_META: { key: PortalPaginaKey; titulo: string; descripcion: string }[] = [
   { key: 'home', titulo: 'Inicio', descripcion: 'Página principal del portal' },
   { key: 'cursos', titulo: 'Cursos', descripcion: 'Catálogo de cursos y programas' },
@@ -137,6 +168,43 @@ export const PORTAL_PAGINA_META: { key: PortalPaginaKey; titulo: string; descrip
     titulo: 'Cursos conducción',
     descripcion: 'Categorías de licencia y resoluciones del CEA',
   },
+  { key: 'examenTeorico', titulo: 'Examen teórico', descripcion: 'Normatividad y requisitos del examen teórico' },
+  {
+    key: 'mercanciasPeligrosas',
+    titulo: 'Mercancías peligrosas',
+    descripcion: 'Curso y landing de mercancías peligrosas',
+  },
+  {
+    key: 'trabajoEnAlturas',
+    titulo: 'Trabajo en alturas',
+    descripcion: 'Curso y landing de trabajo seguro en alturas',
+  },
+  {
+    key: 'manejoDefensivo',
+    titulo: 'Manejo defensivo',
+    descripcion: 'Curso y landing de manejo defensivo',
+  },
+  {
+    key: 'primerosAuxilios',
+    titulo: 'Primeros auxilios',
+    descripcion: 'Curso y landing de primeros auxilios',
+  },
+  {
+    key: 'servicios',
+    titulo: 'Portafolio de servicios',
+    descripcion: 'Hub /servicios y páginas de línea de servicio',
+  },
+  {
+    key: 'jornadasCapacitacion',
+    titulo: 'Jornadas de capacitación',
+    descripcion: 'Inscripción a jornadas presenciales',
+  },
+  {
+    key: 'evaluacionJornadas',
+    titulo: 'Evaluación de jornadas',
+    descripcion: 'Encuesta de satisfacción de jornadas',
+  },
+  { key: 'pqr', titulo: 'PQR', descripcion: 'Peticiones, quejas y reclamos' },
   { key: 'blog', titulo: 'Blog', descripcion: 'Noticias y artículos del portal' },
   { key: 'galeria', titulo: 'Galería', descripcion: 'Fotos y videos de la institución' },
 ];
@@ -166,20 +234,7 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
       paginas[m.key] = {
         activa: true,
         etiquetaMenu: m.titulo,
-        ruta:
-          m.key === 'home'
-            ? '/'
-            : `/${
-                m.key === 'consultaCertificados'
-                  ? 'consulta-certificados'
-                  : m.key === 'cursosConduccion'
-                    ? 'cursos-conduccion'
-                    : m.key === 'blog'
-                      ? 'blog'
-                      : m.key === 'galeria'
-                        ? 'galeria'
-                        : m.key
-              }`,
+        ruta: PORTAL_PAGINA_RUTAS[m.key],
       };
     }
   }

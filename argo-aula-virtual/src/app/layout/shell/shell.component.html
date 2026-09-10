@@ -257,15 +257,21 @@
         <span aria-hidden="true">·</span>
         <a routerLink="/registro">{{ landing().nav.registrarse }}</a>
         <span aria-hidden="true">·</span>
-        <a routerLink="/jornadas-capacitacion">Jornadas de capacitación</a>
-        <span aria-hidden="true">·</span>
-        <a routerLink="/evaluacion-jornadas">Evaluación de satisfacción</a>
-        @if (paginaActivaConsulta()) {
+        @if (paginaActivaJornadas()) {
+          <a routerLink="/jornadas-capacitacion">{{ etiquetaJornadas() }}</a>
           <span aria-hidden="true">·</span>
-          <a routerLink="/consulta-certificados">{{ etiquetaConsultaCertificados() }}</a>
         }
-        <span aria-hidden="true">·</span>
-        <a routerLink="/pqr">PQR</a>
+        @if (paginaActivaEvaluacionJornadas()) {
+          <a routerLink="/evaluacion-jornadas">{{ etiquetaEvaluacionJornadas() }}</a>
+          <span aria-hidden="true">·</span>
+        }
+        @if (paginaActivaConsulta()) {
+          <a routerLink="/consulta-certificados">{{ etiquetaConsultaCertificados() }}</a>
+          <span aria-hidden="true">·</span>
+        }
+        @if (paginaActivaPqr()) {
+          <a routerLink="/pqr">{{ etiquetaPqr() }}</a>
+        }
       </nav>
     </div>
   </div>

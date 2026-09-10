@@ -62,11 +62,13 @@ export const routes: Routes = [
       },
       {
         path: 'examen-teorico',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/examen-teorico/examen-teorico.component').then((m) => m.ExamenTeoricoComponent),
       },
       {
         path: 'mercancias-peligrosas',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/mercancias-peligrosas/mercancias-peligrosas.component').then(
             (m) => m.MercanciasPeligrosasComponent,
@@ -74,6 +76,7 @@ export const routes: Routes = [
       },
       {
         path: 'trabajo-en-alturas',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/trabajo-en-alturas/trabajo-en-alturas.component').then(
             (m) => m.TrabajoEnAlturasComponent,
@@ -81,6 +84,7 @@ export const routes: Routes = [
       },
       {
         path: 'curso-manejo-defensivo',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/manejo-defensivo/manejo-defensivo.component').then(
             (m) => m.ManejoDefensivoComponent,
@@ -93,6 +97,7 @@ export const routes: Routes = [
       },
       {
         path: 'curso-primeros-auxilios',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/primeros-auxilios/primeros-auxilios.component').then(
             (m) => m.PrimerosAuxiliosComponent,
@@ -130,6 +135,7 @@ export const routes: Routes = [
       },
       {
         path: 'jornadas-capacitacion',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/jornadas-capacitacion/jornadas-capacitacion.component').then(
             (m) => m.JornadasCapacitacionComponent,
@@ -137,6 +143,7 @@ export const routes: Routes = [
       },
       {
         path: 'evaluacion-jornadas',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/evaluacion-jornadas/evaluacion-jornadas.component').then(
             (m) => m.EvaluacionJornadasComponent,
@@ -156,11 +163,13 @@ export const routes: Routes = [
       },
       {
         path: 'servicios',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/servicios/servicios-hub.component').then((m) => m.ServiciosHubComponent),
       },
       {
         path: 'servicios/:slug',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/servicios/servicio-linea.component').then((m) => m.ServicioLineaComponent),
       },
