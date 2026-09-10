@@ -141,6 +141,11 @@ export interface PortalFinstruvialServicioLanding {
   modulosPlataformaKicker: string;
   modulosPlataformaTitulo: string;
   modulosPlataformaLead: string;
+  /** Videos tutoriales (registro, matrícula, pago) dentro de «Cómo funciona». */
+  guiasPlataformaKicker: string;
+  guiasPlataformaTitulo: string;
+  guiasPlataformaLead: string;
+  guiasPlataforma: PortalFinstruvialServicioBloque[];
   /** Secciones del campus virtual (tablero, cursos, certificados…) con imagen opcional. */
   modulosPlataforma: PortalFinstruvialServicioBloque[];
   cierreQuote: string;

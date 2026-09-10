@@ -5,7 +5,7 @@ import {
 } from './finstruvial-servicio-landing.types';
 import { FinstruvialServicioSlug } from './finstruvial-servicios.constants';
 
-export const SERVIAL_AULA_VIRTUAL_GUION_VERSION = 1;
+export const SERVIAL_AULA_VIRTUAL_GUION_VERSION = 2;
 
 export const SERVIAL_AULA_VIRTUAL_FAQ: PortalServiciosHubFaq[] = [
   {
@@ -112,7 +112,31 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     modulosPlataformaKicker: 'Plataforma',
     modulosPlataformaTitulo: '¿Cómo funciona el Aula Virtual de SERVIAL?',
     modulosPlataformaLead:
-      'Conozca las secciones del campus virtual: desde el tablero de inicio hasta sus certificados y foros de curso.',
+      'Primero vea los tutoriales en video para registrarse, matricularse y pagar. Después conozca las secciones del campus virtual.',
+    guiasPlataformaKicker: 'Tutoriales en video',
+    guiasPlataformaTitulo: 'Aprenda a usar el aula virtual paso a paso',
+    guiasPlataformaLead:
+      'Le mostramos en videos cortos cómo crear su cuenta, inscribirse a un curso y completar el pago de la matrícula.',
+    guiasPlataforma: [
+      {
+        icon: '📝',
+        titulo: 'Registro en el aula virtual',
+        texto: 'Cómo crear su cuenta y acceder por primera vez al campus virtual de SERVIAL Colombia.',
+        youtubeUrl: 'https://youtu.be/9BrUO6sA4Zk',
+      },
+      {
+        icon: '📚',
+        titulo: 'Matricularse en un curso',
+        texto: 'Cómo elegir un programa del catálogo e inscribirse desde la tienda o el aula virtual.',
+        youtubeUrl: 'https://youtu.be/8aZSw6DmZiw',
+      },
+      {
+        icon: '💳',
+        titulo: 'Pago de matrícula',
+        texto: 'Cómo realizar el pago de su matrícula y confirmar su inscripción al curso.',
+        youtubeUrl: 'https://youtu.be/fM7tlCk_wW8',
+      },
+    ],
     modulosPlataforma: [
       {
         icon: '📊',

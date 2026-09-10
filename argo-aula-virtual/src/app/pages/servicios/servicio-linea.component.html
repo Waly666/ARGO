@@ -1001,6 +1001,54 @@
                 <p class="fsv-section-head__lead">{{ s.modulosPlataformaLead }}</p>
               }
             </header>
+            @if (guiasPlataforma().length) {
+              <div class="fsv-guides-band reveal" avRevealOnScroll [revealDelay]="40">
+                <header class="fsv-guides-band__head">
+                  @if (s.guiasPlataformaKicker.trim()) {
+                    <p class="fsv-guides-band__kicker">{{ s.guiasPlataformaKicker }}</p>
+                  }
+                  @if (s.guiasPlataformaTitulo.trim()) {
+                    <h3 class="fsv-guides-band__title">{{ s.guiasPlataformaTitulo }}</h3>
+                  }
+                  @if (s.guiasPlataformaLead.trim()) {
+                    <p class="fsv-guides-band__lead">{{ s.guiasPlataformaLead }}</p>
+                  }
+                </header>
+                <div class="fsv-guides-grid">
+                  @for (g of guiasPlataforma(); track g.titulo; let i = $index) {
+                    <article class="fsv-guide-card">
+                      <div class="fsv-guide-card__badge" aria-hidden="true">Paso {{ i + 1 }}</div>
+                      <div class="fsv-guide-card__media">
+                        @if (videoEmbed(g.youtubeUrl); as embedSrc) {
+                          <figure class="fsv-figure fsv-figure--video fsv-guide-card__video">
+                            <div class="fsv-figure__frame">
+                              <iframe
+                                [src]="embedSrc"
+                                [title]="g.titulo"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen
+                                loading="lazy"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                              ></iframe>
+                            </div>
+                          </figure>
+                        }
+                      </div>
+                      <div class="fsv-guide-card__body">
+                        <p class="fsv-guide-card__label">
+                          <span class="fsv-guide-card__icon" aria-hidden="true">{{ g.icon }}</span>
+                          Tutorial en video
+                        </p>
+                        <h4 class="fsv-guide-card__title">{{ g.titulo }}</h4>
+                        @if (g.texto.trim()) {
+                          <p class="fsv-guide-card__text">{{ g.texto }}</p>
+                        }
+                      </div>
+                    </article>
+                  }
+                </div>
+              </div>
+            }
             <div class="fsv-editorial-flow reveal" avRevealOnScroll [revealDelay]="60">
               @for (m of s.modulosPlataforma; track m.titulo; let i = $index) {
                 <article class="fsv-feature" [class.fsv-feature--reverse]="featureAlterna(i)">

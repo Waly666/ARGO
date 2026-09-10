@@ -184,7 +184,16 @@ export class ServicioLineaComponent implements OnInit {
 
   mostrarModulosPlataforma = computed(() => {
     const s = this.servicio();
-    return !!(s?.modulosPlataforma.length && s.modulosPlataformaTitulo.trim());
+    return !!(
+      s?.modulosPlataformaTitulo.trim() &&
+      (s.modulosPlataforma.length || this.guiasPlataforma().length)
+    );
+  });
+
+  guiasPlataforma = computed(() => {
+    const items = this.servicio()?.guiasPlataforma;
+    if (!Array.isArray(items)) return [];
+    return items.filter((g) => !!String(g.youtubeUrl || '').trim());
   });
 
   videoEmbed(url: string | undefined) {
