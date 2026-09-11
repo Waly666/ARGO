@@ -9,9 +9,7 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
-import {
-  PROMO_BANNER_RIBBON_DEFAULT,
-} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
+import { PromoBannerHighlight } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import { FUNDACION_CONTACTO } from './fundacion-content';
 import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 
@@ -28,12 +26,25 @@ export class FundacionComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
 
-  readonly heroRibbon = PROMO_BANNER_RIBBON_DEFAULT;
-
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   fund = computed(() => this.landing().fundacion);
 
   heroPilares = computed(() => this.fund().hero.pillars);
+
+  heroHighlight = computed((): PromoBannerHighlight | null => {
+    const hero = this.fund().hero;
+    if (!hero.highlightTitle?.trim()) return null;
+    return {
+      icon: hero.highlightIcon?.trim() || 'shield-check',
+      title: hero.highlightTitle.trim(),
+      subtitle: hero.highlightSubtitle?.trim() || '',
+    };
+  });
+
+  heroHighlightRadar = computed(() => {
+    const hero = this.fund().hero;
+    return !!this.heroHighlight() && hero.highlightRadar !== false;
+  });
 
   nombreCea = computed(() => this.config()?.nombreCea?.trim() || 'Mi institución');
 

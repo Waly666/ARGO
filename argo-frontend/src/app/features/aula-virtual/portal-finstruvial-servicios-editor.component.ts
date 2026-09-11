@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -66,7 +66,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
   templateUrl: './portal-finstruvial-servicios-editor.component.html',
   styleUrl: './portal-finstruvial-servicios-editor.component.scss',
 })
-export class PortalFinstruvialServiciosEditorComponent {
+export class PortalFinstruvialServiciosEditorComponent implements OnInit {
   private api = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) finstruvialServicios!: PortalFinstruvialServiciosConfig;
@@ -87,6 +87,12 @@ export class PortalFinstruvialServiciosEditorComponent {
   uploadingId = signal<string | null>(null);
   /** Colapsar/expandir bloques del formulario (por defecto todos abiertos). */
   private gruposAbiertos = signal<Record<string, boolean>>({});
+
+  ngOnInit(): void {
+    if (this.modo === 'hub') {
+      this.ensureHubHeroAnimadoFields();
+    }
+  }
 
   lineaActiva(): FinstruvialServicioSlug {
     if (this.modo === 'linea' && this.lineaSlug) {
@@ -163,7 +169,34 @@ export class PortalFinstruvialServiciosEditorComponent {
       if (!p.productoImagenId?.trim()) p.productoImagenId = 'producto';
     }
     if (this.lineaActiva() === 'aulaVirtual') p.usarCatalogoCursos = true;
+    this.ensureHeroAnimadoFields(p);
     return p;
+  }
+
+  private ensureHeroAnimadoFields(p: PortalFinstruvialServicioLanding): void {
+    if (!Array.isArray(p.pillars)) p.pillars = [];
+    if (!Array.isArray(p.stats)) p.stats = [];
+    if (!Array.isArray(p.ribbon)) p.ribbon = [];
+    if (p.pillarsLabel == null) p.pillarsLabel = '';
+    if (p.highlightIcon == null) p.highlightIcon = '';
+    if (p.highlightTitle == null) p.highlightTitle = '';
+    if (p.highlightSubtitle == null) p.highlightSubtitle = '';
+    if (p.ribbonLabel == null) p.ribbonLabel = '';
+    if (p.heroHighlightRadar == null) p.heroHighlightRadar = true;
+  }
+
+  ensureHubHeroAnimadoFields(): void {
+    const hub = this.finstruvialServicios?.hub;
+    if (!hub) return;
+    if (!Array.isArray(hub.pillars)) hub.pillars = [];
+    if (!Array.isArray(hub.stats)) hub.stats = hub.heroStats?.length ? [...hub.heroStats] : [];
+    if (!Array.isArray(hub.ribbon)) hub.ribbon = [];
+    if (hub.pillarsLabel == null) hub.pillarsLabel = '';
+    if (hub.highlightIcon == null) hub.highlightIcon = '';
+    if (hub.highlightTitle == null) hub.highlightTitle = '';
+    if (hub.highlightSubtitle == null) hub.highlightSubtitle = '';
+    if (hub.ribbonLabel == null) hub.ribbonLabel = '';
+    if (hub.heroHighlightRadar == null) hub.heroHighlightRadar = true;
   }
 
   mostrarSeccion(seccion: FinstruvialEditorSeccion): boolean {

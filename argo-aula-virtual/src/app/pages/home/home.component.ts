@@ -21,12 +21,19 @@ import { CursoCardComponent } from '../../shared/curso-card/curso-card.component
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { HeroParticleMeshComponent } from '../../shared/hero-particle-mesh/hero-particle-mesh.component';
 import { FinstruvialHeroComponent } from '../../shared/finstruvial-hero/finstruvial-hero.component';
-import { FINSTRUVIAL_HERO_DEFAULTS } from '../../shared/finstruvial-hero/finstruvial-hero.defaults';
+import {
+  FINSTRUVIAL_HERO_DEFAULTS,
+  FINSTRUVIAL_HERO_HIGHLIGHT_DEFAULTS,
+  splitFinstruvialHeroLeadToHighlight,
+} from '../../shared/finstruvial-hero/finstruvial-hero.defaults';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { mergePortalLanding } from '../../core/portal-landing';
-import { applyNombreCeaHeroText } from '../../core/constants/portal-promo-hero-fields.util';
+import {
+  applyNombreCeaHeroText,
+  promoHeroHighlightFromExtras,
+} from '../../core/constants/portal-promo-hero-fields.util';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { CursosConduccionPublicidadSliderComponent } from '../cursos-conduccion/cursos-conduccion-publicidad-slider.component';
 import { PortalSeoService } from '../../core/portal-seo.service';
@@ -164,6 +171,32 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   finstruvialHeroBg = computed(() => this.heroImg() || null);
+
+  finstruvialHeroHighlight = computed(() => {
+    const hero = this.landing().hero;
+    const fromErp = promoHeroHighlightFromExtras({
+      highlightIcon: hero.highlightIcon,
+      highlightTitle: hero.highlightTitle,
+      highlightSubtitle: hero.highlightSubtitle,
+    });
+    if (fromErp) return fromErp;
+    return (
+      splitFinstruvialHeroLeadToHighlight(this.finstruvialHeroLead()) ?? {
+        icon: FINSTRUVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightIcon,
+        title: FINSTRUVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightTitle,
+        subtitle: FINSTRUVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightSubtitle,
+      }
+    );
+  });
+
+  finstruvialHeroHighlightRadar = computed(() => {
+    if (!this.finstruvialHeroHighlight()) return false;
+    const hero = this.landing().hero;
+    if (hero.highlightTitle?.trim()) {
+      return hero.highlightRadar !== false;
+    }
+    return FINSTRUVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightRadar;
+  });
 
   apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || DEFAULT_APK_URL);
 

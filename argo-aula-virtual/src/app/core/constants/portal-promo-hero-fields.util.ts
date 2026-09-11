@@ -103,9 +103,20 @@ export function mergePromoHeroPillars(
   }));
 }
 
-export function mergePromoHeroStats(raw: string[] | undefined, defaults: string[]): string[] {
+export function mergePromoHeroStats(raw: string[] | undefined, defaults: string[] ): string[] {
   if (!Array.isArray(raw) || !raw.length) return [...defaults];
   return raw.map((s, i) => str(s, defaults[i] || ''));
+}
+
+export function mergePromoHeroRibbon(
+  raw: PortalPromoHeroRibbonItem[] | undefined,
+  defaults: PortalPromoHeroRibbonItem[],
+): PortalPromoHeroRibbonItem[] {
+  if (!Array.isArray(raw) || !raw.length) return defaults.map((item) => ({ ...item }));
+  return raw.map((item, i) => ({
+    icon: str(item?.icon, defaults[i]?.icon || 'document'),
+    label: str(item?.label, defaults[i]?.label || ''),
+  }));
 }
 
 export function mergePromoHeroExtras(

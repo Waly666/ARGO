@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -18,6 +18,7 @@ import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt
 
 import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 
 @Component({
   selector: 'argo-portal-cursos-conduccion-editor',
@@ -26,6 +27,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
     PortalEditorEnlacesRelacionadosComponent,
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
+    PortalPromoHeroFieldsEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
@@ -33,7 +35,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
   templateUrl: './portal-cursos-conduccion-editor.component.html',
   styleUrl: './portal-cursos-conduccion-editor.component.scss',
 })
-export class PortalCursosConduccionEditorComponent {
+export class PortalCursosConduccionEditorComponent implements OnInit {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) cursosConduccion!: PortalCursosConduccionLanding;
@@ -43,6 +45,14 @@ export class PortalCursosConduccionEditorComponent {
   uploadIndex = signal<number | null>(null);
   heroUploading = signal(false);
   publicidadUploading = signal(false);
+
+  ngOnInit(): void {
+    const hero = this.cursosConduccion.hero;
+    if (hero.highlightIcon == null) hero.highlightIcon = '';
+    if (hero.highlightTitle == null) hero.highlightTitle = '';
+    if (hero.highlightSubtitle == null) hero.highlightSubtitle = '';
+    if (hero.highlightRadar == null) hero.highlightRadar = true;
+  }
 
   readonly maxPublicidad = MAX_CURSOS_CONDUCCION_PUBLICIDAD;
 

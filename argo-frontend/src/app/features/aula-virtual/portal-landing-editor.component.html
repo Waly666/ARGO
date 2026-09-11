@@ -89,10 +89,26 @@
             <input [(ngModel)]="portalForm.heroTitulo" placeholder="Ej. Capacitación en seguridad vial" />
           </div>
           <div class="av-field">
-            <argo-portal-field-label tag="p" label="Texto debajo del banner" />
+            <argo-portal-field-label tag="p" label="Texto debajo del banner (respaldo si la tarjeta destacada está vacía)" />
             <textarea rows="2" [(ngModel)]="portalForm.heroSubtitulo" placeholder="Una oración que explique qué ofrece su institución"></textarea>
           </div>
         </div>
+        <hr />
+        <h4>Tarjeta destacada del banner</h4>
+        <p class="av-muted">
+          Tarjeta con icono y efecto radar bajo el título. Si completa el título destacado, reemplaza el párrafo simple del banner.
+          Icono: nombre del set del portal (<code>shield-check</code>, <code>academic-cap</code>, etc.).
+        </p>
+        <argo-portal-promo-hero-fields-editor
+          [hero]="landing.hero"
+          [showTitle]="false"
+          [showLead]="false"
+          [showHighlight]="true"
+        />
+        <label class="av-check">
+          <input type="checkbox" [(ngModel)]="landing.hero.highlightRadar" />
+          Efecto radar en la tarjeta destacada
+        </label>
       } @else {
         <div class="av-grid2">
           <div class="av-field">

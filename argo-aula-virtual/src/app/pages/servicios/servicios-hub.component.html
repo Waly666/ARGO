@@ -23,9 +23,9 @@
           @if (hub().lead.trim()) {
             <p class="fsv-hero__lead">{{ hub().lead }}</p>
           }
-          @if (hub().heroStats.length) {
+          @if (hubHeroStats().length) {
             <div class="fsv-hero__stats" aria-label="Cobertura del servicio">
-              @for (stat of hub().heroStats; track stat) {
+              @for (stat of hubHeroStats(); track stat) {
                 <span class="fsv-hero__stat">{{ stat }}</span>
               }
             </div>
@@ -61,19 +61,20 @@
       [titleAccent]="hub().tituloAcento"
       [lead]="hub().lead"
       [pillars]="hubHeroPillars()"
-      pillarsLabel="Áreas de formación"
+      [pillarsLabel]="hubHeroPillarsLabel()"
       [highlight]="hubHeroHighlight()"
+      [highlightRadar]="hubHeroHighlightRadar()"
       [showRibbon]="hubHeroRibbon().length > 0"
       [ribbon]="hubHeroRibbon()"
-      ribbonLabel="Líneas de servicio"
+      [ribbonLabel]="hubHeroRibbonLabel()"
       [showVirtualBadge]="false"
       theme="blue"
       size="page-tall"
       titleId="fsv-hub-title"
     >
-      @if (hub().heroStats.length) {
+      @if (hubHeroStats().length) {
         <div ppbh-extra class="ppbh-stats" aria-label="Cobertura del portafolio">
-          @for (stat of hub().heroStats; track stat) {
+          @for (stat of hubHeroStats(); track stat) {
             <span class="ppbh-stat">{{ stat }}</span>
           }
         </div>
@@ -95,7 +96,7 @@
                 }
               </div>
               <ul class="fsv-formacion__tags" aria-label="Áreas de formación">
-                @for (tag of formacionHighlights; track tag) {
+                @for (tag of formacionHighlights(); track tag) {
                   <li>{{ tag }}</li>
                 }
               </ul>

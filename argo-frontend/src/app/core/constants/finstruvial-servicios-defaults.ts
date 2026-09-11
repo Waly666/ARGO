@@ -15,7 +15,20 @@ import {
 } from './finstruvial-servicio-landing.types';
 import { mergeEnlacesRelacionados } from '../portal-enlace-relacionado.util';
 import { FINSTRUVIAL_SERVICIOS_WIREFRAME } from './finstruvial-servicios-wireframe';
+import {
+  mergePromoHeroPillars,
+  mergePromoHeroRibbon,
+  mergePromoHeroStats,
+  PortalPromoHeroPillar,
+} from './portal-promo-hero-fields.util';
 import { promptFotoHorizontal } from '../utils/portal-imagen-prompt.util';
+
+const HUB_HERO_PILLARS_DEFAULT: PortalPromoHeroPillar[] = [
+  { icon: 'car', label: 'Conducción y licencias' },
+  { icon: 'shield-check', label: 'Seguridad vial y transporte' },
+  { icon: 'exclamation', label: 'Prevención de riesgos' },
+  { icon: 'user-group', label: 'Capacitación empresarial' },
+];
 
 const MENU_LABELS: Record<FinstruvialServicioSlug, string> = {
   aulaVirtual: 'Aula Virtual y Formación',
@@ -94,6 +107,15 @@ function paginaFromWireframe(
     heroParrafos: wire.heroParrafos || [],
     theme: wire.theme || 'blue',
     mostrarBadgeVirtual: wire.mostrarBadgeVirtual === true,
+    pillarsLabel: wire.pillarsLabel || '',
+    pillars: wire.pillars || [],
+    stats: wire.stats || [],
+    highlightIcon: wire.highlightIcon || '',
+    highlightTitle: wire.highlightTitle || '',
+    highlightSubtitle: wire.highlightSubtitle || '',
+    heroHighlightRadar: wire.heroHighlightRadar !== false,
+    ribbonLabel: wire.ribbonLabel || '',
+    ribbon: [],
     heroImagenUrl: '',
     heroImagenAlt: heroAltFromWire(wire, menuLabel),
     heroImagenPrompt:
@@ -203,7 +225,7 @@ export function buildPortafolioServiciosDefaults(opts: {
   wireframe: PortafolioServiciosWireframe;
   menuLabels: Record<FinstruvialServicioSlug, string>;
   hubIcons: Record<FinstruvialServicioSlug, string>;
-  hub: PortalFinstruvialServiciosConfig['hub'];
+  hub?: Partial<PortalFinstruvialServiciosConfig['hub']>;
   menuLabel: string;
   activa?: boolean;
 }): PortalFinstruvialServiciosConfig {
@@ -218,12 +240,13 @@ export function buildPortafolioServiciosDefaults(opts: {
     activa: opts.activa !== false,
     menuLabel: opts.menuLabel,
     hub: {
+      ...FINSTRUVIAL_SERVICIOS_DEFAULTS.hub,
       ...opts.hub,
-      heroImagenUrl: opts.hub.heroImagenUrl || '',
-      heroImagenAlt: opts.hub.heroImagenAlt || opts.menuLabel,
+      heroImagenUrl: opts.hub?.heroImagenUrl || '',
+      heroImagenAlt: opts.hub?.heroImagenAlt || opts.menuLabel,
       heroImagenPrompt:
-        opts.hub.heroImagenPrompt?.trim() ||
-        promptFotoHorizontal(opts.hub.heroImagenAlt || opts.menuLabel),
+        opts.hub?.heroImagenPrompt?.trim() ||
+        promptFotoHorizontal(opts.hub?.heroImagenAlt || opts.menuLabel),
     },
     paginas: JSON.parse(JSON.stringify(paginas)),
   };
@@ -260,6 +283,16 @@ export const FINSTRUVIAL_SERVICIOS_DEFAULTS: PortalFinstruvialServiciosConfig = 
     faq: [],
     tarjetas: [],
     heroStats: [],
+    pillarsLabel: 'Áreas de formación',
+    pillars: HUB_HERO_PILLARS_DEFAULT.map((pillar) => ({ ...pillar })),
+    stats: [],
+    highlightIcon: 'shield-check',
+    highlightTitle: 'Líneas de servicio',
+    highlightSubtitle:
+      'Consultoría técnica, planeación, tecnología y formación en tránsito, transporte, movilidad y seguridad vial.',
+    heroHighlightRadar: true,
+    ribbonLabel: 'Líneas de servicio',
+    ribbon: [],
     formacionImagenUrl: '',
     formacionImagenAlt: '',
     formacionImagen2Url: '',
@@ -582,6 +615,15 @@ export function mergeFinstruvialServicioLanding(
     heroParrafos: mergeHeroParrafos(slug, src.heroParrafos, d.heroParrafos, wireframe),
     theme: (src.theme as PortalFinstruvialServicioLanding['theme']) || d.theme,
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
+    pillarsLabel: str(src.pillarsLabel, d.pillarsLabel),
+    pillars: mergePromoHeroPillars(src.pillars, d.pillars),
+    stats: mergePromoHeroStats(src.stats, d.stats),
+    highlightIcon: str(src.highlightIcon, d.highlightIcon),
+    highlightTitle: str(src.highlightTitle, d.highlightTitle),
+    highlightSubtitle: str(src.highlightSubtitle, d.highlightSubtitle),
+    heroHighlightRadar: src.heroHighlightRadar !== false && d.heroHighlightRadar !== false,
+    ribbonLabel: str(src.ribbonLabel, d.ribbonLabel),
+    ribbon: mergePromoHeroRibbon(src.ribbon, d.ribbon),
     heroImagenUrl: str(src.heroImagenUrl, d.heroImagenUrl),
     heroImagenUrlAbsoluta: src.heroImagenUrlAbsoluta?.trim() || d.heroImagenUrlAbsoluta,
     heroImagenAlt: str(src.heroImagenAlt, d.heroImagenAlt),
@@ -721,6 +763,18 @@ export function mergeFinstruvialServicios(
       faq: arr(src.hub?.faq, d.hub.faq),
       tarjetas: arr(src.hub?.tarjetas, d.hub.tarjetas),
       heroStats: arr(src.hub?.heroStats, d.hub.heroStats),
+      pillarsLabel: str(src.hub?.pillarsLabel, d.hub.pillarsLabel),
+      pillars: mergePromoHeroPillars(src.hub?.pillars, d.hub.pillars),
+      stats: mergePromoHeroStats(
+        Array.isArray(src.hub?.stats) && src.hub.stats.length ? src.hub.stats : src.hub?.heroStats,
+        d.hub.stats.length ? d.hub.stats : d.hub.heroStats,
+      ),
+      highlightIcon: str(src.hub?.highlightIcon, d.hub.highlightIcon),
+      highlightTitle: str(src.hub?.highlightTitle, d.hub.highlightTitle),
+      highlightSubtitle: str(src.hub?.highlightSubtitle, d.hub.highlightSubtitle),
+      heroHighlightRadar: src.hub?.heroHighlightRadar !== false && d.hub.heroHighlightRadar !== false,
+      ribbonLabel: str(src.hub?.ribbonLabel, d.hub.ribbonLabel),
+      ribbon: mergePromoHeroRibbon(src.hub?.ribbon, d.hub.ribbon),
       formacionImagenUrl: str(src.hub?.formacionImagenUrl, d.hub.formacionImagenUrl),
       formacionImagenUrlAbsoluta: src.hub?.formacionImagenUrlAbsoluta?.trim() || d.hub.formacionImagenUrlAbsoluta,
       formacionImagenAlt: str(src.hub?.formacionImagenAlt, d.hub.formacionImagenAlt),

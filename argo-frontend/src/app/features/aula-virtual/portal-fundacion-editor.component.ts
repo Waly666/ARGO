@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -30,7 +30,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
   templateUrl: './portal-fundacion-editor.component.html',
   styleUrl: './portal-fundacion-editor.component.scss',
 })
-export class PortalFundacionEditorComponent {
+export class PortalFundacionEditorComponent implements OnInit {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) fundacion!: PortalFundacionLanding;
@@ -41,6 +41,14 @@ export class PortalFundacionEditorComponent {
 
   bloque = signal<string | null>('hero');
   heroUploading = signal(false);
+
+  ngOnInit(): void {
+    const hero = this.fundacion.hero;
+    if (hero.highlightIcon == null) hero.highlightIcon = '';
+    if (hero.highlightTitle == null) hero.highlightTitle = '';
+    if (hero.highlightSubtitle == null) hero.highlightSubtitle = '';
+    if (hero.highlightRadar == null) hero.highlightRadar = true;
+  }
 
   toggleBloque(id: string) {
     this.bloque.update((actual) => (actual === id ? null : id));

@@ -99,6 +99,10 @@ export interface PortalCursosConduccionLanding {
     pillars: PortalPromoHeroPillar[];
     mostrarBadgeVirtual: boolean;
     virtualBadgeLabel: string;
+    highlightIcon: string;
+    highlightTitle: string;
+    highlightSubtitle: string;
+    highlightRadar: boolean;
   };
   tituloPrincipal: string;
   textoInstitucional: string;
@@ -268,6 +272,11 @@ export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding =
     pillars: PROMO_HERO_PILARES_INSTITUCION,
     mostrarBadgeVirtual: true,
     virtualBadgeLabel: 'VIRTUAL',
+    highlightIcon: 'car',
+    highlightTitle: '¡No dejes para después lo que puede abrirte nuevas puertas hoy!',
+    highlightSubtitle:
+      'Aprender a conducir es ganar independencia, confianza y nuevas oportunidades para moverte con seguridad.',
+    highlightRadar: true,
   },
   tituloPrincipal: 'CENTRO DE ENSEÑANZA AUTOMOVILÍSTICA',
   textoInstitucional:
@@ -438,6 +447,10 @@ export function mergeCursosConduccionLanding(
       pillars: mergePromoHeroPillars(raw.hero?.pillars, d.hero.pillars),
       mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
       virtualBadgeLabel: raw.hero?.virtualBadgeLabel?.trim() || d.hero.virtualBadgeLabel,
+      highlightIcon: raw.hero?.highlightIcon?.trim() || d.hero.highlightIcon,
+      highlightTitle: raw.hero?.highlightTitle?.trim() || d.hero.highlightTitle,
+      highlightSubtitle: raw.hero?.highlightSubtitle?.trim() || d.hero.highlightSubtitle,
+      highlightRadar: raw.hero?.highlightRadar !== false,
     },
     tituloPrincipal: raw.tituloPrincipal?.trim() || d.tituloPrincipal,
     textoInstitucional: raw.textoInstitucional?.trim() || d.textoInstitucional,

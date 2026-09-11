@@ -87,7 +87,7 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
     {
       heroTitulo: 'Formación Especializada en Tránsito, Transporte y Seguridad Vial',
       heroSubtitulo:
-        'Desarrolla competencias para una movilidad más segura. FINSTRUVIAL ofrece formación virtual, presencial y mixta en tránsito, transporte, seguridad vial, prevención del riesgo y atención de emergencias.',
+        'Desarrolla competencias para una movilidad más segura. FINSTRUVIAL ofrece formación virtual, presencial y mixta para estudiantes, conductores, empresas, autoridades, profesionales y ciudadanos.',
       secciones: SECCIONES_COMPLETAS,
       tema: { ...PORTAL_TEMA_FINSTRUVIAL },
     },

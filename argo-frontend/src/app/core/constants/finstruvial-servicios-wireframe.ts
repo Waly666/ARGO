@@ -819,5 +819,10 @@ export const FINSTRUVIAL_SERVICIOS_WIREFRAME: Partial<
     cierreQuote: 'El conocimiento no tiene límites cuando el aprendizaje se adapta a su ritmo.',
     listaServicios: [],
     productoNombre: '',
+    highlightIcon: 'academic-cap',
+    highlightTitle: 'Saber · Saber hacer · Ser',
+    highlightSubtitle:
+      'Conocimiento, habilidad y actitud para transformar el aprendizaje en decisiones seguras en las vías.',
+    heroHighlightRadar: true,
   },
 };

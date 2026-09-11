@@ -10,12 +10,44 @@ import {
   PortalFinstruvialServiciosHub,
   PortalServiciosHubTarjeta,
 } from './constants/finstruvial-servicio-landing.types';
+import {
+  PortalPromoHeroPillar,
+  PortalPromoHeroRibbonItem,
+} from './constants/portal-promo-hero-fields.util';
 
 const MAX_PILLARS = 4;
 const MAX_RIBBON = 4;
 
 function trim(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+function mapPillars(items: PortalPromoHeroPillar[]): PromoBannerPillar[] {
+  return items
+    .filter((item) => trim(item.label))
+    .slice(0, MAX_PILLARS)
+    .map((item) => ({
+      icon: trim(item.icon) || 'check-badge',
+      label: trim(item.label),
+    }));
+}
+
+function mapRibbon(items: PortalPromoHeroRibbonItem[]): PromoBannerRibbonItem[] {
+  return items
+    .filter((item) => trim(item.label))
+    .slice(0, MAX_RIBBON)
+    .map((item) => ({
+      icon: trim(item.icon) || 'document',
+      label: trim(item.label),
+    }));
+}
+
+function hasExplicitPillars(items?: PortalPromoHeroPillar[]): boolean {
+  return Array.isArray(items) && items.some((item) => trim(item.label));
+}
+
+function hasExplicitRibbon(items?: PortalPromoHeroRibbonItem[]): boolean {
+  return Array.isArray(items) && items.some((item) => trim(item.label));
 }
 
 function bloquePillars(items: { icon: string; titulo: string }[]): PromoBannerPillar[] {
@@ -28,8 +60,7 @@ function bloquePillars(items: { icon: string; titulo: string }[]): PromoBannerPi
     }));
 }
 
-/** Pilares del hero a partir del contenido ya publicado en cada línea de servicio. */
-export function finstruvialServicioHeroPillars(s: PortalFinstruvialServicioLanding): PromoBannerPillar[] {
+function derivedServicioHeroPillars(s: PortalFinstruvialServicioLanding): PromoBannerPillar[] {
   if (s.pilaresEducativos?.length) {
     const pillars = bloquePillars(s.pilaresEducativos);
     if (pillars.length) return pillars;
@@ -61,7 +92,18 @@ export function finstruvialServicioHeroPillars(s: PortalFinstruvialServicioLandi
   return PROMO_BANNER_PILARES_INSTITUCION.map((pillar) => ({ ...pillar }));
 }
 
+/** Pilares del hero: primero campos ERP dedicados; si no, contenido editorial existente. */
+export function finstruvialServicioHeroPillars(s: PortalFinstruvialServicioLanding): PromoBannerPillar[] {
+  if (hasExplicitPillars(s.pillars)) {
+    return mapPillars(s.pillars);
+  }
+  return derivedServicioHeroPillars(s);
+}
+
 export function finstruvialServicioHeroPillarsLabel(s: PortalFinstruvialServicioLanding): string {
+  if (hasExplicitPillars(s.pillars)) {
+    return trim(s.pillarsLabel) || 'Fortalezas';
+  }
   if (s.pilaresEducativos?.length) return trim(s.pilaresSeccionTitulo) || 'Fortalezas';
   if (s.metodologiaPasos?.length) return trim(s.metodologiaTitulo) || 'Metodología';
   if (s.resultadoIconos?.length) return trim(s.resultadoTitulo) || 'Resultados';
@@ -69,10 +111,7 @@ export function finstruvialServicioHeroPillarsLabel(s: PortalFinstruvialServicio
   return 'Fortalezas';
 }
 
-/** Tarjeta destacada bajo el lead (producto, metodología o mensaje clave). */
-export function finstruvialServicioHeroHighlight(
-  s: PortalFinstruvialServicioLanding,
-): PromoBannerHighlight | null {
+function derivedServicioHeroHighlight(s: PortalFinstruvialServicioLanding): PromoBannerHighlight | null {
   if (trim(s.productoNombre)) {
     return {
       icon: 'trophy',
@@ -97,9 +136,21 @@ export function finstruvialServicioHeroHighlight(
   return null;
 }
 
-export function finstruvialServicioHeroRibbon(
+/** Tarjeta destacada bajo el lead (ERP o producto / metodología / mensaje clave). */
+export function finstruvialServicioHeroHighlight(
   s: PortalFinstruvialServicioLanding,
-): PromoBannerRibbonItem[] {
+): PromoBannerHighlight | null {
+  if (trim(s.highlightTitle)) {
+    return {
+      icon: trim(s.highlightIcon) || 'trophy',
+      title: trim(s.highlightTitle),
+      subtitle: trim(s.highlightSubtitle),
+    };
+  }
+  return derivedServicioHeroHighlight(s);
+}
+
+function derivedServicioHeroRibbon(s: PortalFinstruvialServicioLanding): PromoBannerRibbonItem[] {
   if (s.rutaAprendizaje?.length) {
     return s.rutaAprendizaje
       .filter((label) => trim(label))
@@ -118,7 +169,24 @@ export function finstruvialServicioHeroRibbon(
   return [];
 }
 
-export function finstruvialServicioHeroStats(s: PortalFinstruvialServicioLanding): string[] {
+export function finstruvialServicioHeroRibbon(
+  s: PortalFinstruvialServicioLanding,
+): PromoBannerRibbonItem[] {
+  if (hasExplicitRibbon(s.ribbon)) {
+    return mapRibbon(s.ribbon);
+  }
+  return derivedServicioHeroRibbon(s);
+}
+
+export function finstruvialServicioHeroRibbonLabel(s: PortalFinstruvialServicioLanding): string {
+  if (hasExplicitRibbon(s.ribbon)) {
+    return trim(s.ribbonLabel) || 'Líneas de servicio';
+  }
+  if (s.rutaAprendizaje?.length) return trim(s.rutaAprendizajeTitulo) || 'Ruta de aprendizaje';
+  return 'Líneas de servicio';
+}
+
+function derivedServicioHeroStats(s: PortalFinstruvialServicioLanding): string[] {
   if (s.dashboardStats?.length) {
     return s.dashboardStats
       .filter((stat) => trim(stat.valor) || trim(stat.etiqueta))
@@ -136,17 +204,47 @@ export function finstruvialServicioHeroStats(s: PortalFinstruvialServicioLanding
   return [];
 }
 
-export function finstruvialHubHeroPillars(labels: string[]): PromoBannerPillar[] {
-  const pillars = labels
-    .filter((label) => trim(label))
+export function finstruvialServicioHeroStats(s: PortalFinstruvialServicioLanding): string[] {
+  const explicit = (s.stats || []).map((stat) => trim(stat)).filter(Boolean).slice(0, 4);
+  if (explicit.length) return explicit;
+  return derivedServicioHeroStats(s);
+}
+
+export function finstruvialHubHeroPillars(hub: PortalFinstruvialServiciosHub): PromoBannerPillar[] {
+  if (hasExplicitPillars(hub.pillars)) {
+    return mapPillars(hub.pillars);
+  }
+  const fromStats = (hub.stats?.length ? hub.stats : hub.heroStats || [])
+    .map((label) => trim(label))
+    .filter(Boolean)
     .slice(0, MAX_PILLARS)
-    .map((label) => ({ icon: 'check-badge', label: trim(label) }));
-  return pillars.length ? pillars : PROMO_BANNER_PILARES_INSTITUCION.map((pillar) => ({ ...pillar }));
+    .map((label) => ({ icon: 'check-badge', label }));
+  if (fromStats.length) return fromStats;
+  return PROMO_BANNER_PILARES_INSTITUCION.map((pillar) => ({ ...pillar }));
+}
+
+export function finstruvialHubHeroPillarsLabel(hub: PortalFinstruvialServiciosHub): string {
+  if (hasExplicitPillars(hub.pillars)) {
+    return trim(hub.pillarsLabel) || 'Áreas de formación';
+  }
+  return 'Áreas de formación';
+}
+
+export function finstruvialHubHeroStats(hub: PortalFinstruvialServiciosHub): string[] {
+  const stats = (hub.stats?.length ? hub.stats : hub.heroStats || [])
+    .map((stat) => trim(stat))
+    .filter(Boolean)
+    .slice(0, 4);
+  return stats;
 }
 
 export function finstruvialHubHeroRibbon(
+  hub: PortalFinstruvialServiciosHub,
   tarjetas: PortalServiciosHubTarjeta[],
 ): PromoBannerRibbonItem[] {
+  if (hasExplicitRibbon(hub.ribbon)) {
+    return mapRibbon(hub.ribbon);
+  }
   const fromTarjetas = tarjetas
     .filter((t) => trim(t.titulo))
     .slice(0, MAX_RIBBON)
@@ -158,7 +256,21 @@ export function finstruvialHubHeroRibbon(
   return PROMO_BANNER_RIBBON_DEFAULT.map((item) => ({ ...item }));
 }
 
+export function finstruvialHubHeroRibbonLabel(hub: PortalFinstruvialServiciosHub): string {
+  if (hasExplicitRibbon(hub.ribbon)) {
+    return trim(hub.ribbonLabel) || 'Líneas de servicio';
+  }
+  return 'Líneas de servicio';
+}
+
 export function finstruvialHubHeroHighlight(hub: PortalFinstruvialServiciosHub): PromoBannerHighlight | null {
+  if (trim(hub.highlightTitle)) {
+    return {
+      icon: trim(hub.highlightIcon) || 'shield-check',
+      title: trim(hub.highlightTitle),
+      subtitle: trim(hub.highlightSubtitle),
+    };
+  }
   if (trim(hub.seoTextoTitulo)) {
     return {
       icon: 'academic-cap',

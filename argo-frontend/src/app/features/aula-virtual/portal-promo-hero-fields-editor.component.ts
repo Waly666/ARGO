@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import {
   PortalPromoHeroPillar,
+  PortalPromoHeroRibbonItem,
   PortalPromoHeroTheme,
 } from '../../core/constants/portal-promo-hero-fields.util';
 import {
@@ -22,6 +23,8 @@ export interface PortalPromoHeroEditorModel {
   highlightIcon?: string;
   highlightTitle?: string;
   highlightSubtitle?: string;
+  ribbonLabel?: string;
+  ribbon?: PortalPromoHeroRibbonItem[];
   mostrarBadgeVirtual?: boolean;
   virtualBadgeLabel?: string;
   backLabel?: string;
@@ -54,6 +57,7 @@ export class PortalPromoHeroFieldsEditorComponent {
   @Input() showBackLabel = false;
   @Input() showTheme = false;
   @Input() showStats = false;
+  @Input() showRibbon = false;
   @Input() showCtas = false;
   @Input() tituloAcentoHint = 'Opcional. Si lo deja vacío, puede usarse el nombre de la empresa en el portal.';
 
@@ -77,5 +81,15 @@ export class PortalPromoHeroFieldsEditorComponent {
   removeStat(index: number) {
     if (!this.hero.stats) return;
     removeAt(this.hero.stats, index);
+  }
+
+  addRibbonItem() {
+    if (!this.hero.ribbon) this.hero.ribbon = [];
+    this.hero.ribbon.push({ icon: 'document', label: '' });
+  }
+
+  removeRibbonItem(index: number) {
+    if (!this.hero.ribbon) return;
+    removeAt(this.hero.ribbon, index);
   }
 }

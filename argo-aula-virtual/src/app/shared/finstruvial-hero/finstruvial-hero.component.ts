@@ -9,15 +9,17 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { PortalIconComponent } from '../portal-icon/portal-icon.component';
 import {
   FINSTRUVIAL_HERO_DEFAULTS,
+  FinstruvialHeroHighlight,
   splitFinstruvialHeroTitle,
 } from './finstruvial-hero.defaults';
 
 @Component({
   selector: 'av-finstruvial-hero',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PortalIconComponent],
   templateUrl: './finstruvial-hero.component.html',
   styleUrl: './finstruvial-hero.component.scss',
 })
@@ -39,6 +41,12 @@ export class FinstruvialHeroComponent {
   /** Imagen ERP; si falta, usa el asset de plantilla. */
   @Input() bgImageUrl: string | null = null;
   @Input() bgImageAlt = 'Formación en tránsito, transporte y seguridad vial';
+  /** Logo institucional flotante (esquina superior izquierda). */
+  @Input() logoUrl: string | null = null;
+  @Input() logoAlt = '';
+  /** Tarjeta destacada bajo el título (sustituye el párrafo lead cuando está presente). */
+  @Input() highlight: FinstruvialHeroHighlight | null = null;
+  @Input() highlightRadar = false;
 
   readonly fallbackBg = FINSTRUVIAL_HERO_DEFAULTS.bgAsset;
 

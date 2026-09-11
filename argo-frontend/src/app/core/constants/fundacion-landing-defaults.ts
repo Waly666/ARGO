@@ -42,6 +42,10 @@ export interface PortalFundacionLanding {
     pillars: PortalPromoHeroPillar[];
     mostrarBadgeVirtual: boolean;
     virtualBadgeLabel: string;
+    highlightIcon: string;
+    highlightTitle: string;
+    highlightSubtitle: string;
+    highlightRadar: boolean;
   };
   quienes: {
     kicker: string;
@@ -89,6 +93,11 @@ export const FUNDACION_LANDING_DEFAULTS: PortalFundacionLanding = {
     pillars: PROMO_HERO_PILARES_INSTITUCION,
     mostrarBadgeVirtual: true,
     virtualBadgeLabel: 'VIRTUAL',
+    highlightIcon: 'shield-check',
+    highlightTitle: 'En la vía, la vida primero',
+    highlightSubtitle:
+      'Una buena formación salva vidas: cursos de conducción, manejo defensivo y programas de seguridad vial.',
+    highlightRadar: true,
   },
   quienes: {
     kicker: 'Conócenos',
@@ -188,6 +197,10 @@ export function mergeFundacionLanding(
       pillars: mergePromoHeroPillars(raw.hero?.pillars, d.hero.pillars),
       mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
       virtualBadgeLabel: raw.hero?.virtualBadgeLabel?.trim() || d.hero.virtualBadgeLabel,
+      highlightIcon: raw.hero?.highlightIcon?.trim() || d.hero.highlightIcon,
+      highlightTitle: raw.hero?.highlightTitle?.trim() || d.hero.highlightTitle,
+      highlightSubtitle: raw.hero?.highlightSubtitle?.trim() || d.hero.highlightSubtitle,
+      highlightRadar: raw.hero?.highlightRadar !== false,
     },
     quienes: {
       ...d.quienes,

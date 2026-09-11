@@ -11,7 +11,7 @@ import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import {
-  PROMO_BANNER_RIBBON_DEFAULT,
+  PromoBannerHighlight,
   PromoBannerRibbonItem,
 } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import {
@@ -52,6 +52,21 @@ export class CursosConduccionComponent implements OnInit {
   );
 
   heroPilares = computed(() => this.contenido().hero.pillars);
+
+  heroHighlight = computed((): PromoBannerHighlight | null => {
+    const hero = this.contenido().hero;
+    if (!hero.highlightTitle?.trim()) return null;
+    return {
+      icon: hero.highlightIcon?.trim() || 'car',
+      title: hero.highlightTitle.trim(),
+      subtitle: hero.highlightSubtitle?.trim() || '',
+    };
+  });
+
+  heroHighlightRadar = computed(() => {
+    const hero = this.contenido().hero;
+    return !!this.heroHighlight() && hero.highlightRadar !== false;
+  });
 
   invitacion = computed(() => this.contenido().invitacion);
 

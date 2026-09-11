@@ -19,7 +19,10 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 import {
   finstruvialHubHeroHighlight,
   finstruvialHubHeroPillars,
+  finstruvialHubHeroPillarsLabel,
   finstruvialHubHeroRibbon,
+  finstruvialHubHeroRibbonLabel,
+  finstruvialHubHeroStats,
 } from '../../core/finstruvial-servicio-hero.util';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
@@ -86,18 +89,27 @@ export class ServiciosHubComponent implements OnInit {
 
   nombreCea = computed(() => this.config()?.nombreCea?.trim() || DEFAULT_CEA_NOMBRE);
 
-  formacionHighlights = [
-    'Conducción y licencias',
-    'Seguridad vial y transporte',
-    'Prevención de riesgos',
-    'Capacitación empresarial',
-  ];
+  hubHeroPillars = computed(() => finstruvialHubHeroPillars(this.hub()));
 
-  hubHeroPillars = computed(() => finstruvialHubHeroPillars(this.formacionHighlights));
+  hubHeroPillarsLabel = computed(() => finstruvialHubHeroPillarsLabel(this.hub()));
 
-  hubHeroRibbon = computed(() => finstruvialHubHeroRibbon(this.tarjetas()));
+  hubHeroRibbon = computed(() => finstruvialHubHeroRibbon(this.hub(), this.tarjetas()));
+
+  hubHeroRibbonLabel = computed(() => finstruvialHubHeroRibbonLabel(this.hub()));
 
   hubHeroHighlight = computed(() => finstruvialHubHeroHighlight(this.hub()));
+
+  hubHeroHighlightRadar = computed(() => {
+    if (!this.hubHeroHighlight()) return false;
+    return this.hub().heroHighlightRadar !== false;
+  });
+
+  hubHeroStats = computed(() => finstruvialHubHeroStats(this.hub()));
+
+  /** Tags del bloque «Formación integral» (mismos pilares ERP del hero cuando existen). */
+  formacionHighlights = computed(() =>
+    finstruvialHubHeroPillars(this.hub()).map((pillar) => pillar.label),
+  );
 
   ngOnInit() {
     this.api.config().subscribe({

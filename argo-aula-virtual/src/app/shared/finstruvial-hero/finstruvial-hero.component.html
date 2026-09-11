@@ -102,6 +102,12 @@
     </g>
   </svg>
 
+  @if (logoUrl) {
+    <figure class="fvh__brand fvh__anim fvh__anim--brand">
+      <img [src]="logoUrl" [alt]="logoAlt || 'Logo institucional'" />
+    </figure>
+  }
+
   <div class="fvh__bar fvh__anim fvh__anim--bar">
     <div class="container fvh__bar-inner">
       <span class="fvh__bar-left">{{ instBarLeft }}</span>
@@ -123,7 +129,30 @@
 
         <span class="fvh__title-accent fvh__anim fvh__anim--accent" aria-hidden="true"></span>
 
-        <p class="fvh__lead fvh__anim fvh__anim--lead">{{ lead }}</p>
+        @if (highlight; as h) {
+          <div
+            class="fvh__highlight fvh__anim fvh__anim--highlight"
+            [class.fvh__highlight--radar]="highlightRadar">
+            @if (highlightRadar) {
+              <div class="fvh__highlight-radar" aria-hidden="true">
+                <span class="fvh__highlight-ring"></span>
+                <span class="fvh__highlight-ring"></span>
+                <span class="fvh__highlight-ring"></span>
+              </div>
+            }
+            <div class="fvh__highlight-icon" aria-hidden="true">
+              <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
+            </div>
+            <div class="fvh__highlight-copy">
+              <strong>{{ h.title }}</strong>
+              @if (h.subtitle) {
+                <span>{{ h.subtitle }}</span>
+              }
+            </div>
+          </div>
+        } @else {
+          <p class="fvh__lead fvh__anim fvh__anim--lead">{{ lead }}</p>
+        }
 
         <div class="fvh__actions">
           @if (esExterna(ctaPrimaryUrl)) {

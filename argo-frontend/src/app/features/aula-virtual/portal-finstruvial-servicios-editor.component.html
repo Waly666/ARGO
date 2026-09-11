@@ -98,15 +98,26 @@
         <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.gridLead"></textarea>
       </label>
     </div>
-    <label class="psb-field psb-field--plain">
-      <span>Chips del hero (separados por coma)</span>
-      <input
-        type="text"
-        class="psb-input"
-        [ngModel]="(finstruvialServicios.hub.heroStats || []).join(', ')"
-        (ngModelChange)="onHubHeroStatsChange($event)"
+    <div class="fsv-fieldset">
+      <p class="fsv-fieldset__legend">Hero animado del portafolio</p>
+      <p class="psb-hint">
+        Pilares, destacado, chips y cinta del banner superior en <strong>/servicios</strong>.
+        Si deja algún bloque vacío, el portal completa con las tarjetas del portafolio o textos existentes.
+      </p>
+      <argo-portal-promo-hero-fields-editor
+        [hero]="finstruvialServicios.hub"
+        [showTitle]="false"
+        [showLead]="false"
+        [showPillars]="true"
+        [showHighlight]="true"
+        [showStats]="true"
+        [showRibbon]="true"
       />
-    </label>
+      <label class="psb-check">
+        <input type="checkbox" [(ngModel)]="finstruvialServicios.hub.heroHighlightRadar" />
+        Efecto radar en la tarjeta destacada
+      </label>
+    </div>
     <div class="psb-grid2">
       <div class="psb-imagen-slot">
         <div class="psb-imagen-slot__head"><strong>Imagen formación 1</strong> (bloque «Formación integral»)</div>
@@ -387,13 +398,28 @@
           </div>
         </div>
       </div>
-      <argo-portal-promo-hero-fields-editor
-        [hero]="p"
-        [showTitle]="false"
-        [showLead]="false"
-        [showVirtualBadge]="true"
-        [showTheme]="true"
-      />
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Hero animado (pilares, destacado, chips, cinta)</p>
+        <p class="psb-hint">
+          Controla los elementos animados del banner. Si deja pilares o chips vacíos, el portal usa las secciones
+          editoriales de esta línea (metodología, pilares, producto, etc.).
+        </p>
+        <argo-portal-promo-hero-fields-editor
+          [hero]="p"
+          [showTitle]="false"
+          [showLead]="false"
+          [showPillars]="true"
+          [showHighlight]="true"
+          [showStats]="true"
+          [showRibbon]="true"
+          [showVirtualBadge]="true"
+          [showTheme]="true"
+        />
+        <label class="psb-check">
+          <input type="checkbox" [(ngModel)]="p.heroHighlightRadar" />
+          Efecto radar en la tarjeta destacada
+        </label>
+      </div>
       @for (parrafo of p.heroParrafos; track $index; let i = $index) {
         <div class="ple-list__row">
           <textarea class="psb-input" rows="2" [(ngModel)]="p.heroParrafos[i]"></textarea>

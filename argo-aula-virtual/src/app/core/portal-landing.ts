@@ -125,6 +125,10 @@ export interface PortalFundacionLanding {
     pillars: { icon: string; label: string }[];
     mostrarBadgeVirtual: boolean;
     virtualBadgeLabel: string;
+    highlightIcon: string;
+    highlightTitle: string;
+    highlightSubtitle: string;
+    highlightRadar: boolean;
   };
   quienes: {
     kicker: string;
@@ -230,6 +234,10 @@ export interface PortalLandingConfig {
     eyebrowServial: string;
     subEyebrow: string;
     ctaLlamarEtiqueta: string;
+    highlightIcon: string;
+    highlightTitle: string;
+    highlightSubtitle: string;
+    highlightRadar: boolean;
   };
   infoCards: LandingInfoCard[];
   nav: {
@@ -410,6 +418,11 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     eyebrowServial: '— Bienvenid@ a {nombreCea} —',
     subEyebrow: 'Centro de Enseñanza Automovilística',
     ctaLlamarEtiqueta: '',
+    highlightIcon: 'shield-check',
+    highlightTitle: 'Desarrolla competencias para una movilidad más segura.',
+    highlightSubtitle:
+      'FINSTRUVIAL ofrece formación virtual, presencial y mixta para estudiantes, conductores, empresas, autoridades, profesionales y ciudadanos.',
+    highlightRadar: true,
   },
   infoCards: [
     { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
@@ -607,6 +620,10 @@ function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): Po
       pillars: mergePromoHeroPillars(raw.hero?.pillars, d.hero.pillars),
       mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
       virtualBadgeLabel: raw.hero?.virtualBadgeLabel?.trim() || d.hero.virtualBadgeLabel,
+      highlightIcon: raw.hero?.highlightIcon?.trim() || d.hero.highlightIcon,
+      highlightTitle: raw.hero?.highlightTitle?.trim() || d.hero.highlightTitle,
+      highlightSubtitle: raw.hero?.highlightSubtitle?.trim() || d.hero.highlightSubtitle,
+      highlightRadar: raw.hero?.highlightRadar !== false,
     },
     quienes: {
       ...d.quienes,
@@ -751,7 +768,14 @@ export function mergePortalLanding(
     },
     cursos: { ...d.cursos, ...raw.cursos },
     catalogo: { ...d.catalogo, ...raw.catalogo },
-    hero: { ...d.hero, ...raw.hero },
+    hero: {
+      ...d.hero,
+      ...raw.hero,
+      highlightIcon: raw.hero?.highlightIcon?.trim() || d.hero.highlightIcon,
+      highlightTitle: raw.hero?.highlightTitle?.trim() || d.hero.highlightTitle,
+      highlightSubtitle: raw.hero?.highlightSubtitle?.trim() || d.hero.highlightSubtitle,
+      highlightRadar: raw.hero?.highlightRadar !== false,
+    },
     infoCards: raw.infoCards?.length ? raw.infoCards : d.infoCards,
     nav: { ...d.nav, ...raw.nav },
     footer: { ...d.footer, ...raw.footer },

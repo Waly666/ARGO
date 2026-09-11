@@ -44,13 +44,22 @@
         <argo-portal-field-label tag="p" label="Texto introductorio" />
         <textarea class="psb-input" rows="3" [(ngModel)]="fundacion.hero.lead"></textarea>
       </label>
+      <h4 class="psb-subtitle">Tarjeta destacada del banner</h4>
+      <p class="psb-hint">
+        Tarjeta con icono y efecto radar bajo el título (como en examen teórico y servicios).
+      </p>
       <argo-portal-promo-hero-fields-editor
         [hero]="fundacion.hero"
         [showTitle]="false"
         [showLead]="false"
         [showPillars]="true"
+        [showHighlight]="true"
         [showVirtualBadge]="true"
       />
+      <label class="psb-check">
+        <input type="checkbox" [(ngModel)]="fundacion.hero.highlightRadar" />
+        Efecto radar en la tarjeta destacada
+      </label>
       <div class="pfe-hero-image">
         <span class="pfe-field-label">Imagen del encabezado (Quiénes somos)</span>
         <p class="psb-hint">

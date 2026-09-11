@@ -176,7 +176,11 @@
   [ctaTertiary]="landing().hero.ctaLlamarEtiqueta?.trim() || 'Solicitar información'"
   [ctaTertiaryUrl]="heroLlamarVisible() ? heroLlamarHref() : '/acerca'"
   [bgImageUrl]="finstruvialHeroBg()"
-  [bgImageAlt]="landing().hero.imagenAlt || 'Formación en tránsito, transporte y seguridad vial'">
+  [bgImageAlt]="landing().hero.imagenAlt || 'Formación en tránsito, transporte y seguridad vial'"
+  [logoUrl]="logoUrl()"
+  [logoAlt]="nombreCea()"
+  [highlight]="finstruvialHeroHighlight()"
+  [highlightRadar]="finstruvialHeroHighlightRadar()">
 
   @if (infoCardsVisibles()) {
     <div fvh-info-cards class="container hero-info-cards">

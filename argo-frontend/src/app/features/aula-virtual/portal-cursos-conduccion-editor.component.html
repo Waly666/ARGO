@@ -23,6 +23,21 @@
       <span>Texto institucional (habilitación Mintransporte)</span>
       <textarea class="psb-input" rows="3" [(ngModel)]="cursosConduccion.textoInstitucional"></textarea>
     </label>
+    <h3 class="psb-subtitle">Tarjeta destacada del banner</h3>
+    <p class="psb-hint">
+      Tarjeta con icono y efecto radar bajo el título (como en examen teórico y servicios). Icono: nombre del set del portal
+      (<code>car</code>, <code>shield-check</code>, <code>trophy</code>, etc.).
+    </p>
+    <argo-portal-promo-hero-fields-editor
+      [hero]="cursosConduccion.hero"
+      [showTitle]="false"
+      [showLead]="false"
+      [showHighlight]="true"
+    />
+    <label class="psb-check">
+      <input type="checkbox" [(ngModel)]="cursosConduccion.hero.highlightRadar" />
+      Efecto radar en la tarjeta destacada
+    </label>
     <div class="pcc-hero-image">
       <span class="pcc-field-label">Foto del encabezado</span>
       <p class="psb-hint">

@@ -23,6 +23,10 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
     eyebrowServial: '— Bienvenid@ a {nombreCea} —',
     subEyebrow: 'Centro de Enseñanza Automovilística',
     ctaLlamarEtiqueta: '',
+    highlightIcon: '',
+    highlightTitle: '',
+    highlightSubtitle: '',
+    highlightRadar: true,
   },
   infoCards: [
     { icon: '📞', title: 'Llámenos', text: '321 303 9595', fuente: 'telefono' },

@@ -1,4 +1,8 @@
-import { PortalPromoHeroTheme } from './portal-promo-hero-fields.util';
+import {
+  PortalPromoHeroPillar,
+  PortalPromoHeroRibbonItem,
+  PortalPromoHeroTheme,
+} from './portal-promo-hero-fields.util';
 import { FinstruvialServicioSlug } from './finstruvial-servicios.constants';
 
 export type FinstruvialServicioEstilo = 'default' | 'tech' | 'academy';
@@ -77,6 +81,20 @@ export interface PortalFinstruvialServicioLanding {
   heroParrafos: string[];
   theme: PortalPromoHeroTheme;
   mostrarBadgeVirtual: boolean;
+  /** Pilares animados del banner (ERP). Si están vacíos, el portal deriva del contenido editorial. */
+  pillarsLabel: string;
+  pillars: PortalPromoHeroPillar[];
+  /** Chips de estadísticas bajo el lead del banner. */
+  stats: string[];
+  /** Tarjeta destacada del banner animado. */
+  highlightIcon: string;
+  highlightTitle: string;
+  highlightSubtitle: string;
+  /** Anillos radar en la tarjeta destacada del banner. */
+  heroHighlightRadar?: boolean;
+  /** Cinta inferior con iconos (p. ej. líneas de servicio). */
+  ribbonLabel: string;
+  ribbon: PortalPromoHeroRibbonItem[];
   heroImagenUrl: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
@@ -209,7 +227,17 @@ export interface PortalFinstruvialServiciosHub {
   faqTitulo: string;
   faq: PortalServiciosHubFaq[];
   tarjetas: PortalServiciosHubTarjeta[];
+  /** @deprecated Preferir `stats`. Se mantiene por compatibilidad con datos guardados. */
   heroStats: string[];
+  pillarsLabel: string;
+  pillars: PortalPromoHeroPillar[];
+  stats: string[];
+  highlightIcon: string;
+  highlightTitle: string;
+  highlightSubtitle: string;
+  heroHighlightRadar?: boolean;
+  ribbonLabel: string;
+  ribbon: PortalPromoHeroRibbonItem[];
   formacionImagenUrl: string;
   formacionImagenUrlAbsoluta?: string;
   formacionImagenAlt: string;

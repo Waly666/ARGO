@@ -104,6 +104,23 @@
     <button type="button" class="psb-link" (click)="addStat()">+ Añadir chip</button>
   }
 
+  @if (showRibbon && hero.ribbon) {
+    <h4 class="pphe__subtitle">Cinta inferior del banner</h4>
+    <p class="psb-hint">Iconos deslizantes bajo el hero (p. ej. líneas de servicio). Si la deja vacía, el portal puede completarla automáticamente.</p>
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta de la cinta (accesibilidad)</span>
+      <input type="text" class="psb-input" [(ngModel)]="hero.ribbonLabel" />
+    </label>
+    @for (item of hero.ribbon; track $index; let i = $index) {
+      <div class="pphe__row">
+        <input type="text" class="psb-input" [(ngModel)]="hero.ribbon[i].icon" placeholder="icono" />
+        <input type="text" class="psb-input" [(ngModel)]="hero.ribbon[i].label" placeholder="Texto" />
+        <button type="button" class="psb-icon-btn" (click)="removeRibbonItem(i)">×</button>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addRibbonItem()">+ Añadir ítem de cinta</button>
+  }
+
   @if (showCtas) {
     <h4 class="pphe__subtitle">Botones del banner</h4>
     <div class="psb-grid2">

@@ -93,6 +93,11 @@ export const FUNDACION_LANDING_DEFAULTS = {
     pillars: PROMO_HERO_PILARES_INSTITUCION,
     mostrarBadgeVirtual: true,
     virtualBadgeLabel: 'VIRTUAL',
+    highlightIcon: 'shield-check',
+    highlightTitle: 'En la vía, la vida primero',
+    highlightSubtitle:
+      'Una buena formación salva vidas: cursos de conducción, manejo defensivo y programas de seguridad vial.',
+    highlightRadar: true,
   },
   quienes: {
     kicker: 'Conócenos',

@@ -16,6 +16,7 @@ import {
   finstruvialServicioHeroPillars,
   finstruvialServicioHeroPillarsLabel,
   finstruvialServicioHeroRibbon,
+  finstruvialServicioHeroRibbonLabel,
   finstruvialServicioHeroStats,
 } from '../../core/finstruvial-servicio-hero.util';
 import {
@@ -101,9 +102,20 @@ export class ServicioLineaComponent implements OnInit {
     return s ? finstruvialServicioHeroHighlight(s) : null;
   });
 
+  heroHighlightRadar = computed(() => {
+    const s = this.servicio();
+    if (!s || !this.heroHighlight()) return false;
+    return s.heroHighlightRadar !== false;
+  });
+
   heroRibbon = computed(() => {
     const s = this.servicio();
     return s ? finstruvialServicioHeroRibbon(s) : [];
+  });
+
+  heroRibbonLabel = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroRibbonLabel(s) : 'Líneas de servicio';
   });
 
   heroStats = computed(() => {
