@@ -60,22 +60,7 @@ function mergeCertificacion(raw, fb) {
 function primerosAuxiliosNecesitaActualizarGuion(src) {
   if (!src || typeof src !== 'object') return false;
   const v = Number(src.guionVersion) || 0;
-  if (v < PRIMEROS_AUXILIOS_GUION_VERSION) return true;
-  const h1 = String(src.h1 || '').trim();
-  if (h1 === 'Curso de Primeros Auxilios Virtual y Presencial') return true;
-  const blob = [
-    src.confianzaTitulo,
-    src.confianzaTexto,
-    src.queEsTexto,
-    src.aprenderasTitulo,
-    src.aprendizajes?.[0]?.titulo,
-  ]
-    .map((x) => String(x || ''))
-    .join(' ');
-  if (/cada minuto cuenta|enfermedad repentina|conducci[oó]n defensiva|riesgo vial|percepci[oó]n del riesgo/i.test(blob)) {
-    return true;
-  }
-  return false;
+  return v < PRIMEROS_AUXILIOS_GUION_VERSION;
 }
 
 function mergePrimerosAuxiliosPreservandoUsuario(src, d) {

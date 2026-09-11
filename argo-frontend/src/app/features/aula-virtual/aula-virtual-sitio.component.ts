@@ -7,16 +7,6 @@ import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/a
 import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
-import { mergeExamenTeoricoLanding } from '../../core/constants/examen-teorico-landing-defaults';
-import { mergeMercanciasPeligrosasLanding } from '../../core/constants/mercancias-peligrosas-landing-defaults';
-import { mergeTrabajoEnAlturasLanding } from '../../core/constants/trabajo-en-alturas-landing-defaults';
-import { mergeManejoDefensivoLanding } from '../../core/constants/manejo-defensivo-landing-defaults';
-import { mergePrimerosAuxiliosLanding } from '../../core/constants/primeros-auxilios-landing-defaults';
-import {
-  manejoDefensivoDefaultsForTema,
-  primerosAuxiliosDefaultsForTema,
-} from '../../core/constants/servial-seo-landing-defaults';
-import { mergePortafolioServicios } from '../../core/utils/portafolio-servicios.util';
 import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
 import { PORTAL_PLANTILLAS, PortalPlantilla } from '../../core/constants/portal-plantillas';
 import {
@@ -97,39 +87,6 @@ export class AulaVirtualSitioComponent implements OnInit {
 
   guardar() {
     this.saving.set(true);
-    if (this.portalForm.landing?.examenTeorico) {
-      this.portalForm.landing.examenTeorico = mergeExamenTeoricoLanding(this.portalForm.landing.examenTeorico);
-    }
-    if (this.portalForm.landing?.mercanciasPeligrosas) {
-      this.portalForm.landing.mercanciasPeligrosas = mergeMercanciasPeligrosasLanding(
-        this.portalForm.landing.mercanciasPeligrosas,
-      );
-    }
-    if (this.portalForm.landing?.trabajoEnAlturas) {
-      this.portalForm.landing.trabajoEnAlturas = mergeTrabajoEnAlturasLanding(
-        this.portalForm.landing.trabajoEnAlturas,
-      );
-    }
-    if (this.portalForm.landing?.manejoDefensivo) {
-      this.portalForm.landing.manejoDefensivo = mergeManejoDefensivoLanding(
-        this.portalForm.landing.manejoDefensivo,
-        manejoDefensivoDefaultsForTema(this.portalForm.site?.tema),
-        this.portalForm.site?.tema,
-      );
-    }
-    if (this.portalForm.landing?.primerosAuxilios) {
-      this.portalForm.landing.primerosAuxilios = mergePrimerosAuxiliosLanding(
-        this.portalForm.landing.primerosAuxilios,
-        primerosAuxiliosDefaultsForTema(this.portalForm.site?.tema),
-        this.portalForm.site?.tema,
-      );
-    }
-    if (this.portalForm.landing?.finstruvialServicios) {
-      this.portalForm.landing.finstruvialServicios = mergePortafolioServicios(
-        this.portalForm.landing.finstruvialServicios,
-        this.portalForm.site?.tema,
-      );
-    }
     this.svc.guardarPortal(this.portalForm).subscribe({
       next: (res) => {
         Object.assign(this.portalForm, res.config);

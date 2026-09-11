@@ -380,6 +380,7 @@
         }
         <argo-portal-landing-editor
           [landing]="landing"
+          [portalForm]="portalForm"
           [portalUrl]="portalUrl"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"

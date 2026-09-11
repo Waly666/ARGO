@@ -71,25 +71,53 @@
   @if (bloque() === 'hero') {
     <div class="ple-block">
       <h3>Textos del banner (inicio)</h3>
-      <div class="av-grid2">
-        <div class="av-field">
-          <label>Subtítulo estilo clásico (eyebrow)</label>
-          <input [(ngModel)]="landing.hero.eyebrow" placeholder="Vacío = nombre de la empresa" />
+      @if (heroEsStarfield() && portalForm) {
+        <p class="av-muted">
+          En esta plantilla el <strong>H1 animado</strong> y el párrafo debajo se editan aquí (no en «Centro de Enseñanza…», que solo aplica a Servial).
+        </p>
+        <div class="av-grid2">
+          <div class="av-field">
+            <label>Encima del título (eyebrow)</label>
+            <input [(ngModel)]="landing.hero.eyebrow" placeholder="Vacío = nombre de la empresa" />
+          </div>
+          <div class="av-field">
+            <label>Etiqueta botón llamar (opcional)</label>
+            <input [(ngModel)]="landing.hero.ctaLlamarEtiqueta" placeholder="Vacío = Llamar + teléfono" />
+          </div>
+          <div class="av-field">
+            <argo-portal-field-label tag="H1" label="Frase principal del banner (animada)" />
+            <input [(ngModel)]="portalForm.heroTitulo" placeholder="Ej. Capacitación en seguridad vial" />
+          </div>
+          <div class="av-field">
+            <argo-portal-field-label tag="p" label="Texto debajo del banner" />
+            <textarea rows="2" [(ngModel)]="portalForm.heroSubtitulo" placeholder="Una oración que explique qué ofrece su institución"></textarea>
+          </div>
         </div>
-        <div class="av-field">
-          <argo-portal-field-label tag="p" label="Subtítulo estilo Servial (encima del H1)" />
-          <input [(ngModel)]="landing.hero.eyebrowServial" placeholder="— Bienvenid@ a {nombreCea} —" />
+      } @else {
+        <div class="av-grid2">
+          <div class="av-field">
+            <label>Subtítulo estilo clásico (eyebrow)</label>
+            <input [(ngModel)]="landing.hero.eyebrow" placeholder="Vacío = nombre de la empresa" />
+          </div>
+          <div class="av-field">
+            <argo-portal-field-label tag="p" label="Subtítulo encima del H1" />
+            <input [(ngModel)]="landing.hero.eyebrowServial" placeholder="— Bienvenid@ a {nombreCea} —" />
+          </div>
+          <div class="av-field">
+            <argo-portal-field-label tag="H1" label="Línea 1 del título («Centro de Enseñanza…»)" />
+            <input [(ngModel)]="landing.hero.subEyebrow" />
+          </div>
+          <div class="av-field">
+            <label>Etiqueta botón llamar (opcional)</label>
+            <input [(ngModel)]="landing.hero.ctaLlamarEtiqueta" placeholder="Vacío = Llamar + teléfono" />
+          </div>
         </div>
-        <div class="av-field">
-          <argo-portal-field-label tag="H1" label="Línea 1 del título («Centro de Enseñanza…»)" />
-          <input [(ngModel)]="landing.hero.subEyebrow" />
-        </div>
-        <div class="av-field">
-          <label>Etiqueta botón llamar (opcional)</label>
-          <input [(ngModel)]="landing.hero.ctaLlamarEtiqueta" placeholder="Vacío = Llamar + teléfono" />
-        </div>
-      </div>
-      <p class="av-muted">En el subtítulo Servial puede usar <code>{{ '{' }}nombreCea{{ '}' }}</code>.</p>
+        <p class="av-muted">
+          En el subtítulo puede usar <code>{{ '{' }}nombreCea{{ '}' }}</code>.
+          La <strong>línea 2 del H1</strong> (dorada y animada) se edita en
+          <strong>Empresa → Frase principal del banner</strong>.
+        </p>
+      }
       <hr />
       <p class="av-muted">Ruta interna (ej. <code>/cursos</code>), <code>https://…</code> o WhatsApp (<code>https://wa.me/573…</code>). Los teléfonos del sitio abren WhatsApp.</p>
       <div class="av-grid2">

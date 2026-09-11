@@ -574,10 +574,7 @@ function mercanciasPeligrosasNecesitaActualizarGuion(
   src: Partial<PortalMercanciasPeligrosasLanding>,
 ): boolean {
   const v = Number(src.guionVersion) || 0;
-  if (v < MERCANCIAS_PELIGROSAS_GUION_VERSION) return true;
-  const titulo = String(src.titulo || '').trim();
-  if (titulo === 'Mercancías peligrosas') return true;
-  return String(src.queSonTitulo || '').trim() === '¿Qué son las mercancías peligrosas?';
+  return v < MERCANCIAS_PELIGROSAS_GUION_VERSION;
 }
 
 function mergeMercanciasPeligrosasPreservandoUsuario(

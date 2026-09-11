@@ -469,11 +469,7 @@ function mergeImagenes(raw: TaImagen[] | undefined, fb: TaImagen[]): TaImagen[] 
 
 function trabajoEnAlturasNecesitaActualizarGuion(src: Partial<PortalTrabajoEnAlturasLanding>): boolean {
   const v = Number(src.guionVersion) || 0;
-  if (v < TRABAJO_EN_ALTURAS_GUION_VERSION) return true;
-  const titulo = String(src.titulo || '').trim();
-  if (titulo === 'Trabajo Seguro') return true;
-  if (/gamificad|20 módulos gamificados|ruleta de 15 retos/i.test(String(src.heroLead || ''))) return true;
-  return String(src.normativaTitulo || '').trim() === 'Marco normativo colombiano';
+  return v < TRABAJO_EN_ALTURAS_GUION_VERSION;
 }
 
 function mergeTrabajoEnAlturasPreservandoUsuario(

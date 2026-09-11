@@ -8,6 +8,7 @@ import {
   PortalLandingConfig,
 } from '../../core/constants/portal-landing-defaults';
 import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
+import { resolvePortalHeroEstilo } from '../../core/utils/portal-theme-css-base.util';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
@@ -29,11 +30,17 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 })
 export class PortalLandingEditorComponent {
   @Input({ required: true }) landing!: PortalLandingConfig;
+  @Input() portalForm?: PortalAulaConfig | null;
   @Input() portalUrl = '';
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   bloque = signal<string | null>('general');
+
+  /** Banner clásico (Finstruvial / azul profundo): H1 animado = heroTitulo del portal. */
+  heroEsStarfield(): boolean {
+    return resolvePortalHeroEstilo(this.portalForm?.site?.tema) === 'starfield';
+  }
 
   toggleBloque(id: string) {
     this.bloque.update((actual) => (actual === id ? null : id));
