@@ -62,7 +62,7 @@
             <span class="pseo-nav__icon" aria-hidden="true">{{ pageIcon(page.key) }}</span>
             <span class="pseo-nav__label">
               <span class="pseo-nav__name">{{ page.label }}</span>
-              <span class="pseo-nav__path">{{ page.ruta }}</span>
+              <span class="pseo-nav__path">{{ pageRuta(page.key) }}</span>
             </span>
             @if (!usesAutoText(page.key)) {
               <span class="pseo-nav__badge" title="Textos personalizados">✓</span>
@@ -83,7 +83,7 @@
             </div>
           </div>
           <div class="pseo-panel__meta">
-            <code class="pseo-panel__ruta">{{ meta.ruta }}</code>
+            <code class="pseo-panel__ruta">{{ pageRuta(meta.key) }}</code>
             <a
               class="psb-btn psb-btn--ghost pseo-panel__open"
               [href]="previewUrl(meta.key)"
@@ -95,6 +95,15 @@
             </span>
           </div>
         </header>
+
+        @if (seoPaginaSlugKey(meta.key); as slugKey) {
+          <argo-portal-page-slug-editor
+            [paginaKey]="slugKey"
+            [site]="site"
+            [finstruvialServicios]="landing?.finstruvialServicios ?? null"
+            [portalUrl]="portalUrl"
+          />
+        }
 
         <div class="pseo-panel__grid">
           <section class="pseo-fields">

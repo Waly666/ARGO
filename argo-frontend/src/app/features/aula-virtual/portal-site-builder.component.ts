@@ -82,10 +82,12 @@ import {
 } from '../../core/constants/finstruvial-servicios-editor-panels';
 import type { PortalFinstruvialServiciosConfig } from '../../core/constants/finstruvial-servicio-landing.types';
 import { PortalFinstruvialServiciosEditorComponent } from './portal-finstruvial-servicios-editor.component';
+import { PortalPageSlugEditorComponent } from './portal-page-slug-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
 import { environment } from '../../../environments/environment';
+import { finstruvialServiciosHubRoute } from '../../core/utils/portal-page-route.util';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -161,6 +163,7 @@ interface GuiaPaso {
     PortalExamenTeoricoEditorComponent,
     PortalFieldLabelComponent,
     PortalFinstruvialServiciosEditorComponent,
+    PortalPageSlugEditorComponent,
     PortalFundacionEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalGaleriaHeroImagenEditorComponent,
@@ -210,6 +213,7 @@ export class PortalSiteBuilderComponent {
   readonly finstruvialServicioMenu = FINSTRUVIAL_SERVICIO_BUILDER_MENU;
   readonly finstruvialServicioRoute = finstruvialServicioRoute;
   readonly finstruvialLineaSlug = finstruvialServicioSlugFromBuilderPanel;
+  readonly finstruvialServiciosHubRoute = finstruvialServiciosHubRoute;
 
   private readonly menuGroupsAll: MenuGroup[] = [
     {
@@ -509,6 +513,34 @@ export class PortalSiteBuilderComponent {
       this.portalForm.site.tema.fuenteTitulos = '';
     }
     return this.portalForm.site;
+  }
+
+  /** Página cuyo slug se edita en la parte superior del panel actual. */
+  paginaSlugEditorKey(): PortalPaginaKey | null {
+    if (this.finstruvialLineaSlug(this.panel())) return null;
+    const map: Partial<Record<BuilderPanel, PortalPaginaKey>> = {
+      inicio: 'home',
+      contenido: 'home',
+      fotosInicio: 'home',
+      publicidadInicio: 'home',
+      appMobile: 'home',
+      acerca: 'acerca',
+      institucional: 'fundacion',
+      cursosConduccion: 'cursosConduccion',
+      examenTeorico: 'examenTeorico',
+      mercanciasPeligrosas: 'mercanciasPeligrosas',
+      trabajoEnAlturas: 'trabajoEnAlturas',
+      manejoDefensivo: 'manejoDefensivo',
+      primerosAuxilios: 'primerosAuxilios',
+      galeria: 'galeria',
+      blog: 'blog',
+      consultaCertificados: 'consultaCertificados',
+      pqr: 'pqr',
+      jornadasCapacitacion: 'jornadasCapacitacion',
+      evaluacionJornadas: 'evaluacionJornadas',
+      finstruvialServiciosHub: 'servicios',
+    };
+    return map[this.panel()] ?? null;
   }
 
   panelInfo(): PanelInfo {

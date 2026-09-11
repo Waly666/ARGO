@@ -6,7 +6,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 import {
   finstruvialServicioDefaultRouteSegment,
-  finstruvialServicioPublicRoute,
   finstruvialServicioRouteSegmentFrom,
   finstruvialServicioSlugFromRouteSegment,
 } from '../../core/constants/finstruvial-servicios.constants';
@@ -24,6 +23,10 @@ import {
   finstruvialServicioImagenUrl,
   finstruvialServicioVideoUrl,
 } from '../../core/finstruvial-servicios.util';
+import {
+  finstruvialServicioPublicRouteWithConfig,
+  finstruvialServiciosHubRoute,
+} from '../../core/portal-page-route.util';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig, CursoVirtual } from '../../core/models';
@@ -372,7 +375,9 @@ export class ServicioLineaComponent implements OnInit {
   private redirigirSiInactivo() {
     if (!this.servicio()) {
       const landing = this.landing();
-      const destino = finstruvialPortafolioActivo(landing.finstruvialServicios) ? '/servicios' : '/';
+      const destino = finstruvialPortafolioActivo(landing.finstruvialServicios)
+        ? finstruvialServiciosHubRoute(this.config())
+        : '/';
       void this.router.navigateByUrl(destino);
     }
   }
@@ -385,7 +390,10 @@ export class ServicioLineaComponent implements OnInit {
     const canon = finstruvialServicioRouteSegmentFrom(s.slug, s.routeSegment).toLowerCase();
     const legacy = finstruvialServicioDefaultRouteSegment(s.slug).toLowerCase();
     if (segment !== legacy || canon === legacy) return;
-    void this.router.navigateByUrl(finstruvialServicioPublicRoute(s.slug, s.routeSegment), { replaceUrl: true });
+    void this.router.navigateByUrl(
+      finstruvialServicioPublicRouteWithConfig(s.slug, s.routeSegment, this.config()),
+      { replaceUrl: true },
+    );
   }
 
   private cargarCatalogoCursos() {

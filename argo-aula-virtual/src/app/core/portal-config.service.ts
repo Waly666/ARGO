@@ -12,6 +12,7 @@ import {
   persistPortalThemeCache,
   readPortalThemeCache,
 } from './portal-theme-cache.util';
+import { PortalRouteSyncService } from './portal-route-sync.service';
 import { PortalThemeService } from './portal-theme.service';
 
 @Injectable({ providedIn: 'root' })
@@ -19,6 +20,7 @@ export class PortalConfigService {
   private http = inject(HttpClient);
   private theme = inject(PortalThemeService);
   private branding = inject(PortalBrandingService);
+  private routeSync = inject(PortalRouteSyncService);
 
   private readonly configSignal = signal<PortalConfig | null>(null);
   private readonly readySignal = signal(false);
@@ -51,6 +53,7 @@ export class PortalConfigService {
 
   private applyConfig(cfg: PortalConfig) {
     this.configSignal.set(cfg);
+    this.routeSync.sync(cfg);
     this.theme.apply(cfg);
     this.branding.apply(cfg);
     persistPortalThemeCache(cfg);

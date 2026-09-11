@@ -6,7 +6,6 @@ import { finalize } from 'rxjs';
 import {
   FINSTRUVIAL_SERVICIO_SLUGS,
   FinstruvialServicioSlug,
-  finstruvialServicioPublicRoute,
   finstruvialServicioRouteSegmentFrom,
 } from '../../core/constants/finstruvial-servicios.constants';
 import {
@@ -77,6 +76,8 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
   @Input() lineaSlug: FinstruvialServicioSlug | null = null;
   /** URL pública del portal (para enlaces «Ver en sitio»). */
   @Input() portalUrl = '';
+  /** Prefijo del portafolio (p. ej. /servicios o slug personalizado del ERP). */
+  @Input() serviciosHubRoute = '/servicios';
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
@@ -234,7 +235,9 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
 
   rutaPublicaLinea(slug: FinstruvialServicioSlug = this.lineaActiva()): string {
     const p = this.finstruvialServicios?.paginas?.[slug];
-    return finstruvialServicioPublicRoute(slug, p?.routeSegment);
+    const hub = (this.serviciosHubRoute || '/servicios').replace(/\/+$/, '');
+    const seg = finstruvialServicioRouteSegmentFrom(slug, p?.routeSegment);
+    return `${hub}/${seg}`;
   }
 
   vistaPreviaPagina(): string {

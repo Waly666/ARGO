@@ -1,4 +1,8 @@
 import { PortalConfig } from './models';
+import {
+  clavePaginaPorRutaConConfig,
+  portalPageRoute as portalPageRouteFromConfig,
+} from './portal-page-route.util';
 
 export type PortalPaginaKey =
   | 'home'
@@ -91,7 +95,8 @@ export function paginaEnMenuServicios(config: PortalConfig | null, key: PortalPa
   return menuGrupoPagina(config, key) === 'servicios';
 }
 
-export function rutaPagina(key: PortalPaginaKey): string {
+export function rutaPagina(key: PortalPaginaKey, config?: PortalConfig | null): string {
+  if (config) return portalPageRouteFromConfig(config, key);
   return RUTA_PAGINA[key];
 }
 
@@ -147,7 +152,8 @@ function posicionarTestimoniosAntesFaq(orden: string[]): string[] {
   return out;
 }
 
-export function clavePaginaPorRuta(path: string): PortalPaginaKey | null {
+export function clavePaginaPorRuta(path: string, config?: PortalConfig | null): PortalPaginaKey | null {
+  if (config) return clavePaginaPorRutaConConfig(path, config);
   const clean = path.split('?')[0].split('#')[0];
   const base = clean.replace(/\/:[^/]+.*$/, '').replace(/\/$/, '') || '/';
   if (base === '/' || base === '') return 'home';

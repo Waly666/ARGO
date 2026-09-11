@@ -12,6 +12,24 @@ function str(v, fallback = '') {
   return String(v ?? fallback).trim();
 }
 
+function normalizePortalPageSlug(raw) {
+  return String(raw ?? '')
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function normalizarRutaPagina(key, raw, fb) {
+  if (key === 'home') return '/';
+  const seg = normalizePortalPageSlug(String(raw || '').replace(/^\//, ''));
+  const fbSeg = normalizePortalPageSlug(String(fb || '').replace(/^\//, ''));
+  return seg ? `/${seg}` : fb;
+}
+
 function hexColor(v, fallback) {
   const s = str(v, fallback);
   return /^#[0-9a-fA-F]{6}$/.test(s) ? s : fallback;
@@ -27,7 +45,7 @@ function normalizarPaginas(raw, navFallback = {}) {
     out[key] = {
       activa: item.activa !== false,
       etiquetaMenu: str(item.etiquetaMenu, fb.etiquetaMenu) || fb.etiquetaMenu,
-      ruta: fb.ruta,
+      ruta: normalizarRutaPagina(key, item.ruta, fb.ruta),
       menuGrupo:
         item.menuGrupo === 'servicios' || item.menuGrupo === 'principal'
           ? item.menuGrupo

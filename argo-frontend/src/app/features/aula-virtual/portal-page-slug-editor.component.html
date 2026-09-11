@@ -1,0 +1,40 @@
+<section class="pps" [class.pps--compact]="compact">
+  <label class="psb-field psb-field--plain psb-field--highlight">
+    <span>URL de la página (slug) — SEO</span>
+    @if (isHome()) {
+      <input type="text" class="psb-input" value="/" disabled aria-readonly="true" />
+      <small class="pps__hint">
+        La página de inicio siempre es <strong>/</strong>. Edite el SEO en «SEO (Google)» o en los textos del inicio.
+      </small>
+    } @else {
+      <div class="pps__row">
+        <span class="pps__prefix" aria-hidden="true">/</span>
+        <input
+          type="text"
+          class="psb-input pps__input"
+          [(ngModel)]="slugInput"
+          (blur)="onSlugBlur()"
+          [attr.placeholder]="slugPlaceholder()"
+          spellcheck="false"
+          autocapitalize="off"
+        />
+      </div>
+      <small class="pps__hint">
+        Solo letras, números y guiones. URL pública:
+        <strong>{{ rutaPublica() }}</strong>
+        @if (rutaPublica() !== rutaDefault()) {
+          <span class="pps__legacy"> (antes {{ rutaDefault() }})</span>
+        }
+        @if (portalUrl) {
+          · <a [href]="urlCompleta()" target="_blank" rel="noopener">Abrir ↗</a>
+        }
+        @if (slugReservado()) {
+          <span class="pps__warn">Este slug está reservado por el sistema; elija otro.</span>
+        }
+        @if (slugDuplicado()) {
+          <span class="pps__warn">Este slug ya lo usa otra página activa; elija uno distinto.</span>
+        }
+      </small>
+    }
+  </label>
+</section>

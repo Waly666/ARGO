@@ -47,6 +47,15 @@
       </header>
     }
 
+    @if (paginaSlugEditorKey(); as pageKey) {
+      <argo-portal-page-slug-editor
+        [paginaKey]="pageKey"
+        [site]="site"
+        [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+        [portalUrl]="portalUrl"
+      />
+    }
+
     @if (finstruvialLineaSlug(panel()); as slug) {
       <p class="psb-note">
         Página pública en <strong>{{ finstruvialServicioRoute(slug, ensureFinstruvialServiciosLanding().paginas[slug]?.routeSegment) }}</strong>. Edite textos e imágenes; pulse
@@ -57,6 +66,7 @@
           modo="linea"
           [lineaSlug]="linea"
           [portalUrl]="portalUrl"
+          [serviciosHubRoute]="finstruvialServiciosHubRoute(site)"
           [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
           (portalConfigUpdated)="applyPortalConfig($event)"
@@ -153,6 +163,13 @@
                     Mostrar en el submenú «Servicios» (en lugar del menú principal)
                   </label>
                 }
+                <argo-portal-page-slug-editor
+                  [paginaKey]="p.key"
+                  [site]="site"
+                  [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+                  [portalUrl]="portalUrl"
+                  [compact]="true"
+                />
               </article>
             }
           }
@@ -539,6 +556,7 @@
         <argo-portal-finstruvial-servicios-editor
           modo="hub"
           [portalUrl]="portalUrl"
+          [serviciosHubRoute]="finstruvialServiciosHubRoute(site)"
           [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
           (portalConfigUpdated)="applyPortalConfig($event)"

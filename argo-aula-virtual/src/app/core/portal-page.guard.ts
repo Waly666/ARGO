@@ -9,12 +9,13 @@ import { clavePaginaPorRuta, paginaActiva } from './portal-site';
 export const portalPageGuard: CanActivateFn = (_route, state) => {
   const api = inject(AulaApiService);
   const router = inject(Router);
-  const key = clavePaginaPorRuta(state.url);
-  if (!key || key === 'home' || key === 'aula') return true;
-
   return api.config().pipe(
     take(1),
-    map((cfg) => (paginaActiva(cfg, key) ? true : router.createUrlTree(['/']))),
+    map((cfg) => {
+      const key = clavePaginaPorRuta(state.url, cfg);
+      if (!key || key === 'home' || key === 'aula') return true;
+      return paginaActiva(cfg, key) ? true : router.createUrlTree(['/']);
+    }),
     catchError(() => of(true)),
   );
 };

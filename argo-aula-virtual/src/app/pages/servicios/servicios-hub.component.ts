@@ -4,10 +4,8 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { finstruvialPortafolioActivo, finstruvialServiciosActivos } from '../../core/constants/finstruvial-servicios-defaults';
-import {
-  finstruvialServicioPublicRoute,
-  resolverUrlLineaServicio,
-} from '../../core/constants/finstruvial-servicios.constants';
+import { resolverUrlLineaServicio } from '../../core/constants/finstruvial-servicios.constants';
+import { finstruvialServicioPublicRouteWithConfig } from '../../core/portal-page-route.util';
 import { PortalServiciosHubTarjeta } from '../../core/constants/finstruvial-servicio-landing.types';
 import { portalHeroImagenPublicUrl } from '../../core/portal-hero-imagen.util';
 import { mergePortalLanding } from '../../core/portal-landing';
@@ -68,7 +66,7 @@ export class ServiciosHubComponent implements OnInit {
       icon: p.hubIcon,
       titulo: p.menuLabel,
       lead: p.hubLead,
-      url: finstruvialServicioPublicRoute(p.slug, p.routeSegment),
+      url: finstruvialServicioPublicRouteWithConfig(p.slug, p.routeSegment, this.config()),
       cta: p.tarjetaCta || 'Conocer más',
       externo: false,
     }));

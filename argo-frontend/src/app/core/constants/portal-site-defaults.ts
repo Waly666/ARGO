@@ -5,6 +5,11 @@ import {
   PortalSeoPageConfig,
   PortalSeoPageKey,
 } from './portal-seo-pages';
+import {
+  normalizePortalPageSlug,
+  portalPageRouteFromSlug,
+  portalPageSlugSegment,
+} from '../utils/portal-page-route.util';
 
 export type PortalPaginaKey =
   | 'home'
@@ -250,6 +255,11 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
       };
     } else if (!paginas[m.key].menuGrupo) {
       paginas[m.key].menuGrupo = m.key === 'cursosConduccion' ? 'servicios' : 'principal';
+    }
+    const slug = portalPageSlugSegment(m.key, paginas[m.key].ruta);
+    paginas[m.key].ruta = portalPageRouteFromSlug(m.key, slug);
+    if (m.key !== 'home' && !normalizePortalPageSlug(slug)) {
+      paginas[m.key].ruta = PORTAL_PAGINA_RUTAS[m.key];
     }
   }
   return {

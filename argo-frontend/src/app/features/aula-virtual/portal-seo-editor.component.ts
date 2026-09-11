@@ -7,11 +7,14 @@ import {
   mergePortalSeoPages,
   PORTAL_SEO_PAGE_CATALOG,
   PortalSeoPageKey,
+  isFinstruvialServicioSeoKey,
+  resolvePortalSeoPageRuta,
   seoPageForEditor,
   seoPreviewText,
 } from '../../core/constants/portal-seo-pages';
 import { FINSTRUVIAL_SERVICIO_BUILDER_MENU } from '../../core/constants/finstruvial-servicios-editor-panels';
-import { PortalSiteConfig } from '../../core/constants/portal-site-defaults';
+import { PortalPaginaKey, PortalSiteConfig } from '../../core/constants/portal-site-defaults';
+import { PortalPageSlugEditorComponent } from './portal-page-slug-editor.component';
 import { PortalLandingConfig } from '../../core/constants/portal-landing-defaults';
 import {
   applyPortalSeoImportPack,
@@ -62,6 +65,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
   standalone: true,
   imports: [
     PortalFieldLabelComponent,
+    PortalPageSlugEditorComponent,
     CommonModule,
     FormsModule,
     FormModalComponent,
@@ -108,7 +112,7 @@ export class PortalSeoEditorComponent implements OnChanges {
     return this.catalog.filter(
       (p) =>
         p.label.toLowerCase().includes(q) ||
-        p.ruta.toLowerCase().includes(q) ||
+        this.pageRuta(p.key).toLowerCase().includes(q) ||
         p.grupo.toLowerCase().includes(q) ||
         p.hint.toLowerCase().includes(q),
     );
@@ -167,7 +171,7 @@ export class PortalSeoEditorComponent implements OnChanges {
 
   previewUrl(key: PortalSeoPageKey): string {
     const base = (this.portalUrl || 'https://ejemplo.edu.co').replace(/\/+$/, '');
-    const path = this.pageMeta(key).ruta;
+    const path = resolvePortalSeoPageRuta(key, this.site, this.landing);
     return `${base}${path}`;
   }
 
@@ -180,7 +184,36 @@ export class PortalSeoEditorComponent implements OnChanges {
   }
 
   previewPath(key: PortalSeoPageKey): string {
-    return this.pageMeta(key).ruta;
+    return resolvePortalSeoPageRuta(key, this.site, this.landing);
+  }
+
+  pageRuta(key: PortalSeoPageKey): string {
+    return resolvePortalSeoPageRuta(key, this.site, this.landing);
+  }
+
+  seoPaginaSlugKey(key: PortalSeoPageKey): PortalPaginaKey | null {
+    if (isFinstruvialServicioSeoKey(key)) return null;
+    const map: Partial<Record<PortalSeoPageKey, PortalPaginaKey>> = {
+      home: 'home',
+      cursos: 'cursos',
+      tienda: 'tienda',
+      acerca: 'acerca',
+      fundacion: 'fundacion',
+      consultaCertificados: 'consultaCertificados',
+      cursosConduccion: 'cursosConduccion',
+      examenTeorico: 'examenTeorico',
+      mercanciasPeligrosas: 'mercanciasPeligrosas',
+      trabajoEnAlturas: 'trabajoEnAlturas',
+      manejoDefensivo: 'manejoDefensivo',
+      primerosAuxilios: 'primerosAuxilios',
+      serviciosHub: 'servicios',
+      blog: 'blog',
+      galeria: 'galeria',
+      pqr: 'pqr',
+      jornadasCapacitacion: 'jornadasCapacitacion',
+      evaluacionJornadas: 'evaluacionJornadas',
+    };
+    return map[key] ?? null;
   }
 
   usesAutoText(key: PortalSeoPageKey): boolean {

@@ -7,6 +7,11 @@ import {
 } from './finstruvial-servicios.constants';
 import { mergeFinstruvialServicios } from './finstruvial-servicios-defaults';
 import { PortalFinstruvialServiciosConfig } from './finstruvial-servicio-landing.types';
+import { PortalPaginaKey, PortalSiteConfig } from './portal-site-defaults';
+import {
+  finstruvialServicioPublicRouteWithSite,
+  portalPageRoute,
+} from '../utils/portal-page-route.util';
 
 export type FinstruvialServicioSeoKey = `servicio_${FinstruvialServicioSlug}`;
 
@@ -390,6 +395,43 @@ export function seoPageForEditor(
     descripcion: stored?.descripcion?.trim() || finstruvial?.descripcion?.trim() || '',
     keywords: stored?.keywords?.trim() || finstruvial?.keywords?.trim() || '',
   };
+}
+
+const SEO_KEY_TO_PAGINA: Partial<Record<PortalSeoPageKey, PortalPaginaKey>> = {
+  home: 'home',
+  cursos: 'cursos',
+  tienda: 'tienda',
+  acerca: 'acerca',
+  fundacion: 'fundacion',
+  consultaCertificados: 'consultaCertificados',
+  cursosConduccion: 'cursosConduccion',
+  examenTeorico: 'examenTeorico',
+  mercanciasPeligrosas: 'mercanciasPeligrosas',
+  trabajoEnAlturas: 'trabajoEnAlturas',
+  manejoDefensivo: 'manejoDefensivo',
+  primerosAuxilios: 'primerosAuxilios',
+  serviciosHub: 'servicios',
+  blog: 'blog',
+  galeria: 'galeria',
+  pqr: 'pqr',
+  jornadasCapacitacion: 'jornadasCapacitacion',
+  evaluacionJornadas: 'evaluacionJornadas',
+};
+
+/** Ruta pública efectiva (slug ERP) para una fila del catálogo SEO. */
+export function resolvePortalSeoPageRuta(
+  key: PortalSeoPageKey,
+  site?: Partial<PortalSiteConfig> | null,
+  landing?: { finstruvialServicios?: Partial<PortalFinstruvialServiciosConfig> } | null,
+): string {
+  if (isFinstruvialServicioSeoKey(key)) {
+    const slug = key.slice(9) as FinstruvialServicioSlug;
+    const p = mergeFinstruvialServicios(landing?.finstruvialServicios).paginas[slug];
+    return finstruvialServicioPublicRouteWithSite(slug, p?.routeSegment, site);
+  }
+  const paginaKey = SEO_KEY_TO_PAGINA[key];
+  if (paginaKey) return portalPageRoute(site, paginaKey);
+  return PORTAL_SEO_PAGE_CATALOG.find((p) => p.key === key)?.ruta || '/';
 }
 
 export function seoPreviewText(value: string, fallback: string, max = 160): string {
