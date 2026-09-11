@@ -60,11 +60,25 @@
       [titleLine]="hub().tituloLinea"
       [titleAccent]="hub().tituloAcento"
       [lead]="hub().lead"
+      [pillars]="hubHeroPillars()"
+      pillarsLabel="Áreas de formación"
+      [highlight]="hubHeroHighlight()"
+      [showRibbon]="hubHeroRibbon().length > 0"
+      [ribbon]="hubHeroRibbon()"
+      ribbonLabel="Líneas de servicio"
       [showVirtualBadge]="false"
       theme="blue"
       size="page-tall"
       titleId="fsv-hub-title"
-    />
+    >
+      @if (hub().heroStats.length) {
+        <div ppbh-extra class="ppbh-stats" aria-label="Cobertura del portafolio">
+          @for (stat of hub().heroStats; track stat) {
+            <span class="ppbh-stat">{{ stat }}</span>
+          }
+        </div>
+      }
+    </av-portal-promo-banner-hero>
   }
 
   <main>

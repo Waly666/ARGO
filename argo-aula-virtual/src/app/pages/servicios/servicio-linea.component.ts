@@ -12,6 +12,13 @@ import {
 } from '../../core/constants/finstruvial-servicios.constants';
 import { finstruvialPortafolioActivo } from '../../core/constants/finstruvial-servicios-defaults';
 import {
+  finstruvialServicioHeroHighlight,
+  finstruvialServicioHeroPillars,
+  finstruvialServicioHeroPillarsLabel,
+  finstruvialServicioHeroRibbon,
+  finstruvialServicioHeroStats,
+} from '../../core/finstruvial-servicio-hero.util';
+import {
   finstruvialServicioHeroPhoto,
   finstruvialServicioImagenUrl,
   finstruvialServicioVideoUrl,
@@ -77,6 +84,31 @@ export class ServicioLineaComponent implements OnInit {
   heroPhoto = computed(() => {
     const s = this.servicio();
     return s ? finstruvialServicioHeroPhoto(s) : null;
+  });
+
+  heroPillars = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroPillars(s) : [];
+  });
+
+  heroPillarsLabel = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroPillarsLabel(s) : 'Fortalezas';
+  });
+
+  heroHighlight = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroHighlight(s) : null;
+  });
+
+  heroRibbon = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroRibbon(s) : [];
+  });
+
+  heroStats = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroStats(s) : [];
   });
 
   /** Imagen de presentación (solo `seccion`; independiente del banner hero). */

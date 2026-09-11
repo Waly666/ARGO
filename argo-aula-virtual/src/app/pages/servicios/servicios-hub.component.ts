@@ -16,6 +16,11 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import {
+  finstruvialHubHeroHighlight,
+  finstruvialHubHeroPillars,
+  finstruvialHubHeroRibbon,
+} from '../../core/finstruvial-servicio-hero.util';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
@@ -87,6 +92,12 @@ export class ServiciosHubComponent implements OnInit {
     'Prevención de riesgos',
     'Capacitación empresarial',
   ];
+
+  hubHeroPillars = computed(() => finstruvialHubHeroPillars(this.formacionHighlights));
+
+  hubHeroRibbon = computed(() => finstruvialHubHeroRibbon(this.tarjetas()));
+
+  hubHeroHighlight = computed(() => finstruvialHubHeroHighlight(this.hub()));
 
   ngOnInit() {
     this.api.config().subscribe({

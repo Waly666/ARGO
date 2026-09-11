@@ -13,11 +13,27 @@
       [titleLine]="s.tituloLinea"
       [titleAccent]="s.tituloAcento"
       [lead]="s.lead"
+      [pillars]="heroPillars()"
+      [pillarsLabel]="heroPillarsLabel()"
+      [highlight]="heroHighlight()"
+      [showRibbon]="heroRibbon().length > 0"
+      [ribbon]="heroRibbon()"
+      ribbonLabel="Ventajas"
       [showVirtualBadge]="s.mostrarBadgeVirtual"
       [theme]="s.theme"
+      size="page-tall"
       titleId="fsv-servicio-title"
     >
       <a ppbh-top routerLink="/servicios" class="ppbh-back">Volver a servicios</a>
+
+      @if (heroStats().length) {
+        <div ppbh-extra class="ppbh-stats" [attr.aria-label]="heroPillarsLabel()">
+          @for (stat of heroStats(); track stat) {
+            <span class="ppbh-stat">{{ stat }}</span>
+          }
+        </div>
+      }
+
       @for (p of s.heroParrafos; track $index) {
         <p ppbh-extra class="fsv-hero-text">{{ p }}</p>
       }
