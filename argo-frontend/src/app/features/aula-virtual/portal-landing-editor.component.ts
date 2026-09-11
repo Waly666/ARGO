@@ -13,6 +13,7 @@ import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.compo
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
+import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
 @Component({
@@ -23,6 +24,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
     PortalPromoHeroFieldsEditorComponent,
+    PortalPromoHeroImagenEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
@@ -42,6 +44,11 @@ export class PortalLandingEditorComponent {
   /** Banner clásico (Finstruvial / azul profundo): H1 animado = heroTitulo del portal. */
   heroEsStarfield(): boolean {
     return resolvePortalHeroEstilo(this.portalForm?.site?.tema) === 'starfield';
+  }
+
+  /** Hero dorado con malla (Servial Colombia). */
+  heroEsServialMesh(): boolean {
+    return resolvePortalHeroEstilo(this.portalForm?.site?.tema) === 'servial-mesh';
   }
 
   toggleBloque(id: string) {

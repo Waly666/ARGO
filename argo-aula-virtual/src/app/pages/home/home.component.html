@@ -18,16 +18,19 @@
       @if (heroEstilo() === 'servial-mesh') {
 <av-portal-promo-banner-hero
   class="home-promo-hero"
+  [class.home-promo-hero--cert-brand]="heroBrandEsCertificacion()"
   size="home"
   sectionId="home-hero"
   titleId="home-hero-title"
   [showPhoto]="!!heroImg()"
   [photoUrl]="heroImg()"
   [photoAlt]="landing().hero.imagenAlt"
-  [logoUrl]="logoUrl()"
-  [logoAlt]="nombreCea()"
+  [logoUrl]="heroBrandUrl()"
+  [logoAlt]="heroBrandAlt()"
   [kicker]="heroPromoKicker()"
-  [lead]="heroSubtitulo()"
+  [lead]="servialHeroLead()"
+  [highlight]="servialHeroHighlight()"
+  [highlightRadar]="servialHeroHighlightRadar()"
   [showVirtualBadge]="false"
   theme="gold">
 
@@ -164,6 +167,7 @@
 </section>
       } @else if (finstruvialHome) {
 <av-finstruvial-hero
+  [class.fvh--cert-brand]="heroBrandEsCertificacion()"
   [instBarLeft]="nombreCea() | uppercase"
   [instBarRight]="landing().instBarTag || 'Cursos y programas de capacitación virtual en Colombia'"
   [eyebrow]="finstruvialHeroEyebrow()"
@@ -177,8 +181,8 @@
   [ctaTertiaryUrl]="heroLlamarVisible() ? heroLlamarHref() : '/acerca'"
   [bgImageUrl]="finstruvialHeroBg()"
   [bgImageAlt]="landing().hero.imagenAlt || 'Formación en tránsito, transporte y seguridad vial'"
-  [logoUrl]="logoUrl()"
-  [logoAlt]="nombreCea()"
+  [logoUrl]="heroBrandUrl()"
+  [logoAlt]="heroBrandAlt()"
   [highlight]="finstruvialHeroHighlight()"
   [highlightRadar]="finstruvialHeroHighlightRadar()">
 

@@ -56,6 +56,14 @@ const LANDING_HERO_IMAGE_PAGES = {
     urlField: 'heroImagenUrl',
     altField: 'heroImagenAlt',
   },
+  homeLogoCertificacion: {
+    label: 'Logo de certificación (inicio)',
+    uploadKey: 'aula-virtual-home-logo-certificacion',
+    multerExport: 'aulaVirtualHomeLogoCertificacion',
+    path: ['hero'],
+    urlField: 'logoCertificacionUrl',
+    altField: 'logoCertificacionAlt',
+  },
 };
 
 function getPageConfig(pageKey) {

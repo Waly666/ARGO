@@ -297,6 +297,10 @@ export interface PortalLandingConfig {
     highlightTitle: string;
     highlightSubtitle: string;
     highlightRadar: boolean;
+    logoCertificacionUrl: string;
+    logoCertificacionUrlAbsoluta?: string;
+    logoCertificacionAlt: string;
+    logoCertificacionPrompt?: string;
   };
   infoCards: LandingInfoCard[];
   nav: {
@@ -422,6 +426,8 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     highlightSubtitle:
       'FINSTRUVIAL ofrece formación virtual, presencial y mixta para estudiantes, conductores, empresas, autoridades, profesionales y ciudadanos.',
     highlightRadar: true,
+    logoCertificacionUrl: '',
+    logoCertificacionAlt: '',
   },
   infoCards: [
     { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
@@ -1064,6 +1070,11 @@ export function mergePortalLanding(
       highlightTitle: raw.hero?.highlightTitle?.trim() || d.hero.highlightTitle,
       highlightSubtitle: raw.hero?.highlightSubtitle?.trim() || d.hero.highlightSubtitle,
       highlightRadar: raw.hero?.highlightRadar !== false,
+      logoCertificacionUrl: raw.hero?.logoCertificacionUrl?.trim() || d.hero.logoCertificacionUrl,
+      logoCertificacionAlt: raw.hero?.logoCertificacionAlt?.trim() || d.hero.logoCertificacionAlt,
+      logoCertificacionPrompt: raw.hero?.logoCertificacionPrompt?.trim() || d.hero.logoCertificacionPrompt,
+      logoCertificacionUrlAbsoluta:
+        raw.hero?.logoCertificacionUrlAbsoluta?.trim() || d.hero.logoCertificacionUrlAbsoluta,
     },
     infoCards: raw.infoCards?.length ? raw.infoCards : d.infoCards,
     nav: { ...d.nav, ...raw.nav },

@@ -515,6 +515,85 @@ av-finstruvial-hero:has([fvh-info-cards]) + av-cursos-conduccion-publicidad-slid
     width: min(100%, 860px);
   }
 
+  &.home-promo-hero--cert-brand {
+    ::ng-deep .ppbh__brand {
+      width: clamp(96px, 13vw, 132px);
+      height: clamp(96px, 13vw, 132px);
+      padding: 0;
+      border: none;
+      border-radius: 14px;
+      background: transparent;
+      box-shadow:
+        0 14px 36px rgba(0, 0, 0, 0.38),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+
+      img {
+        border-radius: 14px;
+      }
+    }
+  }
+
+  ::ng-deep .ppbh__highlight {
+    align-items: flex-start;
+    max-width: min(46rem, 92%);
+    margin-top: 1.15rem;
+    background: transparent;
+    backdrop-filter: none;
+    border: 1px solid rgba(245, 196, 0, 0.48);
+
+    &--radar {
+      --ppbh-radar: #f5c400;
+      --ppbh-radar-soft: rgba(245, 196, 0, 0.62);
+      --ppbh-radar-glow: rgba(255, 214, 51, 0.45);
+      border-color: rgba(245, 196, 0, 0.52);
+      box-shadow: none;
+      animation: servialHomeHighlightGlowRadar 3.4s ease-in-out infinite;
+    }
+  }
+
+  ::ng-deep .ppbh__highlight-ring {
+    border-color: var(--ppbh-radar-soft, rgba(245, 196, 0, 0.62));
+    box-shadow:
+      0 0 14px var(--ppbh-radar-glow, rgba(255, 214, 51, 0.45)),
+      0 0 28px rgba(245, 196, 0, 0.18);
+
+    &:nth-child(2) {
+      border-color: rgba(220, 38, 38, 0.5);
+      box-shadow:
+        0 0 14px rgba(220, 38, 38, 0.35),
+        0 0 24px rgba(220, 38, 38, 0.14);
+    }
+  }
+
+  ::ng-deep .ppbh__highlight-icon {
+    margin-top: 0.1rem;
+    color: #f5c400;
+    border-color: rgba(245, 196, 0, 0.55);
+    animation: servialHomeHighlightPulseRing 2.8s ease-in-out infinite;
+  }
+
+  ::ng-deep .ppbh__highlight-copy {
+    gap: 0.45rem;
+
+    strong {
+      font-size: clamp(1rem, 1.9vw, 1.14rem);
+      line-height: 1.55;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: rgba(255, 255, 255, 0.96);
+      text-transform: none;
+    }
+
+    span {
+      font-size: clamp(0.92rem, 1.65vw, 1.05rem);
+      line-height: 1.68;
+      font-weight: 500;
+      letter-spacing: normal;
+      text-transform: none;
+      color: rgba(255, 255, 255, 0.88);
+    }
+  }
+
   ::ng-deep .ppbh__title-accent {
     font-size: clamp(1.65rem, 3.9vw, 2.75rem);
     line-height: 1.06;
@@ -547,6 +626,32 @@ av-finstruvial-hero:has([fvh-info-cards]) + av-cursos-conduccion-publicidad-slid
     gap: 0.75rem;
     flex-wrap: wrap;
     margin-top: 1.35rem;
+  }
+}
+
+@keyframes servialHomeHighlightGlowRadar {
+  0%,
+  100% {
+    border-color: rgba(245, 196, 0, 0.38);
+    box-shadow: 0 0 0 0 rgba(245, 196, 0, 0);
+  }
+
+  50% {
+    border-color: rgba(220, 38, 38, 0.62);
+    box-shadow:
+      0 0 20px rgba(245, 196, 0, 0.28),
+      0 0 12px rgba(220, 38, 38, 0.18);
+  }
+}
+
+@keyframes servialHomeHighlightPulseRing {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 196, 0, 0.38);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px transparent;
   }
 }
 

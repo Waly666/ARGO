@@ -133,6 +133,42 @@
           La <strong>línea 2 del H1</strong> (dorada y animada) se edita en
           <strong>Empresa → Frase principal del banner</strong>.
         </p>
+        @if (heroEsServialMesh()) {
+          <hr />
+          <h4>Tarjeta destacada del banner</h4>
+          <p class="av-muted">
+            Tarjeta con icono y efecto radar bajo el título animado. Si completa el título destacado, reemplaza el párrafo del subtítulo del banner.
+            Icono: nombre del set del portal (<code>shield-check</code>, <code>trophy</code>, etc.).
+          </p>
+          <argo-portal-promo-hero-fields-editor
+            [hero]="landing.hero"
+            [showTitle]="false"
+            [showLead]="false"
+            [showHighlight]="true"
+          />
+          <label class="av-check">
+            <input type="checkbox" [(ngModel)]="landing.hero.highlightRadar" />
+            Efecto radar en la tarjeta destacada
+          </label>
+        }
+      }
+      @if (heroEsStarfield() || heroEsServialMesh()) {
+        <hr />
+        <h4>Logo flotante del banner</h4>
+        <p class="av-muted">
+          <strong>Opcional.</strong> Suba aquí el escudo o sello de la certificación vigente (calidad, ISO, etc.).
+          Puede cambiarlo cuando cambie la certificación. La imagen se guarda al subirla.
+          Si deja este campo vacío, en el banner se muestra el <strong>logo institucional</strong> del sitio.
+        </p>
+        <argo-portal-promo-hero-imagen-editor
+          pageKey="homeLogoCertificacion"
+          [hero]="landing.hero"
+          label="Logo de certificación (inicio)"
+          routePath="/ (inicio)"
+          emptyHint="Sin imagen configurada — se usará el logo institucional del sitio."
+          (portalConfigUpdated)="portalConfigUpdated.emit($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
       }
       <hr />
       <p class="av-muted">Ruta interna (ej. <code>/cursos</code>), <code>https://…</code> o WhatsApp (<code>https://wa.me/573…</code>). Los teléfonos del sitio abren WhatsApp.</p>

@@ -36,6 +36,7 @@ const {
 } = require('./aulaVirtualFinstruvialServiciosDefaults');
 const { mergePromoHeroTheme } = require('./portalPromoHeroFields');
 const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
+const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
 /** Contenido editable del landing del portal aula virtual (valores por defecto). */
 const LANDING_DEFAULTS = {
@@ -59,6 +60,13 @@ const LANDING_DEFAULTS = {
     eyebrowServial: '— Bienvenid@ a {nombreCea} —',
     subEyebrow: 'Centro de Enseñanza Automovilística',
     ctaLlamarEtiqueta: '',
+    highlightIcon: '',
+    highlightTitle: '',
+    highlightSubtitle: '',
+    highlightRadar: true,
+    logoCertificacionUrl: '',
+    logoCertificacionAlt: '',
+    logoCertificacionPrompt: '',
   },
   infoCards: [
     { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
@@ -591,6 +599,7 @@ function mergeLandingHero(raw) {
   const d = LANDING_DEFAULTS.hero;
   const src = raw && typeof raw === 'object' ? raw : {};
   const str = (v, fb) => String(v ?? fb).trim() || fb;
+  const logoCertificacionUrl = str(src.logoCertificacionUrl, d.logoCertificacionUrl);
   return {
     ctaPrincipal: str(src.ctaPrincipal, d.ctaPrincipal),
     ctaPrincipalUrl: str(src.ctaPrincipalUrl, d.ctaPrincipalUrl),
@@ -604,6 +613,16 @@ function mergeLandingHero(raw) {
     eyebrowServial: str(src.eyebrowServial, d.eyebrowServial),
     subEyebrow: str(src.subEyebrow, d.subEyebrow),
     ctaLlamarEtiqueta: str(src.ctaLlamarEtiqueta, d.ctaLlamarEtiqueta),
+    highlightIcon: str(src.highlightIcon, d.highlightIcon),
+    highlightTitle: str(src.highlightTitle, d.highlightTitle),
+    highlightSubtitle: str(src.highlightSubtitle, d.highlightSubtitle),
+    highlightRadar: src.highlightRadar !== false,
+    logoCertificacionUrl,
+    logoCertificacionUrlAbsoluta:
+      (logoCertificacionUrl ? publicUploadUrl(logoCertificacionUrl) : '') ||
+      str(src.logoCertificacionUrlAbsoluta, ''),
+    logoCertificacionAlt: str(src.logoCertificacionAlt, d.logoCertificacionAlt),
+    logoCertificacionPrompt: str(src.logoCertificacionPrompt, d.logoCertificacionPrompt),
   };
 }
 

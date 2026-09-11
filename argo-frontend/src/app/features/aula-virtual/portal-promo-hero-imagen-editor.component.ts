@@ -8,6 +8,8 @@ import {
   PortalLandingHeroImageKey,
   portalHeroImagenPreviewUrl,
   portalHeroImagenStoredUrl,
+  portalLogoCertificacionPreviewUrl,
+  portalLogoCertificacionStoredUrl,
 } from '../../core/utils/portal-hero-imagen.util';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
@@ -34,10 +36,16 @@ export class PortalPromoHeroImagenEditorComponent {
   heroUploading = signal(false);
 
   tieneImagenHero(): boolean {
+    if (this.pageKey === 'homeLogoCertificacion') {
+      return !!portalLogoCertificacionStoredUrl(this.hero);
+    }
     return !!portalHeroImagenStoredUrl(this.hero);
   }
 
   heroPreviewUrl(): string | null {
+    if (this.pageKey === 'homeLogoCertificacion') {
+      return portalLogoCertificacionPreviewUrl(this.hero, environment.uploadsUrl);
+    }
     return portalHeroImagenPreviewUrl(this.hero, environment.uploadsUrl);
   }
 
@@ -93,29 +101,38 @@ export class PortalPromoHeroImagenEditorComponent {
     return (
       this.pageKey === 'blog' ||
       this.pageKey === 'examenTeorico' ||
-      this.pageKey === 'consultaCertificados'
+      this.pageKey === 'consultaCertificados' ||
+      this.pageKey === 'homeLogoCertificacion'
     );
   }
 
   heroAltText(): string {
+    if (this.pageKey === 'homeLogoCertificacion') {
+      return this.hero.logoCertificacionAlt?.trim() || '';
+    }
     return this.usesFlatHeroAlt()
       ? this.hero.heroImagenAlt?.trim() || ''
       : this.hero.imagenAlt?.trim() || '';
   }
 
   onHeroAltChange(value: string) {
-    if (this.usesFlatHeroAlt()) this.hero.heroImagenAlt = value;
+    if (this.pageKey === 'homeLogoCertificacion') this.hero.logoCertificacionAlt = value;
+    else if (this.usesFlatHeroAlt()) this.hero.heroImagenAlt = value;
     else this.hero.imagenAlt = value;
   }
 
   heroPromptText(): string {
+    if (this.pageKey === 'homeLogoCertificacion') {
+      return this.hero.logoCertificacionPrompt?.trim() || '';
+    }
     return this.usesFlatHeroAlt()
       ? this.hero.heroImagenPrompt?.trim() || ''
       : this.hero.promptImagen?.trim() || '';
   }
 
   onHeroPromptChange(value: string) {
-    if (this.usesFlatHeroAlt()) this.hero.heroImagenPrompt = value;
+    if (this.pageKey === 'homeLogoCertificacion') this.hero.logoCertificacionPrompt = value;
+    else if (this.usesFlatHeroAlt()) this.hero.heroImagenPrompt = value;
     else this.hero.promptImagen = value;
   }
 
@@ -140,6 +157,8 @@ export class PortalPromoHeroImagenEditorComponent {
         return landing.evaluacionJornadas?.hero ?? null;
       case 'consultaCertificados':
         return landing.consultaCertificados ?? null;
+      case 'homeLogoCertificacion':
+        return landing.hero ?? null;
       default:
         return null;
     }

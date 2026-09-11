@@ -34,6 +34,8 @@ import {
   applyNombreCeaHeroText,
   promoHeroHighlightFromExtras,
 } from '../../core/constants/portal-promo-hero-fields.util';
+import { SERVIAL_HERO_HIGHLIGHT_DEFAULTS } from '../../core/constants/servial-landing-defaults';
+import { portalLogoCertificacionPublicUrl } from '../../core/portal-hero-imagen.util';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { CursosConduccionPublicidadSliderComponent } from '../cursos-conduccion/cursos-conduccion-publicidad-slider.component';
 import { PortalSeoService } from '../../core/portal-seo.service';
@@ -129,6 +131,22 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
   });
 
+  heroBrandEsCertificacion = computed(() => !!portalLogoCertificacionPublicUrl(this.landing().hero));
+
+  heroBrandUrl = computed(() => {
+    const cert = portalLogoCertificacionPublicUrl(this.landing().hero);
+    if (cert) return cert;
+    return this.logoUrl();
+  });
+
+  heroBrandAlt = computed(() => {
+    const hero = this.landing().hero;
+    if (portalLogoCertificacionPublicUrl(hero)) {
+      return hero.logoCertificacionAlt?.trim() || 'Logo de certificación';
+    }
+    return this.nombreCea();
+  });
+
   ordenSecciones = computed(() => {
     const cfg = this.config();
     const landing = mergePortalLanding(cfg?.landing, cfg?.site?.tema);
@@ -197,6 +215,35 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     return FINSTRUVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightRadar;
   });
+
+  servialHeroHighlight = computed(() => {
+    const hero = this.landing().hero;
+    const fromErp = promoHeroHighlightFromExtras({
+      highlightIcon: hero.highlightIcon,
+      highlightTitle: hero.highlightTitle,
+      highlightSubtitle: hero.highlightSubtitle,
+    });
+    if (fromErp) return fromErp;
+    return (
+      splitFinstruvialHeroLeadToHighlight(this.heroSubtitulo()) ?? {
+        icon: SERVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightIcon,
+        title: SERVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightTitle,
+        subtitle: SERVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightSubtitle,
+      }
+    );
+  });
+
+  servialHeroHighlightRadar = computed(() => {
+    if (!this.servialHeroHighlight()) return false;
+    const hero = this.landing().hero;
+    if (hero.highlightTitle?.trim()) {
+      return hero.highlightRadar !== false;
+    }
+    return SERVIAL_HERO_HIGHLIGHT_DEFAULTS.highlightRadar;
+  });
+
+  /** Oculta el párrafo lead cuando la tarjeta destacada ya muestra ese texto. */
+  servialHeroLead = computed(() => (this.servialHeroHighlight() ? '' : this.heroSubtitulo()));
 
   apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || DEFAULT_APK_URL);
 

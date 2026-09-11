@@ -23,10 +23,13 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
     eyebrowServial: '— Bienvenid@ a {nombreCea} —',
     subEyebrow: 'Centro de Enseñanza Automovilística',
     ctaLlamarEtiqueta: '',
-    highlightIcon: '',
-    highlightTitle: '',
-    highlightSubtitle: '',
+    highlightIcon: 'shield-check',
+    highlightTitle: 'Únicos con calidad certificada.',
+    highlightSubtitle:
+      'Aprenda a su ritmo con cursos interactivos, capacitación certificada y acompañamiento profesional.',
     highlightRadar: true,
+    logoCertificacionUrl: '',
+    logoCertificacionAlt: '',
   },
   infoCards: [
     { icon: '📞', title: 'Llámenos', text: '321 303 9595', fuente: 'telefono' },
@@ -284,3 +287,12 @@ export const SERVIAL_LANDING_DEFAULTS: Partial<PortalLandingConfig> = {
   ],
   finstruvialServicios: JSON.parse(JSON.stringify(SERVIAL_SERVICIOS_DEFAULTS)),
 };
+
+/** Tarjeta destacada del hero home (plantilla Servial). */
+export const SERVIAL_HERO_HIGHLIGHT_DEFAULTS = {
+  highlightIcon: 'shield-check',
+  highlightTitle: 'Únicos con calidad certificada.',
+  highlightSubtitle:
+    'Aprenda a su ritmo con cursos interactivos, capacitación certificada y acompañamiento profesional.',
+  highlightRadar: true,
+} as const;

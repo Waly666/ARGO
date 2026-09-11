@@ -1,7 +1,11 @@
 <div class="pgh">
   <span class="pgh__label">{{ label }}</span>
   <p class="psb-hint">
-    Foto del héroe en <strong>{{ routePath }}</strong>. Se guarda al instante. PNG, JPG o WEBP. Máx. 8 MB.
+    @if (pageKey === 'homeLogoCertificacion') {
+      Sello o escudo de certificación para el banner de inicio (cualquier certificación vigente). Se guarda al instante. PNG, JPG o WEBP. Máx. 8 MB.
+    } @else {
+      Foto del héroe en <strong>{{ routePath }}</strong>. Se guarda al instante. PNG, JPG o WEBP. Máx. 8 MB.
+    }
   </p>
 
   <div class="pgh__row">
