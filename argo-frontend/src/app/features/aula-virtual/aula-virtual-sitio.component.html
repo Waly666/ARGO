@@ -60,7 +60,9 @@
   <argo-portal-site-builder
     [portalForm]="portalForm"
     [portalUrl]="portalUrl"
+    [slugBaselineSite]="slugBaseline"
     (avNotice)="onBuilderNotice($event)"
+    (slugBaselineRefresh)="slugBaseline = $event"
   />
 
   <div class="av-save-bar av-save-bar--builder">

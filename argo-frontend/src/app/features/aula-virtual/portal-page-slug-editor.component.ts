@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { PortalPaginaKey, PortalSiteConfig } from '../../core/constants/portal-site-defaults';
@@ -13,6 +13,10 @@ import {
   portalPageSlugSegment,
   portalSlugCollisions,
 } from '../../core/utils/portal-page-route.util';
+import {
+  normalizePortalPath,
+  type PortalSlugChange,
+} from '../../core/utils/portal-slug-propagate.util';
 
 @Component({
   selector: 'argo-portal-page-slug-editor',
@@ -28,7 +32,10 @@ export class PortalPageSlugEditorComponent implements OnChanges {
   @Input() portalUrl = '';
   @Input() compact = false;
 
+  @Output() slugChange = new EventEmitter<PortalSlugChange>();
+
   slugInput = '';
+  private rutaAlEnfocar = '';
   readonly isHome = () => this.paginaKey === 'home';
 
   ngOnChanges(): void {
@@ -48,13 +55,32 @@ export class PortalPageSlugEditorComponent implements OnChanges {
     return portalPageDefaultRoute(this.paginaKey);
   }
 
+  onSlugFocus(): void {
+    this.rutaAlEnfocar = portalPageRoute(this.site, this.paginaKey);
+  }
+
   onSlugBlur(): void {
-    if (this.isHome()) return;
+    const change = this.commitPendingEdit();
+    if (change) this.slugChange.emit(change);
+  }
+
+  /** Persiste el slug si el usuario guardó sin salir del campo (p. ej. clic en Publicar). */
+  commitPendingEdit(): PortalSlugChange | null {
+    if (this.isHome()) return null;
     const pg = this.site.paginas[this.paginaKey];
-    if (!pg) return;
+    if (!pg) return null;
+    const anterior = normalizePortalPath(
+      this.rutaAlEnfocar || portalPageRoute(this.site, this.paginaKey),
+    );
     const normalized = normalizePortalPageSlug(this.slugInput);
     this.slugInput = normalized || portalPageSlugSegment(this.paginaKey, this.rutaDefault());
     pg.ruta = portalPageRouteFromSlug(this.paginaKey, this.slugInput);
+    const nueva = normalizePortalPath(portalPageRoute(this.site, this.paginaKey));
+    this.rutaAlEnfocar = nueva;
+    if (anterior && nueva !== anterior) {
+      return { paginaKey: this.paginaKey, from: anterior, to: nueva };
+    }
+    return null;
   }
 
   slugPlaceholder(): string {

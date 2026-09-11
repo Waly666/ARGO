@@ -102,6 +102,7 @@
             [site]="site"
             [finstruvialServicios]="landing?.finstruvialServicios ?? null"
             [portalUrl]="portalUrl"
+            (slugChange)="onSlugChange($event)"
           />
         }
 

@@ -13,6 +13,7 @@
           type="text"
           class="psb-input pps__input"
           [(ngModel)]="slugInput"
+          (focus)="onSlugFocus()"
           (blur)="onSlugBlur()"
           [attr.placeholder]="slugPlaceholder()"
           spellcheck="false"

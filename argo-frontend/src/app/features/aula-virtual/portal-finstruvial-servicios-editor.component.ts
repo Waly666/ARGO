@@ -18,6 +18,7 @@ import {
   mergePortafolioServicios,
   portafolioServiciosDefaultsForTema,
 } from '../../core/utils/portafolio-servicios.util';
+import type { PortalFinstruvialLineSlugChange } from '../../core/utils/portal-slug-propagate.util';
 import type { PortalTemaLike } from '../../core/utils/portal-theme-css-base.util';
 import {
   FinstruvialEditorGrupo,
@@ -80,6 +81,9 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
   @Input() serviciosHubRoute = '/servicios';
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
+  @Output() lineSlugChange = new EventEmitter<PortalFinstruvialLineSlugChange>();
+
+  private routeSegmentAlEnfocar = '';
 
   readonly slugs = FINSTRUVIAL_SERVICIO_SLUGS;
   readonly lineasMenu = FINSTRUVIAL_SERVICIO_BUILDER_MENU;
@@ -246,9 +250,35 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
     return `${base}${this.rutaPublicaLinea()}`;
   }
 
-  normalizarRouteSegmentActiva(): void {
+  onRouteSegmentFocus(): void {
     const p = this.paginaActiva();
+    this.routeSegmentAlEnfocar = finstruvialServicioRouteSegmentFrom(p.slug, p.routeSegment);
+  }
+
+  normalizarRouteSegmentActiva(): void {
+    const change = this.commitPendingRouteSegment();
+    if (change) this.lineSlugChange.emit(change);
+  }
+
+  /** Normaliza el segmento de ruta si se publica sin blur del campo. */
+  commitPendingRouteSegment(): PortalFinstruvialLineSlugChange | null {
+    const p = this.paginaActiva();
+    const anterior = finstruvialServicioRouteSegmentFrom(
+      p.slug,
+      this.routeSegmentAlEnfocar || p.routeSegment,
+    );
     p.routeSegment = finstruvialServicioRouteSegmentFrom(p.slug, p.routeSegment);
+    const nuevo = finstruvialServicioRouteSegmentFrom(p.slug, p.routeSegment);
+    this.routeSegmentAlEnfocar = nuevo;
+    if (nuevo !== anterior) {
+      return {
+        lineaSlug: p.slug,
+        hubPrefix: this.serviciosHubRoute || '/servicios',
+        fromSegment: anterior,
+        toSegment: nuevo,
+      };
+    }
+    return null;
   }
 
   routeSegmentDuplicado(): boolean {

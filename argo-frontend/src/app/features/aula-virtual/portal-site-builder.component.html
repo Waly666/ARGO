@@ -53,6 +53,7 @@
         [site]="site"
         [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
         [portalUrl]="portalUrl"
+        (slugChange)="onPortalSlugChange($event)"
       />
     }
 
@@ -69,6 +70,7 @@
           [serviciosHubRoute]="finstruvialServiciosHubRoute(site)"
           [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+          (lineSlugChange)="onFinstruvialLineSlugChange($event)"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -169,6 +171,7 @@
                   [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
                   [portalUrl]="portalUrl"
                   [compact]="true"
+                  (slugChange)="onPortalSlugChange($event)"
                 />
               </article>
             }
@@ -569,6 +572,7 @@
           [serviciosHubRoute]="finstruvialServiciosHubRoute(site)"
           [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+          (lineSlugChange)="onFinstruvialLineSlugChange($event)"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -968,7 +972,12 @@
 
       @case ('seo') {
         @if (portalSeoEditor) {
-          <argo-portal-seo-editor [site]="site" [landing]="landing" [portalUrl]="portalUrl" />
+          <argo-portal-seo-editor
+            [site]="site"
+            [landing]="landing"
+            [portalUrl]="portalUrl"
+            (slugChange)="onPortalSlugChange($event)"
+          />
         }
       }
 

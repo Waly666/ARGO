@@ -11,6 +11,7 @@ const {
 } = require('./portalSiteConfig');
 const { urlPublicaVerificacion } = require('./portalGoogleSearchConsole');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
+const { detectPortalSlugChanges, propagatePortalSlugChanges } = require('../utils/portalSlugPropagate');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -118,8 +119,22 @@ async function guardarConfigAula(body, usuario) {
   if (body.site !== undefined) {
     const navBase = dto.landing?.nav || mergeLanding(actual.landing).nav;
     const footerBase = dto.landing?.footer || mergeLanding(actual.landing).footer;
+    const oldSite = mergePortalSite(actual.site, { nav: navBase, footer: footerBase });
     dto.site = mergePortalSite(body.site, { nav: navBase, footer: footerBase });
     dto.landing = sincronizarNavLanding(dto.landing || mergeLanding(actual.landing), dto.site);
+
+    const slugChanges = detectPortalSlugChanges(oldSite, dto.site);
+    if (slugChanges.length) {
+      const propagated = propagatePortalSlugChanges({
+        landing: dto.landing,
+        acercaDeHtml: dto.acercaDeHtml ?? actual.acercaDeHtml,
+        changes: slugChanges,
+      });
+      dto.landing = propagated.landing;
+      if (propagated.acercaDeHtml !== undefined) {
+        dto.acercaDeHtml = propagated.acercaDeHtml;
+      }
+    }
   }
   await Config.updateOne({ clave: CLAVE_AULA }, { $set: dto }, { upsert: true });
   return obtenerConfigAula();

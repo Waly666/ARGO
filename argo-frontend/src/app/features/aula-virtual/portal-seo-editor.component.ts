@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -15,6 +15,7 @@ import {
 import { FINSTRUVIAL_SERVICIO_BUILDER_MENU } from '../../core/constants/finstruvial-servicios-editor-panels';
 import { PortalPaginaKey, PortalSiteConfig } from '../../core/constants/portal-site-defaults';
 import { PortalPageSlugEditorComponent } from './portal-page-slug-editor.component';
+import type { PortalSlugChange } from '../../core/utils/portal-slug-propagate.util';
 import { PortalLandingConfig } from '../../core/constants/portal-landing-defaults';
 import {
   applyPortalSeoImportPack,
@@ -77,6 +78,7 @@ export class PortalSeoEditorComponent implements OnChanges {
   @Input({ required: true }) site!: PortalSiteConfig;
   @Input() landing: PortalLandingConfig | null = null;
   @Input() portalUrl = '';
+  @Output() slugChange = new EventEmitter<PortalSlugChange>();
 
   readonly catalog = PORTAL_SEO_PAGE_CATALOG;
   selectedKey = signal<PortalSeoPageKey>('home');
@@ -189,6 +191,10 @@ export class PortalSeoEditorComponent implements OnChanges {
 
   pageRuta(key: PortalSeoPageKey): string {
     return resolvePortalSeoPageRuta(key, this.site, this.landing);
+  }
+
+  onSlugChange(change: PortalSlugChange): void {
+    this.slugChange.emit(change);
   }
 
   seoPaginaSlugKey(key: PortalSeoPageKey): PortalPaginaKey | null {

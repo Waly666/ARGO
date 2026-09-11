@@ -1,5 +1,5 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, QueryList, ViewChild, ViewChildren, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -88,6 +88,14 @@ import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util'
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
 import { environment } from '../../../environments/environment';
 import { finstruvialServiciosHubRoute } from '../../core/utils/portal-page-route.util';
+import {
+  detectPortalSlugChanges,
+  formatPortalSlugPropagateMessage,
+  propagateFinstruvialLineSlugChange,
+  propagatePortalSlugChanges,
+  PortalFinstruvialLineSlugChange,
+  PortalSlugChange,
+} from '../../core/utils/portal-slug-propagate.util';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -199,7 +207,14 @@ export class PortalSiteBuilderComponent {
 
   @Input({ required: true }) portalForm!: PortalAulaConfig;
   @Input({ required: true }) portalUrl!: string;
+  /** Snapshot de rutas al cargar/publicar — detecta cambios acumulados antes de guardar. */
+  @Input() slugBaselineSite: PortalSiteConfig | null = null;
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
+  @Output() slugBaselineRefresh = new EventEmitter<PortalSiteConfig>();
+
+  @ViewChildren(PortalPageSlugEditorComponent) private slugEditors?: QueryList<PortalPageSlugEditorComponent>;
+  @ViewChild(PortalFinstruvialServiciosEditorComponent)
+  private finstruvialEditor?: PortalFinstruvialServiciosEditorComponent;
 
   heroUploading = signal(false);
   asistenteVideoUploading = signal(false);
@@ -886,6 +901,74 @@ export class PortalSiteBuilderComponent {
           });
         },
       });
+  }
+
+  /** Propaga enlaces internos tras cambiar un slug (inmediato en el editor). */
+  onPortalSlugChange(change: PortalSlugChange): void {
+    this.applySlugPropagation([change]);
+  }
+
+  onFinstruvialLineSlugChange(change: PortalFinstruvialLineSlugChange): void {
+    const result = propagateFinstruvialLineSlugChange({
+      landing: this.landing,
+      acercaDeHtml: this.portalForm.acercaDeHtml,
+      change,
+    });
+    if (result.acercaDeHtml !== undefined) {
+      this.portalForm.acercaDeHtml = result.acercaDeHtml;
+    }
+    const msg = formatPortalSlugPropagateMessage(result);
+    if (msg) this.avNotice.emit({ message: msg });
+  }
+
+  /** Llamar antes de publicar: persiste slugs sin blur y propaga enlaces vs. baseline. */
+  propagatePendingSlugChanges(): string | null {
+    this.commitPendingSlugInputs();
+    const baseline = this.slugBaselineSite ?? mergePortalSiteDefaults(this.portalForm.site);
+    const current = mergePortalSiteDefaults(this.portalForm.site);
+    const changes = detectPortalSlugChanges(baseline, current);
+    const pageMsg = changes.length ? this.applySlugPropagation(changes) : null;
+    const finstruvialMsg = this.applyPendingFinstruvialSlugPropagation();
+    return [pageMsg, finstruvialMsg].filter(Boolean).join(' ') || null;
+  }
+
+  private commitPendingSlugInputs(): void {
+    this.slugEditors?.forEach((editor) => {
+      const change = editor.commitPendingEdit();
+      if (change) this.applySlugPropagation([change]);
+    });
+  }
+
+  private applyPendingFinstruvialSlugPropagation(): string | null {
+    const change = this.finstruvialEditor?.commitPendingRouteSegment();
+    if (!change) return null;
+    const result = propagateFinstruvialLineSlugChange({
+      landing: this.landing,
+      acercaDeHtml: this.portalForm.acercaDeHtml,
+      change,
+    });
+    if (result.acercaDeHtml !== undefined) {
+      this.portalForm.acercaDeHtml = result.acercaDeHtml;
+    }
+    return formatPortalSlugPropagateMessage(result);
+  }
+
+  refreshSlugBaseline(): void {
+    this.slugBaselineRefresh.emit(mergePortalSiteDefaults(this.portalForm.site));
+  }
+
+  private applySlugPropagation(changes: PortalSlugChange[]): string | null {
+    const result = propagatePortalSlugChanges({
+      landing: this.landing,
+      acercaDeHtml: this.portalForm.acercaDeHtml,
+      changes,
+    });
+    if (result.acercaDeHtml !== undefined) {
+      this.portalForm.acercaDeHtml = result.acercaDeHtml;
+    }
+    const msg = formatPortalSlugPropagateMessage(result);
+    if (msg) this.avNotice.emit({ message: msg });
+    return msg;
   }
 
   applyPortalConfig(config: PortalAulaConfig) {

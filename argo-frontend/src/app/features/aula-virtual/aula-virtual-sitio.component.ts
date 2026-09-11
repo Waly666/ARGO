@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -7,7 +7,7 @@ import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/a
 import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
-import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
+import { mergePortalSiteDefaults, PortalSiteConfig } from '../../core/constants/portal-site-defaults';
 import { PORTAL_PLANTILLAS, PortalPlantilla } from '../../core/constants/portal-plantillas';
 import {
   aplicarDisenoPortal,
@@ -72,6 +72,9 @@ export class AulaVirtualSitioComponent implements OnInit {
   saving = signal(false);
   msg = signal<string | null>(null);
   err = signal(false);
+  slugBaseline: PortalSiteConfig | null = null;
+
+  @ViewChild(PortalSiteBuilderComponent) siteBuilder?: PortalSiteBuilderComponent;
 
   ngOnInit(): void {
     this.svc.obtenerPortal().subscribe({
@@ -79,6 +82,7 @@ export class AulaVirtualSitioComponent implements OnInit {
         Object.assign(this.portalForm, p);
         this.portalForm.site = mergePortalSiteDefaults(p.site);
         this.portalForm.landing = mergePortalLanding(p.landing, this.portalForm.site?.tema);
+        this.slugBaseline = mergePortalSiteDefaults(p.site);
         this.portalPublicUrlConfigured.set(p.portalPublicUrl || '');
       },
       error: () => this.toast('No se pudo cargar la configuración del sitio', true),
@@ -86,15 +90,18 @@ export class AulaVirtualSitioComponent implements OnInit {
   }
 
   guardar() {
+    const slugMsg = this.siteBuilder?.propagatePendingSlugChanges();
     this.saving.set(true);
     this.svc.guardarPortal(this.portalForm).subscribe({
       next: (res) => {
         Object.assign(this.portalForm, res.config);
         this.portalForm.landing = mergePortalLanding(res.config.landing, res.config.site?.tema);
         this.portalForm.site = mergePortalSiteDefaults(res.config.site);
+        this.slugBaseline = mergePortalSiteDefaults(res.config.site);
         this.portalPublicUrlConfigured.set(res.config.portalPublicUrl || '');
         this.saving.set(false);
-        this.toast(res.message || 'Sitio publicado');
+        const base = res.message || 'Sitio publicado';
+        this.toast(slugMsg ? `${base}. ${slugMsg}` : base);
       },
       error: (e) => {
         this.saving.set(false);
