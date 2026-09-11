@@ -1,0 +1,496 @@
+:host {
+  --fvh-blue: #0f2f86;
+  --fvh-deep: #081b5a;
+  --fvh-dark: #06133f;
+  --fvh-cyan: #27d3ff;
+  --fvh-h1: #c9f3ff;
+  --fvh-text: #d9e4ff;
+  --fvh-orange: #d75a0d;
+  --fvh-parallax-x: 0px;
+  --fvh-parallax-y: 0px;
+  display: block;
+  overflow: visible;
+}
+
+:host(:has([fvh-info-cards])) {
+  position: relative;
+  z-index: 12;
+  margin-bottom: 3.5rem;
+}
+
+.fvh {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  min-height: clamp(680px, 94vh, 1020px);
+  color: var(--fvh-text);
+  background: linear-gradient(135deg, var(--fvh-dark) 0%, var(--fvh-deep) 42%, var(--fvh-blue) 100%);
+  padding: 0 0 clamp(3.5rem, 7vh, 5rem);
+  isolation: isolate;
+}
+
+:host(:has([fvh-info-cards])) .fvh {
+  padding-bottom: 0;
+  isolation: auto;
+}
+
+:host(:has([fvh-info-cards])) .fvh__container {
+  padding-bottom: 0.75rem;
+}
+
+::ng-deep [fvh-info-cards] {
+  position: relative;
+  z-index: 30;
+  flex-shrink: 0;
+  margin-top: auto;
+  transform: translateY(50%);
+  pointer-events: auto;
+
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    width: 100vw;
+    top: 52%;
+    height: 160%;
+    transform: translateX(-50%);
+    background: var(--av-section-light-bg, #f9fafb);
+    pointer-events: none;
+  }
+}
+
+.fvh__backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fvh__bg-zoom {
+  position: absolute;
+  inset: -4%;
+  background-position: 72% center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  transform: translate3d(var(--fvh-parallax-x), var(--fvh-parallax-y), 0) scale(1.06);
+  animation: fvhBgIn 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+
+.fvh__bg-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      105deg,
+      rgba(6, 19, 63, 0.94) 0%,
+      rgba(8, 27, 90, 0.82) 38%,
+      rgba(15, 47, 134, 0.55) 62%,
+      rgba(6, 19, 63, 0.35) 100%
+    ),
+    radial-gradient(ellipse 70% 55% at 78% 42%, rgba(39, 211, 255, 0.12), transparent 68%);
+}
+
+.fvh__network {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.82;
+}
+
+.fvh__route {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fvh__route--far {
+  stroke: rgba(39, 211, 255, 0.2);
+  stroke-width: 0.85;
+}
+
+.fvh__route--main {
+  stroke: url(#fvh-route-tone);
+  stroke-width: 1.25;
+  animation: fvhRouteDepth 12s ease-in-out infinite;
+}
+
+.fvh__route--main-b {
+  animation-delay: -3.6s;
+}
+
+.fvh__route--ramp {
+  stroke: rgba(39, 211, 255, 0.32);
+  stroke-width: 0.95;
+}
+
+.fvh__route--link {
+  stroke: rgba(77, 217, 255, 0.26);
+  stroke-width: 0.9;
+}
+
+.fvh__route--lane {
+  stroke: rgba(39, 211, 255, 0.22);
+  stroke-width: 0.55;
+  stroke-dasharray: 3 12;
+  opacity: 0.62;
+}
+
+.fvh__route--sweep {
+  stroke: url(#fvh-sweep);
+  stroke-width: 1.45;
+  stroke-dasharray: 8 280;
+  opacity: 0;
+  animation: fvhLightSweep 12s ease-in-out infinite;
+}
+
+.fvh__route--sweep-a {
+  animation-delay: 0s;
+}
+
+.fvh__route--sweep-b {
+  animation-delay: -4.8s;
+}
+
+.fvh__route--sweep-c {
+  animation-delay: -9.2s;
+}
+
+.fvh__junction {
+  fill: rgba(39, 211, 255, 0.55);
+  opacity: 0.65;
+}
+
+.fvh__signal {
+  opacity: 0.92;
+  filter: drop-shadow(0 0 5px rgba(39, 211, 255, 0.75));
+}
+
+.fvh__signal--soft {
+  opacity: 0.72;
+  filter: drop-shadow(0 0 4px rgba(39, 211, 255, 0.55));
+}
+
+.fvh__bar {
+  position: relative;
+  z-index: 3;
+  background: var(--fvh-orange);
+  color: #fff;
+  font-size: clamp(0.68rem, 1.4vw, 0.78rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.fvh__bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.15rem;
+  padding: 0.35rem 0;
+}
+
+.fvh__bar-right {
+  text-align: right;
+  opacity: 0.95;
+}
+
+.fvh__container {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-top: clamp(2.5rem, 6vh, 4rem);
+  padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+.fvh__grid {
+  width: 100%;
+}
+
+.fvh__copy {
+  max-width: min(42rem, 58vw);
+}
+
+.fvh__eyebrow {
+  margin: 0 0 0.85rem;
+  color: var(--fvh-cyan);
+  font-size: clamp(0.68rem, 1.2vw, 0.76rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.fvh__title {
+  margin: 0;
+  color: var(--fvh-h1);
+  font-size: clamp(1.65rem, 3.6vw, 2.65rem);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.fvh__title-line {
+  display: block;
+}
+
+.fvh__title-accent {
+  display: block;
+  width: min(280px, 72%);
+  height: 3px;
+  margin: 0.85rem 0 1.15rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--fvh-cyan), rgba(39, 211, 255, 0.15));
+  box-shadow: 0 0 18px rgba(39, 211, 255, 0.45);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: fvhAccentDraw 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.72s forwards;
+}
+
+.fvh__lead {
+  margin: 0 0 1.65rem;
+  max-width: 46ch;
+  color: var(--fvh-text);
+  font-size: clamp(0.98rem, 1.8vw, 1.12rem);
+  line-height: 1.72;
+}
+
+.fvh__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.fvh__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.65rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.fvh__btn--primary {
+  color: #06133f;
+  border: 1px solid transparent;
+  background: linear-gradient(90deg, #27d3ff 0%, #5de4ff 52%, #27d3ff 100%);
+  box-shadow: 0 10px 28px rgba(39, 211, 255, 0.28);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 34px rgba(39, 211, 255, 0.38);
+  }
+}
+
+.fvh__btn--outline {
+  color: var(--fvh-h1);
+  border: 1px solid rgba(201, 243, 255, 0.42);
+  background: rgba(6, 19, 63, 0.35);
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(39, 211, 255, 0.75);
+    background: rgba(15, 47, 134, 0.45);
+    color: #fff;
+  }
+}
+
+/* Entrada (< 2.5 s) */
+.fvh__anim {
+  opacity: 0;
+  animation: fvhFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.fvh__anim--bar {
+  animation-delay: 0.08s;
+}
+
+.fvh__anim--eyebrow {
+  animation-delay: 0.18s;
+}
+
+.fvh__anim--h1a {
+  animation-delay: 0.32s;
+}
+
+.fvh__anim--h1b {
+  animation-delay: 0.48s;
+}
+
+.fvh__anim--lead {
+  animation-delay: 0.88s;
+}
+
+.fvh__anim--btn1 {
+  animation-delay: 1.05s;
+}
+
+.fvh__anim--btn2 {
+  animation-delay: 1.18s;
+}
+
+.fvh__anim--btn3 {
+  animation-delay: 1.31s;
+}
+
+@keyframes fvhBgIn {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--fvh-parallax-x), var(--fvh-parallax-y), 0) scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(var(--fvh-parallax-x), var(--fvh-parallax-y), 0) scale(1.06);
+  }
+}
+
+@keyframes fvhFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fvhAccentDraw {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fvhRouteDepth {
+  0%,
+  100% {
+    opacity: 0.68;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes fvhLightSweep {
+  0%,
+  12%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.58;
+  }
+  44% {
+    stroke-dashoffset: -288;
+    opacity: 0.42;
+  }
+  58% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 960px) {
+  .fvh {
+    min-height: clamp(620px, 88vh, 900px);
+    padding-bottom: 2.5rem;
+  }
+
+  .fvh__bar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0.55rem 0;
+  }
+
+  .fvh__bar-right {
+    text-align: left;
+    font-size: 0.72rem;
+    opacity: 0.92;
+  }
+
+  .fvh__copy {
+    max-width: none;
+  }
+
+  .fvh__bg-zoom {
+    background-position: center 35%;
+  }
+
+  .fvh__network {
+    opacity: 0.52;
+  }
+
+  :host(:has([fvh-info-cards])) {
+    margin-bottom: 0;
+  }
+
+  ::ng-deep [fvh-info-cards] {
+    transform: none;
+    margin-top: 1.75rem;
+  }
+
+  .fvh__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fvh__btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fvh__bg-zoom,
+  .fvh__anim,
+  .fvh__title-accent,
+  .fvh__route--main,
+  .fvh__route--sweep {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .fvh__route--main {
+    opacity: 0.78;
+  }
+
+  .fvh__route--sweep {
+    opacity: 0;
+  }
+
+  .fvh__signals {
+    display: none;
+  }
+
+  .fvh__anim,
+  .fvh__title-accent {
+    opacity: 1;
+    transform: none;
+  }
+
+  .fvh__title-accent {
+    transform: scaleX(1);
+  }
+}

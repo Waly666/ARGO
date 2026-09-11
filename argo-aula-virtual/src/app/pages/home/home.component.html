@@ -162,12 +162,52 @@
     </div>
   }
 </section>
+      } @else if (finstruvialHome) {
+<av-finstruvial-hero
+  [instBarLeft]="nombreCea() | uppercase"
+  [instBarRight]="landing().instBarTag || 'Cursos y programas de capacitación virtual en Colombia'"
+  [eyebrow]="finstruvialHeroEyebrow()"
+  [h1]="finstruvialHeroH1()"
+  [lead]="finstruvialHeroLead()"
+  [ctaPrimary]="landing().hero.ctaPrincipal || 'Ver cursos y programas'"
+  [ctaPrimaryUrl]="landing().hero.ctaPrincipalUrl || '/cursos'"
+  [ctaSecondary]="landing().hero.ctaSecundario || 'Crear cuenta gratis'"
+  [ctaSecondaryUrl]="landing().hero.ctaSecundarioUrl || '/registro'"
+  [ctaTertiary]="landing().hero.ctaLlamarEtiqueta?.trim() || 'Solicitar información'"
+  [ctaTertiaryUrl]="heroLlamarVisible() ? heroLlamarHref() : '/acerca'"
+  [bgImageUrl]="finstruvialHeroBg()"
+  [bgImageAlt]="landing().hero.imagenAlt || 'Formación en tránsito, transporte y seguridad vial'">
+
+  @if (infoCardsVisibles()) {
+    <div fvh-info-cards class="container hero-info-cards">
+      <div class="info-cards">
+        @for (card of landing().infoCards; track card.title; let i = $index) {
+          <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
+            <av-portal-icon [icon]="card.icon" class="info-icon icon-pop" size="2rem" />
+            <div>
+              <h3 avAnimateTitle [titleDelay]="120">{{ card.title }}</h3>
+              @if (card.fuente === 'telefono' && telefono(); as tel) {
+                <p><a [href]="whatsappHref()" target="_blank" rel="noopener noreferrer">{{ tel }}</a></p>
+              } @else if (card.fuente === 'direccion') {
+                <p>{{ direccion() }}</p>
+              } @else {
+                <p>{{ card.text }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+  }
+</av-finstruvial-hero>
       } @else {
 <section
-  class="hero section-starfield"
-  [style.--av-hero-photo]="heroImg() ? 'url(' + heroImg() + ')' : null">
+  class="hero section-starfield hero--photo-bg"
+  [style.--av-hero-photo]="heroImg() ? 'url(' + heroImg() + ')' : null"
+  [attr.aria-label]="landing().hero.imagenAlt || null">
 
   <div class="starfield-bg" aria-hidden="true"></div>
+  <div class="hero-photo-shade" aria-hidden="true"></div>
 
   <div class="container hero-container">
 
@@ -212,12 +252,6 @@
         </div>
 
       </div>
-
-      <figure class="hero-visual hero-in hero-in--5">
-        @if (heroImg(); as src) {
-          <img [src]="src" [alt]="landing().hero.imagenAlt" />
-        }
-      </figure>
 
     </div>
 

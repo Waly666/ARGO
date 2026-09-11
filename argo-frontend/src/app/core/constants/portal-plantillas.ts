@@ -85,8 +85,9 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
     'Tema oscuro con acento cian y home completo (plantilla legacy).',
     'cliente',
     {
-      heroTitulo: 'Formación virtual en seguridad vial y conducción profesional.',
-      heroSubtitulo: 'Cursos en línea, avance a su ritmo y certificación al finalizar.',
+      heroTitulo: 'Formación Especializada en Tránsito, Transporte y Seguridad Vial',
+      heroSubtitulo:
+        'Desarrolla competencias para una movilidad más segura. FINSTRUVIAL ofrece formación virtual, presencial y mixta en tránsito, transporte, seguridad vial, prevención del riesgo y atención de emergencias.',
       secciones: SECCIONES_COMPLETAS,
       tema: { ...PORTAL_TEMA_FINSTRUVIAL },
     },

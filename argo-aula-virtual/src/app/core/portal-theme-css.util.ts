@@ -129,6 +129,13 @@ export const FINSTRUVIAL_DERIVED_CSS_VARS: Record<string, string> = {
   '--av-card-wave-dark-b': 'rgba(34, 211, 238, 0.78)',
   '--av-btn-accent-bg': 'linear-gradient(135deg, #34d399, #14b8a6)',
   '--av-title-underline-light': 'linear-gradient(90deg, #1d4ed8, #0891b2)',
+  '--av-hero-info-card-bg':
+    'linear-gradient(145deg, #e8f7ff 0%, #d4ecff 42%, #b8e0ff 72%, #9fd4ff 100%)',
+  '--av-hero-info-card-border': 'rgba(39, 211, 255, 0.42)',
+  '--av-hero-info-card-glow': 'rgba(39, 211, 255, 0.18)',
+  '--av-hero-info-card-glow-hover': 'rgba(39, 211, 255, 0.32)',
+  '--av-hero-info-card-border-hover': 'rgba(39, 211, 255, 0.72)',
+  '--av-hero-info-card-title': 'linear-gradient(90deg, #0f2f86 0%, #1d4ed8 55%, #0891b2 100%)',
 };
 
 function hexKey(hex: string): string | null {

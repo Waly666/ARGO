@@ -1,0 +1,181 @@
+<section class="fvh" aria-labelledby="finstruvial-hero-title">
+  <div class="fvh__backdrop" aria-hidden="true">
+    <div
+      class="fvh__bg-zoom"
+      [style.background-image]="'url(' + resolvedBg + ')'"
+    ></div>
+    <div class="fvh__bg-gradient"></div>
+  </div>
+
+  <svg class="fvh__network" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="fvh-sweep" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#27D3FF" stop-opacity="0" />
+        <stop offset="38%" stop-color="#27D3FF" stop-opacity="0.45" />
+        <stop offset="62%" stop-color="#7EE8FF" stop-opacity="0.65" />
+        <stop offset="100%" stop-color="#27D3FF" stop-opacity="0" />
+      </linearGradient>
+      <linearGradient id="fvh-route-tone" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#27D3FF" stop-opacity="0.14" />
+        <stop offset="50%" stop-color="#5DE4FF" stop-opacity="0.42" />
+        <stop offset="100%" stop-color="#0F8FD4" stop-opacity="0.28" />
+      </linearGradient>
+      <linearGradient id="fvh-network-depth" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.22" />
+        <stop offset="40%" stop-color="#fff" stop-opacity="0.82" />
+        <stop offset="100%" stop-color="#fff" stop-opacity="1" />
+      </linearGradient>
+      <radialGradient id="fvh-signal-glow">
+        <stop offset="0%" stop-color="#B8F4FF" stop-opacity="1" />
+        <stop offset="55%" stop-color="#27D3FF" stop-opacity="0.85" />
+        <stop offset="100%" stop-color="#27D3FF" stop-opacity="0" />
+      </radialGradient>
+      <mask id="fvh-network-mask">
+        <rect width="1200" height="640" fill="url(#fvh-network-depth)" />
+      </mask>
+      <filter id="fvh-route-glow" x="-15%" y="-15%" width="130%" height="130%">
+        <feGaussianBlur stdDeviation="0.9" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+
+    <g mask="url(#fvh-network-mask)" filter="url(#fvh-route-glow)">
+      <path class="fvh__route fvh__route--far" d="M 1180 260 C 1020 240, 860 280, 700 320 S 440 380, 220 400" />
+      <path class="fvh__route fvh__route--far" d="M 1220 540 C 1060 510, 880 550, 700 530 S 460 490, 280 515" />
+
+      <path id="fvh-path-main-a" class="fvh__route fvh__route--main" d="M 1240 350 C 1080 330, 920 370, 760 400 S 520 440, 340 430" />
+      <path id="fvh-path-main-b" class="fvh__route fvh__route--main fvh__route--main-b" d="M 1240 435 C 1100 415, 960 455, 820 485 S 580 525, 400 505" />
+
+      <path id="fvh-path-ramp-a" class="fvh__route fvh__route--ramp" d="M 820 485 C 780 445, 730 405, 680 365" />
+      <path id="fvh-path-ramp-b" class="fvh__route fvh__route--ramp" d="M 760 400 C 720 360, 680 320, 640 280" />
+      <path class="fvh__route fvh__route--ramp" d="M 640 280 C 600 340, 560 400, 520 460" />
+
+      <path id="fvh-path-link-a" class="fvh__route fvh__route--link" d="M 520 640 C 580 560, 640 480, 700 400 S 820 280, 880 180" />
+      <path id="fvh-path-link-b" class="fvh__route fvh__route--link" d="M 900 640 C 940 520, 980 400, 1020 280 S 1080 120, 1120 20" />
+
+      <path class="fvh__route fvh__route--lane" d="M 1240 350 C 1080 330, 920 370, 760 400 S 520 440, 340 430" />
+      <path class="fvh__route fvh__route--lane" d="M 820 485 C 780 445, 730 405, 680 365" />
+
+      <path class="fvh__route fvh__route--sweep fvh__route--sweep-a" d="M 1240 350 C 1080 330, 920 370, 760 400 S 520 440, 340 430" />
+      <path class="fvh__route fvh__route--sweep fvh__route--sweep-b" d="M 820 485 C 780 445, 730 405, 680 365" />
+      <path class="fvh__route fvh__route--sweep fvh__route--sweep-c" d="M 520 640 C 580 560, 640 480, 700 400 S 820 280, 880 180" />
+
+      <rect class="fvh__junction" x="818.5" y="483.5" width="2.5" height="2.5" rx="0.4" />
+      <rect class="fvh__junction" x="758.5" y="398.5" width="2.5" height="2.5" rx="0.4" />
+      <rect class="fvh__junction" x="638.5" y="278.5" width="2" height="2" rx="0.35" />
+
+      <g class="fvh__signals">
+        <circle class="fvh__signal" r="3.2" fill="url(#fvh-signal-glow)">
+          <animateMotion dur="14s" repeatCount="indefinite" rotate="auto" begin="0s">
+            <mpath href="#fvh-path-main-a" />
+          </animateMotion>
+        </circle>
+        <circle class="fvh__signal" r="2.8" fill="url(#fvh-signal-glow)">
+          <animateMotion dur="18s" repeatCount="indefinite" rotate="auto" begin="-6s">
+            <mpath href="#fvh-path-main-b" />
+          </animateMotion>
+        </circle>
+        <circle class="fvh__signal fvh__signal--soft" r="2.4" fill="url(#fvh-signal-glow)">
+          <animateMotion dur="11s" repeatCount="indefinite" rotate="auto" begin="-3s">
+            <mpath href="#fvh-path-ramp-a" />
+          </animateMotion>
+        </circle>
+        <circle class="fvh__signal fvh__signal--soft" r="2.2" fill="url(#fvh-signal-glow)">
+          <animateMotion dur="13s" repeatCount="indefinite" rotate="auto" begin="-9s">
+            <mpath href="#fvh-path-ramp-b" />
+          </animateMotion>
+        </circle>
+        <circle class="fvh__signal" r="2.6" fill="url(#fvh-signal-glow)">
+          <animateMotion dur="16s" repeatCount="indefinite" rotate="auto" begin="-4s">
+            <mpath href="#fvh-path-link-a" />
+          </animateMotion>
+        </circle>
+        <circle class="fvh__signal fvh__signal--soft" r="2.3" fill="url(#fvh-signal-glow)">
+          <animateMotion dur="20s" repeatCount="indefinite" rotate="auto" begin="-12s">
+            <mpath href="#fvh-path-link-b" />
+          </animateMotion>
+        </circle>
+      </g>
+    </g>
+  </svg>
+
+  <div class="fvh__bar fvh__anim fvh__anim--bar">
+    <div class="container fvh__bar-inner">
+      <span class="fvh__bar-left">{{ instBarLeft }}</span>
+      <span class="fvh__bar-right">{{ instBarRight }}</span>
+    </div>
+  </div>
+
+  <div class="container fvh__container">
+    <div class="fvh__grid">
+      <div class="fvh__copy">
+        <p class="fvh__eyebrow fvh__anim fvh__anim--eyebrow">{{ eyebrow }}</p>
+
+        <h1 id="finstruvial-hero-title" class="fvh__title">
+          <span class="fvh__title-line fvh__anim fvh__anim--h1a">{{ titleLines.line1 }}</span>
+          @if (titleLines.line2) {
+            <span class="fvh__title-line fvh__anim fvh__anim--h1b">{{ titleLines.line2 }}</span>
+          }
+        </h1>
+
+        <span class="fvh__title-accent fvh__anim fvh__anim--accent" aria-hidden="true"></span>
+
+        <p class="fvh__lead fvh__anim fvh__anim--lead">{{ lead }}</p>
+
+        <div class="fvh__actions">
+          @if (esExterna(ctaPrimaryUrl)) {
+            <a
+              class="fvh__btn fvh__btn--primary fvh__anim fvh__anim--btn1"
+              [href]="ctaPrimaryUrl"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ ctaPrimary }}
+            </a>
+          } @else {
+            <a class="fvh__btn fvh__btn--primary fvh__anim fvh__anim--btn1" [routerLink]="ruta(ctaPrimaryUrl, '/cursos')">
+              {{ ctaPrimary }}
+            </a>
+          }
+
+          @if (esExterna(ctaSecondaryUrl)) {
+            <a
+              class="fvh__btn fvh__btn--outline fvh__anim fvh__anim--btn2"
+              [href]="ctaSecondaryUrl"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ ctaSecondary }}
+            </a>
+          } @else {
+            <a
+              class="fvh__btn fvh__btn--outline fvh__anim fvh__anim--btn2"
+              [routerLink]="ruta(ctaSecondaryUrl, '/registro')">
+              {{ ctaSecondary }}
+            </a>
+          }
+
+          @if (esExterna(ctaTertiaryUrl)) {
+            <a
+              class="fvh__btn fvh__btn--outline fvh__anim fvh__anim--btn3"
+              [href]="ctaTertiaryUrl"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ ctaTertiary }}
+            </a>
+          } @else {
+            <a
+              class="fvh__btn fvh__btn--outline fvh__anim fvh__anim--btn3"
+              [routerLink]="ruta(ctaTertiaryUrl, '/acerca')"
+              fragment="contacto">
+              {{ ctaTertiary }}
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-content select="[fvh-info-cards]" />
+</section>

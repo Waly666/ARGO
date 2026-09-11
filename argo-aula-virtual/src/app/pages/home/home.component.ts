@@ -20,6 +20,8 @@ import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { HeroParticleMeshComponent } from '../../shared/hero-particle-mesh/hero-particle-mesh.component';
+import { FinstruvialHeroComponent } from '../../shared/finstruvial-hero/finstruvial-hero.component';
+import { FINSTRUVIAL_HERO_DEFAULTS } from '../../shared/finstruvial-hero/finstruvial-hero.defaults';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry';
 import { resolveUploadUrl } from '../../core/upload-url.util';
@@ -42,7 +44,7 @@ import { HERO_DEFAULT } from './home-content';
 @Component({
   selector: 'av-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, PortalIconComponent, CursosConduccionPublicidadSliderComponent, PortalPromoBannerHeroComponent, HeroParticleMeshComponent],
+  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, PortalIconComponent, CursosConduccionPublicidadSliderComponent, PortalPromoBannerHeroComponent, HeroParticleMeshComponent, FinstruvialHeroComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -124,6 +126,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const cfg = this.config();
     const landing = mergePortalLanding(cfg?.landing, cfg?.site?.tema);
     return ordenSeccionesHome(cfg).filter((id) => {
+      if (id === 'instBar' && isFinstruvialPortalTema(cfg?.site?.tema)) return false;
       if (id === 'infoCards') return false;
       if (id === 'fotosInicio') {
         return seccionHomeVisible(cfg, id) && (landing.fotosInicio?.fotos?.length ?? 0) > 0;
@@ -143,6 +146,24 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   infoCardsVisibles = computed(() => seccionHomeVisible(this.config(), 'infoCards'));
 
   heroImg = computed(() => this.theme.heroImageUrl(this.config()));
+
+  finstruvialHeroEyebrow = computed(
+    () => this.landing().hero.eyebrow?.trim() || FINSTRUVIAL_HERO_DEFAULTS.eyebrow,
+  );
+
+  finstruvialHeroH1 = computed(() => {
+    const raw = (this.config()?.heroTitulo || '').trim();
+    if (!raw || raw === HERO_DEFAULT.titulo) return FINSTRUVIAL_HERO_DEFAULTS.h1;
+    return raw;
+  });
+
+  finstruvialHeroLead = computed(() => {
+    const raw = (this.config()?.heroSubtitulo || '').trim();
+    if (!raw || raw === HERO_DEFAULT.subtitulo) return FINSTRUVIAL_HERO_DEFAULTS.lead;
+    return raw;
+  });
+
+  finstruvialHeroBg = computed(() => this.heroImg() || null);
 
   apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || DEFAULT_APK_URL);
 
@@ -207,8 +228,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (c) => {
         this.config.set(c);
         this.seo.applyHome(c, this.cursos());
-        const titulo = (c.heroTitulo || HERO_DEFAULT.titulo).trim();
-        queueMicrotask(() => this.startTypewriter(titulo));
+        if (!isFinstruvialPortalTema(c.site?.tema)) {
+          const titulo = (c.heroTitulo || HERO_DEFAULT.titulo).trim();
+          queueMicrotask(() => this.startTypewriter(titulo));
+        }
       },
     });
     this.api.cursos().subscribe({
@@ -224,6 +247,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    if (isFinstruvialPortalTema(this.config()?.site?.tema)) return;
     queueMicrotask(() => this.startTypewriter(this.heroTitulo()));
   }
 
