@@ -748,6 +748,18 @@ export class PortalSiteBuilderComponent {
     return this.pasosGuia().filter((p) => p.listo()).length;
   }
 
+  /** Panel del editor donde vive el contenido de un bloque de curso en el inicio. */
+  panelContenidoHome(seccionId: string): BuilderPanel | null {
+    const map: Partial<Record<string, BuilderPanel>> = {
+      examenTeorico: 'examenTeorico',
+      mercanciasPeligrosas: 'mercanciasPeligrosas',
+      trabajoEnAlturas: 'trabajoEnAlturas',
+      manejoDefensivo: 'manejoDefensivo',
+      primerosAuxilios: 'primerosAuxilios',
+    };
+    return map[seccionId] ?? null;
+  }
+
   seccionesInicio(): { id: string; label: string; activa: boolean }[] {
     this.homeSeccionesTick();
     const s = this.site;

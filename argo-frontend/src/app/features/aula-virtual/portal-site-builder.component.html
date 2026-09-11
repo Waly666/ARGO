@@ -338,6 +338,8 @@
       @case ('inicio') {
         <p class="psb-note">
           ↕ Use <strong>Subir</strong> y <strong>Bajar</strong> para cambiar el orden. El interruptor enciende o apaga cada bloque.
+          Los bloques de cursos (mercancías peligrosas, examen teórico, trabajo en alturas, etc.) se editan en
+          <strong>Más páginas</strong>, no en «Textos del inicio».
         </p>
         <ul class="psb-sections">
           @for (s of seccionesInicio(); track $index) {
@@ -350,6 +352,11 @@
                 <span class="psb-sections__label">{{ s.label }}</span>
                 <span class="psb-sections__state" [class.is-on]="s.activa">{{ s.activa ? 'Visible' : 'Oculto' }}</span>
               </div>
+              @if (panelContenidoHome(s.id); as editPanel) {
+                <button type="button" class="psb-link psb-sections__edit" (click)="setPanel(editPanel)">
+                  Editar textos →
+                </button>
+              }
               <label class="psb-switch" [attr.aria-label]="'Mostrar ' + s.label">
                 <input type="checkbox" [checked]="s.activa" (change)="toggleSeccion(s.id, $any($event.target).checked)" />
                 <span></span>
@@ -361,7 +368,10 @@
 
       @case ('contenido') {
         <p class="psb-note">
-          Elija una sección abajo para editar sus textos. Los cambios se ven en la vista previa de la derecha.
+          Elija una sección abajo para editar sus textos del hero, FAQ, testimonios, etc.
+          Los bloques de cursos del inicio (mercancías peligrosas, examen teórico, manejo defensivo…)
+          están en <strong>Más páginas</strong> → panel de cada curso → <strong>Sección del inicio</strong>.
+          Los cambios se ven en la vista previa de la derecha.
           Pulse <strong>Publicar cambios</strong> para que el sitio público los muestre.
           Para subir el APK use
           <button type="button" class="psb-link" (click)="setPanel('appMobile')">App móvil Android</button>.

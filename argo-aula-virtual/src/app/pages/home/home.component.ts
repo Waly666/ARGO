@@ -36,6 +36,7 @@ import {
 } from '../../core/constants/portal-promo-hero-fields.util';
 import { SERVIAL_HERO_HIGHLIGHT_DEFAULTS } from '../../core/constants/servial-landing-defaults';
 import { portalLogoCertificacionPublicUrl } from '../../core/portal-hero-imagen.util';
+import { homeCursoCtaUrl } from '../../core/portal-page-route.util';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { CursosConduccionPublicidadSliderComponent } from '../cursos-conduccion/cursos-conduccion-publicidad-slider.component';
 import { PortalSeoService } from '../../core/portal-seo.service';
@@ -259,45 +260,43 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return raw;
   });
 
+  examenTeoricoCtaUrl = computed(() => homeCursoCtaUrl(this.config(), 'examenTeorico'));
+
   mercanciasPeligrosasCtaTexto = computed(() => {
     const raw = this.landing().mercanciasPeligrosas?.ctaInicioTexto?.trim() || '';
     return raw || 'Ver información completa';
   });
 
-  mercanciasPeligrosasCtaUrl = computed(() => {
-    const raw = this.landing().mercanciasPeligrosas?.ctaUrl?.trim() || '';
-    return raw || '/mercancias-peligrosas';
-  });
+  mercanciasPeligrosasCtaUrl = computed(() =>
+    homeCursoCtaUrl(this.config(), 'mercanciasPeligrosas', this.landing().mercanciasPeligrosas?.ctaUrl),
+  );
 
   trabajoEnAlturasCtaTexto = computed(() => {
     const raw = this.landing().trabajoEnAlturas?.ctaInicioTexto?.trim() || '';
     return raw || 'Ver información completa';
   });
 
-  trabajoEnAlturasCtaUrl = computed(() => {
-    const raw = this.landing().trabajoEnAlturas?.ctaUrl?.trim() || '';
-    return raw || '/trabajo-en-alturas';
-  });
+  trabajoEnAlturasCtaUrl = computed(() =>
+    homeCursoCtaUrl(this.config(), 'trabajoEnAlturas', this.landing().trabajoEnAlturas?.ctaUrl),
+  );
 
   manejoDefensivoCtaTexto = computed(() => {
     const raw = this.landing().manejoDefensivo?.ctaInicioTexto?.trim() || '';
     return raw || 'Conoce el curso de manejo defensivo';
   });
 
-  manejoDefensivoCtaUrl = computed(() => {
-    const raw = this.landing().manejoDefensivo?.ctaUrl?.trim() || '';
-    return raw || '/curso-manejo-defensivo';
-  });
+  manejoDefensivoCtaUrl = computed(() =>
+    homeCursoCtaUrl(this.config(), 'manejoDefensivo', this.landing().manejoDefensivo?.ctaUrl),
+  );
 
   primerosAuxiliosCtaTexto = computed(() => {
     const raw = this.landing().primerosAuxilios?.ctaInicioTexto?.trim() || '';
     return raw || 'Conoce el curso de primeros auxilios';
   });
 
-  primerosAuxiliosCtaUrl = computed(() => {
-    const raw = this.landing().primerosAuxilios?.ctaUrl?.trim() || '';
-    return raw || '/curso-primeros-auxilios';
-  });
+  primerosAuxiliosCtaUrl = computed(() =>
+    homeCursoCtaUrl(this.config(), 'primerosAuxilios', this.landing().primerosAuxilios?.ctaUrl),
+  );
 
   fotoInicioUrl(foto: { url?: string; urlAbsoluta?: string }) {
     return resolveUploadUrl(foto.urlAbsoluta || foto.url);

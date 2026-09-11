@@ -11,26 +11,88 @@
 
   <argo-portal-seo-legend />
 
-  <section class="psb-card">
-    <h3 class="psb-card__title">Encabezado (hero)</h3>
+  <section class="psb-card psb-card--highlight">
+    <h3 class="psb-card__title">Sección del inicio (página principal)</h3>
+    <p class="psb-note">
+      Bloque «Mercancías peligrosas» en el home del sitio. Actívelo o desactívelo en
+      <strong>Bloques del inicio</strong>. El botón usa el slug de la página salvo que indique otra URL abajo.
+    </p>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
         <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H1" label="Título — línea 1" />
+        <argo-portal-field-label tag="H2" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H1" label="Título — línea 2" />
+        <argo-portal-field-label tag="H2" label="Título — línea 2" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Subtítulo" />
+      <argo-portal-field-label tag="p" label="Frase destacada bajo el título" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.subtitulo" />
     </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Enlace oficial MinTransporte (URL)</span>
+        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialUrl" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto del enlace oficial</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialEtiqueta" />
+      </label>
+    </div>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain psb-field--highlight">
+        <span>Texto del botón en el inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaInicioTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL del botón (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaUrl" placeholder="Vacío = slug de la página" />
+        <small class="psb-hint">Deje vacío para usar la URL del slug configurado arriba en este editor.</small>
+      </label>
+    </div>
+    @for (item of mercanciasPeligrosas.homeItems; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Tarjeta {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(mercanciasPeligrosas.homeItems, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Acento</span>
+            <select class="psb-input" [(ngModel)]="item.acento">
+              @for (a of acentos; track a) { <option [value]="a">{{ a }}</option> }
+            </select>
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Encabezado de la página completa</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="p" label="Texto principal del inicio" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.heroLead"></textarea>
@@ -81,16 +143,6 @@
       <span>Fecha de actualización normativa</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.fechaActualizacion" />
     </label>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Enlace oficial MinTransporte</span>
-        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialUrl" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Texto del enlace oficial</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialEtiqueta" />
-      </label>
-    </div>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="p" label="Frase final de la página" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.fraseFinal" />
@@ -99,53 +151,6 @@
       <argo-portal-field-label tag="p" label="Aviso legal / disclaimer" />
       <textarea class="psb-input" rows="4" [(ngModel)]="mercanciasPeligrosas.disclaimer"></textarea>
     </label>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Sección del inicio (home)</h3>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Texto del botón en el inicio</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaInicioTexto" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>URL del botón</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaUrl" />
-      </label>
-    </div>
-    @for (item of mercanciasPeligrosas.homeItems; track $index; let i = $index) {
-      <div class="ple-card">
-        <div class="ple-card__head">
-          <strong>Tarjeta {{ i + 1 }}</strong>
-          <button type="button" class="psb-link ple-remove" (click)="removeItem(mercanciasPeligrosas.homeItems, i)">Eliminar</button>
-        </div>
-        <div class="psb-grid3">
-          <label class="psb-field psb-field--plain">
-            <span>Número</span>
-            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Acento</span>
-            <select class="psb-input" [(ngModel)]="item.acento">
-              @for (a of acentos; track a) { <option [value]="a">{{ a }}</option> }
-            </select>
-          </label>
-        </div>
-        <label class="psb-field psb-field--plain">
-          <span>Título</span>
-          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Texto</span>
-          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
-        </label>
-      </div>
-    }
-    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
   </section>
 
   <section class="psb-card">

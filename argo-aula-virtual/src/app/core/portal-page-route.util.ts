@@ -43,6 +43,19 @@ export function portalPageDefaultRoute(key: PortalPaginaKey): string {
   return PORTAL_PAGINA_RUTAS[key];
 }
 
+/** URL del botón de un bloque de curso en el inicio: respeta slug ERP si ctaUrl está vacío o es la ruta antigua. */
+export function homeCursoCtaUrl(
+  config: PortalConfig | null | undefined,
+  paginaKey: PortalPaginaKey,
+  ctaUrl?: string | null,
+): string {
+  const custom = ctaUrl?.trim();
+  const canonical = portalPageRoute(config, paginaKey);
+  const legacy = portalPageDefaultRoute(paginaKey);
+  if (!custom || custom === legacy) return canonical;
+  return custom;
+}
+
 export function portalPageRoute(config: PortalConfig | null | undefined, key: PortalPaginaKey): string {
   if (key === 'home') return '/';
   const custom = config?.site?.paginas?.[key]?.ruta?.trim();

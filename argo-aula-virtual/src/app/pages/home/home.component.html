@@ -515,7 +515,7 @@
 
     @if (examenTeoricoCtaTexto()) {
       <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
-        <a class="btn btn-primary exteor-cta__btn" routerLink="/examen-teorico">
+        <a class="btn btn-primary exteor-cta__btn" [routerLink]="examenTeoricoCtaUrl()">
           {{ examenTeoricoCtaTexto() }}
         </a>
       </div>
