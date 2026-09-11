@@ -59,6 +59,8 @@ export class PortalPromoBannerHeroComponent {
   lead = input('');
   pillars = input<PromoBannerPillar[]>([]);
   highlight = input<PromoBannerHighlight | null>(null);
+  /** Anillos radar en la tarjeta highlight (p. ej. aviso normativo examen teórico). */
+  highlightRadar = input(false);
   ribbon = input<PromoBannerRibbonItem[]>([]);
   showRibbon = input(false);
   theme = input<PromoBannerTheme>('gold');

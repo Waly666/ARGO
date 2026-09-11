@@ -75,7 +75,14 @@
 
       <ng-content select="[ppbh-highlight]">
         @if (highlight(); as h) {
-          <div class="ppbh__highlight">
+          <div class="ppbh__highlight" [class.ppbh__highlight--radar]="highlightRadar()">
+            @if (highlightRadar()) {
+              <div class="ppbh__highlight-radar" aria-hidden="true">
+                <span class="ppbh__highlight-ring"></span>
+                <span class="ppbh__highlight-ring"></span>
+                <span class="ppbh__highlight-ring"></span>
+              </div>
+            }
             <div class="ppbh__highlight-icon" aria-hidden="true">
               <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
             </div>
