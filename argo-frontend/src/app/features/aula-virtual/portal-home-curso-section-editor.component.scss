@@ -1,0 +1,14 @@
+.phc-cta-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.phc-cta-warn {
+  margin: 0;
+  color: #fde68a;
+  background: rgba(245, 196, 0, 0.1);
+  border-color: rgba(245, 196, 0, 0.35);
+}

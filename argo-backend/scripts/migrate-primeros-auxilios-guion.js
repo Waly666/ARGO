@@ -5,7 +5,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const {
-  mergePrimerosAuxiliosLanding,
+  migratePrimerosAuxiliosGuionSeoDefaults,
   primerosAuxiliosNecesitaActualizarGuion,
 } = require('../src/constants/aulaVirtualPrimerosAuxiliosDefaults');
 
@@ -25,7 +25,7 @@ async function main() {
     await mongoose.disconnect();
     return;
   }
-  const merged = mergePrimerosAuxiliosLanding(prev);
+  const merged = migratePrimerosAuxiliosGuionSeoDefaults(prev);
   await col.updateOne({ clave: 'aula_virtual' }, { $set: { 'landing.primerosAuxilios': merged } });
   console.log('Migrado primerosAuxilios → guion v2');
   console.log('h1:', merged.h1);

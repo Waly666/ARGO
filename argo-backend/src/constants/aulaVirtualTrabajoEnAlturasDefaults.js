@@ -119,13 +119,13 @@ function trabajoEnAlturasNecesitaActualizarGuion(src) {
   return v < TRABAJO_EN_ALTURAS_GUION_VERSION;
 }
 
-function mergeTrabajoEnAlturasPreservandoUsuario(src, d) {
-  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
+function migrateTrabajoEnAlturasGuionSeoDefaults(prev) {
+  const d = TRABAJO_EN_ALTURAS_DEFAULTS;
   return {
     ...JSON.parse(JSON.stringify(d)),
     guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
-    enlaceCursoUrl,
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
+    enlaceCursoUrl: String(prev?.enlaceCursoUrl ?? '').trim(),
+    imagenes: mergeImagenes(prev?.imagenes, d.imagenes),
   };
 }
 
@@ -147,9 +147,6 @@ function mergeImagenes(raw, fb) {
 function mergeTrabajoEnAlturasLanding(raw) {
   const d = TRABAJO_EN_ALTURAS_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (trabajoEnAlturasNecesitaActualizarGuion(src)) {
-    return mergeTrabajoEnAlturasPreservandoUsuario(src, d);
-  }
   const str = (v, fb) => String(v ?? fb).trim() || fb;
   const arr = (v, fb) => (Array.isArray(v) && v.length ? v : fb);
 
@@ -227,4 +224,5 @@ module.exports = {
   TRABAJO_EN_ALTURAS_DEFAULTS,
   mergeTrabajoEnAlturasLanding,
   trabajoEnAlturasNecesitaActualizarGuion,
+  migrateTrabajoEnAlturasGuionSeoDefaults,
 };

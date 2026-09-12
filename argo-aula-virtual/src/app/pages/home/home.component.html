@@ -515,9 +515,15 @@
 
     @if (examenTeoricoCtaTexto()) {
       <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
-        <a class="btn btn-primary exteor-cta__btn" [routerLink]="examenTeoricoCtaUrl()">
-          {{ examenTeoricoCtaTexto() }}
-        </a>
+        @if (homeCtaEsExterna(examenTeoricoCtaUrl())) {
+          <a class="btn btn-primary exteor-cta__btn" [href]="examenTeoricoCtaUrl()" target="_blank" rel="noopener noreferrer">
+            {{ examenTeoricoCtaTexto() }}
+          </a>
+        } @else {
+          <a class="btn btn-primary exteor-cta__btn" [routerLink]="examenTeoricoCtaUrl()">
+            {{ examenTeoricoCtaTexto() }}
+          </a>
+        }
       </div>
     }
   </div>
@@ -578,9 +584,15 @@
 
     @if (mercanciasPeligrosasCtaTexto()) {
       <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
-        <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--mp" [routerLink]="mercanciasPeligrosasCtaUrl()">
-          {{ mercanciasPeligrosasCtaTexto() }}
-        </a>
+        @if (homeCtaEsExterna(mercanciasPeligrosasCtaUrl())) {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--mp" [href]="mercanciasPeligrosasCtaUrl()" target="_blank" rel="noopener noreferrer">
+            {{ mercanciasPeligrosasCtaTexto() }}
+          </a>
+        } @else {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--mp" [routerLink]="mercanciasPeligrosasCtaUrl()">
+            {{ mercanciasPeligrosasCtaTexto() }}
+          </a>
+        }
       </div>
     }
   </div>
@@ -629,9 +641,15 @@
 
     @if (trabajoEnAlturasCtaTexto()) {
       <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
-        <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--ta" [routerLink]="trabajoEnAlturasCtaUrl()">
-          {{ trabajoEnAlturasCtaTexto() }}
-        </a>
+        @if (homeCtaEsExterna(trabajoEnAlturasCtaUrl())) {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--ta" [href]="trabajoEnAlturasCtaUrl()" target="_blank" rel="noopener noreferrer">
+            {{ trabajoEnAlturasCtaTexto() }}
+          </a>
+        } @else {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--ta" [routerLink]="trabajoEnAlturasCtaUrl()">
+            {{ trabajoEnAlturasCtaTexto() }}
+          </a>
+        }
       </div>
     }
   </div>
@@ -680,9 +698,15 @@
 
     @if (manejoDefensivoCtaTexto()) {
       <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
-        <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--md" [routerLink]="manejoDefensivoCtaUrl()">
-          {{ manejoDefensivoCtaTexto() }}
-        </a>
+        @if (homeCtaEsExterna(manejoDefensivoCtaUrl())) {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--md" [href]="manejoDefensivoCtaUrl()" target="_blank" rel="noopener noreferrer">
+            {{ manejoDefensivoCtaTexto() }}
+          </a>
+        } @else {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--md" [routerLink]="manejoDefensivoCtaUrl()">
+            {{ manejoDefensivoCtaTexto() }}
+          </a>
+        }
       </div>
     }
   </div>
@@ -731,9 +755,15 @@
 
     @if (primerosAuxiliosCtaTexto()) {
       <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
-        <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--pa" [routerLink]="primerosAuxiliosCtaUrl()">
-          {{ primerosAuxiliosCtaTexto() }}
-        </a>
+        @if (homeCtaEsExterna(primerosAuxiliosCtaUrl())) {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--pa" [href]="primerosAuxiliosCtaUrl()" target="_blank" rel="noopener noreferrer">
+            {{ primerosAuxiliosCtaTexto() }}
+          </a>
+        } @else {
+          <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--pa" [routerLink]="primerosAuxiliosCtaUrl()">
+            {{ primerosAuxiliosCtaTexto() }}
+          </a>
+        }
       </div>
     }
   </div>

@@ -11,6 +11,7 @@ import {
   FINSTRUVIAL_ENLACES_MANEJO_DEFENSIVO,
   FINSTRUVIAL_ENLACES_TITULO,
 } from './portal-enlaces-relacionados-finstruvial';
+import { mergeHomeCursoCtaUrl } from '../utils/portal-page-route.util';
 
 export interface MdImagen {
   id: string;
@@ -697,7 +698,7 @@ export function mergeManejoDefensivoLanding(
     ctaEmpresaUrl: str(src.ctaEmpresaUrl, d.ctaEmpresaUrl),
     ctaWhatsappTexto: str(src.ctaWhatsappTexto, d.ctaWhatsappTexto),
     ctaInicioTexto: str(src.ctaInicioTexto, d.ctaInicioTexto),
-    ctaUrl: str(src.ctaUrl, d.ctaUrl),
+    ctaUrl: mergeHomeCursoCtaUrl(src, d.ctaUrl),
     homeItems: arr(src.homeItems, d.homeItems),
     confianzaTitulo: str(src.confianzaTitulo, d.confianzaTitulo),
     confianzaTexto: str(src.confianzaTexto, d.confianzaTexto),

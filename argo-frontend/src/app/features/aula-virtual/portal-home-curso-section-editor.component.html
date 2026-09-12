@@ -1,0 +1,202 @@
+<div class="phc">
+  <p class="psb-note">
+    Bloque del <strong>inicio</strong> (home). Actívelo o desactívelo en <strong>Bloques del inicio</strong>.
+    El botón abre la URL que escriba abajo, o <strong>{{ rutaSugerida() }}</strong> si deja el campo vacío.
+  </p>
+
+  @if (paginaKey === 'examenTeorico' && examenTeorico) {
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Etiqueta (kicker)" />
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.kicker" />
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.tituloLinea2" />
+      </label>
+    </div>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Texto antes de la fecha</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.fechaBannerPrefijo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Fecha destacada</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.fechaDestacada" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto después de la fecha</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.fechaBannerSufijo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Texto del botón</span>
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.ctaTexto" placeholder="Ver información completa" />
+    </label>
+    <ng-container *ngTemplateOutlet="ctaUrlField; context: { $implicit: examenTeorico }" />
+  } @else if (paginaKey === 'mercanciasPeligrosas' && mercanciasPeligrosas) {
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Frase destacada bajo el título" />
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.subtitulo" />
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Enlace oficial (URL)</span>
+        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialUrl" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto enlace oficial</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialEtiqueta" />
+      </label>
+    </div>
+    <ng-container *ngTemplateOutlet="ctaCurso; context: { $implicit: mercanciasPeligrosas }" />
+    <ng-container *ngTemplateOutlet="homeItemsList; context: { items: mercanciasPeligrosas.homeItems }" />
+  } @else if (paginaKey === 'trabajoEnAlturas' && trabajoEnAlturas) {
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Frase destacada bajo el título" />
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.subtitulo" />
+    </label>
+    <ng-container *ngTemplateOutlet="ctaCurso; context: { $implicit: trabajoEnAlturas }" />
+    <ng-container *ngTemplateOutlet="homeItemsList; context: { items: trabajoEnAlturas.homeItems }" />
+  } @else if (paginaKey === 'manejoDefensivo' && manejoDefensivo) {
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
+      <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.subtitulo" />
+    </label>
+    <ng-container *ngTemplateOutlet="ctaCurso; context: { $implicit: manejoDefensivo }" />
+    <ng-container *ngTemplateOutlet="homeItemsList; context: { items: manejoDefensivo.homeItems }" />
+  } @else if (paginaKey === 'primerosAuxilios' && primerosAuxilios) {
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.subtitulo" />
+    </label>
+    <ng-container *ngTemplateOutlet="ctaCurso; context: { $implicit: primerosAuxilios }" />
+    <ng-container *ngTemplateOutlet="homeItemsList; context: { items: primerosAuxilios.homeItems }" />
+  }
+</div>
+
+<ng-template #ctaCurso let-model>
+  <label class="psb-field psb-field--plain psb-field--highlight">
+    <span>Texto del botón en el inicio</span>
+    <input type="text" class="psb-input" [(ngModel)]="model.ctaInicioTexto" />
+  </label>
+  <ng-container *ngTemplateOutlet="ctaUrlField; context: { $implicit: model }" />
+</ng-template>
+
+<ng-template #ctaUrlField let-model>
+  <label class="psb-field psb-field--plain psb-field--highlight">
+    <span>URL del botón del inicio</span>
+    <input
+      type="text"
+      class="psb-input"
+      [(ngModel)]="model.ctaUrl"
+      [placeholder]="rutaSugerida()"
+    />
+    <span class="psb-hint">
+      Escriba la ruta completa (ej. <code>/mercancias-peligrosas</code>) o un enlace externo
+      <code>https://…</code>. Vacío = usa automáticamente <code>{{ rutaSugerida() }}</code>.
+    </span>
+  </label>
+  <div class="phc-cta-meta">
+    <p class="psb-hint">El visitante irá a: <strong><code>{{ urlBotonPublica() }}</code></strong></p>
+    <button type="button" class="psb-link" (click)="usarSlugAutomatico()">Vaciar URL (usar slug automático)</button>
+  </div>
+</ng-template>
+
+<ng-template #homeItemsList let-items="items">
+  @for (item of items; track $index; let i = $index) {
+    <div class="ple-card">
+      <div class="ple-card-head">
+        <strong>Tarjeta {{ i + 1 }}</strong>
+        <button type="button" class="psb-link ple-remove" (click)="removeHomeItem(i)">Eliminar</button>
+      </div>
+      <div class="psb-grid3">
+        <label class="psb-field psb-field--plain">
+          <span>Número</span>
+          <input type="number" class="psb-input" [(ngModel)]="item.numero" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Icono</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Acento</span>
+          <select class="psb-input" [(ngModel)]="item.acento">
+            @for (a of acentos; track a) {
+              <option [value]="a">{{ a }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Título</span>
+        <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+      </label>
+    </div>
+  }
+  <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta</button>
+</ng-template>

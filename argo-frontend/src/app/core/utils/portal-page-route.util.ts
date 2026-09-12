@@ -120,3 +120,47 @@ export function portalPageSlugReserved(segment: string): boolean {
   const seg = normalizePortalPageSlug(segment);
   return !seg || PORTAL_RESERVED_SLUGS.has(seg);
 }
+
+function normalizePortalPath(path: string): string {
+  const raw = String(path ?? '').trim();
+  if (!raw) return '/';
+  const withoutQuery = raw.split('?')[0].split('#')[0];
+  const withSlash = withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
+  return withSlash.replace(/\/+$/, '') || '/';
+}
+
+export function buildPortalRouteIndex(
+  site?: Partial<PortalSiteConfig> | null,
+): Map<string, PortalPaginaKey> {
+  const index = new Map<string, PortalPaginaKey>();
+  for (const key of Object.keys(PORTAL_PAGINA_RUTAS) as PortalPaginaKey[]) {
+    const ruta = portalPageRoute(site, key);
+    const base = normalizePortalPath(ruta);
+    index.set(base, key);
+    const defaultBase = normalizePortalPath(portalPageDefaultRoute(key));
+    if (defaultBase !== base) index.set(defaultBase, key);
+  }
+  return index;
+}
+
+/** URL del botón del bloque de curso en el inicio: vacío → slug ERP; con valor → la URL del editor tal cual. */
+export function homeCursoCtaUrl(
+  site: Partial<PortalSiteConfig> | null | undefined,
+  paginaKey: PortalPaginaKey,
+  ctaUrl?: string | null,
+): string {
+  const custom = String(ctaUrl ?? '').trim();
+  if (!custom) return portalPageRoute(site, paginaKey);
+  if (/^https?:\/\//i.test(custom)) return custom;
+  return normalizePortalPath(custom);
+}
+
+export function mergeHomeCursoCtaUrl(
+  src: { ctaUrl?: string | null } | null | undefined,
+  fallback: string,
+): string {
+  if (src && Object.prototype.hasOwnProperty.call(src, 'ctaUrl')) {
+    return String(src.ctaUrl ?? '').trim();
+  }
+  return fallback;
+}

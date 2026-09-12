@@ -639,31 +639,6 @@ function mergeCertificacion(raw: unknown, fb: PaCertificacion): PaCertificacion 
   };
 }
 
-function primerosAuxiliosNecesitaActualizarGuion(src: Partial<PortalPrimerosAuxiliosLanding>): boolean {
-  const v = Number(src.guionVersion) || 0;
-  return v < PRIMEROS_AUXILIOS_GUION_VERSION;
-}
-
-function mergePrimerosAuxiliosPreservandoUsuario(
-  src: Partial<PortalPrimerosAuxiliosLanding>,
-  d: PortalPrimerosAuxiliosLanding,
-): PortalPrimerosAuxiliosLanding {
-  const idProgramaVinculado = String(src.idProgramaVinculado ?? '').trim();
-  const out: PortalPrimerosAuxiliosLanding = {
-    ...JSON.parse(JSON.stringify(d)) as PortalPrimerosAuxiliosLanding,
-    guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
-    idProgramaVinculado,
-    nombreProgramaVinculado: String(src.nombreProgramaVinculado ?? '').trim(),
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
-  };
-  if (idProgramaVinculado) {
-    out.ctaInscribirseUrl = `/cursos/${idProgramaVinculado}`;
-  } else if (String(src.ctaInscribirseUrl || '').trim()) {
-    out.ctaInscribirseUrl = str(src.ctaInscribirseUrl, d.ctaInscribirseUrl);
-  }
-  return out;
-}
-
 function mergePrimerosAuxiliosTheme(
   src: Partial<PortalPrimerosAuxiliosLanding>,
   d: PortalPrimerosAuxiliosLanding,
@@ -683,11 +658,6 @@ export function mergePrimerosAuxiliosLanding(
 ): PortalPrimerosAuxiliosLanding {
   const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (primerosAuxiliosNecesitaActualizarGuion(src)) {
-    const out = mergePrimerosAuxiliosPreservandoUsuario(src, d);
-    out.theme = mergePrimerosAuxiliosTheme(src, d, tema);
-    return out;
-  }
   return {
     ...d,
     guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,

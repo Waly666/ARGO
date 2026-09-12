@@ -429,22 +429,20 @@ function mercanciasPeligrosasNecesitaActualizarGuion(src) {
   return v < MERCANCIAS_PELIGROSAS_GUION_VERSION;
 }
 
-function mergeMercanciasPeligrosasPreservandoUsuario(src, d) {
-  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
+/** Aplica guion SEO v1 completo (solo scripts de migración). */
+function migrateMercanciasPeligrosasGuionSeoDefaults(prev) {
+  const d = MERCANCIAS_PELIGROSAS_DEFAULTS;
   return {
     ...JSON.parse(JSON.stringify(d)),
     guionVersion: MERCANCIAS_PELIGROSAS_GUION_VERSION,
-    enlaceCursoUrl,
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
+    enlaceCursoUrl: String(prev?.enlaceCursoUrl ?? '').trim(),
+    imagenes: mergeImagenes(prev?.imagenes, d.imagenes),
   };
 }
 
 function mergeMercanciasPeligrosasLanding(raw) {
   const d = MERCANCIAS_PELIGROSAS_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (mercanciasPeligrosasNecesitaActualizarGuion(src)) {
-    return mergeMercanciasPeligrosasPreservandoUsuario(src, d);
-  }
   const str = (v, fb) => String(v ?? fb).trim() || fb;
   const arr = (v, fb) => (Array.isArray(v) && v.length ? v : fb);
 
@@ -470,7 +468,9 @@ function mergeMercanciasPeligrosasLanding(raw) {
     ctaClasificacionTexto: str(src.ctaClasificacionTexto, d.ctaClasificacionTexto),
     ctaFaqTexto: str(src.ctaFaqTexto, d.ctaFaqTexto),
     ctaInicioTexto: str(src.ctaInicioTexto, d.ctaInicioTexto),
-    ctaUrl: str(src.ctaUrl, d.ctaUrl) || d.ctaUrl,
+    ctaUrl: Object.prototype.hasOwnProperty.call(src, 'ctaUrl')
+      ? String(src.ctaUrl ?? '').trim()
+      : d.ctaUrl,
     homeItems: mergeHomeItems(src.homeItems, d.homeItems),
     fechaActualizacion: str(src.fechaActualizacion, d.fechaActualizacion),
     enlaceOficialUrl: str(src.enlaceOficialUrl, d.enlaceOficialUrl),
@@ -559,5 +559,6 @@ module.exports = {
   MERCANCIAS_PELIGROSAS_DEFAULTS,
   mergeMercanciasPeligrosasLanding,
   mercanciasPeligrosasNecesitaActualizarGuion,
+  migrateMercanciasPeligrosasGuionSeoDefaults,
 };
 

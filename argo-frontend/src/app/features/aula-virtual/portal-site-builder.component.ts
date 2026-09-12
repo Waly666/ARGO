@@ -415,46 +415,40 @@ export class PortalSiteBuilderComponent {
     return this.portalForm.landing.examenTeorico;
   }
 
+  /** Inicializa mercancías peligrosas sin reemplazar el objeto en cada render (conserva textos editados). */
   ensureMercanciasPeligrosasLanding(): PortalMercanciasPeligrosasLanding {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding();
     }
     if (!this.portalForm.landing.mercanciasPeligrosas) {
-      this.portalForm.landing.mercanciasPeligrosas = mergePortalLanding().mercanciasPeligrosas;
-    } else {
       this.portalForm.landing.mercanciasPeligrosas = mergeMercanciasPeligrosasLanding(
-        this.portalForm.landing.mercanciasPeligrosas,
+        mergePortalLanding().mercanciasPeligrosas,
       );
     }
     return this.portalForm.landing.mercanciasPeligrosas;
   }
 
+  /** Inicializa trabajo en alturas sin reemplazar el objeto en cada render. */
   ensureTrabajoEnAlturasLanding(): PortalTrabajoEnAlturasLanding {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding();
     }
     if (!this.portalForm.landing.trabajoEnAlturas) {
-      this.portalForm.landing.trabajoEnAlturas = mergePortalLanding().trabajoEnAlturas;
-    } else {
       this.portalForm.landing.trabajoEnAlturas = mergeTrabajoEnAlturasLanding(
-        this.portalForm.landing.trabajoEnAlturas,
+        mergePortalLanding().trabajoEnAlturas,
       );
     }
     return this.portalForm.landing.trabajoEnAlturas;
   }
 
+  /** Inicializa manejo defensivo sin reemplazar el objeto en cada render. */
   ensureManejoDefensivoLanding(): PortalManejoDefensivoLanding {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding();
     }
     if (!this.portalForm.landing.manejoDefensivo) {
-      this.portalForm.landing.manejoDefensivo = mergePortalLanding(
-        null,
-        this.portalForm.site?.tema,
-      ).manejoDefensivo;
-    } else {
       this.portalForm.landing.manejoDefensivo = mergeManejoDefensivoLanding(
-        this.portalForm.landing.manejoDefensivo,
+        mergePortalLanding(null, this.portalForm.site?.tema).manejoDefensivo,
         manejoDefensivoDefaultsForTema(this.portalForm.site?.tema),
         this.portalForm.site?.tema,
       );
@@ -462,18 +456,14 @@ export class PortalSiteBuilderComponent {
     return this.portalForm.landing.manejoDefensivo;
   }
 
+  /** Inicializa primeros auxilios sin reemplazar el objeto en cada render. */
   ensurePrimerosAuxiliosLanding(): PortalPrimerosAuxiliosLanding {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding();
     }
     if (!this.portalForm.landing.primerosAuxilios) {
-      this.portalForm.landing.primerosAuxilios = mergePortalLanding(
-        null,
-        this.portalForm.site?.tema,
-      ).primerosAuxilios;
-    } else {
       this.portalForm.landing.primerosAuxilios = mergePrimerosAuxiliosLanding(
-        this.portalForm.landing.primerosAuxilios,
+        mergePortalLanding(null, this.portalForm.site?.tema).primerosAuxilios,
         primerosAuxiliosDefaultsForTema(this.portalForm.site?.tema),
         this.portalForm.site?.tema,
       );

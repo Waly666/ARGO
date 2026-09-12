@@ -5,7 +5,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const {
-  mergeMercanciasPeligrosasLanding,
+  migrateMercanciasPeligrosasGuionSeoDefaults,
   mercanciasPeligrosasNecesitaActualizarGuion,
 } = require('../src/constants/aulaVirtualMercanciasPeligrosasDefaults');
 
@@ -29,7 +29,7 @@ async function main() {
   const prev = doc.landing?.mercanciasPeligrosas;
   const update = {};
   if (mercanciasPeligrosasNecesitaActualizarGuion(prev || {})) {
-    const merged = mergeMercanciasPeligrosasLanding(prev);
+    const merged = migrateMercanciasPeligrosasGuionSeoDefaults(prev);
     update['landing.mercanciasPeligrosas'] = merged;
     console.log('Migrado mercanciasPeligrosas → guion v1');
     console.log('titulo:', merged.titulo);

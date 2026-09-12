@@ -11,6 +11,7 @@ import {
   FINSTRUVIAL_ENLACES_PRIMEROS_AUXILIOS,
   FINSTRUVIAL_ENLACES_TITULO,
 } from './portal-enlaces-relacionados-finstruvial';
+import { mergeHomeCursoCtaUrl } from '../utils/portal-page-route.util';
 
 export interface PaImagen {
   id: string;
@@ -638,29 +639,10 @@ function mergeCertificacion(raw: unknown, fb: PaCertificacion): PaCertificacion 
   };
 }
 
-function primerosAuxiliosNecesitaActualizarGuion(src: Partial<PortalPrimerosAuxiliosLanding>): boolean {
+/** Solo para scripts de migración one-shot (no usar en merge en caliente). */
+export function primerosAuxiliosNecesitaActualizarGuion(src: Partial<PortalPrimerosAuxiliosLanding>): boolean {
   const v = Number(src.guionVersion) || 0;
   return v < PRIMEROS_AUXILIOS_GUION_VERSION;
-}
-
-function mergePrimerosAuxiliosPreservandoUsuario(
-  src: Partial<PortalPrimerosAuxiliosLanding>,
-  d: PortalPrimerosAuxiliosLanding,
-): PortalPrimerosAuxiliosLanding {
-  const idProgramaVinculado = String(src.idProgramaVinculado ?? '').trim();
-  const out: PortalPrimerosAuxiliosLanding = {
-    ...JSON.parse(JSON.stringify(d)) as PortalPrimerosAuxiliosLanding,
-    guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
-    idProgramaVinculado,
-    nombreProgramaVinculado: String(src.nombreProgramaVinculado ?? '').trim(),
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
-  };
-  if (idProgramaVinculado) {
-    out.ctaInscribirseUrl = `/cursos/${idProgramaVinculado}`;
-  } else if (String(src.ctaInscribirseUrl || '').trim()) {
-    out.ctaInscribirseUrl = str(src.ctaInscribirseUrl, d.ctaInscribirseUrl);
-  }
-  return out;
 }
 
 function mergePrimerosAuxiliosTheme(
@@ -682,11 +664,6 @@ export function mergePrimerosAuxiliosLanding(
 ): PortalPrimerosAuxiliosLanding {
   const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (primerosAuxiliosNecesitaActualizarGuion(src)) {
-    const out = mergePrimerosAuxiliosPreservandoUsuario(src, d);
-    out.theme = mergePrimerosAuxiliosTheme(src, d, tema);
-    return out;
-  }
   return {
     ...d,
     guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
@@ -705,7 +682,7 @@ export function mergePrimerosAuxiliosLanding(
     ctaEmpresaUrl: str(src.ctaEmpresaUrl, d.ctaEmpresaUrl),
     ctaWhatsappTexto: str(src.ctaWhatsappTexto, d.ctaWhatsappTexto),
     ctaInicioTexto: str(src.ctaInicioTexto, d.ctaInicioTexto),
-    ctaUrl: str(src.ctaUrl, d.ctaUrl),
+    ctaUrl: mergeHomeCursoCtaUrl(src, d.ctaUrl),
     homeItems: arr(src.homeItems, d.homeItems),
     confianzaTitulo: str(src.confianzaTitulo, d.confianzaTitulo),
     confianzaTexto: str(src.confianzaTexto, d.confianzaTexto),

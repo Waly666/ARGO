@@ -36,7 +36,7 @@ import {
 } from '../../core/constants/portal-promo-hero-fields.util';
 import { SERVIAL_HERO_HIGHLIGHT_DEFAULTS } from '../../core/constants/servial-landing-defaults';
 import { portalLogoCertificacionPublicUrl } from '../../core/portal-hero-imagen.util';
-import { homeCursoCtaUrl } from '../../core/portal-page-route.util';
+import { homeCursoCtaEsExterna, homeCursoCtaUrl } from '../../core/portal-page-route.util';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { CursosConduccionPublicidadSliderComponent } from '../cursos-conduccion/cursos-conduccion-publicidad-slider.component';
 import { PortalSeoService } from '../../core/portal-seo.service';
@@ -260,7 +260,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return raw;
   });
 
-  examenTeoricoCtaUrl = computed(() => homeCursoCtaUrl(this.config(), 'examenTeorico'));
+  examenTeoricoCtaUrl = computed(() =>
+    homeCursoCtaUrl(this.config(), 'examenTeorico', this.landing().examenTeorico?.ctaUrl),
+  );
 
   mercanciasPeligrosasCtaTexto = computed(() => {
     const raw = this.landing().mercanciasPeligrosas?.ctaInicioTexto?.trim() || '';
@@ -297,6 +299,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   primerosAuxiliosCtaUrl = computed(() =>
     homeCursoCtaUrl(this.config(), 'primerosAuxilios', this.landing().primerosAuxilios?.ctaUrl),
   );
+
+  homeCtaEsExterna(url: string): boolean {
+    return homeCursoCtaEsExterna(url);
+  }
 
   fotoInicioUrl(foto: { url?: string; urlAbsoluta?: string }) {
     return resolveUploadUrl(foto.urlAbsoluta || foto.url);

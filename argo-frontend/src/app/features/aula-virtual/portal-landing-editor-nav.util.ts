@@ -1,6 +1,7 @@
 import {
   ordenSeccionesHomePortal,
   PORTAL_HOME_SECCIONES_LABELS,
+  PortalPaginaKey,
   PortalSiteConfig,
 } from '../../core/constants/portal-site-defaults';
 
@@ -56,16 +57,30 @@ const HOME_SECCION_A_BLOQUE: Partial<Record<string, string>> = {
   pilares: 'pilares',
 };
 
+/** Bloques de curso en el home — editables aquí (pestaña home:…). */
+const HOME_SECCION_CURSO: Partial<Record<string, PortalPaginaKey>> = {
+  examenTeorico: 'examenTeorico',
+  mercanciasPeligrosas: 'mercanciasPeligrosas',
+  trabajoEnAlturas: 'trabajoEnAlturas',
+  manejoDefensivo: 'manejoDefensivo',
+  primerosAuxilios: 'primerosAuxilios',
+};
+
 /** Bloques del home que se editan en otro panel del constructor. */
 const HOME_SECCION_EXTERNA: Partial<Record<string, string>> = {
   publicidadInicio: 'Editor del sitio → Publicidad inicio (carrusel)',
   fotosInicio: 'Editor del sitio → Fotos del inicio',
-  examenTeorico: 'Más páginas → Examen teórico → Solo inicio',
-  mercanciasPeligrosas: 'Más páginas → Mercancías peligrosas → Solo inicio',
-  trabajoEnAlturas: 'Más páginas → Trabajo en alturas → Solo inicio',
-  manejoDefensivo: 'Más páginas → Manejo defensivo → Solo inicio',
-  primerosAuxilios: 'Más páginas → Primeros auxilios → Solo inicio',
 };
+
+export function homeCursoEditorBloqueId(secId: string): string {
+  return `home:${secId}`;
+}
+
+export function paginaKeyDesdeHomeBloque(bloqueId: string | null | undefined): PortalPaginaKey | null {
+  if (!bloqueId?.startsWith('home:')) return null;
+  const secId = bloqueId.slice(5);
+  return HOME_SECCION_CURSO[secId] ?? null;
+}
 
 const GLOBAL_TABS: string[] = ['nav', 'blog', 'footer', 'catalogo'];
 
@@ -99,6 +114,17 @@ export function buildLandingEditorNavTabs(site?: Partial<PortalSiteConfig> | nul
         homePos,
         editable: true,
         oculta: bloqueId === 'general' ? bloqueGeneralOculto(site, orden) : !seccionHomeActiva(site, secId),
+      });
+      continue;
+    }
+
+    if (HOME_SECCION_CURSO[secId]) {
+      tabs.push({
+        id: homeCursoEditorBloqueId(secId),
+        label: PORTAL_HOME_SECCIONES_LABELS[secId] || secId,
+        homePos,
+        editable: true,
+        oculta: !seccionHomeActiva(site, secId),
       });
       continue;
     }

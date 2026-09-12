@@ -452,9 +452,6 @@ export function mergeCursosConduccionLanding(
 ): PortalCursosConduccionLanding {
   const d = CURSOS_CONDUCCION_LANDING_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (cursosConduccionNecesitaActualizarGuion(src)) {
-    return mergeCursosConduccionPreservandoUsuario(src, d);
-  }
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalCursosConduccionLanding;
 
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;

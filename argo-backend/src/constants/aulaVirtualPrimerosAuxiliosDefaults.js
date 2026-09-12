@@ -63,19 +63,20 @@ function primerosAuxiliosNecesitaActualizarGuion(src) {
   return v < PRIMEROS_AUXILIOS_GUION_VERSION;
 }
 
-function mergePrimerosAuxiliosPreservandoUsuario(src, d) {
-  const idProgramaVinculado = String(src.idProgramaVinculado ?? '').trim();
+function migratePrimerosAuxiliosGuionSeoDefaults(prev) {
+  const d = PRIMEROS_AUXILIOS_DEFAULTS;
+  const idProgramaVinculado = String(prev?.idProgramaVinculado ?? '').trim();
   const out = {
     ...JSON.parse(JSON.stringify(d)),
     guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
     idProgramaVinculado,
-    nombreProgramaVinculado: String(src.nombreProgramaVinculado ?? '').trim(),
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
+    nombreProgramaVinculado: String(prev?.nombreProgramaVinculado ?? '').trim(),
+    imagenes: mergeImagenes(prev?.imagenes, d.imagenes),
   };
   if (idProgramaVinculado) {
     out.ctaInscribirseUrl = `/cursos/${idProgramaVinculado}`;
-  } else if (String(src.ctaInscribirseUrl || '').trim()) {
-    out.ctaInscribirseUrl = str(src.ctaInscribirseUrl, d.ctaInscribirseUrl);
+  } else if (String(prev?.ctaInscribirseUrl || '').trim()) {
+    out.ctaInscribirseUrl = str(prev.ctaInscribirseUrl, d.ctaInscribirseUrl);
   }
   return out;
 }
@@ -90,9 +91,6 @@ function mergePromoHeroTheme(v, fb) {
 function mergePrimerosAuxiliosLanding(raw, defaults = PRIMEROS_AUXILIOS_DEFAULTS) {
   const d = defaults;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (primerosAuxiliosNecesitaActualizarGuion(src)) {
-    return mergePrimerosAuxiliosPreservandoUsuario(src, d);
-  }
   return {
     ...d,
     guionVersion: PRIMEROS_AUXILIOS_GUION_VERSION,
@@ -172,4 +170,5 @@ module.exports = {
   PRIMEROS_AUXILIOS_DEFAULTS,
   mergePrimerosAuxiliosLanding,
   primerosAuxiliosNecesitaActualizarGuion,
+  migratePrimerosAuxiliosGuionSeoDefaults,
 };

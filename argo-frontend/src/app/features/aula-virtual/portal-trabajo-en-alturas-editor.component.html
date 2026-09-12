@@ -448,8 +448,9 @@
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaInicioTexto" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>URL del botón</span>
-        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaUrl" />
+        <span>URL del botón (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaUrl" placeholder="Vacío = slug de la página" />
+        <small class="psb-hint">Deje vacío para usar el slug de esta página. También editable en Textos del inicio.</small>
       </label>
     </div>
     @for (item of trabajoEnAlturas.homeItems; track $index; let i = $index) {

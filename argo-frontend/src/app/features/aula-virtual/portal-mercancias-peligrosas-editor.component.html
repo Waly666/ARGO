@@ -655,10 +655,13 @@
         <span>Texto del botón en el inicio</span>
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaInicioTexto" />
       </label>
-      <label class="psb-field psb-field--plain">
-        <span>URL del botón (opcional)</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaUrl" placeholder="Vacío = slug de la página" />
-        <small class="psb-hint">Deje vacío para usar la URL del slug configurado arriba en este editor.</small>
+      <label class="psb-field psb-field--plain psb-field--highlight">
+        <span>URL del botón del inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaUrl" placeholder="/mercancias-peligrosas" />
+        <small class="psb-hint">
+          Pegue aquí la ruta exacta del botón (ej. <code>/mercancias-peligrosas</code>). También en Textos del inicio.
+          Vacío = slug automático de la página.
+        </small>
       </label>
     </div>
     @for (item of mercanciasPeligrosas.homeItems; track $index; let i = $index) {

@@ -5,7 +5,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const {
-  mergeTrabajoEnAlturasLanding,
+  migrateTrabajoEnAlturasGuionSeoDefaults,
   trabajoEnAlturasNecesitaActualizarGuion,
 } = require('../src/constants/aulaVirtualTrabajoEnAlturasDefaults');
 
@@ -30,7 +30,7 @@ async function main() {
   const prev = doc.landing?.trabajoEnAlturas;
   const update = {};
   if (trabajoEnAlturasNecesitaActualizarGuion(prev || {})) {
-    const merged = mergeTrabajoEnAlturasLanding(prev);
+    const merged = migrateTrabajoEnAlturasGuionSeoDefaults(prev);
     update['landing.trabajoEnAlturas'] = merged;
     console.log('Migrado trabajoEnAlturas → guion v1');
     console.log('titulo:', merged.titulo);

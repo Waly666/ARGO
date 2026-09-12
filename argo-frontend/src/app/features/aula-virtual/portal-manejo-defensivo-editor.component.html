@@ -517,6 +517,16 @@
       <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.subtitulo" />
     </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón en el inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.ctaInicioTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL del botón (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.ctaUrl" placeholder="Vacío = slug de la página" />
+      </label>
+    </div>
     @for (item of manejoDefensivo.homeItems; track $index; let i = $index) {
       <div class="ple-card">
         <div class="ple-card__head">

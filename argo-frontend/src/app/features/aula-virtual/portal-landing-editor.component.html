@@ -10,8 +10,8 @@
 
   <p class="psb-note psb-editor-order-hint">
     Las pestañas <strong>numeradas</strong> siguen el orden configurado en
-    <strong>Bloques del inicio</strong> (subir/bajar). Si mueve un bloque allí, el número aquí se actualiza.
-    Las marcadas ↗ se editan en otro panel. Menú, blog, pie y catálogo son ajustes globales.
+    <strong>Bloques del inicio</strong>. Los bloques de cursos (mercancías, alturas, etc.) se editan aquí;
+    el botón del inicio usa el slug de cada página. Menú, blog, pie y catálogo son ajustes globales.
   </p>
 
   <div class="ple-nav">
@@ -534,6 +534,20 @@
       <div class="av-field"><argo-portal-field-label tag="H1" label="Título tienda" /><input [(ngModel)]="landing.catalogo.tituloTienda" /></div>
       <div class="av-field"><argo-portal-field-label tag="p" label="Intro tienda" /><textarea rows="2" [(ngModel)]="landing.catalogo.leadTienda"></textarea></div>
       <div class="av-field"><label>Placeholder buscador</label><input [(ngModel)]="landing.catalogo.placeholderBuscar" /></div>
+    </div>
+  }
+
+  @if (homeCursoPaginaKey(); as paginaKey) {
+    <div class="ple-block psb-card--page-home">
+      <argo-portal-home-curso-section-editor
+        [paginaKey]="paginaKey"
+        [site]="portalForm?.site"
+        [examenTeorico]="landing.examenTeorico"
+        [mercanciasPeligrosas]="landing.mercanciasPeligrosas"
+        [trabajoEnAlturas]="landing.trabajoEnAlturas"
+        [manejoDefensivo]="landing.manejoDefensivo"
+        [primerosAuxilios]="landing.primerosAuxilios"
+      />
     </div>
   }
 </div>

@@ -570,34 +570,11 @@ function mergeDocumentosGrupos(
   return raw;
 }
 
-function mercanciasPeligrosasNecesitaActualizarGuion(
-  src: Partial<PortalMercanciasPeligrosasLanding>,
-): boolean {
-  const v = Number(src.guionVersion) || 0;
-  return v < MERCANCIAS_PELIGROSAS_GUION_VERSION;
-}
-
-function mergeMercanciasPeligrosasPreservandoUsuario(
-  src: Partial<PortalMercanciasPeligrosasLanding>,
-  d: PortalMercanciasPeligrosasLanding,
-): PortalMercanciasPeligrosasLanding {
-  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
-  return {
-    ...JSON.parse(JSON.stringify(d)) as PortalMercanciasPeligrosasLanding,
-    guionVersion: MERCANCIAS_PELIGROSAS_GUION_VERSION,
-    enlaceCursoUrl,
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
-  };
-}
-
 export function mergeMercanciasPeligrosasLanding(
   raw?: Partial<PortalMercanciasPeligrosasLanding> | null,
 ): PortalMercanciasPeligrosasLanding {
   const d = MERCANCIAS_PELIGROSAS_LANDING;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (mercanciasPeligrosasNecesitaActualizarGuion(src)) {
-    return mergeMercanciasPeligrosasPreservandoUsuario(src, d);
-  }
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
   const arr = <T>(v: T[] | undefined, fb: T[]) => (Array.isArray(v) && v.length ? v : fb);
 

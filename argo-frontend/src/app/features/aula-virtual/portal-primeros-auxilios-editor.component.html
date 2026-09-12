@@ -509,6 +509,16 @@
       <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
       <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.subtitulo" />
     </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón en el inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaInicioTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL del botón (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaUrl" placeholder="Vacío = slug de la página" />
+      </label>
+    </div>
     @for (item of primerosAuxilios.homeItems; track $index; let i = $index) {
       <div class="ple-card">
         <div class="ple-card__head">

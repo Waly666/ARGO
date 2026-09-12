@@ -13,6 +13,7 @@ import {
   TaDocumento,
   TaDocumentoGrupo,
 } from './trabajo-en-alturas-documentos';
+import { mergeHomeCursoCtaUrl } from '../utils/portal-page-route.util';
 import { promptFotoHorizontal } from '../utils/portal-imagen-prompt.util';
 
 export type { TaDocumento, TaDocumentoGrupo };
@@ -467,22 +468,10 @@ function mergeImagenes(raw: TaImagen[] | undefined, fb: TaImagen[]): TaImagen[] 
   });
 }
 
-function trabajoEnAlturasNecesitaActualizarGuion(src: Partial<PortalTrabajoEnAlturasLanding>): boolean {
+/** Solo para scripts de migración one-shot (no usar en merge en caliente). */
+export function trabajoEnAlturasNecesitaActualizarGuion(src: Partial<PortalTrabajoEnAlturasLanding>): boolean {
   const v = Number(src.guionVersion) || 0;
   return v < TRABAJO_EN_ALTURAS_GUION_VERSION;
-}
-
-function mergeTrabajoEnAlturasPreservandoUsuario(
-  src: Partial<PortalTrabajoEnAlturasLanding>,
-  d: PortalTrabajoEnAlturasLanding,
-): PortalTrabajoEnAlturasLanding {
-  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
-  return {
-    ...JSON.parse(JSON.stringify(d)) as PortalTrabajoEnAlturasLanding,
-    guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
-    enlaceCursoUrl,
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
-  };
 }
 
 export function mergeTrabajoEnAlturasLanding(
@@ -490,13 +479,10 @@ export function mergeTrabajoEnAlturasLanding(
 ): PortalTrabajoEnAlturasLanding {
   const d = TRABAJO_EN_ALTURAS_LANDING;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (trabajoEnAlturasNecesitaActualizarGuion(src)) {
-    return mergeTrabajoEnAlturasPreservandoUsuario(src, d);
-  }
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
   const arr = <T>(v: T[] | undefined, fb: T[]) => (Array.isArray(v) && v.length ? v : fb);
 
-  const merged = {
+  return {
     ...d,
     guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
     kicker: str(src.kicker, d.kicker),
@@ -518,7 +504,7 @@ export function mergeTrabajoEnAlturasLanding(
     ctaDocumentosTexto: str(src.ctaDocumentosTexto, d.ctaDocumentosTexto),
     ctaFaqTexto: str(src.ctaFaqTexto, d.ctaFaqTexto),
     ctaInicioTexto: str(src.ctaInicioTexto, d.ctaInicioTexto),
-    ctaUrl: str(src.ctaUrl, d.ctaUrl) || d.ctaUrl,
+    ctaUrl: mergeHomeCursoCtaUrl(src, d.ctaUrl),
     homeItems: arr(src.homeItems, d.homeItems),
     fechaActualizacion: str(src.fechaActualizacion, d.fechaActualizacion),
     fraseFinal: str(src.fraseFinal, d.fraseFinal),
@@ -564,10 +550,4 @@ export function mergeTrabajoEnAlturasLanding(
     localTexto: str(src.localTexto, d.localTexto),
     faq: arr(src.faq, d.faq),
   };
-
-  if (trabajoEnAlturasNecesitaActualizarGuion(merged)) {
-    return mergeTrabajoEnAlturasPreservandoUsuario(merged, d);
-  }
-
-  return merged;
 }

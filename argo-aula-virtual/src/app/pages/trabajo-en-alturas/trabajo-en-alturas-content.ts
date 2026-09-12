@@ -438,36 +438,15 @@ function mergeImagenes(raw: TaImagen[] | undefined, fb: TaImagen[]): TaImagen[] 
   });
 }
 
-function trabajoEnAlturasNecesitaActualizarGuion(src: Partial<PortalTrabajoEnAlturasLanding>): boolean {
-  const v = Number(src.guionVersion) || 0;
-  return v < TRABAJO_EN_ALTURAS_GUION_VERSION;
-}
-
-function mergeTrabajoEnAlturasPreservandoUsuario(
-  src: Partial<PortalTrabajoEnAlturasLanding>,
-  d: PortalTrabajoEnAlturasLanding,
-): PortalTrabajoEnAlturasLanding {
-  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
-  return {
-    ...JSON.parse(JSON.stringify(d)) as PortalTrabajoEnAlturasLanding,
-    guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
-    enlaceCursoUrl,
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
-  };
-}
-
 export function mergeTrabajoEnAlturasLanding(
   raw?: Partial<PortalTrabajoEnAlturasLanding> | null,
 ): PortalTrabajoEnAlturasLanding {
   const d = TRABAJO_EN_ALTURAS_LANDING;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (trabajoEnAlturasNecesitaActualizarGuion(src)) {
-    return mergeTrabajoEnAlturasPreservandoUsuario(src, d);
-  }
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
   const arr = <T>(v: T[] | undefined, fb: T[]) => (Array.isArray(v) && v.length ? v : fb);
 
-  const merged = {
+  return {
     ...d,
     guionVersion: TRABAJO_EN_ALTURAS_GUION_VERSION,
     kicker: str(src.kicker, d.kicker),
@@ -537,6 +516,4 @@ export function mergeTrabajoEnAlturasLanding(
     enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     faq: arr(src.faq, d.faq),
   };
-
-  return merged;
 }

@@ -14,6 +14,7 @@ import {
   MpDocumentoGrupo,
 } from './mercancias-peligrosas-documentos';
 import { promptFotoHorizontal } from '../utils/portal-imagen-prompt.util';
+import { mergeHomeCursoCtaUrl } from '../utils/portal-page-route.util';
 
 export type { MpDocumento, MpDocumentoGrupo };
 
@@ -579,24 +580,12 @@ function mergeDocumentosGrupos(
   return raw;
 }
 
-function mercanciasPeligrosasNecesitaActualizarGuion(
+/** Solo para scripts de migración one-shot (no usar en merge en caliente). */
+export function mercanciasPeligrosasNecesitaActualizarGuion(
   src: Partial<PortalMercanciasPeligrosasLanding>,
 ): boolean {
   const v = Number(src.guionVersion) || 0;
   return v < MERCANCIAS_PELIGROSAS_GUION_VERSION;
-}
-
-function mergeMercanciasPeligrosasPreservandoUsuario(
-  src: Partial<PortalMercanciasPeligrosasLanding>,
-  d: PortalMercanciasPeligrosasLanding,
-): PortalMercanciasPeligrosasLanding {
-  const enlaceCursoUrl = String(src.enlaceCursoUrl ?? '').trim();
-  return {
-    ...JSON.parse(JSON.stringify(d)) as PortalMercanciasPeligrosasLanding,
-    guionVersion: MERCANCIAS_PELIGROSAS_GUION_VERSION,
-    enlaceCursoUrl,
-    imagenes: mergeImagenes(src.imagenes, d.imagenes),
-  };
 }
 
 export function mergeMercanciasPeligrosasLanding(
@@ -604,9 +593,6 @@ export function mergeMercanciasPeligrosasLanding(
 ): PortalMercanciasPeligrosasLanding {
   const d = MERCANCIAS_PELIGROSAS_LANDING_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
-  if (mercanciasPeligrosasNecesitaActualizarGuion(src)) {
-    return mergeMercanciasPeligrosasPreservandoUsuario(src, d);
-  }
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
   const arr = <T>(v: T[] | undefined, fb: T[]) => (Array.isArray(v) && v.length ? v : fb);
 
@@ -632,7 +618,7 @@ export function mergeMercanciasPeligrosasLanding(
     ctaClasificacionTexto: str(src.ctaClasificacionTexto, d.ctaClasificacionTexto),
     ctaFaqTexto: str(src.ctaFaqTexto, d.ctaFaqTexto),
     ctaInicioTexto: str(src.ctaInicioTexto, d.ctaInicioTexto),
-    ctaUrl: str(src.ctaUrl, d.ctaUrl) || d.ctaUrl,
+    ctaUrl: mergeHomeCursoCtaUrl(src, d.ctaUrl),
     homeItems: mergeHomeItems(src.homeItems, d.homeItems),
     fechaActualizacion: str(src.fechaActualizacion, d.fechaActualizacion),
     enlaceOficialUrl: str(src.enlaceOficialUrl, d.enlaceOficialUrl),

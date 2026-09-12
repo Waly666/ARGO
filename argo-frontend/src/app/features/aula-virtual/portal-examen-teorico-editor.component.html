@@ -248,7 +248,11 @@
     <label class="psb-field psb-field--plain">
       <span>Texto del botón en el inicio</span>
       <input type="text" class="psb-input" [(ngModel)]="examenTeorico.ctaTexto" placeholder="Ver información completa" />
-      <span class="psb-hint">Siempre abre la página /examen-teorico (no aparece en el menú).</span>
+    </label>
+    <label class="psb-field psb-field--plain psb-field--highlight">
+      <span>URL del botón del inicio</span>
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.ctaUrl" placeholder="/examen-teorico" />
+      <span class="psb-hint">Ruta exacta del botón. Vacío = slug automático (/examen-teorico).</span>
     </label>
   </div>
 </div>

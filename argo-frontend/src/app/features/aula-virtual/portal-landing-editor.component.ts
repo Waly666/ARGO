@@ -15,7 +15,13 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
-import { buildLandingEditorNavTabs, LandingEditorNavTab } from './portal-landing-editor-nav.util';
+import {
+  buildLandingEditorNavTabs,
+  LandingEditorNavTab,
+  paginaKeyDesdeHomeBloque,
+} from './portal-landing-editor-nav.util';
+import { PortalHomeCursoSectionEditorComponent } from './portal-home-curso-section-editor.component';
+import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
 
 @Component({
   selector: 'argo-portal-landing-editor',
@@ -26,6 +32,7 @@ import { buildLandingEditorNavTabs, LandingEditorNavTab } from './portal-landing
     PortalFieldLabelComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalPromoHeroImagenEditorComponent,
+    PortalHomeCursoSectionEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
@@ -51,6 +58,10 @@ export class PortalLandingEditorComponent {
 
   etiquetaPestana(tab: LandingEditorNavTab): string {
     return tab.homePos != null ? `${tab.homePos} · ${tab.label}` : tab.label;
+  }
+
+  homeCursoPaginaKey(): PortalPaginaKey | null {
+    return paginaKeyDesdeHomeBloque(this.bloque());
   }
 
   /** Banner clásico (Finstruvial / azul profundo): H1 animado = heroTitulo del portal. */

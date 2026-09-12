@@ -43,17 +43,28 @@ export function portalPageDefaultRoute(key: PortalPaginaKey): string {
   return PORTAL_PAGINA_RUTAS[key];
 }
 
-/** URL del botón de un bloque de curso en el inicio: respeta slug ERP si ctaUrl está vacío o es la ruta antigua. */
+function normalizePortalPath(path: string): string {
+  const raw = String(path ?? '').trim();
+  if (!raw) return '/';
+  const withoutQuery = raw.split('?')[0].split('#')[0];
+  const withSlash = withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
+  return withSlash.replace(/\/+$/, '') || '/';
+}
+
+/** URL del botón del bloque de curso en el inicio: vacío → slug ERP; con valor → la URL del editor tal cual. */
 export function homeCursoCtaUrl(
   config: PortalConfig | null | undefined,
   paginaKey: PortalPaginaKey,
   ctaUrl?: string | null,
 ): string {
-  const custom = ctaUrl?.trim();
-  const canonical = portalPageRoute(config, paginaKey);
-  const legacy = portalPageDefaultRoute(paginaKey);
-  if (!custom || custom === legacy) return canonical;
-  return custom;
+  const custom = String(ctaUrl ?? '').trim();
+  if (!custom) return portalPageRoute(config, paginaKey);
+  if (/^https?:\/\//i.test(custom)) return custom;
+  return normalizePortalPath(custom);
+}
+
+export function homeCursoCtaEsExterna(url: string): boolean {
+  return /^https?:\/\//i.test(String(url ?? '').trim());
 }
 
 export function portalPageRoute(config: PortalConfig | null | undefined, key: PortalPaginaKey): string {
