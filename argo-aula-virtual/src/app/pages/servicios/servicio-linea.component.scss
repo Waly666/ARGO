@@ -2272,27 +2272,42 @@
 }
 
 $fsv-stagger: '.fsv-grid, .fsv-icon-grid, .fsv-sim-grid, .fsv-preguntas, .fsv-tags, .fsv-flow, .fsv-vertical-flow, .fsv-ecosystem, .fsv-check-list--cards, .fsv-estudios-bloques';
+$fsv-ease-lit: cubic-bezier(0.22, 1, 0.36, 1);
 
-@media (prefers-reduced-motion: no-preference) {
-  /* El contenedor deja de moverse: la animación la llevan las tarjetas. */
-  :is(#{$fsv-stagger}).reveal {
+/**
+ * Las declaraciones `animation` van fuera de cualquier @media y con el easing
+ * literal a propósito: Angular renombra los @keyframes al encapsularlos por
+ * componente, pero no reescribe la referencia dentro de un @media, y la
+ * animación pasa a apuntar a unos keyframes inexistentes. El movimiento se
+ * desactiva más abajo con `prefers-reduced-motion: reduce`.
+ */
+
+/* El contenedor deja de moverse: la animación la llevan las tarjetas. */
+:is(#{$fsv-stagger}).reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Oculto solo mientras está pendiente: si la animación fallara, igual se ve. */
+:is(#{$fsv-stagger}).reveal:not(.is-visible) > * {
+  opacity: 0;
+}
+
+:is(#{$fsv-stagger}).reveal.is-visible > * {
+  animation: fsv-rise-in 0.58s $fsv-ease-lit both;
+}
+
+@for $i from 2 through 14 {
+  :is(#{$fsv-stagger}).reveal.is-visible > *:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 55}ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(#{$fsv-stagger}).reveal > * {
+    animation: none;
     opacity: 1;
-    transform: none;
-    transition: none;
-
-    > * {
-      opacity: 0;
-    }
-  }
-
-  :is(#{$fsv-stagger}).reveal.is-visible > * {
-    animation: fsv-rise-in 0.58s var(--fsv-ease) both;
-  }
-
-  @for $i from 2 through 14 {
-    :is(#{$fsv-stagger}).reveal.is-visible > *:nth-child(#{$i}) {
-      animation-delay: #{($i - 1) * 55}ms;
-    }
   }
 }
 
@@ -2907,56 +2922,68 @@ $fsv-stagger: '.fsv-grid, .fsv-icon-grid, .fsv-sim-grid, .fsv-preguntas, .fsv-ta
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .fsv-dashboard__map::before {
-    animation: fsv-map-breathe 6.5s ease-in-out infinite;
+.fsv-dashboard__map::before {
+  animation: fsv-map-breathe 6.5s ease-in-out infinite;
+}
+
+.fsv-dashboard__map::after {
+  animation: fsv-map-sweep 8s linear infinite;
+}
+
+.fsv-dashboard.reveal:not(.is-visible) {
+  .fsv-stat,
+  .fsv-dashboard__filters li {
+    opacity: 0;
+  }
+}
+
+.fsv-dashboard.reveal.is-visible {
+  .fsv-stat {
+    animation: fsv-stat-pop 0.5s $fsv-ease-lit both;
   }
 
-  .fsv-dashboard__map::after {
-    animation: fsv-map-sweep 8s linear infinite;
+  .fsv-dashboard__filters li {
+    animation: fsv-rise-in 0.45s $fsv-ease-lit both;
   }
 
-  .fsv-dashboard.reveal {
-    .fsv-stat,
-    .fsv-dashboard__filters li {
-      opacity: 0;
-    }
-  }
-
-  .fsv-dashboard.reveal.is-visible {
-    .fsv-stat {
-      animation: fsv-stat-pop 0.5s var(--fsv-ease) both;
+  @for $i from 1 through 8 {
+    .fsv-stat:nth-of-type(#{$i}) {
+      animation-delay: #{180 + ($i - 1) * 85}ms;
     }
 
-    .fsv-dashboard__filters li {
-      animation: fsv-rise-in 0.45s var(--fsv-ease) both;
-    }
-
-    @for $i from 1 through 8 {
-      .fsv-stat:nth-of-type(#{$i}) {
-        animation-delay: #{180 + ($i - 1) * 85}ms;
-      }
-
-      .fsv-dashboard__filters li:nth-child(#{$i}) {
-        animation-delay: #{160 + ($i - 1) * 55}ms;
-      }
+    .fsv-dashboard__filters li:nth-child(#{$i}) {
+      animation-delay: #{160 + ($i - 1) * 55}ms;
     }
   }
 }
 
 /* --- Entrada escalonada de las guías en video --------------------------- */
-@media (prefers-reduced-motion: no-preference) {
-  .fsv-guides-band.reveal .fsv-guide-card {
-    opacity: 0;
+.fsv-guides-band.reveal:not(.is-visible) .fsv-guide-card {
+  opacity: 0;
+}
+
+.fsv-guides-band.reveal.is-visible .fsv-guide-card {
+  animation: fsv-rise-in 0.55s $fsv-ease-lit both;
+
+  @for $i from 2 through 6 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 90}ms;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fsv-dashboard__map::before,
+  .fsv-dashboard__map::after,
+  .fsv-dashboard .fsv-stat,
+  .fsv-dashboard__filters li,
+  .fsv-guides-band .fsv-guide-card {
+    animation: none;
   }
 
-  .fsv-guides-band.reveal.is-visible .fsv-guide-card {
-    animation: fsv-rise-in 0.55s var(--fsv-ease) both;
-
-    @for $i from 2 through 6 {
-      &:nth-child(#{$i}) {
-        animation-delay: #{($i - 1) * 90}ms;
-      }
-    }
+  .fsv-dashboard .fsv-stat,
+  .fsv-dashboard__filters li,
+  .fsv-guides-band .fsv-guide-card {
+    opacity: 1;
   }
 }

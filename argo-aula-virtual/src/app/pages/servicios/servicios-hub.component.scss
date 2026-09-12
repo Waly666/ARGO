@@ -691,26 +691,39 @@
 }
 
 $fsv-stagger: '.fsv-grid, .fsv-faq';
+$fsv-ease-lit: cubic-bezier(0.22, 1, 0.36, 1);
 
-@media (prefers-reduced-motion: no-preference) {
-  :is(#{$fsv-stagger}).reveal {
+/**
+ * `animation` va fuera de cualquier @media y con el easing literal: Angular
+ * renombra los @keyframes al encapsularlos y no reescribe la referencia dentro
+ * de un @media, con lo que la animación deja de existir y el contenido se
+ * quedaría invisible.
+ */
+:is(#{$fsv-stagger}).reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Oculto solo mientras está pendiente: si la animación fallara, igual se ve. */
+:is(#{$fsv-stagger}).reveal:not(.is-visible) > * {
+  opacity: 0;
+}
+
+:is(#{$fsv-stagger}).reveal.is-visible > * {
+  animation: fsv-rise-in 0.58s $fsv-ease-lit both;
+}
+
+@for $i from 2 through 14 {
+  :is(#{$fsv-stagger}).reveal.is-visible > *:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 55}ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(#{$fsv-stagger}).reveal > * {
+    animation: none;
     opacity: 1;
-    transform: none;
-    transition: none;
-
-    > * {
-      opacity: 0;
-    }
-  }
-
-  :is(#{$fsv-stagger}).reveal.is-visible > * {
-    animation: fsv-rise-in 0.58s var(--fsv-ease) both;
-  }
-
-  @for $i from 2 through 14 {
-    :is(#{$fsv-stagger}).reveal.is-visible > *:nth-child(#{$i}) {
-      animation-delay: #{($i - 1) * 55}ms;
-    }
   }
 }
 
