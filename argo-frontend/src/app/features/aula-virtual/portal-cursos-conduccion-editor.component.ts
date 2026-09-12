@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -11,6 +11,7 @@ import {
   mergeCursosConduccionLanding,
   PortalCursosConduccionLanding,
   PortalCursosConduccionPublicidadSlide,
+  PortalCursosConduccionSeccionImagenes,
 } from '../../core/constants/cursos-conduccion-landing-defaults';
 import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.util';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
@@ -40,7 +41,7 @@ import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields
   templateUrl: './portal-cursos-conduccion-editor.component.html',
   styleUrl: './portal-cursos-conduccion-editor.component.scss',
 })
-export class PortalCursosConduccionEditorComponent implements OnInit {
+export class PortalCursosConduccionEditorComponent implements OnInit, OnChanges {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) cursosConduccion!: PortalCursosConduccionLanding;
@@ -56,14 +57,40 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
   readonly seccionImagenSlots = CURSOS_CONDUCCION_SECCION_IMAGEN_SLOTS;
 
   ngOnInit(): void {
+    this.initHeroHighlightDefaults();
+    this.ensureSeccionImagenesStructure();
+  }
+
+  ngOnChanges(): void {
+    this.ensureSeccionImagenesStructure();
+  }
+
+  private initHeroHighlightDefaults(): void {
     const hero = this.cursosConduccion.hero;
     if (hero.highlightIcon == null) hero.highlightIcon = '';
     if (hero.highlightTitle == null) hero.highlightTitle = '';
     if (hero.highlightSubtitle == null) hero.highlightSubtitle = '';
     if (hero.highlightRadar == null) hero.highlightRadar = true;
-    this.cursosConduccion.seccionImagenes = mergeCursosConduccionLanding(
-      this.cursosConduccion,
-    ).seccionImagenes;
+  }
+
+  /** Solo estructura editable; no rellenar URLs predeterminadas (evita pisar uploads al publicar). */
+  private ensureSeccionImagenesStructure() {
+    const defaults = mergeCursosConduccionLanding({}).seccionImagenes || {};
+    if (!this.cursosConduccion.seccionImagenes) {
+      this.cursosConduccion.seccionImagenes = {};
+    }
+    for (const { slot } of this.seccionImagenSlots) {
+      const current = this.cursosConduccion.seccionImagenes[slot];
+      const fb = defaults[slot as keyof PortalCursosConduccionSeccionImagenes];
+      if (!current) {
+        this.cursosConduccion.seccionImagenes[slot] = {
+          url: '',
+          alt: fb?.alt || 'Formación en conducción SERVIAL',
+        };
+      } else if (!current.alt?.trim() && fb?.alt) {
+        current.alt = fb.alt;
+      }
+    }
   }
 
   readonly maxPublicidad = MAX_CURSOS_CONDUCCION_PUBLICIDAD;
@@ -322,16 +349,27 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
 
   seccionImagenPreview(slot: CursosConduccionSeccionImagenSlot): string | null {
     const img = this.cursosConduccion.seccionImagenes?.[slot];
-    return this.archivoPreviewUrl(img?.url);
+    const defaultUrl = mergeCursosConduccionLanding({}).seccionImagenes?.[slot]?.url;
+    const url = img?.url?.trim() || defaultUrl;
+    return this.archivoPreviewUrl(url);
+  }
+
+  tieneSeccionImagenPersonalizada(slot: CursosConduccionSeccionImagenSlot): boolean {
+    const url = this.cursosConduccion.seccionImagenes?.[slot]?.url?.trim() || '';
+    return url.startsWith('/uploads/') || /^https?:\/\//i.test(url);
   }
 
   syncSeccionImagenesFromConfig(config: PortalAulaConfig) {
     const seccionImagenes = config.landing?.cursosConduccion?.seccionImagenes;
-    if (seccionImagenes) {
-      this.cursosConduccion.seccionImagenes = {
-        ...this.cursosConduccion.seccionImagenes,
-        ...seccionImagenes,
-      };
+    if (!seccionImagenes) return;
+    if (!this.cursosConduccion.seccionImagenes) {
+      this.cursosConduccion.seccionImagenes = {};
+    }
+    for (const { slot } of this.seccionImagenSlots) {
+      const img = seccionImagenes[slot];
+      if (img?.url?.trim()) {
+        this.cursosConduccion.seccionImagenes[slot] = { ...img };
+      }
     }
   }
 

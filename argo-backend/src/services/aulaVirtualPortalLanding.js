@@ -367,9 +367,42 @@ function normalizarAsistente(raw, legacyConsulta) {
   };
 }
 
-function normalizarLanding(input, tema) {
+function isDefaultSeccionImagenCursosConduccionUrl(url) {
+  return String(url || '').trim().startsWith('/images/cursos-conduccion/');
+}
+
+function mergeSeccionImagenesCursosConduccionForPersist(incoming, stored) {
+  const slots = [
+    'invitacion',
+    'metodologiaTeorica',
+    'metodologiaPractica',
+    'metodologiaTaller',
+    'requisitos',
+    'seo',
+    'local',
+  ];
+  const inSrc = incoming && typeof incoming === 'object' ? incoming : {};
+  const stSrc = stored && typeof stored === 'object' ? stored : {};
+  const out = {};
+  for (const slot of slots) {
+    const next = normalizarImagenSeccionCursosConduccion(inSrc[slot], null);
+    const prev = normalizarImagenSeccionCursosConduccion(stSrc[slot], null);
+    if (next && !isDefaultSeccionImagenCursosConduccionUrl(next.url)) {
+      out[slot] = next;
+    } else if (prev?.url?.startsWith('/uploads/')) {
+      out[slot] = prev;
+    } else if (next) {
+      out[slot] = next;
+    }
+  }
+  return out;
+}
+
+function normalizarLanding(input, tema, storedLanding) {
   const d = LANDING_DEFAULTS;
   const src = input && typeof input === 'object' ? input : {};
+  const stored =
+    storedLanding && typeof storedLanding === 'object' ? storedLanding : null;
 
   const ofertasSrc = src.ofertas && typeof src.ofertas === 'object' ? src.ofertas : {};
   const serviciosSrc = src.servicios && typeof src.servicios === 'object' ? src.servicios : {};
@@ -576,7 +609,10 @@ function normalizarLanding(input, tema) {
     footerServicios: footer.length ? footer : [...d.footerServicios],
     fundacion: normalizarFundacion(fundSrc, fundD),
     acerca: normalizarAcerca(acercaSrc),
-    cursosConduccion: normalizarCursosConduccion(src.cursosConduccion),
+    cursosConduccion: normalizarCursosConduccion(
+      src.cursosConduccion,
+      stored?.cursosConduccion?.seccionImagenes,
+    ),
     popup: normalizarPopup(popupSrc),
     consultaCertificados: normalizarConsultaCertificados(consultaCertSrc),
     pqr: mergePqrLanding(pqrSrc),
@@ -710,7 +746,7 @@ function normalizarPublicidad(raw) {
   };
 }
 
-function normalizarCursosConduccion(src) {
+function normalizarCursosConduccion(src, storedSeccionImagenes) {
   const d = CURSOS_CONDUCCION_DEFAULTS;
   const raw = src && typeof src === 'object' ? src : {};
   const resolucionesSrc = Array.isArray(raw.resoluciones) ? raw.resoluciones : [];
@@ -784,7 +820,10 @@ function normalizarCursosConduccion(src) {
     resoluciones,
     licencias: normalizarLicencias(licenciasSrc || {}, d.licencias),
     publicidad: normalizarPublicidad(raw.publicidad),
-    seccionImagenes: normalizarSeccionImagenesCursosConduccion(raw.seccionImagenes),
+    seccionImagenes: mergeSeccionImagenesCursosConduccionForPersist(
+      raw.seccionImagenes,
+      storedSeccionImagenes,
+    ),
   };
 }
 

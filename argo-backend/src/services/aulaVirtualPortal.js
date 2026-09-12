@@ -117,7 +117,7 @@ async function guardarConfigAula(body, usuario) {
   delete dto.nombreCea;
   if (dto.urlLogo === undefined) delete dto.urlLogo;
   if (body.landing !== undefined) {
-    dto.landing = normalizarLanding(body.landing, tema);
+    dto.landing = normalizarLanding(body.landing, tema, actual.landing);
   } else {
     dto.landing = mergeLanding(actual.landing, tema);
   }

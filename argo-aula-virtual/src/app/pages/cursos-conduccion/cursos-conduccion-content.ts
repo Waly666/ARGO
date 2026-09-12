@@ -324,6 +324,8 @@ function mergeCursosConduccionPreservandoUsuario(
       merged.enlacesRelacionados = d.enlacesRelacionados.map((e) => ({ ...e }));
       merged.enlacesRelacionadosTitulo = d.enlacesRelacionadosTitulo;
     }
+    merged.seccionImagenes = mergeSeccionImagenes(src.seccionImagenes);
+    merged.guionVersion = CURSOS_CONDUCCION_GUION_VERSION;
     return merged;
 }
 

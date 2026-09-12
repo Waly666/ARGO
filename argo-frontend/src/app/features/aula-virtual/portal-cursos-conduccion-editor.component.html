@@ -274,7 +274,7 @@
                 [disabled]="seccionUploading() === 'invitacion'"
               />
             </label>
-            @if (cursosConduccion.seccionImagenes?.invitacion?.url?.trim()) {
+            @if (tieneSeccionImagenPersonalizada('invitacion')) {
               <button
                 type="button"
                 class="psb-link"
@@ -390,7 +390,7 @@
                   (change)="onSeccionImagen($event, slotDef.slot)"
                 />
               </label>
-              @if (cursosConduccion.seccionImagenes?.[slotDef.slot]?.url?.trim()) {
+              @if (tieneSeccionImagenPersonalizada(slotDef.slot)) {
                 <button
                   type="button"
                   class="psb-link"
