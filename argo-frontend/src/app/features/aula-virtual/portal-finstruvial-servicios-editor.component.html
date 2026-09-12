@@ -75,7 +75,19 @@
     <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarHub()">Restaurar portafolio</button>
   </div>
 
-  <section class="psb-card psb-card--h1">
+  <nav class="fsv-indice" aria-label="Secciones del portafolio">
+    <p class="fsv-indice__label">Ir a la sección:</p>
+    <div class="fsv-indice__chips">
+      @for (item of hubSecciones; track item.id) {
+        <button type="button" class="fsv-indice__chip" (click)="scrollToHubSeccion(item.id)">
+          <span class="fsv-indice__chip-step">{{ item.paso }}</span>
+          {{ item.titulo }}
+        </button>
+      }
+    </div>
+  </nav>
+
+  <section class="psb-card psb-card--h1" id="fsv-hub-seccion-banner">
     <h3 class="psb-card__title"><span class="pes-order">1</span> Banner principal (H1)</h3>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
@@ -118,12 +130,38 @@
         <p class="psb-hint">
           Etiquetas cortas debajo de la tarjeta (p. ej. «Villavicencio», «Meta», «Llanos Orientales»).
         </p>
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta de accesibilidad de los chips</span>
+          <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.statsLabel" />
+        </label>
         <argo-portal-promo-hero-fields-editor
           [hero]="finstruvialServicios.hub"
           [showTitle]="false"
           [showLead]="false"
           [showStats]="true"
         />
+      </div>
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Botones del banner</p>
+        <p class="psb-hint">Enlaces bajo los chips. Use anclas como <code>#formacion</code> o rutas como <code>/servicios/aula-virtual</code>.</p>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Botón principal — texto</span>
+            <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.ctaPrincipal" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Botón principal — enlace</span>
+            <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.ctaPrincipalUrl" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Botón secundario — texto</span>
+            <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.ctaSecundario" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Botón secundario — enlace</span>
+            <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.ctaSecundarioUrl" />
+          </label>
+        </div>
       </div>
     } @else {
       <div class="fsv-fieldset">
@@ -178,8 +216,12 @@
     </div>
   </section>
 
-  <section class="psb-card">
+  <section class="psb-card" id="fsv-hub-seccion-formacion">
     <h3 class="psb-card__title"><span class="pes-order">2</span> Formación integral</h3>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Etiqueta pequeña del bloque" />
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionKicker" />
+    </label>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="H2" label="Título del bloque" />
       <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.seoTextoTitulo" />
@@ -259,11 +301,15 @@
     </div>
   </section>
 
-  <section class="psb-card">
+  <section class="psb-card" id="fsv-hub-seccion-grilla">
     <h3 class="psb-card__title"><span class="pes-order">3</span> Grilla del portafolio</h3>
     <label class="psb-field psb-field--plain">
-      <span>Etiqueta en el menú principal</span>
+      <span>Etiqueta en el menú principal del sitio</span>
       <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.menuLabel" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Etiqueta pequeña del bloque" />
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.gridKicker" />
     </label>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
@@ -275,9 +321,57 @@
         <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.gridLead"></textarea>
       </label>
     </div>
+    <div class="fsv-fieldset">
+      <p class="fsv-fieldset__legend">Tarjetas de la grilla</p>
+      <p class="psb-hint">
+        Cada tarjeta enlaza a un curso o servicio. Si deja la lista vacía y publica, el sitio arma las tarjetas
+        automáticamente desde las <strong>líneas de servicio visibles</strong> del menú lateral.
+      </p>
+      @for (tarjeta of finstruvialServicios.hub.tarjetas; track $index; let i = $index) {
+        <div class="ple-card">
+          <div class="ple-card__head">
+            <strong>Tarjeta {{ i + 1 }}{{ tarjeta.titulo ? ': ' + tarjeta.titulo : '' }}</strong>
+            <button type="button" class="psb-link ple-remove" (click)="removeHubTarjeta(i)">Eliminar</button>
+          </div>
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Icono (emoji)</span>
+              <input type="text" class="psb-input" [(ngModel)]="tarjeta.icon" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <argo-portal-field-label tag="H3" label="Título" />
+              <input type="text" class="psb-input" [(ngModel)]="tarjeta.titulo" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Texto del enlace</span>
+              <input type="text" class="psb-input" [(ngModel)]="tarjeta.cta" />
+            </label>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <argo-portal-field-label tag="p" label="Descripción breve" />
+            <textarea class="psb-input" rows="2" [(ngModel)]="tarjeta.lead"></textarea>
+          </label>
+          <div class="psb-grid2">
+            <label class="psb-field psb-field--plain">
+              <span>URL de destino</span>
+              <input type="text" class="psb-input" [(ngModel)]="tarjeta.url" placeholder="/servicios/aula-virtual" />
+            </label>
+            <label class="psb-check psb-check--inline">
+              <input
+                type="checkbox"
+                [checked]="tarjeta.externo === true"
+                (change)="setHubTarjetaExterna(tarjeta, $any($event.target).checked)"
+              />
+              Enlace externo (abre fuera del portal)
+            </label>
+          </div>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addHubTarjeta()">+ Añadir tarjeta</button>
+    </div>
   </section>
 
-  <section class="psb-card">
+  <section class="psb-card" id="fsv-hub-seccion-ubicacion">
     <h3 class="psb-card__title"><span class="pes-order">4</span> Ubicación y contacto local</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="H2" label="Título del bloque" />
@@ -301,6 +395,18 @@
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localEmail" />
       </label>
     </div>
+  </section>
+
+  <section class="psb-card" id="fsv-hub-seccion-faq">
+    <h3 class="psb-card__title"><span class="pes-order">5</span> Preguntas frecuentes</h3>
+    <p class="psb-hint">
+      Bloque al final de <strong>/servicios</strong>. Si no hay preguntas, la sección no se muestra en el sitio.
+    </p>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.faqTitulo" />
+    </label>
+    <argo-portal-editor-faq-list [items]="finstruvialServicios.hub.faq" />
   </section>
   }
 

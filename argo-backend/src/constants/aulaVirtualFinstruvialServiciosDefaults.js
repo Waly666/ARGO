@@ -629,6 +629,20 @@ function mergeFinstruvialServicios(raw, paginasDefaults = {}, configDefaults = F
 
       gridLead: str(src.hub?.gridLead, d.hub.gridLead),
 
+      formacionKicker: str(src.hub?.formacionKicker, d.hub.formacionKicker || 'Formación integral'),
+
+      gridKicker: str(src.hub?.gridKicker, d.hub.gridKicker || 'Portafolio'),
+
+      ctaPrincipal: str(src.hub?.ctaPrincipal, d.hub.ctaPrincipal || ''),
+
+      ctaPrincipalUrl: str(src.hub?.ctaPrincipalUrl, d.hub.ctaPrincipalUrl || '#formacion'),
+
+      ctaSecundario: str(src.hub?.ctaSecundario, d.hub.ctaSecundario || ''),
+
+      ctaSecundarioUrl: str(src.hub?.ctaSecundarioUrl, d.hub.ctaSecundarioUrl || '#portafolio'),
+
+      statsLabel: str(src.hub?.statsLabel, d.hub.statsLabel || 'Cobertura del servicio'),
+
       heroImagenUrl: str(src.hub?.heroImagenUrl, d.hub.heroImagenUrl),
 
       heroImagenUrlAbsoluta: src.hub?.heroImagenUrlAbsoluta?.trim() || d.hub.heroImagenUrlAbsoluta,

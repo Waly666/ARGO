@@ -45,16 +45,26 @@
             </div>
           }
           @if (hubHeroStats().length) {
-            <div class="fsv-hero__stats" aria-label="Cobertura del servicio">
+            <div class="fsv-hero__stats" [attr.aria-label]="hub().statsLabel">
               @for (stat of hubHeroStats(); track stat) {
                 <span class="fsv-hero__stat">{{ stat }}</span>
               }
             </div>
           }
-          <div class="fsv-hero__actions">
-            <a class="fsv-btn fsv-btn--primary" href="#formacion">Conocer nuestra formación</a>
-            <a class="fsv-btn fsv-btn--ghost" href="#portafolio">Ver cursos y servicios</a>
-          </div>
+          @if (hub().ctaPrincipal.trim() || hub().ctaSecundario.trim()) {
+            <div class="fsv-hero__actions">
+              @if (hub().ctaPrincipal.trim()) {
+                <a class="fsv-btn fsv-btn--primary" [href]="hub().ctaPrincipalUrl || '#formacion'">
+                  {{ hub().ctaPrincipal }}
+                </a>
+              }
+              @if (hub().ctaSecundario.trim()) {
+                <a class="fsv-btn fsv-btn--ghost" [href]="hub().ctaSecundarioUrl || '#portafolio'">
+                  {{ hub().ctaSecundario }}
+                </a>
+              }
+            </div>
+          }
         </div>
 
         <div class="fsv-hero__media reveal" avRevealOnScroll [revealDelay]="80">
@@ -109,7 +119,9 @@
         <div class="container">
           <div class="fsv-formacion__grid reveal" avRevealOnScroll>
             <div class="fsv-formacion__copy">
-              <p class="fsv-section-head__kicker">Formación integral</p>
+              @if (hub().formacionKicker.trim()) {
+                <p class="fsv-section-head__kicker">{{ hub().formacionKicker }}</p>
+              }
               <h2 class="fsv-section__title">{{ hub().seoTextoTitulo }}</h2>
               <div class="fsv-formacion__body">
                 @for (p of hub().seoTextoParrafos; track p) {
@@ -156,7 +168,9 @@
     <section class="fsv-section fsv-section--alt" id="portafolio">
       <div class="container">
         <header class="fsv-section-head fsv-section-head--center reveal" avRevealOnScroll>
-          <p class="fsv-section-head__kicker">Portafolio</p>
+          @if (hub().gridKicker.trim()) {
+            <p class="fsv-section-head__kicker">{{ hub().gridKicker }}</p>
+          }
           <h2 class="fsv-section__title">{{ hub().gridTitulo }}</h2>
           @if (hub().gridLead.trim()) {
             <p class="fsv-section-head__lead">{{ hub().gridLead }}</p>

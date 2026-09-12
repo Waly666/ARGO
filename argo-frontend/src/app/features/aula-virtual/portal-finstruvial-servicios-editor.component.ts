@@ -33,6 +33,7 @@ import {
   PortalFinstruvialServicioLanding,
   PortalFinstruvialServicioMedio,
   PortalFinstruvialServiciosConfig,
+  PortalServiciosHubTarjeta,
 } from '../../core/constants/finstruvial-servicio-landing.types';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
@@ -45,6 +46,7 @@ import {
   PortalFinstruvialMedioTipoUi,
   PortalFinstruvialMediosPanelComponent,
 } from './portal-finstruvial-medios-panel.component';
+import { PortalEditorFaqListComponent } from './portal-editor-faq-list.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
@@ -55,6 +57,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
   selector: 'argo-portal-finstruvial-servicios-editor',
   standalone: true,
   imports: [
+    PortalEditorFaqListComponent,
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
     PortalFinstruvialEditorSeccionComponent,
@@ -94,10 +97,24 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
   /** Colapsar/expandir bloques del formulario (por defecto todos abiertos). */
   private gruposAbiertos = signal<Record<string, boolean>>({});
 
+  readonly hubSecciones = [
+    { id: 'fsv-hub-seccion-banner', paso: 1, titulo: 'Banner' },
+    { id: 'fsv-hub-seccion-formacion', paso: 2, titulo: 'Formación' },
+    { id: 'fsv-hub-seccion-grilla', paso: 3, titulo: 'Grilla' },
+    { id: 'fsv-hub-seccion-ubicacion', paso: 4, titulo: 'Ubicación' },
+    { id: 'fsv-hub-seccion-faq', paso: 5, titulo: 'FAQ' },
+  ] as const;
+
   ngOnInit(): void {
     if (this.modo === 'hub') {
       this.ensureHubHeroAnimadoFields();
+      this.ensureHubFaqFields();
+      this.ensureHubTarjetas();
     }
+  }
+
+  scrollToHubSeccion(id: string): void {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   lineaActiva(): FinstruvialServicioSlug {
@@ -194,6 +211,39 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
     if (p.highlightSubtitle == null) p.highlightSubtitle = '';
     if (p.ribbonLabel == null) p.ribbonLabel = '';
     if (p.heroHighlightRadar == null) p.heroHighlightRadar = true;
+  }
+
+  ensureHubFaqFields(): void {
+    const hub = this.finstruvialServicios?.hub;
+    if (!hub) return;
+    if (!Array.isArray(hub.faq)) hub.faq = [];
+    if (hub.faqTitulo == null) hub.faqTitulo = '';
+  }
+
+  ensureHubTarjetas(): void {
+    const hub = this.finstruvialServicios?.hub;
+    if (!hub) return;
+    if (!Array.isArray(hub.tarjetas)) hub.tarjetas = [];
+  }
+
+  addHubTarjeta(): void {
+    this.ensureHubTarjetas();
+    this.finstruvialServicios.hub.tarjetas.push({
+      icon: '🎓',
+      titulo: '',
+      lead: '',
+      url: '',
+      cta: 'Conocer más',
+      externo: false,
+    });
+  }
+
+  removeHubTarjeta(index: number): void {
+    removeAt(this.finstruvialServicios.hub.tarjetas, index);
+  }
+
+  setHubTarjetaExterna(tarjeta: PortalServiciosHubTarjeta, externo: boolean): void {
+    tarjeta.externo = externo;
   }
 
   ensureHubHeroAnimadoFields(): void {

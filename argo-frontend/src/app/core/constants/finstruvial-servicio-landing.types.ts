@@ -217,6 +217,16 @@ export interface PortalFinstruvialServiciosHub {
   lead: string;
   gridTitulo: string;
   gridLead: string;
+  /** Etiqueta pequeña sobre el bloque «Formación integral». */
+  formacionKicker: string;
+  /** Etiqueta pequeña sobre la grilla de cursos/servicios. */
+  gridKicker: string;
+  ctaPrincipal: string;
+  ctaPrincipalUrl: string;
+  ctaSecundario: string;
+  ctaSecundarioUrl: string;
+  /** Etiqueta de accesibilidad de los chips del banner. */
+  statsLabel: string;
   seoTextoTitulo: string;
   seoTextoParrafos: string[];
   localTitulo: string;

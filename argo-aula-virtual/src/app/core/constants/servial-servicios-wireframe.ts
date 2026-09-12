@@ -595,6 +595,13 @@ export const SERVIAL_PORTAFOLIO_HUB = {
     'SERVIAL Colombia ofrece cursos, capacitación y formación especializada para conductores, trabajadores, empresas e instituciones en Villavicencio, Meta y los Llanos Orientales.',
   gridTitulo: 'Nuestros Cursos y Servicios',
   gridLead: '',
+  formacionKicker: 'Formación integral',
+  gridKicker: 'Portafolio',
+  ctaPrincipal: 'Conocer nuestra formación',
+  ctaSecundario: 'Ver cursos y servicios',
+  ctaPrincipalUrl: '#formacion',
+  ctaSecundarioUrl: '#portafolio',
+  statsLabel: 'Cobertura del servicio',
   seoTextoTitulo: 'Formación y capacitación con SERVIAL Colombia',
   seoTextoParrafos: [
     'SERVIAL Colombia brinda servicios de formación y capacitación en Villavicencio, Meta, dirigidos a conductores, trabajadores, empresas e instituciones que requieren fortalecer sus conocimientos y competencias en seguridad vial, transporte, conducción segura y prevención de riesgos.',

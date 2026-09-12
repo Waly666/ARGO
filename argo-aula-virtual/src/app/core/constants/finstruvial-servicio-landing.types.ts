@@ -222,6 +222,13 @@ export interface PortalFinstruvialServiciosHub {
   lead: string;
   gridTitulo: string;
   gridLead: string;
+  formacionKicker: string;
+  gridKicker: string;
+  ctaPrincipal: string;
+  ctaPrincipalUrl: string;
+  ctaSecundario: string;
+  ctaSecundarioUrl: string;
+  statsLabel: string;
   seoTextoTitulo: string;
   seoTextoParrafos: string[];
   localTitulo: string;

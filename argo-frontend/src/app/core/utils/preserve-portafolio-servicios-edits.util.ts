@@ -23,6 +23,13 @@ const HUB_TEXT_KEYS: (keyof PortalFinstruvialServiciosHub)[] = [
   'lead',
   'gridTitulo',
   'gridLead',
+  'formacionKicker',
+  'gridKicker',
+  'ctaPrincipal',
+  'ctaPrincipalUrl',
+  'ctaSecundario',
+  'ctaSecundarioUrl',
+  'statsLabel',
   'seoTextoTitulo',
   'localTitulo',
   'localTexto',
@@ -80,6 +87,9 @@ function preservePaginaTexts(
   if (prev.seoTextoParrafos?.length && !next.seoTextoParrafos?.length) {
     next.seoTextoParrafos = [...prev.seoTextoParrafos];
   }
+  if (prev.faq?.length && !next.faq?.length) {
+    next.faq = prev.faq.map((item) => ({ ...item }));
+  }
   if (prev.heroVideoYoutubeUrl?.trim() && !next.heroVideoYoutubeUrl?.trim()) {
     next.heroVideoYoutubeUrl = prev.heroVideoYoutubeUrl.trim();
   }
@@ -111,6 +121,12 @@ export function preservePortafolioServiciosEdits(
     }
     if (prev.hub.seoTextoParrafos?.length && !next.hub.seoTextoParrafos?.length) {
       next.hub.seoTextoParrafos = [...prev.hub.seoTextoParrafos];
+    }
+    if (prev.hub.faq?.length && !next.hub.faq?.length) {
+      next.hub.faq = prev.hub.faq.map((item) => ({ ...item }));
+    }
+    if (prev.hub.tarjetas?.length && !next.hub.tarjetas?.length) {
+      next.hub.tarjetas = prev.hub.tarjetas.map((item) => ({ ...item }));
     }
   }
 
