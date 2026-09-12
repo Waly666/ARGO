@@ -96,15 +96,17 @@
 
   &__title {
     margin: 0;
-    font-size: clamp(1.85rem, 4.2vw, 2.85rem);
+    font-size: clamp(1.35rem, 2.8vw, 2rem);
     font-weight: 900;
-    line-height: 1.08;
+    line-height: 1.12;
     letter-spacing: -0.02em;
   }
 
   &__title-accent {
     display: block;
-    margin-top: 0.15rem;
+    margin-top: 0.2rem;
+    font-size: clamp(1.15rem, 2.35vw, 1.65rem);
+    line-height: 1.15;
     color: #ffe566;
   }
 
