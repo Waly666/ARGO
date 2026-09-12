@@ -68,7 +68,6 @@ function normalizarLicencias(raw, fallback) {
     const incluye = (incluyeRaw || [])
       .map((x) => str(x))
       .filter(Boolean);
-    const imagenUrl = str(item?.imagenUrl, fb.imagenUrl);
     return {
       icon: str(item?.icon, fb.icon || '🚗'),
       codigo: str(item?.codigo, fb.codigo),
@@ -80,12 +79,6 @@ function normalizarLicencias(raw, fallback) {
       btnTexto: str(item?.btnTexto, fb.btnTexto || 'Solicitar ahora'),
       btnUrl: str(item?.btnUrl, fb.btnUrl || '/registro'),
       destacada: item?.destacada === true,
-      imagenUrl,
-      imagenUrlAbsoluta: (() => {
-        if (!imagenUrl || imagenUrl.startsWith('/images/')) return '';
-        return publicUploadUrl(imagenUrl) || imagenUrl;
-      })(),
-      imagenAlt: str(item?.imagenAlt, fb.imagenAlt),
     };
   });
   return {

@@ -1284,20 +1284,9 @@ function urlCursosConduccionSeccion(filename) {
   return publicUrl('aula-virtual-cursos-conduccion-seccion', filename);
 }
 
-function urlCursosConduccionLicencia(filename) {
-  return publicUrl('aula-virtual-cursos-conduccion-licencia', filename);
-}
-
 function quitarArchivoCursosConduccionSeccion(url) {
   const rel = String(url || '').replace(/^\/uploads\//, '').trim();
   if (!rel.startsWith('aula-virtual-cursos-conduccion-seccion/')) return;
-  const p = resolvePath(rel);
-  if (p && fs.existsSync(p)) fs.unlinkSync(p);
-}
-
-function quitarArchivoCursosConduccionLicencia(url) {
-  const rel = String(url || '').replace(/^\/uploads\//, '').trim();
-  if (!rel.startsWith('aula-virtual-cursos-conduccion-licencia/')) return;
   const p = resolvePath(rel);
   if (p && fs.existsSync(p)) fs.unlinkSync(p);
 }
@@ -1361,73 +1350,6 @@ exports.quitarImagenCursosConduccionSeccionPortal = async (req, res, next) => {
     res.json({
       config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de sección eliminada',
-    });
-  } catch (e) {
-    next(e);
-  }
-};
-
-exports.subirImagenCursosConduccionLicenciaPortal = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
-    }
-    const index = Number(req.body?.index ?? req.query?.index);
-    if (!Number.isInteger(index) || index < 0) {
-      quitarArchivoCursosConduccionLicencia(urlCursosConduccionLicencia(req.file.filename));
-      return res.status(400).json({ message: 'Indique el índice de la licencia' });
-    }
-    const aula = await obtenerConfigAula();
-    const landing = mergeLanding(aula.landing);
-    const licencias = landing.cursosConduccion?.licencias;
-    const items = Array.isArray(licencias?.items) ? licencias.items : [];
-    if (index >= items.length) {
-      quitarArchivoCursosConduccionLicencia(urlCursosConduccionLicencia(req.file.filename));
-      return res.status(400).json({ message: 'Licencia no encontrada' });
-    }
-    const prev = items[index]?.imagenUrl;
-    if (prev) quitarArchivoCursosConduccionLicencia(prev);
-
-    const filePath = path.join(req.file.destination, req.file.filename);
-    await optimizarImagenArchivo(filePath, { maxWidth: 1200, maxHeight: 900 });
-    const imagenUrl = urlCursosConduccionLicencia(req.file.filename);
-    items[index] = {
-      ...items[index],
-      imagenUrl,
-      imagenAlt: String(items[index]?.imagenAlt || items[index]?.titulo || 'Curso de conducción').trim(),
-    };
-    landing.cursosConduccion.licencias = { ...licencias, items };
-    await guardarConfigAula({ landing }, req.user);
-    res.json({
-      config: await obtenerConfigPortalAdmin(req),
-      message: 'Imagen de licencia actualizada',
-    });
-  } catch (e) {
-    next(e);
-  }
-};
-
-exports.quitarImagenCursosConduccionLicenciaPortal = async (req, res, next) => {
-  try {
-    const index = Number(req.body?.index ?? req.query?.index);
-    if (!Number.isInteger(index) || index < 0) {
-      return res.status(400).json({ message: 'Indique el índice de la licencia' });
-    }
-    const aula = await obtenerConfigAula();
-    const landing = mergeLanding(aula.landing);
-    const licencias = landing.cursosConduccion?.licencias;
-    const items = Array.isArray(licencias?.items) ? licencias.items : [];
-    if (index >= items.length) {
-      return res.status(400).json({ message: 'Licencia no encontrada' });
-    }
-    const prev = items[index]?.imagenUrl;
-    if (prev) quitarArchivoCursosConduccionLicencia(prev);
-    items[index] = { ...items[index], imagenUrl: '', imagenUrlAbsoluta: '' };
-    landing.cursosConduccion.licencias = { ...licencias, items };
-    await guardarConfigAula({ landing }, req.user);
-    res.json({
-      config: await obtenerConfigPortalAdmin(req),
-      message: 'Imagen de licencia eliminada',
     });
   } catch (e) {
     next(e);

@@ -185,8 +185,6 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso A2',
     btnUrl: '/registro',
     destacada: false,
-    imagenUrl: '/images/cursos-conduccion/licencia-a2.png',
-    imagenAlt: 'Curso de conducción A2 para motocicletas',
   },
   {
     icon: 'truck',
@@ -201,8 +199,6 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso B2',
     btnUrl: '/registro',
     destacada: true,
-    imagenUrl: '/images/cursos-conduccion/licencia-b2.png',
-    imagenAlt: 'Curso de conducción B2 en Villavicencio',
   },
   {
     icon: 'bus',
@@ -216,8 +212,6 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso C1',
     btnUrl: '/registro',
     destacada: false,
-    imagenUrl: '/images/cursos-conduccion/licencia-c1.png',
-    imagenAlt: 'Formación de conductores de servicio público C1',
   },
   {
     icon: 'truck',
@@ -231,8 +225,6 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso C2',
     btnUrl: '/registro',
     destacada: false,
-    imagenUrl: '/images/cursos-conduccion/licencia-c2.png',
-    imagenAlt: 'Curso de conducción C2 para camiones y buses',
   },
   {
     icon: 'truck',
@@ -246,7 +238,5 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso C3',
     btnUrl: '/registro',
     destacada: false,
-    imagenUrl: '/images/cursos-conduccion/licencia-c3.png',
-    imagenAlt: 'Curso C3 para vehículos articulados',
   },
 ];

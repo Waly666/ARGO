@@ -210,33 +210,6 @@
   gap: 1rem;
 }
 
-.lic-card__media {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background: #ecfdf5;
-
-  img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.45s ease;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, transparent 55%, rgba(15, 23, 42, 0.22) 100%);
-    pointer-events: none;
-  }
-}
-
-.lic-card:hover .lic-card__media img {
-  transform: scale(1.04);
-}
-
 .lic-card {
   display: flex;
   flex-direction: column;

@@ -52,7 +52,6 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
   heroUploading = signal(false);
   publicidadUploading = signal(false);
   seccionUploading = signal<string | null>(null);
-  licenciaUploading = signal<number | null>(null);
 
   readonly seccionImagenSlots = CURSOS_CONDUCCION_SECCION_IMAGEN_SLOTS;
 
@@ -336,16 +335,6 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
     }
   }
 
-  syncLicenciasFromConfig(config: PortalAulaConfig) {
-    const items = config.landing?.cursosConduccion?.licencias?.items;
-    if (items?.length) {
-      this.cursosConduccion.licencias.items = items.map((item, i) => ({
-        ...this.cursosConduccion.licencias.items[i],
-        ...item,
-      }));
-    }
-  }
-
   onSeccionImagen(ev: Event, slot: CursosConduccionSeccionImagenSlot) {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -384,55 +373,6 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
           }
           this.portalConfigUpdated.emit(res.config);
           this.avNotice.emit({ message: res.message || 'Imagen de sección eliminada' });
-        },
-        error: (e) => {
-          this.avNotice.emit({
-            message: e?.error?.message || 'No se pudo quitar la imagen',
-            error: true,
-          });
-        },
-      });
-  }
-
-  onLicenciaImagen(ev: Event, index: number) {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    this.licenciaUploading.set(index);
-    this.svc
-      .subirImagenCursosConduccionLicenciaPortal(file, index)
-      .pipe(finalize(() => this.licenciaUploading.set(null)))
-      .subscribe({
-        next: (res) => {
-          this.syncLicenciasFromConfig(res.config);
-          this.portalConfigUpdated.emit(res.config);
-          this.avNotice.emit({ message: res.message || 'Imagen de licencia actualizada' });
-        },
-        error: (e) => {
-          this.avNotice.emit({
-            message: e?.error?.message || 'No se pudo subir la imagen',
-            error: true,
-          });
-        },
-      });
-  }
-
-  quitarLicenciaImagen(index: number) {
-    this.licenciaUploading.set(index);
-    this.svc
-      .quitarImagenCursosConduccionLicenciaPortal(index)
-      .pipe(finalize(() => this.licenciaUploading.set(null)))
-      .subscribe({
-        next: (res) => {
-          this.syncLicenciasFromConfig(res.config);
-          const item = this.cursosConduccion.licencias.items[index];
-          if (item) {
-            item.imagenUrl = '';
-            item.imagenUrlAbsoluta = '';
-          }
-          this.portalConfigUpdated.emit(res.config);
-          this.avNotice.emit({ message: res.message || 'Imagen de licencia eliminada' });
         },
         error: (e) => {
           this.avNotice.emit({

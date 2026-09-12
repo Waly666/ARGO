@@ -16,7 +16,6 @@ import {
 } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import {
   mergeCursosConduccionLanding,
-  PortalCursosConduccionLicenciaItem,
   PortalCursosConduccionResolucion,
   PortalCursosConduccionSeccionImagenes,
 } from './cursos-conduccion-content';
@@ -152,12 +151,5 @@ export class CursosConduccionComponent implements OnInit {
       'metodologiaTaller',
     ];
     return this.seccionImagenAlt(slots[index] || 'metodologiaTeorica');
-  }
-
-  licenciaImagen(lic: PortalCursosConduccionLicenciaItem): string | null {
-    const url = lic.imagenUrl?.trim();
-    if (!url) return null;
-    const resolved = this.resolveImagenUrl(url, lic.imagenUrlAbsoluta);
-    return resolved || null;
   }
 }

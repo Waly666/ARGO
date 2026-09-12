@@ -29,9 +29,6 @@ export interface PortalCursosConduccionLicenciaItem {
   btnTexto: string;
   btnUrl: string;
   destacada: boolean;
-  imagenUrl?: string;
-  imagenUrlAbsoluta?: string;
-  imagenAlt?: string;
 }
 
 export interface PortalCursosConduccionImagenSeccion {
@@ -458,9 +455,6 @@ function mergeLicenciaItem(
     btnTexto: item.btnTexto?.trim() || fb.btnTexto,
     btnUrl: item.btnUrl?.trim() || fb.btnUrl,
     destacada: item.destacada === true,
-    imagenUrl: item.imagenUrl?.trim() || fb.imagenUrl || '',
-    imagenUrlAbsoluta: item.imagenUrlAbsoluta?.trim() || undefined,
-    imagenAlt: item.imagenAlt?.trim() || fb.imagenAlt || '',
   };
 }
 

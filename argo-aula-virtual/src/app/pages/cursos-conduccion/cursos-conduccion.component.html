@@ -30,11 +30,6 @@
         <div class="licencias-grid">
           @for (lic of contenido().licencias.items; track lic.codigo + lic.titulo; let i = $index) {
             <article class="lic-card" [class.lic-card--destacada]="lic.destacada">
-              @if (licenciaImagen(lic); as imgUrl) {
-                <div class="lic-card__media">
-                  <img [src]="imgUrl" [alt]="lic.imagenAlt || lic.titulo" loading="lazy" />
-                </div>
-              }
               <div class="lic-card__head">
                 <span class="lic-card__head-glow" aria-hidden="true"></span>
                 <div class="lic-card__head-row">

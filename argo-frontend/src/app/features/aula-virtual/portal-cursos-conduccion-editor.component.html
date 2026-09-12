@@ -245,48 +245,6 @@
             Destacar tarjeta (franja superior)
           </span>
         </label>
-        <div class="pcc-hero-image">
-          <span class="pcc-field-label">Foto de la tarjeta</span>
-          <p class="psb-hint">
-            Imagen en la parte superior de la tarjeta de licencia. Se guarda al instante. PNG, JPG o WEBP. Máx. 8 MB.
-          </p>
-          <div class="pcc-hero-image__row">
-            @if (archivoPreviewUrl(item.imagenUrl); as imgUrl) {
-              <figure class="pcc-hero-image__preview">
-                <img [src]="imgUrl" [alt]="item.imagenAlt || item.titulo" />
-              </figure>
-            } @else {
-              <div class="pcc-hero-image__preview pcc-hero-image__preview--empty">
-                Sin imagen personalizada — se usará la predeterminada del portal
-              </div>
-            }
-            <div class="pcc-hero-image__actions">
-              <label class="pcc-btn-file" [class.pcc-btn-file--busy]="licenciaUploading() === i">
-                {{ licenciaUploading() === i ? 'Subiendo…' : 'Elegir imagen' }}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  (change)="onLicenciaImagen($event, i)"
-                  [disabled]="licenciaUploading() === i"
-                />
-              </label>
-              @if (item.imagenUrl?.trim()) {
-                <button
-                  type="button"
-                  class="psb-link"
-                  [disabled]="licenciaUploading() === i"
-                  (click)="quitarLicenciaImagen(i)"
-                >
-                  Quitar imagen
-                </button>
-              }
-            </div>
-          </div>
-          <label class="psb-field psb-field--plain">
-            <span>Texto alternativo (accesibilidad)</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.imagenAlt" />
-          </label>
-        </div>
       </div>
     }
     <button type="button" class="psb-link" (click)="addLicencia()">+ Añadir licencia</button>
