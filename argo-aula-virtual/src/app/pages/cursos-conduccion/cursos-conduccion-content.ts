@@ -280,8 +280,12 @@ function cursosConduccionNecesitaActualizarGuion(src: Partial<PortalCursosConduc
   const titulo = String(src.tituloPrincipal || '').trim();
   if (titulo === 'CENTRO DE ENSEÑANZA AUTOMOVILÍSTICA') return true;
   const items = src.licencias?.items || [];
-  if (items.some((i) => String(i.codigo || '').toUpperCase() === 'B1')) return true;
-  if (!items.some((i) => String(i.codigo || '').toUpperCase() === 'C3')) return true;
+  const codigos = items.map((i) => String(i.codigo || '').toUpperCase());
+  if (codigos.includes('B2') || codigos.includes('C3')) return true;
+  if (items.length !== 4) return true;
+  if (items.some((i) => (i.incluye?.length ?? 0) <= 2)) return true;
+  if (src.licencias?.kicker === 'Categorías de Licencia de Conducción') return true;
+  if (src.licencias?.titulo === 'Cursos de Conducción Disponibles') return true;
   return false;
 }
 
@@ -506,6 +510,10 @@ export function mergeCursosConduccionLanding(
   const d = CURSOS_CONDUCCION_LANDING_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalCursosConduccionLanding;
+
+  if (cursosConduccionNecesitaActualizarGuion(src)) {
+    return mergeCursosConduccionPreservandoUsuario(src, d);
+  }
 
   const str = (v: unknown, fb: string) => String(v ?? fb).trim() || fb;
   const parrafos = (v: string[] | undefined, fb: string[]) =>

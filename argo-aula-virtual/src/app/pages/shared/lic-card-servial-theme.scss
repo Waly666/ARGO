@@ -1,0 +1,166 @@
+@keyframes lic-precio-box-glow-servial {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+      0 8px 22px rgba(0, 0, 0, 0.42),
+      0 0 18px rgba(245, 196, 0, 0.18);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+      0 10px 28px rgba(0, 0, 0, 0.5),
+      0 0 32px rgba(245, 196, 0, 0.34);
+  }
+}
+
+@mixin lic-card-servial-theme {
+  --servial-accent: #f5c400;
+  --servial-accent-light: #ffd633;
+  --servial-accent-dark: #c99a00;
+  --servial-navy-deep: #0b1b47;
+  --servial-navy-mid: #1c4569;
+  --servial-navy-blue: #2a5f8f;
+  --servial-red: #dc2626;
+
+  .cc-licencias-head h2 {
+    color: var(--servial-red);
+
+    &::after {
+      content: '';
+      display: block;
+      width: 3.5rem;
+      height: 3px;
+      margin: 0.55rem auto 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--servial-red), var(--servial-accent));
+    }
+  }
+
+  .lic-card {
+    --lic-green-dark: var(--servial-navy-blue);
+    --lic-green-deep: var(--servial-navy-deep);
+    --lic-precio-green: var(--servial-accent);
+    --lic-precio-green-bright: var(--servial-accent-light);
+    border-color: rgba(30, 74, 122, 0.22);
+
+    &:hover {
+      border-color: rgba(245, 196, 0, 0.42);
+    }
+  }
+
+  .lic-card__head {
+    background: linear-gradient(155deg, var(--servial-navy-blue) 0%, var(--servial-navy-deep) 100%);
+    border-bottom: 2px solid rgba(245, 196, 0, 0.35);
+  }
+
+  .lic-card__head-glow {
+    background: radial-gradient(circle, rgba(245, 196, 0, 0.2), transparent 68%);
+  }
+
+  .lic-card__icon {
+    color: var(--servial-accent);
+    filter: drop-shadow(0 0 8px rgba(245, 196, 0, 0.35));
+  }
+
+  .lic-card__code {
+    color: var(--servial-accent-light);
+    background: linear-gradient(
+      135deg,
+      #fff9e6 0%,
+      var(--servial-accent) 32%,
+      var(--servial-accent-dark) 88%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(245, 196, 0, 0.28));
+  }
+
+  .lic-card__badge-icon {
+    color: var(--servial-red);
+  }
+
+  .lic-card__badge-label {
+    background: linear-gradient(135deg, var(--servial-red) 0%, var(--servial-accent-dark) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .lic-card__check {
+    border-color: rgba(245, 196, 0, 0.55);
+    color: var(--servial-accent-dark);
+    background: rgba(245, 196, 0, 0.12);
+  }
+
+  .lic-card__ribbon,
+  .lic-card--destacada .lic-card__ribbon {
+    background: linear-gradient(90deg, var(--servial-red), var(--servial-accent));
+  }
+
+  .lic-card--destacada {
+    border-color: rgba(245, 196, 0, 0.48);
+  }
+
+  .lic-card__btn {
+    background: linear-gradient(
+      135deg,
+      #fff9e6 0%,
+      var(--servial-accent) 24%,
+      var(--servial-accent-dark) 78%
+    );
+    color: #0a0a0a;
+    -webkit-text-fill-color: #0a0a0a;
+    border: 1px solid rgba(201, 154, 0, 0.65);
+    box-shadow:
+      0 4px 16px rgba(245, 196, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+    &:hover {
+      filter: brightness(1.06);
+      box-shadow:
+        0 6px 22px rgba(245, 196, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  .lic-card__precio {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(245, 196, 0, 0.14), transparent 58%),
+      linear-gradient(165deg, #001a3d 0%, var(--servial-navy-deep) 42%, var(--servial-navy-mid) 100%);
+    border-color: rgba(245, 196, 0, 0.38);
+    animation: lic-precio-box-glow-servial 3.2s ease-in-out infinite;
+  }
+
+  .lic-card__precio-label {
+    color: rgba(245, 196, 0, 0.72);
+  }
+
+  .lic-card__precio-valor {
+    background: linear-gradient(
+      135deg,
+      #fff9e6 0%,
+      var(--servial-accent) 32%,
+      var(--servial-accent-dark) 90%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(245, 196, 0, 0.45));
+    animation: none;
+  }
+
+  .lic-card__precio-ring {
+    border-color: rgba(245, 196, 0, 0.55);
+    box-shadow: 0 0 10px rgba(245, 196, 0, 0.25);
+  }
+
+  .lic-card__precio-radar::after {
+    background: linear-gradient(180deg, transparent, rgba(245, 196, 0, 0.16), transparent);
+  }
+}

@@ -35,7 +35,7 @@ const INVITACION_DEFAULTS = {
 
 /** Espejo de LANDING_DEFAULTS.licencias (inline para evitar dependencia circular). */
 const LICENCIAS_DEFAULTS = {
-  kicker: 'Trámites y certificaciones',
+  kicker: 'CAPACITACIÓN PARA OBTENCIÓN DE LICENCIA DE CONDUCCIÓN',
   titulo: 'Elige tu licencia',
   lead: 'A continuación las licencias que puedes solicitar con nosotros',
   items: [
@@ -52,7 +52,7 @@ const LICENCIAS_DEFAULTS = {
         'Trámites y costos RUNT',
       ],
       licenciaLabel: 'Licencia A2',
-      valor: 'Consulte valor en sede',
+      valor: '1.163.000',
       btnTexto: 'Solicitar ahora',
       btnUrl: '/registro',
       destacada: false,
@@ -70,7 +70,7 @@ const LICENCIAS_DEFAULTS = {
         'Trámites y costos RUNT',
       ],
       licenciaLabel: 'Licencia B1',
-      valor: 'Consulte valor en sede',
+      valor: '1.263.000',
       btnTexto: 'Solicitar ahora',
       btnUrl: '/registro',
       destacada: false,
@@ -88,7 +88,7 @@ const LICENCIAS_DEFAULTS = {
         'Trámites y costos RUNT',
       ],
       licenciaLabel: 'Licencia C1',
-      valor: 'Consulte valor en sede',
+      valor: '1.363.000',
       btnTexto: 'Solicitar ahora',
       btnUrl: '/registro',
       destacada: false,
@@ -109,7 +109,7 @@ const LICENCIAS_DEFAULTS = {
       valor: 'Consulte valor en sede',
       btnTexto: 'Solicitar ahora',
       btnUrl: '/registro',
-      destacada: true,
+      destacada: false,
     },
   ],
 };

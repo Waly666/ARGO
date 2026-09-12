@@ -19,7 +19,7 @@
   <av-cursos-conduccion-publicidad-slider [publicidad]="contenido().publicidad" />
 
   @if (contenido().licencias.items.length) {
-    <section class="cc-section cc-section--light" id="cursos-disponibles">
+    <section class="cc-section cc-section--light cc-section--licencias" id="cursos-disponibles">
       <div class="container">
         <header class="cc-section__head cc-section__head--center cc-licencias-head">
           <p class="cc-kicker cc-kicker--accent">{{ contenido().licencias.kicker }}</p>
@@ -34,12 +34,7 @@
                 <span class="lic-card__head-glow" aria-hidden="true"></span>
                 <div class="lic-card__head-row">
                   <av-portal-icon [icon]="lic.icon" class="lic-card__icon" size="1.75rem" color="currentColor" />
-                  <div class="lic-card__head-text">
-                    @if (lic.subtitulo?.trim()) {
-                      <p class="lic-card__subtitulo">{{ lic.subtitulo }}</p>
-                    }
-                    <h3 class="lic-card__code">{{ lic.titulo }}</h3>
-                  </div>
+                  <h3 class="lic-card__code">{{ lic.titulo }}</h3>
                 </div>
               </div>
               <div class="lic-card__body">

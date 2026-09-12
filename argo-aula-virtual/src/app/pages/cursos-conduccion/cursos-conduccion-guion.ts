@@ -5,7 +5,7 @@ import {
   SERVIAL_ENLACES_TITULO,
 } from '../../core/constants/portal-enlaces-relacionados-servial';
 
-export const CURSOS_CONDUCCION_GUION_VERSION = 1;
+export const CURSOS_CONDUCCION_GUION_VERSION = 2;
 
 export const CC_SEO_TITLE = 'Cursos de Conducción en Villavicencio | SERVIAL Colombia';
 export const CC_SEO_DESCRIPTION =
@@ -30,10 +30,9 @@ export const CC_HERO = {
 };
 
 export const CC_LICENCIAS_SECCION = {
-  kicker: 'Categorías de Licencia de Conducción',
-  titulo: 'Cursos de Conducción Disponibles',
-  lead:
-    'Formación para motocicletas, vehículos de servicio particular y servicio público, conforme a la clasificación oficial del Ministerio de Transporte.',
+  kicker: 'CAPACITACIÓN PARA OBTENCIÓN DE LICENCIA DE CONDUCCIÓN',
+  titulo: 'Elige tu licencia',
+  lead: 'A continuación las licencias que puedes solicitar con nosotros',
 };
 
 export const CC_INVITACION = {
@@ -176,66 +175,72 @@ export const CC_LICENCIAS_ITEMS = [
   {
     icon: 'bicycle',
     codigo: 'A2',
-    titulo: 'Curso de Conducción A2 – Motocicletas',
+    titulo: 'Categoría A2',
     incluye: [
-      'Formación para conducción de motocicletas, motociclos y mototriciclos de más de 125 c.c., mediante preparación teórica, práctica y técnicas de conducción segura.',
+      '25 Horas Teoría',
+      '3 Horas Práctica en Taller',
+      '15 Horas Práctica en Conducción',
+      'Certificado escuela de conducción',
+      'Examen médico',
+      'Trámites y costos RUNT',
     ],
-    licenciaLabel: 'Categoría A2',
-    valor: 'Consulte valor en sede',
-    btnTexto: 'Consultar Curso A2',
+    licenciaLabel: 'Licencia A2',
+    valor: '1.163.000',
+    btnTexto: 'Solicitar ahora',
     btnUrl: '/registro',
     destacada: false,
   },
   {
-    icon: 'truck',
-    codigo: 'B2',
-    titulo: 'Curso de Conducción B2 – Camiones, Busetas y Buses Particulares',
-    subtitulo: 'Curso B2 en Villavicencio',
+    icon: 'car',
+    codigo: 'B1',
+    titulo: 'Categoría B1',
     incluye: [
-      'Capacitación para conducción de camiones rígidos, busetas y buses de servicio particular, desarrollando competencias para una conducción segura y responsable.',
+      '25 Horas Teoría',
+      '5 Horas Práctica en Taller',
+      '20 Horas Práctica en Conducción',
+      'Certificado escuela de conducción',
+      'Examen médico',
+      'Trámites y costos RUNT',
     ],
-    licenciaLabel: 'Categoría B2',
-    valor: 'Consulte valor en sede',
-    btnTexto: 'Consultar Curso B2',
+    licenciaLabel: 'Licencia B1',
+    valor: '1.263.000',
+    btnTexto: 'Solicitar ahora',
     btnUrl: '/registro',
-    destacada: true,
+    destacada: false,
   },
   {
     icon: 'bus',
     codigo: 'C1',
-    titulo: 'Curso de Conducción C1 – Servicio Público',
+    titulo: 'Categoría C1',
     incluye: [
-      'Formación para conducción de automóviles, camperos, camionetas y microbuses destinados al servicio público.',
+      '30 Horas Teoría',
+      '5 Horas Práctica en Taller',
+      '30 Horas Práctica en Conducción',
+      'Certificado escuela de conducción',
+      'Examen médico',
+      'Trámites y costos RUNT',
     ],
-    licenciaLabel: 'Categoría C1',
-    valor: 'Consulte valor en sede',
-    btnTexto: 'Consultar Curso C1',
+    licenciaLabel: 'Licencia C1',
+    valor: '1.363.000',
+    btnTexto: 'Solicitar ahora',
     btnUrl: '/registro',
     destacada: false,
   },
   {
     icon: 'truck',
     codigo: 'C2',
-    titulo: 'Curso de Conducción C2 – Camiones y Buses de Servicio Público',
+    titulo: 'Categoría C2',
     incluye: [
-      'Capacitación para la conducción de camiones rígidos, busetas y buses de servicio público.',
+      '20 Horas Teoría',
+      '10 Horas Práctica en Taller',
+      '14 Horas Práctica en Conducción',
+      'Certificado escuela de conducción',
+      'Examen médico',
+      'Trámites y costos RUNT',
     ],
-    licenciaLabel: 'Categoría C2',
+    licenciaLabel: 'Licencia C2',
     valor: 'Consulte valor en sede',
-    btnTexto: 'Consultar Curso C2',
-    btnUrl: '/registro',
-    destacada: false,
-  },
-  {
-    icon: 'truck',
-    codigo: 'C3',
-    titulo: 'Curso de Conducción C3 – Vehículos Articulados',
-    incluye: [
-      'Formación especializada para la conducción de vehículos articulados de servicio público.',
-    ],
-    licenciaLabel: 'Categoría C3',
-    valor: 'Consulte valor en sede',
-    btnTexto: 'Consultar Curso C3',
+    btnTexto: 'Solicitar ahora',
     btnUrl: '/registro',
     destacada: false,
   },
