@@ -490,6 +490,52 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenCursosConduccionSeccionPortal(
+    file: File,
+    slot: string,
+    alt?: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('slot', slot);
+    if (alt?.trim()) fd.append('alt', alt.trim());
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-seccion-imagen`,
+      fd,
+    );
+  }
+
+  quitarImagenCursosConduccionSeccionPortal(
+    slot: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-seccion-imagen`,
+      { body: { slot } },
+    );
+  }
+
+  subirImagenCursosConduccionLicenciaPortal(
+    file: File,
+    index: number,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('index', String(index));
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-licencia-imagen`,
+      fd,
+    );
+  }
+
+  quitarImagenCursosConduccionLicenciaPortal(
+    index: number,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-licencia-imagen`,
+      { body: { index } },
+    );
+  }
+
   subirImagenPopupPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
     const fd = new FormData();
     fd.append('imagen', file);

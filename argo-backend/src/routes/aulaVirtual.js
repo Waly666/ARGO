@@ -33,6 +33,8 @@ const {
   aulaVirtualHomeFotos,
   aulaVirtualHomePublicidad,
   aulaVirtualCursosConduccionPublicidad,
+  aulaVirtualCursosConduccionSeccion,
+  aulaVirtualCursosConduccionLicencia,
   aulaVirtualApk,
   aulaVirtualGoogleVerification,
   programasVirtual,
@@ -493,6 +495,34 @@ router.delete(
   requireAuth,
   configPortal,
   admin.eliminarImagenCursosConduccionPublicidadPortal,
+);
+
+router.post(
+  '/admin/portal/cursos-conduccion-seccion-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualCursosConduccionSeccion.single('imagen'),
+  admin.subirImagenCursosConduccionSeccionPortal,
+);
+router.delete(
+  '/admin/portal/cursos-conduccion-seccion-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenCursosConduccionSeccionPortal,
+);
+
+router.post(
+  '/admin/portal/cursos-conduccion-licencia-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualCursosConduccionLicencia.single('imagen'),
+  admin.subirImagenCursosConduccionLicenciaPortal,
+);
+router.delete(
+  '/admin/portal/cursos-conduccion-licencia-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenCursosConduccionLicenciaPortal,
 );
 
 module.exports = router;

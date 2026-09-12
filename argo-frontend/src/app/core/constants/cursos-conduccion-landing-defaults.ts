@@ -29,7 +29,43 @@ export interface PortalCursosConduccionLicenciaItem {
   btnTexto: string;
   btnUrl: string;
   destacada: boolean;
+  imagenUrl?: string;
+  imagenUrlAbsoluta?: string;
+  imagenAlt?: string;
 }
+
+export interface PortalCursosConduccionImagenSeccion {
+  url: string;
+  urlAbsoluta?: string;
+  alt: string;
+  /** Solo ERP */
+  promptImagen?: string;
+}
+
+export interface PortalCursosConduccionSeccionImagenes {
+  invitacion?: PortalCursosConduccionImagenSeccion;
+  metodologiaTeorica?: PortalCursosConduccionImagenSeccion;
+  metodologiaPractica?: PortalCursosConduccionImagenSeccion;
+  metodologiaTaller?: PortalCursosConduccionImagenSeccion;
+  requisitos?: PortalCursosConduccionImagenSeccion;
+  seo?: PortalCursosConduccionImagenSeccion;
+  local?: PortalCursosConduccionImagenSeccion;
+}
+
+export type CursosConduccionSeccionImagenSlot = keyof PortalCursosConduccionSeccionImagenes;
+
+export const CURSOS_CONDUCCION_SECCION_IMAGEN_SLOTS: {
+  slot: CursosConduccionSeccionImagenSlot;
+  label: string;
+}[] = [
+  { slot: 'invitacion', label: '¿Qué aprenderás? (banner)' },
+  { slot: 'metodologiaTeorica', label: 'Metodología — formación teórica' },
+  { slot: 'metodologiaPractica', label: 'Metodología — práctica en conducción' },
+  { slot: 'metodologiaTaller', label: 'Metodología — práctica en taller' },
+  { slot: 'requisitos', label: 'Requisitos del curso' },
+  { slot: 'seo', label: 'Escuela de conducción (SEO)' },
+  { slot: 'local', label: 'Inscripciones / sede Villavicencio' },
+];
 
 export interface PortalCursosConduccionLicencias {
   kicker: string;
@@ -110,6 +146,7 @@ export interface PortalCursosConduccionLanding {
   invitacion: PortalCursosConduccionInvitacion;
   licencias: PortalCursosConduccionLicencias;
   publicidad: PortalCursosConduccionPublicidad;
+  seccionImagenes?: PortalCursosConduccionSeccionImagenes;
   /** @deprecated Usar licencias */
   etiquetaCategorias?: string;
   /** @deprecated Usar licencias.lead */
@@ -262,6 +299,64 @@ const PUBLICIDAD_DEFAULTS: PortalCursosConduccionPublicidad = {
   slides: [],
 };
 
+const SECCION_IMAGENES_DEFAULTS: PortalCursosConduccionSeccionImagenes = {
+  invitacion: {
+    url: '/images/cursos-conduccion/invitacion.png',
+    alt: 'Estudiantes en formación de conducción en SERVIAL Villavicencio',
+  },
+  metodologiaTeorica: {
+    url: '/images/cursos-conduccion/metodologia-teorica.png',
+    alt: 'Formación teórica en normas de tránsito y seguridad vial',
+  },
+  metodologiaPractica: {
+    url: '/images/cursos-conduccion/metodologia-practica.png',
+    alt: 'Práctica de conducción con instructores certificados',
+  },
+  metodologiaTaller: {
+    url: '/images/cursos-conduccion/metodologia-taller.png',
+    alt: 'Práctica en taller y conocimiento del vehículo',
+  },
+  requisitos: {
+    url: '/images/cursos-conduccion/requisitos.png',
+    alt: 'Proceso de inscripción a cursos de conducción',
+  },
+  seo: {
+    url: '/images/cursos-conduccion/seo-sede.png',
+    alt: 'CEA SERVIAL — escuela de conducción en Villavicencio',
+  },
+  local: {
+    url: '/images/cursos-conduccion/local-sede.png',
+    alt: 'Sede SERVIAL en Villavicencio, Meta',
+  },
+};
+
+function mergeImagenSeccion(
+  raw?: Partial<PortalCursosConduccionImagenSeccion> | null,
+  fb?: PortalCursosConduccionImagenSeccion,
+): PortalCursosConduccionImagenSeccion | undefined {
+  const url = raw?.url?.trim() || fb?.url?.trim() || '';
+  if (!url) return undefined;
+  return {
+    url,
+    urlAbsoluta: raw?.urlAbsoluta?.trim() || undefined,
+    alt: raw?.alt?.trim() || fb?.alt || 'Formación en conducción SERVIAL',
+    promptImagen: raw?.promptImagen?.trim() || fb?.promptImagen || '',
+  };
+}
+
+function mergeSeccionImagenes(
+  raw?: Partial<PortalCursosConduccionSeccionImagenes> | null,
+): PortalCursosConduccionSeccionImagenes {
+  const d = SECCION_IMAGENES_DEFAULTS;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const merged: PortalCursosConduccionSeccionImagenes = {};
+  for (const { slot } of CURSOS_CONDUCCION_SECCION_IMAGEN_SLOTS) {
+    const img = mergeImagenSeccion(src[slot], d[slot]);
+    if (img) merged[slot] = img;
+  }
+  return merged;
+}
+
 export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding = {
   guionVersion: 1,
   hero: {
@@ -291,6 +386,7 @@ export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding =
     items: LICENCIAS_DEFAULTS.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
   },
   publicidad: { ...PUBLICIDAD_DEFAULTS, slides: [] },
+  seccionImagenes: JSON.parse(JSON.stringify(SECCION_IMAGENES_DEFAULTS)),
   metodologiaTitulo: 'Formación Teórica, Práctica y de Taller',
   metodologiaLead: '',
   metodologiaItems: [],
@@ -362,6 +458,9 @@ function mergeLicenciaItem(
     btnTexto: item.btnTexto?.trim() || fb.btnTexto,
     btnUrl: item.btnUrl?.trim() || fb.btnUrl,
     destacada: item.destacada === true,
+    imagenUrl: item.imagenUrl?.trim() || fb.imagenUrl || '',
+    imagenUrlAbsoluta: item.imagenUrlAbsoluta?.trim() || undefined,
+    imagenAlt: item.imagenAlt?.trim() || fb.imagenAlt || '',
   };
 }
 
@@ -469,6 +568,7 @@ export function mergeCursosConduccionLanding(
         }))
       : d.resoluciones.map((r) => ({ ...r })),
     publicidad: mergePublicidad(raw.publicidad),
+    seccionImagenes: mergeSeccionImagenes(raw.seccionImagenes),
     guionVersion: raw.guionVersion ?? d.guionVersion,
     metodologiaTitulo: raw.metodologiaTitulo?.trim() || d.metodologiaTitulo || '',
     metodologiaLead: raw.metodologiaLead?.trim() || d.metodologiaLead || '',

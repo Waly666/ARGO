@@ -16,7 +16,9 @@ import {
 } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import {
   mergeCursosConduccionLanding,
+  PortalCursosConduccionLicenciaItem,
   PortalCursosConduccionResolucion,
+  PortalCursosConduccionSeccionImagenes,
 } from './cursos-conduccion-content';
 import { CursosConduccionPublicidadSliderComponent } from './cursos-conduccion-publicidad-slider.component';
 
@@ -110,5 +112,52 @@ export class CursosConduccionComponent implements OnInit {
     const u = String(url || '/registro').trim();
     if (!u || u === '/') return '/';
     return u.startsWith('/') ? u : `/${u}`;
+  }
+
+  private resolveImagenUrl(rel?: string, abs?: string, fallback = ''): string {
+    const url = String(rel || '').trim();
+    if (!url) return fallback;
+    if (url.startsWith('/images/') || url.startsWith('/apk/')) return url;
+    if (/^https?:\/\//i.test(url) || url.startsWith('//')) return url;
+    const resolved = resolveUploadUrl(abs || url);
+    if (resolved) return resolved;
+    if (url.startsWith('/uploads/')) return url;
+    return fallback;
+  }
+
+  seccionImagen(slot: keyof PortalCursosConduccionSeccionImagenes): string | null {
+    const img = this.contenido().seccionImagenes?.[slot];
+    if (!img?.url?.trim()) return null;
+    const resolved = this.resolveImagenUrl(img.url, img.urlAbsoluta);
+    return resolved || null;
+  }
+
+  seccionImagenAlt(slot: keyof PortalCursosConduccionSeccionImagenes): string {
+    return this.contenido().seccionImagenes?.[slot]?.alt?.trim() || 'Formación en conducción SERVIAL';
+  }
+
+  metodologiaImagen(index: number): string | null {
+    const slots: (keyof PortalCursosConduccionSeccionImagenes)[] = [
+      'metodologiaTeorica',
+      'metodologiaPractica',
+      'metodologiaTaller',
+    ];
+    return this.seccionImagen(slots[index] || 'metodologiaTeorica');
+  }
+
+  metodologiaImagenAlt(index: number): string {
+    const slots: (keyof PortalCursosConduccionSeccionImagenes)[] = [
+      'metodologiaTeorica',
+      'metodologiaPractica',
+      'metodologiaTaller',
+    ];
+    return this.seccionImagenAlt(slots[index] || 'metodologiaTeorica');
+  }
+
+  licenciaImagen(lic: PortalCursosConduccionLicenciaItem): string | null {
+    const url = lic.imagenUrl?.trim();
+    if (!url) return null;
+    const resolved = this.resolveImagenUrl(url, lic.imagenUrlAbsoluta);
+    return resolved || null;
   }
 }

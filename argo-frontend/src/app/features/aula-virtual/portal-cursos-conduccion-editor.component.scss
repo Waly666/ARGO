@@ -154,6 +154,11 @@
     color: var(--text-dim);
     text-align: center;
   }
+
+  &--wide {
+    width: min(360px, 100%);
+    aspect-ratio: 21 / 8;
+  }
 }
 
 .pcc-hero-image__actions {
@@ -198,6 +203,10 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  &--4x3 {
+    aspect-ratio: 4 / 3;
   }
 }
 

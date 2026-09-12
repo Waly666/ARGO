@@ -68,16 +68,24 @@ function normalizarLicencias(raw, fallback) {
     const incluye = (incluyeRaw || [])
       .map((x) => str(x))
       .filter(Boolean);
+    const imagenUrl = str(item?.imagenUrl, fb.imagenUrl);
     return {
       icon: str(item?.icon, fb.icon || '🚗'),
       codigo: str(item?.codigo, fb.codigo),
       titulo: str(item?.titulo, fb.titulo),
+      subtitulo: str(item?.subtitulo, fb.subtitulo),
       incluye: incluye.length ? incluye : [...(fb.incluye || [])],
       licenciaLabel: str(item?.licenciaLabel, fb.licenciaLabel),
       valor: str(item?.valor, fb.valor),
       btnTexto: str(item?.btnTexto, fb.btnTexto || 'Solicitar ahora'),
       btnUrl: str(item?.btnUrl, fb.btnUrl || '/registro'),
       destacada: item?.destacada === true,
+      imagenUrl,
+      imagenUrlAbsoluta: (() => {
+        if (!imagenUrl || imagenUrl.startsWith('/images/')) return '';
+        return publicUploadUrl(imagenUrl) || imagenUrl;
+      })(),
+      imagenAlt: str(item?.imagenAlt, fb.imagenAlt),
     };
   });
   return {
@@ -783,7 +791,37 @@ function normalizarCursosConduccion(src) {
     resoluciones,
     licencias: normalizarLicencias(licenciasSrc || {}, d.licencias),
     publicidad: normalizarPublicidad(raw.publicidad),
+    seccionImagenes: normalizarSeccionImagenesCursosConduccion(raw.seccionImagenes),
   };
+}
+
+function normalizarImagenSeccionCursosConduccion(item, fb) {
+  const url = str(item?.url, fb?.url);
+  if (!url) return null;
+  return {
+    url,
+    urlAbsoluta: url.startsWith('/images/') ? '' : publicUploadUrl(url) || url,
+    alt: str(item?.alt, fb?.alt || 'Formación en conducción SERVIAL'),
+  };
+}
+
+function normalizarSeccionImagenesCursosConduccion(raw) {
+  const slots = [
+    'invitacion',
+    'metodologiaTeorica',
+    'metodologiaPractica',
+    'metodologiaTaller',
+    'requisitos',
+    'seo',
+    'local',
+  ];
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const out = {};
+  for (const slot of slots) {
+    const img = normalizarImagenSeccionCursosConduccion(src[slot], null);
+    if (img) out[slot] = img;
+  }
+  return out;
 }
 
 function normalizarAcerca(src) {

@@ -245,12 +245,94 @@
             Destacar tarjeta (franja superior)
           </span>
         </label>
+        <div class="pcc-hero-image">
+          <span class="pcc-field-label">Foto de la tarjeta</span>
+          <p class="psb-hint">
+            Imagen en la parte superior de la tarjeta de licencia. Se guarda al instante. PNG, JPG o WEBP. Máx. 8 MB.
+          </p>
+          <div class="pcc-hero-image__row">
+            @if (archivoPreviewUrl(item.imagenUrl); as imgUrl) {
+              <figure class="pcc-hero-image__preview">
+                <img [src]="imgUrl" [alt]="item.imagenAlt || item.titulo" />
+              </figure>
+            } @else {
+              <div class="pcc-hero-image__preview pcc-hero-image__preview--empty">
+                Sin imagen personalizada — se usará la predeterminada del portal
+              </div>
+            }
+            <div class="pcc-hero-image__actions">
+              <label class="pcc-btn-file" [class.pcc-btn-file--busy]="licenciaUploading() === i">
+                {{ licenciaUploading() === i ? 'Subiendo…' : 'Elegir imagen' }}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  (change)="onLicenciaImagen($event, i)"
+                  [disabled]="licenciaUploading() === i"
+                />
+              </label>
+              @if (item.imagenUrl?.trim()) {
+                <button
+                  type="button"
+                  class="psb-link"
+                  [disabled]="licenciaUploading() === i"
+                  (click)="quitarLicenciaImagen(i)"
+                >
+                  Quitar imagen
+                </button>
+              }
+            </div>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <span>Texto alternativo (accesibilidad)</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.imagenAlt" />
+          </label>
+        </div>
       </div>
     }
     <button type="button" class="psb-link" (click)="addLicencia()">+ Añadir licencia</button>
 
     <h3 class="psb-subtitle"><span class="pes-order">4</span> Bloque motivacional (invitación)</h3>
     <div class="pcc-card">
+      <div class="pcc-hero-image">
+        <span class="pcc-field-label">Foto del banner «¿Qué aprenderás?»</span>
+        <p class="psb-hint">Banner horizontal debajo del encabezado de la sección. Se guarda al instante.</p>
+        <div class="pcc-hero-image__row">
+          @if (seccionImagenPreview('invitacion'); as imgUrl) {
+            <figure class="pcc-hero-image__preview pcc-hero-image__preview--wide">
+              <img [src]="imgUrl" alt="Vista previa invitación" />
+            </figure>
+          } @else {
+            <div class="pcc-hero-image__preview pcc-hero-image__preview--wide pcc-hero-image__preview--empty">
+              Sin imagen personalizada — se usará la predeterminada del portal
+            </div>
+          }
+          <div class="pcc-hero-image__actions">
+            <label class="pcc-btn-file" [class.pcc-btn-file--busy]="seccionUploading() === 'invitacion'">
+              {{ seccionUploading() === 'invitacion' ? 'Subiendo…' : 'Elegir imagen' }}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                (change)="onSeccionImagen($event, 'invitacion')"
+                [disabled]="seccionUploading() === 'invitacion'"
+              />
+            </label>
+            @if (cursosConduccion.seccionImagenes?.invitacion?.url?.trim()) {
+              <button
+                type="button"
+                class="psb-link"
+                [disabled]="seccionUploading() === 'invitacion'"
+                (click)="quitarSeccionImagen('invitacion')"
+              >
+                Quitar imagen
+              </button>
+            }
+          </div>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Texto alternativo</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.seccionImagenes!.invitacion!.alt" />
+        </label>
+      </div>
       <label class="psb-field psb-field--plain">
         <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.kicker" />
@@ -312,11 +394,61 @@
       </div>
     </div>
 
-    <p class="psb-note">
-      Las secciones <strong>Metodología</strong> y <strong>Requisitos</strong> aparecen en la página pública pero no tienen campos editables en este constructor.
-    </p>
+    <h3 class="psb-subtitle"><span class="pes-order">5</span> Fotos — metodología, requisitos, SEO y sede</h3>
+    <div class="pcc-card">
+      <p class="psb-hint">
+        Imágenes de las secciones informativas (no incluye el carrusel de publicidad). Se guardan al instante.
+        Los textos de metodología y requisitos siguen siendo los predeterminados del portal.
+      </p>
+      <div class="pcc-pub-grid">
+        @for (slotDef of seccionImagenSlots; track slotDef.slot) {
+          @if (slotDef.slot !== 'invitacion') {
+            <article class="pcc-pub-slot">
+              <strong>{{ slotDef.label }}</strong>
+              @if (seccionImagenPreview(slotDef.slot); as imgUrl) {
+                <figure class="pcc-pub-thumb pcc-pub-thumb--4x3">
+                  <img [src]="imgUrl" [alt]="slotDef.label" loading="lazy" />
+                </figure>
+              } @else {
+                <div class="pcc-pub-placeholder">
+                  <span>Sin imagen personalizada</span>
+                  <p>Se usará la predeterminada del portal</p>
+                </div>
+              }
+              <label class="psb-field psb-field--plain">
+                <span>Texto alternativo</span>
+                <input
+                  type="text"
+                  class="psb-input"
+                  [(ngModel)]="cursosConduccion.seccionImagenes![slotDef.slot]!.alt"
+                />
+              </label>
+              <label class="pcc-btn-file" [class.pcc-btn-file--busy]="seccionUploading() === slotDef.slot">
+                {{ seccionUploading() === slotDef.slot ? 'Subiendo…' : 'Elegir imagen' }}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  [disabled]="seccionUploading() === slotDef.slot"
+                  (change)="onSeccionImagen($event, slotDef.slot)"
+                />
+              </label>
+              @if (cursosConduccion.seccionImagenes?.[slotDef.slot]?.url?.trim()) {
+                <button
+                  type="button"
+                  class="psb-link"
+                  [disabled]="seccionUploading() === slotDef.slot"
+                  (click)="quitarSeccionImagen(slotDef.slot)"
+                >
+                  Quitar imagen
+                </button>
+              }
+            </article>
+          }
+        }
+      </div>
+    </div>
 
-    <h3 class="psb-subtitle"><span class="pes-order">5</span> Resoluciones (descargables)</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">6</span> Resoluciones (descargables)</h3>
     @for (res of cursosConduccion.resoluciones; track $index) {
       <div class="pcc-card">
         <label class="psb-field psb-field--plain">
@@ -348,13 +480,13 @@
     }
     <button type="button" class="psb-link" (click)="addResolucion()">+ Agregar resolución</button>
 
-    <h3 class="psb-subtitle"><span class="pes-order">6</span> Enlaces relacionados (SEO interno)</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">7</span> Enlaces relacionados (SEO interno)</h3>
     <av-portal-editor-enlaces-relacionados
       [titulo]="cursosConduccion.enlacesRelacionadosTitulo || 'Formación relacionada en SERVIAL'"
       [enlaces]="enlacesRelacionadosEdit()"
     />
 
-    <h3 class="psb-subtitle"><span class="pes-order">7</span> Bloque SEO y local</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">8</span> Bloque SEO y local</h3>
     <div class="pcc-card">
       <label class="psb-field psb-field--plain">
         <span>Título bloque SEO</span>

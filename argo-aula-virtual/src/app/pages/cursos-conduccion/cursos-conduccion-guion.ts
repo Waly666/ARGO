@@ -141,6 +141,37 @@ export const CC_LOCAL = {
   btnWhatsappTexto: 'Consultar curso por WhatsApp',
 };
 
+export const CC_SECCION_IMAGENES = {
+  invitacion: {
+    url: '/images/cursos-conduccion/invitacion.png',
+    alt: 'Estudiantes en formación de conducción en SERVIAL Villavicencio',
+  },
+  metodologiaTeorica: {
+    url: '/images/cursos-conduccion/metodologia-teorica.png',
+    alt: 'Formación teórica en normas de tránsito y seguridad vial',
+  },
+  metodologiaPractica: {
+    url: '/images/cursos-conduccion/metodologia-practica.png',
+    alt: 'Práctica de conducción con instructores certificados',
+  },
+  metodologiaTaller: {
+    url: '/images/cursos-conduccion/metodologia-taller.png',
+    alt: 'Práctica en taller y conocimiento del vehículo',
+  },
+  requisitos: {
+    url: '/images/cursos-conduccion/requisitos.png',
+    alt: 'Proceso de inscripción a cursos de conducción',
+  },
+  seo: {
+    url: '/images/cursos-conduccion/seo-sede.png',
+    alt: 'CEA SERVIAL — escuela de conducción en Villavicencio',
+  },
+  local: {
+    url: '/images/cursos-conduccion/local-sede.png',
+    alt: 'Sede SERVIAL en Villavicencio, Meta',
+  },
+} as const;
+
 export const CC_LICENCIAS_ITEMS = [
   {
     icon: 'bicycle',
@@ -154,6 +185,7 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso A2',
     btnUrl: '/registro',
     destacada: false,
+    imagenUrl: '/images/cursos-conduccion/licencia-a2.png',
     imagenAlt: 'Curso de conducción A2 para motocicletas',
   },
   {
@@ -169,6 +201,7 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso B2',
     btnUrl: '/registro',
     destacada: true,
+    imagenUrl: '/images/cursos-conduccion/licencia-b2.png',
     imagenAlt: 'Curso de conducción B2 en Villavicencio',
   },
   {
@@ -183,6 +216,7 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso C1',
     btnUrl: '/registro',
     destacada: false,
+    imagenUrl: '/images/cursos-conduccion/licencia-c1.png',
     imagenAlt: 'Formación de conductores de servicio público C1',
   },
   {
@@ -197,6 +231,7 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso C2',
     btnUrl: '/registro',
     destacada: false,
+    imagenUrl: '/images/cursos-conduccion/licencia-c2.png',
     imagenAlt: 'Curso de conducción C2 para camiones y buses',
   },
   {
@@ -211,6 +246,7 @@ export const CC_LICENCIAS_ITEMS = [
     btnTexto: 'Consultar Curso C3',
     btnUrl: '/registro',
     destacada: false,
+    imagenUrl: '/images/cursos-conduccion/licencia-c3.png',
     imagenAlt: 'Curso C3 para vehículos articulados',
   },
 ];

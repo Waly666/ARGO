@@ -20,6 +20,7 @@ import {
   CC_LICENCIAS_SECCION,
   CC_LICENCIAS_URL,
   CC_LOCAL,
+  CC_SECCION_IMAGENES,
   CC_MAPS_URL,
   CC_METODOLOGIA,
   CC_REQUISITOS,
@@ -55,7 +56,25 @@ export interface PortalCursosConduccionLicenciaItem {
   btnTexto: string;
   btnUrl: string;
   destacada: boolean;
+  imagenUrl?: string;
+  imagenUrlAbsoluta?: string;
   imagenAlt?: string;
+}
+
+export interface PortalCursosConduccionImagenSeccion {
+  url: string;
+  urlAbsoluta?: string;
+  alt: string;
+}
+
+export interface PortalCursosConduccionSeccionImagenes {
+  invitacion?: PortalCursosConduccionImagenSeccion;
+  metodologiaTeorica?: PortalCursosConduccionImagenSeccion;
+  metodologiaPractica?: PortalCursosConduccionImagenSeccion;
+  metodologiaTaller?: PortalCursosConduccionImagenSeccion;
+  requisitos?: PortalCursosConduccionImagenSeccion;
+  seo?: PortalCursosConduccionImagenSeccion;
+  local?: PortalCursosConduccionImagenSeccion;
 }
 
 export interface PortalCursosConduccionLicencias {
@@ -129,6 +148,7 @@ export interface PortalCursosConduccionLanding {
   invitacion: PortalCursosConduccionInvitacion;
   licencias: PortalCursosConduccionLicencias;
   publicidad: PortalCursosConduccionPublicidad;
+  seccionImagenes: PortalCursosConduccionSeccionImagenes;
   metodologiaTitulo: string;
   metodologiaLead: string;
   metodologiaItems: PortalCursosConduccionMetodologiaItem[];
@@ -227,6 +247,7 @@ export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding =
     items: LICENCIAS_DEFAULTS.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
   },
   publicidad: { ...PUBLICIDAD_DEFAULTS, slides: [] },
+  seccionImagenes: JSON.parse(JSON.stringify(CC_SECCION_IMAGENES)),
   metodologiaTitulo: CC_METODOLOGIA.titulo,
   metodologiaLead: CC_METODOLOGIA.lead,
   metodologiaItems: CC_METODOLOGIA.items.map((m) => ({ ...m })),
@@ -346,8 +367,46 @@ function mergeLicenciaItem(
     btnTexto: item.btnTexto?.trim() || fb.btnTexto,
     btnUrl: item.btnUrl?.trim() || fb.btnUrl,
     destacada: item.destacada === true,
-    imagenAlt: item.imagenAlt?.trim() || fb.imagenAlt,
+    imagenUrl: item.imagenUrl?.trim() || fb.imagenUrl || '',
+    imagenUrlAbsoluta: item.imagenUrlAbsoluta?.trim() || undefined,
+    imagenAlt: item.imagenAlt?.trim() || fb.imagenAlt || '',
   };
+}
+
+const SECCION_IMAGEN_SLOTS: (keyof PortalCursosConduccionSeccionImagenes)[] = [
+  'invitacion',
+  'metodologiaTeorica',
+  'metodologiaPractica',
+  'metodologiaTaller',
+  'requisitos',
+  'seo',
+  'local',
+];
+
+function mergeImagenSeccion(
+  raw?: Partial<PortalCursosConduccionImagenSeccion> | null,
+  fb?: PortalCursosConduccionImagenSeccion,
+): PortalCursosConduccionImagenSeccion | undefined {
+  const url = raw?.url?.trim() || fb?.url?.trim() || '';
+  if (!url) return undefined;
+  return {
+    url,
+    urlAbsoluta: raw?.urlAbsoluta?.trim() || undefined,
+    alt: raw?.alt?.trim() || fb?.alt || 'Formación en conducción SERVIAL',
+  };
+}
+
+function mergeSeccionImagenes(
+  raw?: Partial<PortalCursosConduccionSeccionImagenes> | null,
+): PortalCursosConduccionSeccionImagenes {
+  const d = CC_SECCION_IMAGENES as PortalCursosConduccionSeccionImagenes;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const merged: PortalCursosConduccionSeccionImagenes = {};
+  for (const slot of SECCION_IMAGEN_SLOTS) {
+    const img = mergeImagenSeccion(src[slot], d[slot]);
+    if (img) merged[slot] = img;
+  }
+  return merged;
 }
 
 function mergeLicencias(
@@ -491,6 +550,7 @@ export function mergeCursosConduccionLanding(
         }))
       : d.resoluciones.map((r) => ({ ...r })),
     publicidad: mergePublicidad(raw.publicidad),
+    seccionImagenes: mergeSeccionImagenes(raw.seccionImagenes),
     metodologiaTitulo: str(raw.metodologiaTitulo, d.metodologiaTitulo),
     metodologiaLead: str(raw.metodologiaLead, d.metodologiaLead),
     metodologiaItems: mergeMetodologiaItems(raw.metodologiaItems),

@@ -5,6 +5,8 @@ import { finalize } from 'rxjs';
 
 import {
   CURSOS_CONDUCCION_LANDING_DEFAULTS,
+  CURSOS_CONDUCCION_SECCION_IMAGEN_SLOTS,
+  CursosConduccionSeccionImagenSlot,
   MAX_CURSOS_CONDUCCION_PUBLICIDAD,
   mergeCursosConduccionLanding,
   PortalCursosConduccionLanding,
@@ -49,6 +51,10 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
   uploadIndex = signal<number | null>(null);
   heroUploading = signal(false);
   publicidadUploading = signal(false);
+  seccionUploading = signal<string | null>(null);
+  licenciaUploading = signal<number | null>(null);
+
+  readonly seccionImagenSlots = CURSOS_CONDUCCION_SECCION_IMAGEN_SLOTS;
 
   ngOnInit(): void {
     const hero = this.cursosConduccion.hero;
@@ -56,6 +62,9 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
     if (hero.highlightTitle == null) hero.highlightTitle = '';
     if (hero.highlightSubtitle == null) hero.highlightSubtitle = '';
     if (hero.highlightRadar == null) hero.highlightRadar = true;
+    this.cursosConduccion.seccionImagenes = mergeCursosConduccionLanding(
+      this.cursosConduccion,
+    ).seccionImagenes;
   }
 
   readonly maxPublicidad = MAX_CURSOS_CONDUCCION_PUBLICIDAD;
@@ -310,5 +319,127 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
     item.archivoUrl = '';
     item.nombreArchivo = '';
     this.avNotice.emit({ message: 'Archivo quitado de esta resolución. Publique los cambios del sitio.' });
+  }
+
+  seccionImagenPreview(slot: CursosConduccionSeccionImagenSlot): string | null {
+    const img = this.cursosConduccion.seccionImagenes?.[slot];
+    return this.archivoPreviewUrl(img?.url);
+  }
+
+  syncSeccionImagenesFromConfig(config: PortalAulaConfig) {
+    const seccionImagenes = config.landing?.cursosConduccion?.seccionImagenes;
+    if (seccionImagenes) {
+      this.cursosConduccion.seccionImagenes = {
+        ...this.cursosConduccion.seccionImagenes,
+        ...seccionImagenes,
+      };
+    }
+  }
+
+  syncLicenciasFromConfig(config: PortalAulaConfig) {
+    const items = config.landing?.cursosConduccion?.licencias?.items;
+    if (items?.length) {
+      this.cursosConduccion.licencias.items = items.map((item, i) => ({
+        ...this.cursosConduccion.licencias.items[i],
+        ...item,
+      }));
+    }
+  }
+
+  onSeccionImagen(ev: Event, slot: CursosConduccionSeccionImagenSlot) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const alt = this.cursosConduccion.seccionImagenes?.[slot]?.alt;
+    this.seccionUploading.set(slot);
+    this.svc
+      .subirImagenCursosConduccionSeccionPortal(file, slot, alt)
+      .pipe(finalize(() => this.seccionUploading.set(null)))
+      .subscribe({
+        next: (res) => {
+          this.syncSeccionImagenesFromConfig(res.config);
+          this.portalConfigUpdated.emit(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen de sección actualizada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo subir la imagen',
+            error: true,
+          });
+        },
+      });
+  }
+
+  quitarSeccionImagen(slot: CursosConduccionSeccionImagenSlot) {
+    this.seccionUploading.set(slot);
+    this.svc
+      .quitarImagenCursosConduccionSeccionPortal(slot)
+      .pipe(finalize(() => this.seccionUploading.set(null)))
+      .subscribe({
+        next: (res) => {
+          this.syncSeccionImagenesFromConfig(res.config);
+          if (this.cursosConduccion.seccionImagenes) {
+            delete this.cursosConduccion.seccionImagenes[slot];
+          }
+          this.portalConfigUpdated.emit(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen de sección eliminada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo quitar la imagen',
+            error: true,
+          });
+        },
+      });
+  }
+
+  onLicenciaImagen(ev: Event, index: number) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.licenciaUploading.set(index);
+    this.svc
+      .subirImagenCursosConduccionLicenciaPortal(file, index)
+      .pipe(finalize(() => this.licenciaUploading.set(null)))
+      .subscribe({
+        next: (res) => {
+          this.syncLicenciasFromConfig(res.config);
+          this.portalConfigUpdated.emit(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen de licencia actualizada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo subir la imagen',
+            error: true,
+          });
+        },
+      });
+  }
+
+  quitarLicenciaImagen(index: number) {
+    this.licenciaUploading.set(index);
+    this.svc
+      .quitarImagenCursosConduccionLicenciaPortal(index)
+      .pipe(finalize(() => this.licenciaUploading.set(null)))
+      .subscribe({
+        next: (res) => {
+          this.syncLicenciasFromConfig(res.config);
+          const item = this.cursosConduccion.licencias.items[index];
+          if (item) {
+            item.imagenUrl = '';
+            item.imagenUrlAbsoluta = '';
+          }
+          this.portalConfigUpdated.emit(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen de licencia eliminada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo quitar la imagen',
+            error: true,
+          });
+        },
+      });
   }
 }

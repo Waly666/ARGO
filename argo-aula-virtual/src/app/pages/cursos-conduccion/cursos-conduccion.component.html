@@ -30,6 +30,11 @@
         <div class="licencias-grid">
           @for (lic of contenido().licencias.items; track lic.codigo + lic.titulo; let i = $index) {
             <article class="lic-card" [class.lic-card--destacada]="lic.destacada">
+              @if (licenciaImagen(lic); as imgUrl) {
+                <div class="lic-card__media">
+                  <img [src]="imgUrl" [alt]="lic.imagenAlt || lic.titulo" loading="lazy" />
+                </div>
+              }
               <div class="lic-card__head">
                 <span class="lic-card__head-glow" aria-hidden="true"></span>
                 <div class="lic-card__head-row">
@@ -95,7 +100,7 @@
   @if (invitacion(); as inv) {
     <section class="cc-section cc-section--invita" id="que-aprenderas">
       <div class="container">
-        <div class="cc-invita">
+        <div class="cc-invita" [class.cc-invita--with-photo]="!!seccionImagen('invitacion')">
           <header class="cc-invita__head">
             @if (inv.kicker.trim()) {
               <p class="cc-kicker cc-kicker--dark">{{ inv.kicker }}</p>
@@ -106,6 +111,12 @@
               <p class="cc-invita__inst">{{ inv.institucion }}</p>
             }
           </header>
+
+          @if (seccionImagen('invitacion'); as invitaImg) {
+            <figure class="cc-invita__banner">
+              <img [src]="invitaImg" [alt]="seccionImagenAlt('invitacion')" loading="lazy" />
+            </figure>
+          }
 
           <div class="cc-invita__beneficios">
             @for (b of inv.beneficios; track b.titulo + $index) {
@@ -153,8 +164,13 @@
           <p class="cc-section__lead">{{ contenido().metodologiaLead }}</p>
         </header>
         <div class="cc-metodologia-grid">
-          @for (m of contenido().metodologiaItems; track m.titulo) {
+          @for (m of contenido().metodologiaItems; track m.titulo; let i = $index) {
             <article class="cc-metodologia-card">
+              @if (metodologiaImagen(i); as metaImg) {
+                <div class="cc-metodologia-card__media">
+                  <img [src]="metaImg" [alt]="metodologiaImagenAlt(i)" loading="lazy" />
+                </div>
+              }
               <h3>{{ m.titulo }}</h3>
               <p>{{ m.texto }}</p>
             </article>
@@ -166,24 +182,33 @@
 
   <section class="cc-section" id="requisitos">
     <div class="container">
-      <header class="cc-section__head">
-        <h2>{{ contenido().requisitosTitulo }}</h2>
-        <p class="cc-section__lead">{{ contenido().requisitosLead }}</p>
-      </header>
-      <p class="cc-text">{{ contenido().requisitosTexto }}</p>
-      <p class="cc-requisitos-licencia">
-        {{ contenido().requisitosLicenciaTexto }}
-        <a [href]="contenido().requisitosBtnUrl" target="_blank" rel="noopener noreferrer">
-          {{ contenido().requisitosLicenciaEnlaceTexto }}
-        </a>
-      </p>
-      <a
-        class="btn btn-primary cc-requisitos-btn"
-        [href]="contenido().requisitosBtnUrl"
-        target="_blank"
-        rel="noopener noreferrer">
-        {{ contenido().requisitosBtnTexto }}
-      </a>
+      <div class="cc-split" [class.cc-split--reverse]="!!seccionImagen('requisitos')">
+        <div class="cc-split__copy">
+          <header class="cc-section__head">
+            <h2>{{ contenido().requisitosTitulo }}</h2>
+            <p class="cc-section__lead">{{ contenido().requisitosLead }}</p>
+          </header>
+          <p class="cc-text">{{ contenido().requisitosTexto }}</p>
+          <p class="cc-requisitos-licencia">
+            {{ contenido().requisitosLicenciaTexto }}
+            <a [href]="contenido().requisitosBtnUrl" target="_blank" rel="noopener noreferrer">
+              {{ contenido().requisitosLicenciaEnlaceTexto }}
+            </a>
+          </p>
+          <a
+            class="btn btn-primary cc-requisitos-btn"
+            [href]="contenido().requisitosBtnUrl"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().requisitosBtnTexto }}
+          </a>
+        </div>
+        @if (seccionImagen('requisitos'); as reqImg) {
+          <figure class="cc-split__media">
+            <img [src]="reqImg" [alt]="seccionImagenAlt('requisitos')" loading="lazy" />
+          </figure>
+        }
+      </div>
     </div>
   </section>
 
@@ -214,10 +239,19 @@
   @if (contenido().seoTextoTitulo.trim() && contenido().seoTextoParrafos.length) {
     <section class="cc-section cc-section--light" id="escuela-conduccion">
       <div class="container cc-seo">
-        <h2>{{ contenido().seoTextoTitulo }}</h2>
-        @for (p of contenido().seoTextoParrafos; track p) {
-          <p class="cc-text">{{ p }}</p>
-        }
+        <div class="cc-split cc-split--seo">
+          <div class="cc-split__copy">
+            <h2>{{ contenido().seoTextoTitulo }}</h2>
+            @for (p of contenido().seoTextoParrafos; track p) {
+              <p class="cc-text">{{ p }}</p>
+            }
+          </div>
+          @if (seccionImagen('seo'); as seoImg) {
+            <figure class="cc-split__media">
+              <img [src]="seoImg" [alt]="seccionImagenAlt('seo')" loading="lazy" />
+            </figure>
+          }
+        </div>
       </div>
     </section>
   }
@@ -255,6 +289,12 @@
         <h2>{{ contenido().inscripcionesTitulo }}</h2>
         <p class="cc-section__lead">{{ contenido().inscripcionesLead }}</p>
       </header>
+
+      @if (seccionImagen('local'); as localImg) {
+        <figure class="cc-local__media">
+          <img [src]="localImg" [alt]="seccionImagenAlt('local')" loading="lazy" />
+        </figure>
+      }
 
       <article class="cc-local">
         <h3>{{ contenido().localTitulo }}</h3>
