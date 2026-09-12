@@ -32,19 +32,20 @@
 
   @include fsvFonts.servicios-portal-fonts();
 
-  p:not(.fsv-section-head__kicker):not(.fsv-producto-showcase__kicker):not(.fsv-presentacion__kicker):not(.fsv-article__kicker),
+  /**
+   * Justificado solo en columnas anchas de texto largo. En tarjetas estrechas
+   * la justificación abre "ríos" de espacio en blanco, y en los bloques
+   * centrados impedía que el texto acompañara al título.
+   */
   .fsv-presentacion__p,
   .fsv-presentacion__lead,
   .fsv-article__p,
   .fsv-article__lead,
   .fsv-producto-showcase__p,
   .fsv-producto-showcase__lead,
-  .fsv-sim-card__text,
-  .fsv-ecosystem__node p,
-  .fsv-card > p,
-  .fsv-card__body p,
-  .fsv-text,
-  .fsv-linea-card__text {
+  .fsv-highlight__text,
+  .fsv-faq__item p,
+  .fsv-text {
     text-align: justify;
     text-justify: inter-word;
     hyphens: auto;
@@ -798,9 +799,6 @@
     font-size: 0.88rem;
     line-height: 1.55;
     color: var(--fsv-muted);
-    text-align: justify;
-    text-justify: inter-word;
-    hyphens: auto;
   }
 
   p {

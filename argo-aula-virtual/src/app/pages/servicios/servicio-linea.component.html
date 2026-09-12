@@ -533,9 +533,9 @@
                 @if (s.dashboardStats.length) {
                   <aside class="fsv-dashboard__stats">
                     <h3>Indicadores</h3>
-                    @for (stat of s.dashboardStats; track stat.etiqueta) {
+                    @for (stat of s.dashboardStats; track stat.etiqueta; let i = $index) {
                       <div class="fsv-stat">
-                        <strong>{{ stat.valor }}</strong>
+                        <strong avCountUp [countUpDelay]="180 + i * 85">{{ stat.valor }}</strong>
                         <span>{{ stat.etiqueta }}</span>
                       </div>
                     }

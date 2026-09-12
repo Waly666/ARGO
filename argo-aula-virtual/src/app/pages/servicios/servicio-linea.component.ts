@@ -35,6 +35,7 @@ import { PortalConfig, CursoVirtual } from '../../core/models';
 import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { CountUpDirective } from '../../core/count-up.directive';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { youtubeEmbedUrl } from '../../core/youtube-embed.util';
 import { resolveUploadUrl } from '../../core/upload-url.util';
@@ -62,6 +63,7 @@ export interface ServicioCatalogoCardView {
     PortalEnlacesRelacionadosComponent,
     CursoCardComponent,
     RevealOnScrollDirective,
+    CountUpDirective,
   ],
   templateUrl: './servicio-linea.component.html',
   styleUrl: './servicio-linea.component.scss',
