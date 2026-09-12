@@ -717,8 +717,15 @@
     box-shadow: var(--mp-shadow-md);
   }
 
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2rem;
+  }
+
   h3 {
-    margin: 0.35rem 0 0;
+    margin: 0.5rem 0 0;
     font-size: 0.98rem;
   }
 
@@ -730,16 +737,15 @@
   }
 
   &__badge {
-    position: absolute;
-    top: 0.65rem;
-    right: 0.65rem;
     display: grid;
     place-content: center;
+    flex-shrink: 0;
     width: 2rem;
     height: 2rem;
     border-radius: 10px;
     font-size: 0.95rem;
     font-weight: 900;
+    line-height: 1;
     color: #fff;
     background: var(--mp-teal);
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.15);
@@ -750,6 +756,8 @@
     font-size: 0.72rem;
     font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
     color: var(--mp-teal);
   }
 

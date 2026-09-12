@@ -179,8 +179,10 @@
         <div class="mp-clases">
           @for (clase of contenido().clases; track clase.numero) {
             <article class="mp-clase reveal" [ngClass]="'mp-clase--' + claseAcento(clase.numero)" avRevealOnScroll [revealDelay]="40 + clase.numero * 25">
-              <span class="mp-clase__badge" aria-hidden="true">{{ clase.numero }}</span>
-              <span class="mp-clase__num">Clase {{ clase.numero }}</span>
+              <div class="mp-clase__head">
+                <span class="mp-clase__badge" aria-hidden="true">{{ clase.numero }}</span>
+                <span class="mp-clase__num">Clase {{ clase.numero }}</span>
+              </div>
               <h3>{{ clase.titulo }}</h3>
               <p>{{ clase.texto }}</p>
             </article>
