@@ -16,9 +16,16 @@
   --fsv-gold: #f5c400;
   --fsv-gold-soft: #fff8d6;
   --fsv-navy: #0b1b47;
-  --fsv-shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --fsv-shadow-md: 0 16px 40px rgba(37, 99, 235, 0.12);
+  --fsv-shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px rgba(15, 23, 42, 0.06);
+  --fsv-shadow-md:
+    0 2px 5px rgba(15, 23, 42, 0.05),
+    0 18px 44px rgba(37, 99, 235, 0.14);
   --fsv-radius: 16px;
+  --fsv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fsv-accent-line: linear-gradient(90deg, var(--fsv-primary), var(--fsv-gold));
+  --fsv-ring: 0 0 0 3px rgba(37, 99, 235, 0.28);
   background:
     radial-gradient(ellipse at 0% 0%, rgba(37, 99, 235, 0.05), transparent 45%),
     radial-gradient(ellipse at 100% 20%, rgba(16, 185, 129, 0.04), transparent 40%),
@@ -642,5 +649,186 @@
   }
   50% {
     transform: scale(1.04);
+  }
+}
+
+/* ==========================================================================
+   Retoque visual (solo presentación) — no toca el hero ni el marcado
+   ========================================================================== */
+
+.fsv-section__title {
+  position: relative;
+
+  &::after {
+    content: '';
+    display: block;
+    width: 64px;
+    height: 3px;
+    margin-top: 0.6rem;
+    border-radius: 999px;
+    background: var(--fsv-accent-line);
+    transition: width 0.7s var(--fsv-ease) 0.15s;
+  }
+}
+
+.fsv-section-head--center .fsv-section__title::after {
+  margin-inline: auto;
+}
+
+.reveal:not(.is-visible) .fsv-section__title::after {
+  width: 0;
+}
+
+@keyframes fsv-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+$fsv-stagger: '.fsv-grid, .fsv-faq';
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(#{$fsv-stagger}).reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+
+    > * {
+      opacity: 0;
+    }
+  }
+
+  :is(#{$fsv-stagger}).reveal.is-visible > * {
+    animation: fsv-rise-in 0.58s var(--fsv-ease) both;
+  }
+
+  @for $i from 2 through 14 {
+    :is(#{$fsv-stagger}).reveal.is-visible > *:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 55}ms;
+    }
+  }
+}
+
+.fsv-card {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 3px;
+    background: var(--fsv-accent-line);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.38s var(--fsv-ease);
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    transform: scaleX(1);
+  }
+}
+
+.fsv-card__icon {
+  transition: transform 0.28s var(--fsv-ease);
+}
+
+.fsv-card:hover .fsv-card__icon {
+  transform: translateY(-2px) scale(1.07);
+}
+
+.fsv-card__link {
+  transition: letter-spacing 0.25s var(--fsv-ease);
+}
+
+.fsv-card:hover .fsv-card__link {
+  letter-spacing: 0.09em;
+}
+
+.fsv-highlight {
+  transition:
+    box-shadow 0.22s var(--fsv-ease),
+    border-color 0.22s var(--fsv-ease);
+
+  &:hover {
+    border-color: #bfdbfe;
+    box-shadow: var(--fsv-shadow-md);
+  }
+}
+
+.fsv-faq__item {
+  transition:
+    border-color 0.2s var(--fsv-ease),
+    box-shadow 0.2s var(--fsv-ease);
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::before {
+      content: '+';
+      display: inline-grid;
+      place-items: center;
+      flex-shrink: 0;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 999px;
+      border: 1px solid #bfdbfe;
+      background: var(--fsv-primary-soft);
+      color: var(--fsv-primary);
+      font-weight: 900;
+      line-height: 1;
+      transition:
+        transform 0.28s var(--fsv-ease),
+        background 0.2s var(--fsv-ease);
+    }
+  }
+
+  &:hover {
+    border-color: #bfdbfe;
+    box-shadow: var(--fsv-shadow-sm);
+  }
+
+  &[open] {
+    border-color: #bfdbfe;
+    box-shadow: var(--fsv-shadow-sm);
+
+    summary::before {
+      content: '\2212';
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.fsv-page {
+  a:not(.fsv-card):not(.btn):not(.fsv-btn):focus-visible,
+  summary:focus-visible,
+  button:not(.btn):not(.fsv-btn):focus-visible {
+    outline: none;
+    border-radius: 10px;
+    box-shadow: var(--fsv-ring);
+  }
+
+  .btn:focus-visible,
+  .fsv-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--fsv-ring);
+  }
+
+  .fsv-card:focus-visible {
+    outline: none;
+    box-shadow: var(--fsv-shadow-md), var(--fsv-ring);
   }
 }
