@@ -35,6 +35,7 @@ const {
   mergeFinstruvialServicios,
 } = require('./aulaVirtualFinstruvialServiciosDefaults');
 const { mergePromoHeroTheme } = require('./portalPromoHeroFields');
+const { PORTAL_ICONOGRAFIA_DEFAULTS } = require('./portalIconCatalog');
 const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
@@ -538,6 +539,7 @@ const LANDING_DEFAULTS = {
   jornadasCapacitacion: JSON.parse(JSON.stringify(JORNADAS_CAPACITACION_LANDING_DEFAULTS)),
   evaluacionJornadas: JSON.parse(JSON.stringify(EVALUACION_JORNADAS_LANDING_DEFAULTS)),
   finstruvialServicios: JSON.parse(JSON.stringify(FINSTRUVIAL_SERVICIOS_DEFAULTS)),
+  iconografia: JSON.parse(JSON.stringify(PORTAL_ICONOGRAFIA_DEFAULTS)),
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: {

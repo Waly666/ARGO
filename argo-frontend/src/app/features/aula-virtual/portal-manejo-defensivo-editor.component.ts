@@ -24,7 +24,9 @@ import {
 
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
 @Component({
   selector: 'argo-portal-manejo-defensivo-editor',
@@ -34,6 +36,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
     PortalEditorFaqListComponent,
     PortalEditorStringListComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
@@ -46,6 +49,7 @@ export class PortalManejoDefensivoEditorComponent implements OnInit {
   private api = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) manejoDefensivo!: PortalManejoDefensivoLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 

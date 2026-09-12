@@ -46,6 +46,7 @@
     </label>
     <argo-portal-promo-hero-fields-editor
       [hero]="mercanciasPeligrosas"
+      [iconografia]="iconografia"
       [showTitle]="false"
       [showLead]="false"
       [showPillars]="true"
@@ -380,7 +381,7 @@
         <div class="psb-grid2">
           <label class="psb-field psb-field--plain">
             <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="modo.icono" placeholder="truck, train, ship..." />
+            <argo-portal-icon-picker [(ngModel)]="modo.icono" [iconografia]="iconografia" placeholder="truck, train, ship..." />
           </label>
           <label class="psb-field psb-field--plain">
             <span>Título</span>
@@ -677,7 +678,7 @@
           </label>
           <label class="psb-field psb-field--plain">
             <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+            <argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="iconografia" />
           </label>
           <label class="psb-field psb-field--plain">
             <span>Acento</span>

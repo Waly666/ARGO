@@ -12,6 +12,7 @@ import { resolvePortalHeroEstilo } from '../../core/utils/portal-theme-css-base.
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
@@ -30,6 +31,7 @@ import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
     PortalAppMobileEditorComponent,
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalPromoHeroImagenEditorComponent,
     PortalHomeCursoSectionEditorComponent,

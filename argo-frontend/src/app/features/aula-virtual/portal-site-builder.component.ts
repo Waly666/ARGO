@@ -64,6 +64,7 @@ import { PortalTrabajoEnAlturasEditorComponent } from './portal-trabajo-en-altur
 import { PortalManejoDefensivoEditorComponent } from './portal-manejo-defensivo-editor.component';
 import { PortalPrimerosAuxiliosEditorComponent } from './portal-primeros-auxilios-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
+import { PortalIconografiaEditorComponent } from './portal-iconografia-editor.component';
 import { PortalGaleriaHeroImagenEditorComponent } from './portal-galeria-hero-imagen-editor.component';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
@@ -116,6 +117,7 @@ export type BuilderPanel =
   | 'institucional'
   | 'blog'
   | 'galeria'
+  | 'iconografia'
   | 'popup'
   | 'appMobile'
   | 'asistente'
@@ -181,6 +183,7 @@ interface GuiaPaso {
     PortalFundacionEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalGaleriaHeroImagenEditorComponent,
+    PortalIconografiaEditorComponent,
     PortalGoogleSearchConsoleEditorComponent,
     PortalHomeFotosEditorComponent,
     PortalHomePublicidadEditorComponent,
@@ -293,6 +296,7 @@ export class PortalSiteBuilderComponent {
       title: 'Diseño',
       items: [
         { id: 'apariencia', icon: '🎨', label: 'Colores y estilo' },
+        { id: 'iconografia', icon: '🧩', label: 'Galería de iconos' },
         { id: 'popup', icon: '💬', label: 'Popup de bienvenida' },
         { id: 'googleSearchConsole', icon: '🔍', label: 'Google Search Console' },
         { id: 'seo', icon: '📈', label: 'SEO (Google)' },
@@ -365,6 +369,9 @@ export class PortalSiteBuilderComponent {
     }
     if (!this.portalForm.landing.asistente) {
       this.portalForm.landing.asistente = { ...mergePortalLanding().asistente };
+    }
+    if (!this.portalForm.landing.iconografia) {
+      this.portalForm.landing.iconografia = mergePortalLanding().iconografia;
     }
     if (!this.portalForm.landing.cursosConduccion) {
       this.portalForm.landing.cursosConduccion = { ...mergePortalLanding().cursosConduccion };
@@ -671,6 +678,11 @@ export class PortalSiteBuilderComponent {
       apariencia: {
         title: 'Colores y estilo',
         help: 'Elija los colores de su marca. No necesita saber diseño: pruebe y mire el resultado en la vista previa.',
+      },
+      iconografia: {
+        title: 'Galería de iconos',
+        help:
+          'Iconos disponibles en todo el editor del sitio. Oculte los del sistema o cree personalizados (emoji, alias o imagen). Distinto de Galería de fotos.',
       },
       popup: {
         title: 'Popup de bienvenida',

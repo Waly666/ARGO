@@ -114,11 +114,12 @@
           Aparece bajo el párrafo introductorio en <strong>/servicios</strong>, igual que en las demás
           páginas de servicios (icono, título y subtítulo).
         </p>
-        <argo-portal-promo-hero-fields-editor
+        <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
           [hero]="finstruvialServicios.hub"
           [showTitle]="false"
           [showLead]="false"
           [showHighlight]="true"
+          [highlightSubtitleRows]="3"
         />
         <label class="psb-check">
           <input type="checkbox" [(ngModel)]="finstruvialServicios.hub.heroHighlightRadar" />
@@ -134,7 +135,7 @@
           <span>Etiqueta de accesibilidad de los chips</span>
           <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.statsLabel" />
         </label>
-        <argo-portal-promo-hero-fields-editor
+        <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
           [hero]="finstruvialServicios.hub"
           [showTitle]="false"
           [showLead]="false"
@@ -170,7 +171,7 @@
           Pilares, destacado, chips y cinta del banner superior en <strong>/servicios</strong>.
           Si deja algún bloque vacío, el portal completa con las tarjetas del portafolio o textos existentes.
         </p>
-        <argo-portal-promo-hero-fields-editor
+        <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
           [hero]="finstruvialServicios.hub"
           [showTitle]="false"
           [showLead]="false"
@@ -242,7 +243,7 @@
           Chips de áreas de formación que aparecen en este bloque en la página pública
           (p. ej. «Seguridad vial», «Conducción certificada»).
         </p>
-        <argo-portal-promo-hero-fields-editor
+        <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
           [hero]="finstruvialServicios.hub"
           [showTitle]="false"
           [showLead]="false"
@@ -335,8 +336,8 @@
           </div>
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
-              <span>Icono (emoji)</span>
-              <input type="text" class="psb-input" [(ngModel)]="tarjeta.icon" />
+              <span>Icono</span>
+              <argo-portal-icon-picker [(ngModel)]="tarjeta.icon" [iconografia]="iconografia" />
             </label>
             <label class="psb-field psb-field--plain">
               <argo-portal-field-label tag="H3" label="Título" />
@@ -580,34 +581,79 @@
         </div>
       </div>
       <div class="fsv-fieldset">
-        <p class="fsv-fieldset__legend">Hero animado (pilares, destacado, chips, cinta)</p>
+        <p class="fsv-fieldset__legend">Tarjeta destacada del banner</p>
         <p class="psb-hint">
-          Controla los elementos animados del banner. Si deja pilares o chips vacíos, el portal usa las secciones
-          editoriales de esta línea (metodología, pilares, producto, etc.).
+          Aparece bajo la frase introductoria con icono y texto. El switch activa el efecto radar en el portal
+          público.
         </p>
-        <argo-portal-promo-hero-fields-editor
+        <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
           [hero]="p"
           [showTitle]="false"
           [showLead]="false"
-          [showPillars]="true"
           [showHighlight]="true"
-          [showStats]="true"
-          [showRibbon]="true"
-          [showVirtualBadge]="true"
-          [showTheme]="true"
+          [highlightSubtitleRows]="3"
         />
         <label class="psb-check">
           <input type="checkbox" [(ngModel)]="p.heroHighlightRadar" />
           Efecto radar en la tarjeta destacada
         </label>
       </div>
-      @for (parrafo of p.heroParrafos; track $index; let i = $index) {
-        <div class="ple-list__row">
-          <textarea class="psb-input" rows="2" [(ngModel)]="p.heroParrafos[i]"></textarea>
-          <button type="button" class="psb-icon-btn" (click)="removeItem(p.heroParrafos, i)">×</button>
+      @if (esLineaServial()) {
+        <div class="fsv-fieldset">
+          <p class="fsv-fieldset__legend">Chips bajo la tarjeta destacada</p>
+          <p class="psb-hint">Etiquetas cortas opcionales (p. ej. «Villavicencio», «Meta»). Déjelos vacíos para ocultarlos.</p>
+          <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
+            [hero]="p"
+            [showTitle]="false"
+            [showLead]="false"
+            [showStats]="true"
+          />
+        </div>
+        <div class="fsv-fieldset">
+          <p class="fsv-fieldset__legend">Iconos circulares del banner (opcional)</p>
+          <p class="psb-hint">
+            Círculos con icono bajo la tarjeta (p. ej. Saber, Saber hacer, Ser). <strong>Déjelos vacíos para ocultarlos</strong>
+            en el banner; los pilares educativos del cuerpo de la página se editan más abajo en su propia sección.
+          </p>
+          <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
+            [hero]="p"
+            [showTitle]="false"
+            [showLead]="false"
+            [showPillars]="true"
+          />
+        </div>
+        <div class="fsv-fieldset">
+          <p class="fsv-fieldset__legend">Cinta inferior del banner (opcional)</p>
+          <p class="psb-hint">
+            Barra deslizante bajo el banner (p. ej. Estudiar → Comprender). Déjela vacía para ocultarla; la ruta de
+            aprendizaje del cuerpo de la página se edita en su sección correspondiente.
+          </p>
+          <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
+            [hero]="p"
+            [showTitle]="false"
+            [showLead]="false"
+            [showRibbon]="true"
+          />
+        </div>
+      } @else {
+        <div class="fsv-fieldset">
+          <p class="fsv-fieldset__legend">Hero animado (pilares, chips, cinta)</p>
+          <p class="psb-hint">
+            Elementos avanzados del banner. Si deja pilares o chips vacíos, el portal usa las secciones editoriales
+            de esta línea (metodología, pilares, producto, etc.).
+          </p>
+          <argo-portal-promo-hero-fields-editor [iconografia]="iconografia"
+            [hero]="p"
+            [showTitle]="false"
+            [showLead]="false"
+            [showPillars]="true"
+            [showStats]="true"
+            [showRibbon]="true"
+            [showVirtualBadge]="true"
+            [showTheme]="true"
+          />
         </div>
       }
-      <button type="button" class="psb-link" (click)="addHeroParrafo()">+ Añadir párrafo</button>
       <div class="fsv-fieldset">
         <p class="fsv-fieldset__legend">Botones del banner</p>
       <div class="psb-grid2">
@@ -773,12 +819,18 @@
           (toggle)="toggleGrupo('pilares')"
         >
       @if (mostrarSeccion('pilares')) {
+        @if (esLineaServial()) {
+          <p class="psb-hint">
+            Tarjetas de la sección «Pilares educativos» en el cuerpo de la página. Ya no se copian automáticamente al
+            banner; use «Iconos circulares del banner» arriba si desea mostrarlos allí.
+          </p>
+        }
         @for (pilar of p.pilaresEducativos; track $index; let i = $index) {
           <div class="ple-list__row ple-list__row--stack">
             <div class="psb-grid3">
               <label class="psb-field psb-field--plain">
                 <span>Icono</span>
-                <input type="text" class="psb-input" [(ngModel)]="p.pilaresEducativos[i].icon" />
+                <argo-portal-icon-picker [(ngModel)]="p.pilaresEducativos[i].icon" [iconografia]="iconografia" />
               </label>
               <label class="psb-field psb-field--plain">
                 <span>Título</span>
@@ -814,6 +866,12 @@
           (toggle)="toggleGrupo('ruta')"
         >
       @if (mostrarSeccion('ruta')) {
+        @if (esLineaServial()) {
+          <p class="psb-hint">
+            Pasos de la sección «Ruta de aprendizaje» en el cuerpo de la página. Ya no se copian solos a la cinta del
+            banner; use «Cinta inferior del banner» arriba si desea mostrarlos allí.
+          </p>
+        }
         @for (paso of p.rutaAprendizaje; track $index; let i = $index) {
           <div class="ple-list__row">
             <input type="text" class="psb-input" [(ngModel)]="p.rutaAprendizaje[i]" placeholder="Paso de la ruta" />
@@ -892,7 +950,7 @@
                   <div class="psb-grid2">
                     <label class="psb-field psb-field--plain">
                       <span>Icono</span>
-                      <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].icon" />
+                      <argo-portal-icon-picker [(ngModel)]="p.bloques[i].icon" [iconografia]="iconografia" />
                     </label>
                     <label class="psb-field psb-field--plain">
                       <span>Título</span>
@@ -935,7 +993,7 @@
                 <div class="psb-grid2">
                   <label class="psb-field psb-field--plain">
                     <span>Icono</span>
-                    <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].icon" />
+                    <argo-portal-icon-picker [(ngModel)]="p.bloques[i].icon" [iconografia]="iconografia" />
                   </label>
                   <label class="psb-field psb-field--plain">
                     <span>Título corto</span>
@@ -956,7 +1014,7 @@
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
               <span>Icono</span>
-              <input type="text" class="psb-input" [(ngModel)]="p.bloques[i].icon" />
+              <argo-portal-icon-picker [(ngModel)]="p.bloques[i].icon" [iconografia]="iconografia" />
             </label>
             <label class="psb-field psb-field--plain">
               <span>Título</span>
@@ -1180,7 +1238,7 @@
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
               <span>Icono</span>
-              <input type="text" class="psb-input" [(ngModel)]="p.experienciaItems[i].icon" />
+                <argo-portal-icon-picker [(ngModel)]="p.experienciaItems[i].icon" [iconografia]="iconografia" />
             </label>
             <label class="psb-field psb-field--plain">
               <span>Título</span>
@@ -1255,7 +1313,7 @@
               <div class="psb-grid3">
                 <label class="psb-field psb-field--plain">
                   <span>Icono</span>
-                  <input type="text" class="psb-input" [(ngModel)]="p.guiasPlataforma[i].icon" />
+                  <argo-portal-icon-picker [(ngModel)]="p.guiasPlataforma[i].icon" [iconografia]="iconografia" />
                 </label>
                 <label class="psb-field psb-field--plain">
                   <span>Título del tutorial</span>
@@ -1286,7 +1344,7 @@
             <div class="psb-grid3">
               <label class="psb-field psb-field--plain">
                 <span>Icono</span>
-                <input type="text" class="psb-input" [(ngModel)]="p.modulosPlataforma[i].icon" />
+                <argo-portal-icon-picker [(ngModel)]="p.modulosPlataforma[i].icon" [iconografia]="iconografia" />
               </label>
               <label class="psb-field psb-field--plain">
                 <span>Módulo</span>
@@ -1402,7 +1460,7 @@
             <div class="psb-grid2">
               <label class="psb-field psb-field--plain">
                 <span>Icono</span>
-                <input type="text" class="psb-input" [(ngModel)]="p.resultadoIconos[i].icon" />
+                <argo-portal-icon-picker [(ngModel)]="p.resultadoIconos[i].icon" [iconografia]="iconografia" />
               </label>
               <label class="psb-field psb-field--plain">
                 <span>Título</span>
@@ -1486,7 +1544,7 @@
               <div class="psb-grid3">
                 <label class="psb-field psb-field--plain">
                   <span>Icono</span>
-                  <input type="text" class="psb-input" [(ngModel)]="p.ecosistemaItems[i].icon" />
+                  <argo-portal-icon-picker [(ngModel)]="p.ecosistemaItems[i].icon" [iconografia]="iconografia" />
                 </label>
                 <label class="psb-field psb-field--plain">
                   <span>Título</span>

@@ -39,8 +39,12 @@
                 <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
               </div>
               <div class="fsv-hero__highlight-copy">
-                <strong>{{ h.title }}</strong>
-                <span>{{ h.subtitle }}</span>
+                @if (h.title.trim()) {
+                  <strong>{{ h.title }}</strong>
+                }
+                @if (h.subtitle.trim()) {
+                  <span>{{ h.subtitle }}</span>
+                }
               </div>
             </div>
           }

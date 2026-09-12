@@ -52,6 +52,7 @@ import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
 @Component({
   selector: 'argo-portal-finstruvial-servicios-editor',
@@ -63,6 +64,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
     PortalFinstruvialEditorSeccionComponent,
     PortalFinstruvialMediosPanelComponent,
     PortalPromoHeroFieldsEditorComponent,
+    PortalIconPickerComponent,
     PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
@@ -74,6 +76,8 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
   private api = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) finstruvialServicios!: PortalFinstruvialServiciosConfig;
+  @Input() iconografia: import('../../core/constants/portal-icon-catalog.types').PortalIconografiaConfig | null =
+    null;
   @Input() portalTema: PortalTemaLike | null | undefined = null;
   /** `hub` = portafolio /servicios; `linea` = una de las siete páginas. */
   @Input() modo: 'hub' | 'linea' = 'hub';
@@ -132,9 +136,14 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
     return mergePortafolioServicios(raw ?? this.finstruvialServicios, this.portalTema);
   }
 
-  /** El hub Servial usa un banner propio (sin cinta, radar ni tarjeta destacada Finstruvial). */
+  /** El hub Servial usa un banner propio (sin cinta Finstruvial). */
   esHubServial(): boolean {
     return this.modo === 'hub' && portafolioServiciosEsServial(this.portalTema);
+  }
+
+  /** Líneas de servicio Servial: tarjeta destacada + chips, sin pilares/cinta Finstruvial. */
+  esLineaServial(): boolean {
+    return this.modo === 'linea' && portafolioServiciosEsServial(this.portalTema);
   }
 
   lineas() {
@@ -205,12 +214,24 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
     if (!Array.isArray(p.pillars)) p.pillars = [];
     if (!Array.isArray(p.stats)) p.stats = [];
     if (!Array.isArray(p.ribbon)) p.ribbon = [];
+    if (!Array.isArray(p.heroParrafos)) p.heroParrafos = [];
     if (p.pillarsLabel == null) p.pillarsLabel = '';
-    if (p.highlightIcon == null) p.highlightIcon = '';
     if (p.highlightTitle == null) p.highlightTitle = '';
     if (p.highlightSubtitle == null) p.highlightSubtitle = '';
+    if (p.highlightIcon == null) p.highlightIcon = '';
     if (p.ribbonLabel == null) p.ribbonLabel = '';
     if (p.heroHighlightRadar == null) p.heroHighlightRadar = true;
+    const parrafos = p.heroParrafos.map((x) => String(x).trim()).filter(Boolean);
+    if (!String(p.highlightSubtitle).trim() && parrafos.length) {
+      p.highlightSubtitle = parrafos.join('\n\n');
+      p.heroParrafos = [];
+    }
+    if (!String(p.highlightTitle).trim() && String(p.highlightSubtitle).trim()) {
+      p.highlightTitle = String(p.menuLabel || p.kicker || 'Destacado').trim();
+    }
+    if (!String(p.highlightIcon).trim()) {
+      p.highlightIcon = 'shield-check';
+    }
   }
 
   ensureHubFaqFields(): void {
@@ -258,6 +279,12 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
     if (hub.highlightSubtitle == null) hub.highlightSubtitle = '';
     if (hub.ribbonLabel == null) hub.ribbonLabel = '';
     if (hub.heroHighlightRadar == null) hub.heroHighlightRadar = true;
+    if (!String(hub.highlightTitle).trim() && String(hub.highlightSubtitle).trim()) {
+      hub.highlightTitle = String(hub.gridTitulo || hub.tituloLinea || 'Portafolio').trim();
+    }
+    if (!String(hub.highlightIcon).trim()) {
+      hub.highlightIcon = 'shield-check';
+    }
   }
 
   mostrarSeccion(seccion: FinstruvialEditorSeccion): boolean {

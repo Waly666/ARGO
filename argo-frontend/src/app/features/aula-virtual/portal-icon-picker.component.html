@@ -1,0 +1,77 @@
+<div class="pipk" [class.pipk--disabled]="disabled">
+  <argo-portal-icon-preview [slug]="value" [iconografia]="iconografia" />
+  <div class="pipk__field">
+    @if (allowManual) {
+      <input
+        type="text"
+        class="psb-input pipk__input"
+        [placeholder]="placeholder"
+        [disabled]="disabled"
+        [(ngModel)]="value"
+        (ngModelChange)="onManualInput($event)"
+      />
+    } @else {
+      <input
+        type="text"
+        class="psb-input pipk__input pipk__input--readonly"
+        [placeholder]="placeholder"
+        [disabled]="disabled"
+        [value]="value"
+        readonly
+      />
+    }
+    <div class="pipk__actions">
+      <button type="button" class="psb-link" [disabled]="disabled" (click)="openGallery()">
+        Elegir de galería
+      </button>
+      @if (value) {
+        <button type="button" class="psb-link psb-link--danger" [disabled]="disabled" (click)="clearValue()">
+          Quitar
+        </button>
+      }
+    </div>
+  </div>
+</div>
+
+@if (galleryOpen()) {
+  <div class="pipk-gallery" role="dialog" aria-modal="true" aria-label="Galería de iconos">
+    <div class="pipk-gallery__backdrop" (click)="closeGallery()"></div>
+    <div class="pipk-gallery__panel">
+      <header class="pipk-gallery__head">
+        <h3 class="pipk-gallery__title">Galería de iconos</h3>
+        <button type="button" class="psb-icon-btn" (click)="closeGallery()" aria-label="Cerrar">×</button>
+      </header>
+      <div class="pipk-gallery__filters">
+        <input
+          type="search"
+          class="psb-input"
+          placeholder="Buscar por nombre o slug…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+        <select class="psb-input" [ngModel]="category()" (ngModelChange)="category.set($event)">
+          <option value="">Todas las categorías</option>
+          @for (c of categories; track c.id) {
+            <option [value]="c.id">{{ c.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="pipk-gallery__grid">
+        @for (item of filteredItems(); track item.id) {
+          <button
+            type="button"
+            class="pipk-gallery__item"
+            [class.pipk-gallery__item--active]="value === item.slug"
+            (click)="selectItem(item)"
+          >
+            <span class="pipk-gallery__glyph" aria-hidden="true">{{ previewGlyph(item.slug, item) }}</span>
+            <span class="pipk-gallery__label">{{ item.label }}</span>
+            <span class="pipk-gallery__slug">{{ item.slug }}</span>
+          </button>
+        } @empty {
+          <p class="pipk-gallery__empty">No hay iconos que coincidan. Cree iconos personalizados en «Galería de iconos» del menú Diseño.</p>
+        }
+      </div>
+    </div>
+  </div>
+}

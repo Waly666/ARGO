@@ -117,7 +117,7 @@
         <div class="psb-grid3">
           <label class="psb-field psb-field--plain">
             <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="p.icono" />
+            <argo-portal-icon-picker [(ngModel)]="p.icono" [iconografia]="iconografia" />
           </label>
           <label class="psb-field psb-field--plain">
             <span>Título</span>
@@ -352,7 +352,7 @@
     </label>
     @for (a of manejoDefensivo.audiencias; track $index; let i = $index) {
       <div class="ple-list__row">
-        <input type="text" class="psb-input" style="max-width:4rem" [(ngModel)]="a.icono" />
+        <argo-portal-icon-picker class="ple-list__icon-picker" [(ngModel)]="a.icono" [iconografia]="iconografia" />
         <input type="text" class="psb-input" [(ngModel)]="a.titulo" />
         <button type="button" class="psb-icon-btn" (click)="removeItem(manejoDefensivo.audiencias, i)">×</button>
       </div>
@@ -540,7 +540,7 @@
           </label>
           <label class="psb-field psb-field--plain">
             <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+            <argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="iconografia" />
           </label>
           <label class="psb-field psb-field--plain">
             <span>Acento</span>

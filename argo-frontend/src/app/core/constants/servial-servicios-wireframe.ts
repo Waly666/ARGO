@@ -78,6 +78,10 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     lead:
       'Cursos virtuales de seguridad vial, tránsito, transporte y formación especializada, disponibles desde Villavicencio, Meta, para estudiantes y empresas en toda Colombia.',
     heroParrafos: [],
+    highlightIcon: 'academic-cap',
+    highlightTitle: 'Saber, saber hacer y ser',
+    highlightSubtitle:
+      'Prestamos servicios de capacitación con horarios flexibles y la posibilidad de tomar clases en ambientes virtuales desde nuestra aula virtual por internet.',
     introKicker: '',
     introTitulo: '',
     introLead: '',
@@ -236,9 +240,11 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     tituloLinea: 'CAPACITACIÓN',
     tituloAcento: 'EN SEGURIDAD VIAL',
     lead: 'Programas acordes a las necesidades de su empresa con horarios flexibles.',
-    heroParrafos: [
-      'Somos Centro de Enseñanza Automovilística e Instituto de Educación para el Trabajo y el Desarrollo Humano, con certificación ISO 9001:2008 y compromiso con la calidad, la seguridad industrial y la salud ocupacional.',
-    ],
+    heroParrafos: [],
+    highlightIcon: 'shield-check',
+    highlightTitle: 'Centro de enseñanza certificado',
+    highlightSubtitle:
+      'Somos centro de enseñanza automovilística e instituto de educación para el trabajo y el desarrollo humano, con certificación ISO 9001:2008 y compromiso con la calidad, la seguridad industrial y la salud ocupacional.',
     introKicker: 'Nuestro servicio',
     introTitulo: 'Capacitación integral para el sector transportador',
     introLead:
@@ -333,9 +339,11 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     tituloLinea: 'ASESORÍA EN',
     tituloAcento: 'TRÁNSITO Y TRANSPORTE',
     lead: 'Orientamos sobre normas, regulaciones y procedimientos del sector.',
-    heroParrafos: [
+    heroParrafos: [],
+    highlightIcon: 'document',
+    highlightTitle: 'Asesoría en tránsito y transporte',
+    highlightSubtitle:
       'Informamos sobre trámites, consultas y peticiones relacionadas con tránsito y transporte.',
-    ],
     introKicker: 'Nuestro servicio',
     introTitulo: 'Acompañamiento en tránsito y transporte',
     introLead: 'Respuestas claras para conductores, empresas y usuarios del sistema.',
@@ -369,9 +377,11 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     tituloLinea: 'CONSULTORÍA',
     tituloAcento: 'EN TRÁNSITO Y TRANSPORTE',
     lead: 'Asesoría técnica y legal acorde a las necesidades de su empresa.',
-    heroParrafos: [
+    heroParrafos: [],
+    highlightIcon: 'shield-check',
+    highlightTitle: 'Consultoría técnica y legal',
+    highlightSubtitle:
       'Brindamos consultoría especializada en tránsito, transporte, movilidad y seguridad vial para empresas e instituciones.',
-    ],
     introKicker: 'Nuestro servicio',
     introTitulo: 'Soluciones técnicas y legales para su organización',
     introLead: 'Planes, estudios y acompañamiento conforme a la normativa colombiana.',
@@ -418,9 +428,11 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     tituloLinea: 'ESTUDIOS DE TRÁNSITO',
     tituloAcento: 'Y MOVILIDAD',
     lead: 'Herramientas para la toma de decisiones en movilidad y seguridad vial.',
-    heroParrafos: [
+    heroParrafos: [],
+    highlightIcon: 'chart-bar',
+    highlightTitle: 'Estudios de tránsito y movilidad',
+    highlightSubtitle:
       'Estudios que brindan insumos para implementar medidas de seguridad, movilidad y señalización vial.',
-    ],
     introKicker: 'Nuestro servicio',
     introTitulo: 'Diagnóstico para decisiones informadas',
     introLead: 'Análisis técnico del territorio y del sistema de transporte.',
@@ -455,9 +467,11 @@ export const SERVIAL_SERVICIOS_WIREFRAME: Partial<
     tituloLinea: 'SOLUCIONES',
     tituloAcento: 'INFORMÁTICAS',
     lead: 'Herramientas digitales para la gestión y la formación en el sector transportador.',
-    heroParrafos: [
+    heroParrafos: [],
+    highlightIcon: 'computer-desktop',
+    highlightTitle: 'Soluciones informáticas',
+    highlightSubtitle:
       'Desarrollamos soluciones informáticas que apoyan la capacitación, la gestión y la operación de empresas de tránsito y transporte.',
-    ],
     introKicker: 'Nuestro servicio',
     introTitulo: 'Tecnología al servicio del sector vial',
     introLead: 'Plataformas y herramientas para formación y gestión.',

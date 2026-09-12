@@ -18,8 +18,40 @@ import {
 const MAX_PILLARS = 4;
 const MAX_RIBBON = 4;
 
+export interface FinstruvialServicioHeroOpts {
+  /** Si es false, solo campos del banner ERP (sin rellenar desde secciones editoriales). */
+  autocompletar?: boolean;
+}
+
 function trim(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+function isMostlyUppercase(text: string): boolean {
+  const letters = text.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑüÜ]/g, '');
+  if (letters.length < 4) return false;
+  const upper = letters.replace(/[^A-ZÁÉÍÓÚÑÜ]/g, '').length;
+  return upper / letters.length > 0.8;
+}
+
+/** Convierte textos guardados en MAYÚSCULAS a formato oración (primera letra en mayúscula). */
+function toSentenceCaseEs(text: string): string {
+  const value = trim(text);
+  if (!value || !isMostlyUppercase(value)) return value;
+  const lower = value.toLocaleLowerCase('es-CO');
+  return lower.charAt(0).toLocaleUpperCase('es-CO') + lower.slice(1);
+}
+
+function normalizeHighlightTitle(text: string, fallback: string): string {
+  const value = trim(text) || trim(fallback);
+  return value ? value.toLocaleUpperCase('es-CO') : '';
+}
+
+function normalizeHighlightCopy(title: string, subtitle: string, menuLabel: string): { title: string; subtitle: string } {
+  return {
+    title: normalizeHighlightTitle(title, menuLabel),
+    subtitle: toSentenceCaseEs(subtitle),
+  };
 }
 
 function mapPillars(items: PortalPromoHeroPillar[]): PromoBannerPillar[] {
@@ -93,15 +125,27 @@ function derivedServicioHeroPillars(s: PortalFinstruvialServicioLanding): PromoB
 }
 
 /** Pilares del hero: primero campos ERP dedicados; si no, contenido editorial existente. */
-export function finstruvialServicioHeroPillars(s: PortalFinstruvialServicioLanding): PromoBannerPillar[] {
+export function finstruvialServicioHeroPillars(
+  s: PortalFinstruvialServicioLanding,
+  opts?: FinstruvialServicioHeroOpts,
+): PromoBannerPillar[] {
   if (hasExplicitPillars(s.pillars)) {
     return mapPillars(s.pillars);
+  }
+  if (opts?.autocompletar === false) {
+    return [];
   }
   return derivedServicioHeroPillars(s);
 }
 
-export function finstruvialServicioHeroPillarsLabel(s: PortalFinstruvialServicioLanding): string {
+export function finstruvialServicioHeroPillarsLabel(
+  s: PortalFinstruvialServicioLanding,
+  opts?: FinstruvialServicioHeroOpts,
+): string {
   if (hasExplicitPillars(s.pillars)) {
+    return trim(s.pillarsLabel) || 'Fortalezas';
+  }
+  if (opts?.autocompletar === false) {
     return trim(s.pillarsLabel) || 'Fortalezas';
   }
   if (s.pilaresEducativos?.length) return trim(s.pilaresSeccionTitulo) || 'Fortalezas';
@@ -109,6 +153,10 @@ export function finstruvialServicioHeroPillarsLabel(s: PortalFinstruvialServicio
   if (s.resultadoIconos?.length) return trim(s.resultadoTitulo) || 'Resultados';
   if (s.experienciaItems?.length) return trim(s.experienciaSeccionTitulo) || 'Experiencia';
   return 'Fortalezas';
+}
+
+function servicioHeroParrafos(s: PortalFinstruvialServicioLanding): string[] {
+  return (s.heroParrafos || []).map((p) => trim(p)).filter(Boolean);
 }
 
 function derivedServicioHeroHighlight(s: PortalFinstruvialServicioLanding): PromoBannerHighlight | null {
@@ -136,16 +184,42 @@ function derivedServicioHeroHighlight(s: PortalFinstruvialServicioLanding): Prom
   return null;
 }
 
-/** Tarjeta destacada bajo el lead (ERP o producto / metodología / mensaje clave). */
+/** Párrafos del hero que no van dentro de la tarjeta destacada. */
+export function finstruvialServicioHeroExtraParrafos(s: PortalFinstruvialServicioLanding): string[] {
+  const parrafos = servicioHeroParrafos(s);
+  if (!parrafos.length) return [];
+  if (trim(s.highlightTitle) || trim(s.highlightSubtitle)) return [];
+  return parrafos;
+}
+
+/** Tarjeta destacada bajo el lead (ERP, heroParrafos o producto / metodología / mensaje clave). */
 export function finstruvialServicioHeroHighlight(
   s: PortalFinstruvialServicioLanding,
+  opts?: FinstruvialServicioHeroOpts,
 ): PromoBannerHighlight | null {
-  if (trim(s.highlightTitle)) {
+  const explicitTitle = trim(s.highlightTitle);
+  const explicitSubtitle = trim(s.highlightSubtitle);
+  if (explicitTitle || explicitSubtitle) {
+    const copy = normalizeHighlightCopy(explicitTitle, explicitSubtitle, trim(s.menuLabel));
+    if (!copy.title || !copy.subtitle) return null;
     return {
       icon: trim(s.highlightIcon) || 'trophy',
-      title: trim(s.highlightTitle),
-      subtitle: trim(s.highlightSubtitle),
+      title: copy.title,
+      subtitle: copy.subtitle,
     };
+  }
+  const parrafos = servicioHeroParrafos(s);
+  if (parrafos.length) {
+    const copy = normalizeHighlightCopy('', parrafos.join(' '), trim(s.menuLabel));
+    if (!copy.subtitle) return null;
+    return {
+      icon: trim(s.highlightIcon) || 'shield-check',
+      title: copy.title,
+      subtitle: copy.subtitle,
+    };
+  }
+  if (opts?.autocompletar === false) {
+    return null;
   }
   return derivedServicioHeroHighlight(s);
 }
@@ -171,15 +245,25 @@ function derivedServicioHeroRibbon(s: PortalFinstruvialServicioLanding): PromoBa
 
 export function finstruvialServicioHeroRibbon(
   s: PortalFinstruvialServicioLanding,
+  opts?: FinstruvialServicioHeroOpts,
 ): PromoBannerRibbonItem[] {
   if (hasExplicitRibbon(s.ribbon)) {
     return mapRibbon(s.ribbon);
   }
+  if (opts?.autocompletar === false) {
+    return [];
+  }
   return derivedServicioHeroRibbon(s);
 }
 
-export function finstruvialServicioHeroRibbonLabel(s: PortalFinstruvialServicioLanding): string {
+export function finstruvialServicioHeroRibbonLabel(
+  s: PortalFinstruvialServicioLanding,
+  opts?: FinstruvialServicioHeroOpts,
+): string {
   if (hasExplicitRibbon(s.ribbon)) {
+    return trim(s.ribbonLabel) || 'Líneas de servicio';
+  }
+  if (opts?.autocompletar === false) {
     return trim(s.ribbonLabel) || 'Líneas de servicio';
   }
   if (s.rutaAprendizaje?.length) return trim(s.rutaAprendizajeTitulo) || 'Ruta de aprendizaje';
@@ -204,9 +288,15 @@ function derivedServicioHeroStats(s: PortalFinstruvialServicioLanding): string[]
   return [];
 }
 
-export function finstruvialServicioHeroStats(s: PortalFinstruvialServicioLanding): string[] {
+export function finstruvialServicioHeroStats(
+  s: PortalFinstruvialServicioLanding,
+  opts?: FinstruvialServicioHeroOpts,
+): string[] {
   const explicit = (s.stats || []).map((stat) => trim(stat)).filter(Boolean).slice(0, 4);
   if (explicit.length) return explicit;
+  if (opts?.autocompletar === false) {
+    return [];
+  }
   return derivedServicioHeroStats(s);
 }
 
@@ -264,11 +354,15 @@ export function finstruvialHubHeroRibbonLabel(hub: PortalFinstruvialServiciosHub
 }
 
 export function finstruvialHubHeroHighlight(hub: PortalFinstruvialServiciosHub): PromoBannerHighlight | null {
-  if (trim(hub.highlightTitle)) {
+  const explicitTitle = trim(hub.highlightTitle);
+  const explicitSubtitle = trim(hub.highlightSubtitle);
+  if (explicitTitle || explicitSubtitle) {
+    const copy = normalizeHighlightCopy(explicitTitle, explicitSubtitle, trim(hub.gridTitulo) || 'Portafolio');
+    if (!copy.title || !copy.subtitle) return null;
     return {
       icon: trim(hub.highlightIcon) || 'shield-check',
-      title: trim(hub.highlightTitle),
-      subtitle: trim(hub.highlightSubtitle),
+      title: copy.title,
+      subtitle: copy.subtitle,
     };
   }
   if (trim(hub.seoTextoTitulo)) {

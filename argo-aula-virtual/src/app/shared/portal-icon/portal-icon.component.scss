@@ -11,3 +11,15 @@
 :host ::ng-deep svg {
   display: block;
 }
+
+.av-portal-icon__emoji {
+  font-size: 1.35em;
+  line-height: 1;
+}
+
+.av-portal-icon__img {
+  width: 1.35em;
+  height: 1.35em;
+  object-fit: contain;
+  display: block;
+}

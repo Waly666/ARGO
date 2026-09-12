@@ -55,6 +55,7 @@
       </p>
       <argo-portal-promo-hero-fields-editor
         [hero]="fundacion.hero"
+        [iconografia]="iconografia"
         [showTitle]="false"
         [showLead]="false"
         [showPillars]="true"
@@ -151,7 +152,7 @@
       <h4 class="pfe-sub">Datos destacados</h4>
       @for (d of fundacion.quienes.destacados; track $index; let i = $index) {
         <div class="pfe-row">
-          <input class="psb-input pfe-icon" [(ngModel)]="d.icon" placeholder="Icono" />
+          <argo-portal-icon-picker class="pfe-icon-picker" [(ngModel)]="d.icon" [iconografia]="iconografia" placeholder="Icono" />
           <input class="psb-input" [(ngModel)]="d.label" placeholder="Etiqueta" />
           <input class="psb-input" [(ngModel)]="d.text" placeholder="Texto" />
           <button type="button" class="psb-icon-btn" (click)="removeDestacado(i)">×</button>
@@ -161,7 +162,7 @@
       <h4 class="pfe-sub">Bloques informativos</h4>
       @for (b of fundacion.quienes.bloques; track $index; let i = $index) {
         <div class="pfe-card">
-          <input class="psb-input pfe-icon" [(ngModel)]="b.icon" placeholder="Icono" />
+          <argo-portal-icon-picker class="pfe-icon-picker" [(ngModel)]="b.icon" [iconografia]="iconografia" placeholder="Icono" />
           <input class="psb-input" [(ngModel)]="b.titulo" placeholder="Título" />
           <textarea class="psb-input" rows="2" [(ngModel)]="b.texto" placeholder="Texto"></textarea>
           <button type="button" class="psb-link" (click)="removeBloque(i)">Eliminar bloque</button>
@@ -215,7 +216,7 @@
       </label>
       @for (s of fundacion.lineas.items; track $index; let i = $index) {
         <div class="pfe-card">
-          <input class="psb-input pfe-icon" [(ngModel)]="s.icon" />
+          <argo-portal-icon-picker class="pfe-icon-picker" [(ngModel)]="s.icon" [iconografia]="iconografia" />
           <input class="psb-input" [(ngModel)]="s.title" placeholder="Título" />
           <textarea class="psb-input" rows="2" [(ngModel)]="s.text" placeholder="Descripción"></textarea>
           <button type="button" class="psb-link" (click)="removeLinea(i)">Eliminar</button>

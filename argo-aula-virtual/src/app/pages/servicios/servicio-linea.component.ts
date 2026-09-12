@@ -11,6 +11,7 @@ import {
 } from '../../core/constants/finstruvial-servicios.constants';
 import { finstruvialPortafolioActivo } from '../../core/constants/finstruvial-servicios-defaults';
 import {
+  finstruvialServicioHeroExtraParrafos,
   finstruvialServicioHeroHighlight,
   finstruvialServicioHeroPillars,
   finstruvialServicioHeroPillarsLabel,
@@ -28,6 +29,7 @@ import {
   finstruvialServiciosHubRoute,
 } from '../../core/portal-page-route.util';
 import { mergePortalLanding } from '../../core/portal-landing';
+import { portafolioServiciosEsServial } from '../../core/portafolio-servicios.util';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig, CursoVirtual } from '../../core/models';
 import { PortalEnlacesRelacionadosComponent } from '../../shared/portal-enlaces-relacionados/portal-enlaces-relacionados.component';
@@ -76,6 +78,11 @@ export class ServicioLineaComponent implements OnInit {
   slug = signal<ReturnType<typeof finstruvialServicioSlugFromRouteSegment>>(null);
 
   landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
+
+  esServial = computed(() => portafolioServiciosEsServial(this.config()?.site?.tema));
+
+  heroOpts = computed(() => ({ autocompletar: !this.esServial() }));
+
   servicio = computed(() => {
     const s = this.slug();
     if (!s) return null;
@@ -92,17 +99,22 @@ export class ServicioLineaComponent implements OnInit {
 
   heroPillars = computed(() => {
     const s = this.servicio();
-    return s ? finstruvialServicioHeroPillars(s) : [];
+    return s ? finstruvialServicioHeroPillars(s, this.heroOpts()) : [];
   });
 
   heroPillarsLabel = computed(() => {
     const s = this.servicio();
-    return s ? finstruvialServicioHeroPillarsLabel(s) : 'Fortalezas';
+    return s ? finstruvialServicioHeroPillarsLabel(s, this.heroOpts()) : 'Fortalezas';
   });
 
   heroHighlight = computed(() => {
     const s = this.servicio();
-    return s ? finstruvialServicioHeroHighlight(s) : null;
+    return s ? finstruvialServicioHeroHighlight(s, this.heroOpts()) : null;
+  });
+
+  heroExtraParrafos = computed(() => {
+    const s = this.servicio();
+    return s ? finstruvialServicioHeroExtraParrafos(s) : [];
   });
 
   heroHighlightRadar = computed(() => {
@@ -113,17 +125,17 @@ export class ServicioLineaComponent implements OnInit {
 
   heroRibbon = computed(() => {
     const s = this.servicio();
-    return s ? finstruvialServicioHeroRibbon(s) : [];
+    return s ? finstruvialServicioHeroRibbon(s, this.heroOpts()) : [];
   });
 
   heroRibbonLabel = computed(() => {
     const s = this.servicio();
-    return s ? finstruvialServicioHeroRibbonLabel(s) : 'Líneas de servicio';
+    return s ? finstruvialServicioHeroRibbonLabel(s, this.heroOpts()) : 'Líneas de servicio';
   });
 
   heroStats = computed(() => {
     const s = this.servicio();
-    return s ? finstruvialServicioHeroStats(s) : [];
+    return s ? finstruvialServicioHeroStats(s, this.heroOpts()) : [];
   });
 
   /** Imagen de presentación (solo `seccion`; independiente del banner hero). */

@@ -313,6 +313,29 @@ function resolveEstilo(
 
 const HERO_PARRAFO_MAX_CHARS = 200;
 
+function syncHeroHighlightFromParrafos(
+  highlightTitle: string,
+  highlightSubtitle: string,
+  heroParrafos: string[],
+  menuLabel: string,
+): { highlightTitle: string; highlightSubtitle: string; heroParrafos: string[] } {
+  let title = highlightTitle.trim();
+  let subtitle = highlightSubtitle.trim();
+  const parrafos = heroParrafos.map((p) => String(p || '').trim()).filter(Boolean);
+  if (!subtitle && parrafos.length) {
+    subtitle = parrafos.join('\n\n');
+    parrafos.length = 0;
+  }
+  if (subtitle && !title) {
+    title = menuLabel.trim() || 'Destacado';
+  }
+  return {
+    highlightTitle: title,
+    highlightSubtitle: subtitle,
+    heroParrafos: parrafos.length ? parrafos : [],
+  };
+}
+
 function mergeHeroParrafos(
   slug: FinstruvialServicioSlug,
   raw: string[] | undefined,
@@ -583,6 +606,12 @@ export function mergeFinstruvialServicioLanding(
     src.productoMedios,
     legacyProductoMedios(src, d, slug, imagenes, wireframe),
   );
+  const heroHighlight = syncHeroHighlightFromParrafos(
+    str(src.highlightTitle, d.highlightTitle),
+    str(src.highlightSubtitle, d.highlightSubtitle),
+    mergeHeroParrafos(slug, src.heroParrafos, d.heroParrafos, wireframe),
+    str(src.menuLabel, d.menuLabel),
+  );
   return {
     slug,
     activa: src.activa !== false && d.activa !== false,
@@ -593,15 +622,15 @@ export function mergeFinstruvialServicioLanding(
     tituloLinea: str(src.tituloLinea, d.tituloLinea),
     tituloAcento: str(src.tituloAcento, d.tituloAcento),
     lead: str(src.lead, d.lead),
-    heroParrafos: mergeHeroParrafos(slug, src.heroParrafos, d.heroParrafos, wireframe),
+    heroParrafos: heroHighlight.heroParrafos,
     theme: (src.theme as PortalFinstruvialServicioLanding['theme']) || d.theme,
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
     pillarsLabel: str(src.pillarsLabel, d.pillarsLabel),
     pillars: mergePromoHeroPillars(src.pillars, d.pillars),
     stats: mergePromoHeroStats(src.stats, d.stats),
     highlightIcon: str(src.highlightIcon, d.highlightIcon),
-    highlightTitle: str(src.highlightTitle, d.highlightTitle),
-    highlightSubtitle: str(src.highlightSubtitle, d.highlightSubtitle),
+    highlightTitle: heroHighlight.highlightTitle,
+    highlightSubtitle: heroHighlight.highlightSubtitle,
     heroHighlightRadar: mergeOptionalBoolean(src.heroHighlightRadar, d.heroHighlightRadar !== false),
     ribbonLabel: str(src.ribbonLabel, d.ribbonLabel),
     ribbon: mergePromoHeroRibbon(src.ribbon, d.ribbon),

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, ElementRef, inject, OnInit, AfterViewInit, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, OnInit, AfterViewInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -27,6 +27,7 @@ import {
 import { finstruvialPortafolioActivo, finstruvialServiciosActivos } from '../../core/constants/finstruvial-servicios-defaults';
 import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalIconografiaService } from '../../shared/portal-icon/portal-iconografia.service';
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
 
 import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
@@ -87,6 +88,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private host = inject(ElementRef<HTMLElement>);
   private menuToggle = viewChild<ElementRef<HTMLButtonElement>>('menuToggle');
   private portalTheme = inject(PortalThemeService);
+  private iconografiaSvc = inject(PortalIconografiaService);
   auth = inject(PortalAuthService);
 
   config = this.portalConfig.config;
@@ -107,6 +109,12 @@ export class ShellComponent implements OnInit, AfterViewInit {
   logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
   landing = computed(() => mergePortalLanding(this.config()?.landing, this.config()?.site?.tema));
+
+  constructor() {
+    effect(() => {
+      this.iconografiaSvc.setConfig(this.landing().iconografia);
+    });
+  }
 
   footerServicios = computed(() => this.landing().footerServicios);
 

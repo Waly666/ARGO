@@ -10,7 +10,9 @@ import { PortalTrabajoEnAlturasLanding } from '../../core/constants/trabajo-en-a
 import { PortalPaginaKey, PortalSiteConfig } from '../../core/constants/portal-site-defaults';
 import { homeCursoCtaUrl, portalPageRoute } from '../../core/utils/portal-page-route.util';
 import { PORTAL_EDITOR_ACENTOS, removeAt } from './portal-landing-editor-helpers';
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
 type HomeItemLike = {
   numero: number;
@@ -23,12 +25,13 @@ type HomeItemLike = {
 @Component({
   selector: 'argo-portal-home-curso-section-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalFieldLabelComponent],
+  imports: [CommonModule, FormsModule, PortalFieldLabelComponent, PortalIconPickerComponent],
   templateUrl: './portal-home-curso-section-editor.component.html',
   styleUrl: './portal-home-curso-section-editor.component.scss',
 })
 export class PortalHomeCursoSectionEditorComponent {
   @Input({ required: true }) paginaKey!: PortalPaginaKey;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Input() site?: PortalSiteConfig | null;
   @Input() examenTeorico?: PortalExamenTeoricoLanding;
   @Input() mercanciasPeligrosas?: PortalMercanciasPeligrosasLanding;

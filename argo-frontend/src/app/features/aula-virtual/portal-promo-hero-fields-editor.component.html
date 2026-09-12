@@ -60,21 +60,38 @@
   }
 
   @if (showHighlight) {
-    <h4 class="pphe__subtitle">Destacado del banner</h4>
-    <div class="psb-grid3">
+    <h4 class="pphe__subtitle">Tarjeta destacada</h4>
+    <p class="psb-hint">
+      Incluya icono, título y texto. El <strong>título destacado</strong> se muestra en mayúsculas; el
+      <strong>texto de la tarjeta</strong> va en minúsculas (solo la primera letra en mayúscula).
+    </p>
+    <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
         <span>Icono</span>
-        <input type="text" class="psb-input" [(ngModel)]="hero.highlightIcon" placeholder="trophy" />
+        <argo-portal-icon-picker
+          [(ngModel)]="hero.highlightIcon"
+          [iconografia]="iconografia"
+          placeholder="shield-check"
+        />
       </label>
       <label class="psb-field psb-field--plain">
         <argo-portal-field-label tag="H3" label="Título destacado" />
-        <input type="text" class="psb-input" [(ngModel)]="hero.highlightTitle" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="p" label="Subtítulo destacado" />
-        <input type="text" class="psb-input" [(ngModel)]="hero.highlightSubtitle" />
+        <input type="text" class="psb-input" [(ngModel)]="hero.highlightTitle" placeholder="Ej. SABER, SABER HACER Y SER" />
       </label>
     </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Texto de la tarjeta" />
+      @if (highlightSubtitleRows > 1) {
+        <textarea
+          class="psb-input"
+          [rows]="highlightSubtitleRows"
+          [(ngModel)]="hero.highlightSubtitle"
+          placeholder="Frase descriptiva en minúsculas, con la primera letra en mayúscula."
+        ></textarea>
+      } @else {
+        <input type="text" class="psb-input" [(ngModel)]="hero.highlightSubtitle" placeholder="Texto de la tarjeta destacada" />
+      }
+    </label>
   }
 
   @if (showPillars && hero.pillars) {
@@ -87,7 +104,12 @@
     }
     @for (p of hero.pillars; track $index; let i = $index) {
       <div class="pphe__row">
-        <input type="text" class="psb-input" [(ngModel)]="hero.pillars[i].icon" placeholder="icono" />
+        <argo-portal-icon-picker
+          class="pphe__icon-picker"
+          [(ngModel)]="hero.pillars[i].icon"
+          [iconografia]="iconografia"
+          placeholder="icono"
+        />
         <input type="text" class="psb-input" [(ngModel)]="hero.pillars[i].label" placeholder="Texto" />
         <button type="button" class="psb-icon-btn" (click)="removePillar(i)">×</button>
       </div>
@@ -115,7 +137,12 @@
     </label>
     @for (item of hero.ribbon; track $index; let i = $index) {
       <div class="pphe__row">
-        <input type="text" class="psb-input" [(ngModel)]="hero.ribbon[i].icon" placeholder="icono" />
+        <argo-portal-icon-picker
+          class="pphe__icon-picker"
+          [(ngModel)]="hero.ribbon[i].icon"
+          [iconografia]="iconografia"
+          placeholder="icono"
+        />
         <input type="text" class="psb-input" [(ngModel)]="hero.ribbon[i].label" placeholder="Texto" />
         <button type="button" class="psb-icon-btn" (click)="removeRibbonItem(i)">×</button>
       </div>

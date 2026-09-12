@@ -1,0 +1,125 @@
+.pige {
+  display: grid;
+  gap: 1rem;
+}
+
+.pige__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.pige-form {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.65);
+  display: grid;
+  gap: 0.75rem;
+
+  &__title {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+}
+
+.pige-section {
+  display: grid;
+  gap: 0.65rem;
+
+  &__title {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+}
+
+.pige-list {
+  display: grid;
+  gap: 0.5rem;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(6, 16, 41, 0.55);
+
+    &--off {
+      opacity: 0.55;
+    }
+  }
+
+  &__copy {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.1rem;
+
+    strong {
+      font-size: 0.84rem;
+      color: var(--text);
+    }
+
+    span {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+  }
+}
+
+.pige-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.55rem;
+
+  &__item {
+    display: grid;
+    gap: 0.2rem;
+    justify-items: center;
+    text-align: center;
+    padding: 0.65rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(6, 16, 41, 0.55);
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.85);
+    }
+  }
+
+  &__glyph {
+    font-size: 1.5rem;
+  }
+
+  &__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  &__slug {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    word-break: break-all;
+  }
+
+  &__toggle {
+    margin-top: 0.15rem;
+    font-size: 0.68rem;
+  }
+}
+

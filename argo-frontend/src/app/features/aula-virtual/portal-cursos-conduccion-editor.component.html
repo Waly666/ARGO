@@ -35,6 +35,7 @@
     </p>
     <argo-portal-promo-hero-fields-editor
       [hero]="cursosConduccion.hero"
+      [iconografia]="iconografia"
       [showTitle]="false"
       [showLead]="false"
       [showHighlight]="true"
@@ -195,7 +196,7 @@
         <div class="psb-grid3">
           <label class="psb-field psb-field--plain">
             <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" maxlength="4" />
+            <argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="iconografia" />
           </label>
           <label class="psb-field psb-field--plain">
             <span>Código</span>
@@ -272,7 +273,7 @@
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
               <span>Icono</span>
-              <input type="text" class="psb-input" [(ngModel)]="b.icon" maxlength="4" />
+              <argo-portal-icon-picker [(ngModel)]="b.icon" [iconografia]="iconografia" />
             </label>
             <label class="psb-field psb-field--plain psb-field--span2">
               <span>Título</span>

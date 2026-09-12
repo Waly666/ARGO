@@ -11,6 +11,8 @@ import {
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
 import { addStringItem, removeAt } from './portal-landing-editor-helpers';
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
@@ -25,6 +27,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
   imports: [
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
@@ -37,6 +40,7 @@ export class PortalAcercaEditorComponent {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) acerca!: PortalAcercaLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Input() nombreEmpresa = '';
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();

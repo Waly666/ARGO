@@ -36,6 +36,7 @@
     <div class="pae-block">
       <argo-portal-promo-hero-fields-editor
         [hero]="acerca.hero"
+        [iconografia]="iconografia"
         [showPillars]="true"
         [showHighlight]="true"
         [showVirtualBadge]="true"
@@ -202,7 +203,7 @@
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
               <span>Icono</span>
-              <input type="text" class="psb-input" [(ngModel)]="v.icon" placeholder="star" />
+              <argo-portal-icon-picker [(ngModel)]="v.icon" [iconografia]="iconografia" placeholder="star" />
             </label>
             <label class="psb-field psb-field--plain">
               <span>Título</span>

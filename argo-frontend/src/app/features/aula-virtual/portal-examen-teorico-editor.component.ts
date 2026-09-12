@@ -12,7 +12,9 @@ import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/a
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
 @Component({
@@ -20,6 +22,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
   standalone: true,
   imports: [
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalPromoHeroImagenEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
@@ -32,6 +35,7 @@ export class PortalExamenTeoricoEditorComponent {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) examenTeorico!: PortalExamenTeoricoLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 

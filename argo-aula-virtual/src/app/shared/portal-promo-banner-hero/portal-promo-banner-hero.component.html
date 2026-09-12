@@ -58,6 +58,33 @@
         <p class="ppbh__lead">{{ lead() }}</p>
       }
 
+      <ng-content select="[ppbh-highlight]">
+        @if (highlight(); as h) {
+          @if (h.title.trim() || h.subtitle.trim()) {
+          <div class="ppbh__highlight" [class.ppbh__highlight--radar]="highlightRadar()">
+            @if (highlightRadar()) {
+              <div class="ppbh__highlight-radar" aria-hidden="true">
+                <span class="ppbh__highlight-ring"></span>
+                <span class="ppbh__highlight-ring"></span>
+                <span class="ppbh__highlight-ring"></span>
+              </div>
+            }
+            <div class="ppbh__highlight-icon" aria-hidden="true">
+              <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
+            </div>
+            <div class="ppbh__highlight-copy">
+              @if (h.title.trim()) {
+                <strong>{{ h.title }}</strong>
+              }
+              @if (h.subtitle.trim()) {
+                <span>{{ h.subtitle }}</span>
+              }
+            </div>
+          </div>
+          }
+        }
+      </ng-content>
+
       <ng-content select="[ppbh-extra]"></ng-content>
 
       @if (pillars().length) {
@@ -72,27 +99,6 @@
           }
         </ul>
       }
-
-      <ng-content select="[ppbh-highlight]">
-        @if (highlight(); as h) {
-          <div class="ppbh__highlight" [class.ppbh__highlight--radar]="highlightRadar()">
-            @if (highlightRadar()) {
-              <div class="ppbh__highlight-radar" aria-hidden="true">
-                <span class="ppbh__highlight-ring"></span>
-                <span class="ppbh__highlight-ring"></span>
-                <span class="ppbh__highlight-ring"></span>
-              </div>
-            }
-            <div class="ppbh__highlight-icon" aria-hidden="true">
-              <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
-            </div>
-            <div class="ppbh__highlight-copy">
-              <strong>{{ h.title }}</strong>
-              <span>{{ h.subtitle }}</span>
-            </div>
-          </div>
-        }
-      </ng-content>
 
       <ng-content select="[ppbh-actions]"></ng-content>
     </div>

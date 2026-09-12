@@ -22,7 +22,9 @@ import {
 
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
 @Component({
   selector: 'argo-portal-primeros-auxilios-editor',
@@ -31,6 +33,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
     PortalEditorFaqListComponent,
     PortalEditorStringListComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalSeoLegendComponent,
     CommonModule,
     FormsModule,
@@ -43,6 +46,7 @@ export class PortalPrimerosAuxiliosEditorComponent implements OnInit {
   private api = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) primerosAuxilios!: PortalPrimerosAuxiliosLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 

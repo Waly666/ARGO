@@ -96,6 +96,7 @@
         </p>
         <argo-portal-promo-hero-fields-editor
           [hero]="landing.hero"
+          [iconografia]="landing.iconografia"
           [showTitle]="false"
           [showLead]="false"
           [showHighlight]="true"
@@ -137,6 +138,7 @@
           </p>
           <argo-portal-promo-hero-fields-editor
             [hero]="landing.hero"
+            [iconografia]="landing.iconografia"
             [showTitle]="false"
             [showLead]="false"
             [showHighlight]="true"
@@ -199,7 +201,7 @@
         <div class="ple-card">
           <div class="ple-card-head"><strong>Tarjeta {{ i + 1 }}</strong></div>
           <div class="av-grid3">
-            <div class="av-field"><label>Icono</label><input [(ngModel)]="card.icon" /></div>
+            <div class="av-field"><label>Icono</label><argo-portal-icon-picker [(ngModel)]="card.icon" [iconografia]="landing.iconografia" /></div>
             <div class="av-field"><label>Título</label><input [(ngModel)]="card.title" /></div>
             <div class="av-field">
               <label>Contenido</label>
@@ -247,7 +249,7 @@
             <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeOferta(i)">Quitar</button>
           </div>
           <div class="av-grid3">
-            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" placeholder="💻" /></div>
+            <div class="av-field"><label>Icono</label><argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="landing.iconografia" placeholder="💻" /></div>
             <div class="av-field av-field--span2"><argo-portal-field-label tag="H3" label="Título tarjeta" /><input [(ngModel)]="item.title" /></div>
           </div>
           <div class="av-field"><argo-portal-field-label tag="p" label="Descripción" /><textarea rows="2" [(ngModel)]="item.text"></textarea></div>
@@ -268,7 +270,7 @@
         <div class="ple-card">
           <div class="ple-card-head"><strong>Beneficio {{ i + 1 }}</strong><button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeBeneficio(i)">Quitar</button></div>
           <div class="av-grid3">
-            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" /></div>
+            <div class="av-field"><label>Icono</label><argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="landing.iconografia" /></div>
             <div class="av-field av-field--span2"><argo-portal-field-label tag="H3" label="Título" /><input [(ngModel)]="item.title" /></div>
           </div>
           <div class="av-field"><argo-portal-field-label tag="p" label="Texto" /><textarea rows="2" [(ngModel)]="item.text"></textarea></div>
@@ -292,7 +294,7 @@
             <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeLicencia(i)">Quitar</button>
           </div>
           <div class="av-grid3">
-            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" maxlength="4" /></div>
+            <div class="av-field"><label>Icono</label><argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="landing.iconografia" /></div>
             <div class="av-field"><label>Código</label><input [(ngModel)]="item.codigo" placeholder="A2" /></div>
             <div class="av-field"><argo-portal-field-label tag="H3" label="Título tarjeta" /><input [(ngModel)]="item.titulo" placeholder="Categoría A2" /></div>
           </div>
@@ -334,7 +336,7 @@
             <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeServicio(i)">Quitar</button>
           </div>
           <div class="av-grid2">
-            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" placeholder="📋" /></div>
+            <div class="av-field"><label>Icono</label><argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="landing.iconografia" placeholder="📋" /></div>
             <div class="av-field"><argo-portal-field-label tag="H3" label="Nombre" /><input [(ngModel)]="item.title" placeholder="Nombre del servicio" /></div>
           </div>
           <div class="av-field">
@@ -441,6 +443,7 @@
   @if (bloque() === 'appMobile') {
     <argo-portal-app-mobile-editor
       [appMobile]="landing.appMobile"
+      [iconografia]="landing.iconografia"
       [portalUrl]="portalUrl"
       (portalConfigUpdated)="portalConfigUpdated.emit($event)"
       (avNotice)="avNotice.emit($event)"
@@ -542,6 +545,7 @@
       <argo-portal-home-curso-section-editor
         [paginaKey]="paginaKey"
         [site]="portalForm?.site"
+        [iconografia]="landing.iconografia"
         [examenTeorico]="landing.examenTeorico"
         [mercanciasPeligrosas]="landing.mercanciasPeligrosas"
         [trabajoEnAlturas]="landing.trabajoEnAlturas"

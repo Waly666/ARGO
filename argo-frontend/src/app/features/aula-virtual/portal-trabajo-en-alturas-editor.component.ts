@@ -28,6 +28,8 @@ import {
 } from './portal-landing-editor-helpers';
 import { PortalEditorFaqListComponent } from './portal-editor-faq-list.component';
 import { PortalEditorStringListComponent } from './portal-editor-string-list.component';
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
@@ -41,6 +43,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
     PortalEditorFaqListComponent,
     PortalEditorStringListComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
@@ -53,6 +56,7 @@ export class PortalTrabajoEnAlturasEditorComponent {
   private api = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) trabajoEnAlturas!: PortalTrabajoEnAlturasLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 

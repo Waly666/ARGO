@@ -10,6 +10,8 @@ import {
 } from '../../core/constants/fundacion-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt.component';
 
@@ -22,6 +24,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
   imports: [
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
@@ -34,6 +37,7 @@ export class PortalFundacionEditorComponent implements OnInit {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) fundacion!: PortalFundacionLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Input() nombreEmpresa = '';
   @Input() portalUrl = 'http://localhost:4202/';
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();

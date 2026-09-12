@@ -39,6 +39,11 @@ import type { PortalTemaLike } from './portal-theme-css.util';
 import { SERVIAL_LANDING_DEFAULTS } from './constants/servial-landing-defaults';
 import { mergePromoHeroPillars, type PortalPromoHeroTheme } from './constants/portal-promo-hero-fields.util';
 import {
+  PORTAL_ICONOGRAFIA_DEFAULTS,
+  type PortalIconografiaConfig,
+} from './constants/portal-icon-catalog.types';
+import { mergePortalIconografia } from './utils/portal-icon-catalog.util';
+import {
   buildServialLandingDefaults,
   type ServialPlantillaInicioSnapshot,
 } from './servial-plantilla-inicio.util';
@@ -371,6 +376,7 @@ export interface PortalLandingConfig {
   evaluacionJornadas: PortalEvaluacionJornadasLanding;
   finstruvialServicios: PortalFinstruvialServiciosConfig;
   asistente: PortalAsistenteConfig;
+  iconografia: PortalIconografiaConfig;
   /** Snapshot de textos del inicio Servial (plantilla personalizada del cliente). */
   servialPlantillaBase?: ServialPlantillaInicioSnapshot | null;
 }
@@ -613,6 +619,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: defaultAsistentePaginas(),
   },
+  iconografia: { ...PORTAL_ICONOGRAFIA_DEFAULTS, custom: [] },
 };
 
 function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): PortalFundacionLanding {
@@ -860,5 +867,6 @@ export function mergePortalLanding(
       raw.asistente,
       raw.consultaCertificados as LegacyConsultaAsistente | undefined,
     ),
+    iconografia: mergePortalIconografia(raw.iconografia),
   };
 }

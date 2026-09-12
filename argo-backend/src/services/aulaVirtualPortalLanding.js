@@ -15,6 +15,7 @@ const { mergeManejoDefensivoLanding } = require('../constants/aulaVirtualManejoD
 const { mergePrimerosAuxiliosLanding } = require('../constants/aulaVirtualPrimerosAuxiliosDefaults');
 const { mergeAcercaLanding } = require('../constants/aulaVirtualAcercaDefaults');
 const { mergePromoHeroPillars, mergePromoHeroTheme } = require('../constants/portalPromoHeroFields');
+const { mergePortalIconografia } = require('../constants/portalIconCatalog');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('../constants/aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS, MAX_FOTOS_INICIO } = require('../constants/aulaVirtualHomeFotosDefaults');
@@ -582,6 +583,7 @@ function normalizarLanding(input, tema) {
     evaluacionJornadas: mergeEvaluacionJornadasLanding(evaluacionJornadasSrc),
     finstruvialServicios: normalizarFinstruvialServicios(src.finstruvialServicios, tema),
     asistente: normalizarAsistente(src.asistente, consultaCertSrc),
+    iconografia: mergePortalIconografia(src.iconografia),
     servialPlantillaBase:
       src.servialPlantillaBase && typeof src.servialPlantillaBase === 'object'
         ? src.servialPlantillaBase

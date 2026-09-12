@@ -11,6 +11,11 @@ import {
   type LegacyConsultaAsistente,
 } from '../utils/portal-asistente.util';
 import {
+  PORTAL_ICONOGRAFIA_DEFAULTS,
+  type PortalIconografiaConfig,
+} from './portal-icon-catalog.types';
+import { mergePortalIconografia } from '../utils/portal-icon-catalog.util';
+import {
   CURSOS_CONDUCCION_LANDING_DEFAULTS,
   mergeCursosConduccionLanding,
   PortalCursosConduccionLanding,
@@ -397,6 +402,7 @@ export interface PortalLandingConfig {
   jornadasCapacitacion: PortalJornadasCapacitacionLanding;
   evaluacionJornadas: PortalEvaluacionJornadasLanding;
   asistente: PortalAsistenteConfig;
+  iconografia: PortalIconografiaConfig;
   servialPlantillaBase?: import('../utils/servial-plantilla-inicio.util').ServialPlantillaInicioSnapshot | null;
 }
 
@@ -937,6 +943,7 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: defaultAsistentePaginas(),
   },
+  iconografia: { ...PORTAL_ICONOGRAFIA_DEFAULTS, custom: [] },
 };
 
 function mergeServiciosItems(
@@ -1125,5 +1132,6 @@ export function mergePortalLanding(
       raw.asistente,
       raw.consultaCertificados as LegacyConsultaAsistente | undefined,
     ),
+    iconografia: mergePortalIconografia(raw.iconografia),
   };
 }

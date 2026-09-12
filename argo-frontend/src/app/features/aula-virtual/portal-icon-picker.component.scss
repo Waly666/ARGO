@@ -1,0 +1,140 @@
+.pipk {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+
+  &--disabled {
+    opacity: 0.65;
+  }
+
+  &__field {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  &__input--readonly {
+    cursor: default;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+}
+
+.pipk-gallery {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.72);
+  }
+
+  &__panel {
+    position: relative;
+    width: min(920px, 100%);
+    max-height: min(82vh, 760px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #0f172a 0%, #0b1224 100%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    color: var(--text);
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  &__filters {
+    display: grid;
+    grid-template-columns: 1fr minmax(180px, 240px);
+    gap: 0.65rem;
+  }
+
+  &__grid {
+    overflow: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 0.55rem;
+    padding-right: 0.15rem;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.65rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(6, 16, 41, 0.55);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    &--active {
+      border-color: rgba(78, 163, 255, 0.65);
+      background: rgba(37, 99, 235, 0.12);
+      box-shadow: 0 0 0 2px rgba(78, 163, 255, 0.15);
+    }
+  }
+
+  &__glyph {
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+  }
+
+  &__slug {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    word-break: break-all;
+  }
+
+  &__empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .pipk-gallery__filters {
+    grid-template-columns: 1fr;
+  }
+}
+

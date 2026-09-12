@@ -11,7 +11,9 @@ import {
   addStringItem,
   removeAt,
 } from './portal-landing-editor-helpers';
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
 export interface PortalPromoHeroEditorModel {
   kicker?: string;
@@ -41,6 +43,7 @@ export interface PortalPromoHeroEditorModel {
   standalone: true,
   imports: [
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     CommonModule,
     FormsModule,
   ],
@@ -49,11 +52,13 @@ export interface PortalPromoHeroEditorModel {
 })
 export class PortalPromoHeroFieldsEditorComponent {
   @Input({ required: true }) hero!: PortalPromoHeroEditorModel;
+  @Input() iconografia: Partial<PortalIconografiaConfig> | null = null;
   @Input() showTitle = true;
   @Input() showLead = true;
   @Input() showPillars = false;
   @Input() showPillarsLabel = true;
   @Input() showHighlight = false;
+  @Input() highlightSubtitleRows = 1;
   @Input() showVirtualBadge = false;
   @Input() showBackLabel = false;
   @Input() showTheme = false;

@@ -18,6 +18,8 @@ import { PortalEditorImagenPromptComponent } from './portal-editor-imagen-prompt
 
 import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 
 @Component({
@@ -27,6 +29,7 @@ import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields
     PortalEditorEnlacesRelacionadosComponent,
     PortalEditorImagenPromptComponent,
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalSeoLegendComponent,
     CommonModule,
@@ -39,6 +42,7 @@ export class PortalCursosConduccionEditorComponent implements OnInit {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) cursosConduccion!: PortalCursosConduccionLanding;
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 

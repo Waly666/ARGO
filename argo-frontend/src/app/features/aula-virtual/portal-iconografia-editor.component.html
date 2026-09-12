@@ -1,0 +1,112 @@
+<section class="pige">
+  <p class="psb-hint">
+    Administre los iconos disponibles en todo el editor del sitio. Los iconos del sistema son de solo lectura;
+    puede ocultarlos del selector. Cree iconos personalizados (emoji, alias o imagen por URL).
+  </p>
+
+  <div class="pige__toolbar">
+    <input
+      type="search"
+      class="psb-input"
+      placeholder="Buscar icono del sistema…"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+    <button type="button" class="psb-btn psb-btn--primary" (click)="openCreate()">+ Icono personalizado</button>
+  </div>
+
+  @if (showForm()) {
+    <div class="pige-form">
+      <h3 class="pige-form__title">Nuevo icono personalizado</h3>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Nombre visible</span>
+          <input type="text" class="psb-input" [(ngModel)]="draft.label" placeholder="Ej. Logo Servial" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Slug (identificador)</span>
+          <input type="text" class="psb-input" [(ngModel)]="draft.slug" placeholder="logo-servial" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Categoría</span>
+          <select class="psb-input" [(ngModel)]="draft.category">
+            @for (c of categories; track c.id) {
+              <option [ngValue]="c.id">{{ c.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Tipo</span>
+          <select class="psb-input" [(ngModel)]="draft.kind">
+            <option ngValue="emoji">Emoji</option>
+            <option ngValue="alias">Alias a icono del sistema</option>
+            <option ngValue="image">Imagen (URL)</option>
+          </select>
+        </label>
+      </div>
+      @if (draft.kind === 'emoji') {
+        <label class="psb-field psb-field--plain">
+          <span>Emoji</span>
+          <input type="text" class="psb-input" [(ngModel)]="draft.value" maxlength="4" placeholder="🎓" />
+        </label>
+      } @else if (draft.kind === 'alias') {
+        <label class="psb-field psb-field--plain">
+          <span>Icono del sistema destino</span>
+          <select class="psb-input" [(ngModel)]="draft.aliasTarget">
+            @for (b of builtinIcons; track b.slug) {
+              <option [ngValue]="b.slug">{{ b.label }} ({{ b.slug }})</option>
+            }
+          </select>
+        </label>
+      } @else {
+        <label class="psb-field psb-field--plain">
+          <span>URL de la imagen</span>
+          <input type="text" class="psb-input" [(ngModel)]="draft.value" placeholder="/uploads/... o https://..." />
+        </label>
+      }
+      <div class="pige-form__actions">
+        <button type="button" class="psb-btn psb-btn--primary" (click)="saveCustom()">Guardar icono</button>
+        <button type="button" class="psb-link" (click)="cancelCreate()">Cancelar</button>
+      </div>
+    </div>
+  }
+
+  @if (iconografia.custom?.length) {
+    <div class="pige-section">
+      <h3 class="pige-section__title">Iconos personalizados</h3>
+      <div class="pige-list">
+        @for (item of iconografia.custom; track item.id; let i = $index) {
+          <div class="pige-list__row" [class.pige-list__row--off]="item.activo === false">
+            <argo-portal-icon-preview [slug]="item.slug" [iconografia]="iconografia" />
+            <div class="pige-list__copy">
+              <strong>{{ item.label }}</strong>
+              <span>{{ item.slug }} · {{ item.kind }}</span>
+            </div>
+            <label class="psb-check">
+              <input type="checkbox" [ngModel]="item.activo !== false" (ngModelChange)="setCustomActive(i, $event)" />
+              Activo
+            </label>
+            <button type="button" class="psb-icon-btn" (click)="removeCustom(i)" aria-label="Eliminar">×</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="pige-section">
+    <h3 class="pige-section__title">Iconos del sistema</h3>
+    <div class="pige-grid">
+      @for (item of filteredBuiltin(); track item.id) {
+        <div class="pige-grid__item">
+          <span class="pige-grid__glyph" aria-hidden="true">{{ previewGlyph(item) }}</span>
+          <span class="pige-grid__label">{{ item.label }}</span>
+          <code class="pige-grid__slug">{{ item.slug }}</code>
+          <label class="psb-check pige-grid__toggle">
+            <input type="checkbox" [checked]="!isHidden(item.slug)" (change)="toggleBuiltin(item.slug)" />
+            Visible
+          </label>
+        </div>
+      }
+    </div>
+  </div>
+</section>

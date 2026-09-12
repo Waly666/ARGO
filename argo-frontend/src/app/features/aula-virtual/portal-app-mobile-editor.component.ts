@@ -7,13 +7,16 @@ import { PortalLandingConfig } from '../../core/constants/portal-landing-default
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
 
+import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
+import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
 @Component({
   selector: 'argo-portal-app-mobile-editor',
   standalone: true,
   imports: [
     PortalFieldLabelComponent,
+    PortalIconPickerComponent,
     CommonModule,
     FormsModule,
   ],
@@ -24,6 +27,7 @@ export class PortalAppMobileEditorComponent {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) appMobile!: PortalLandingConfig['appMobile'];
+  @Input() iconografia: PortalIconografiaConfig | null = null;
   @Input() portalUrl = '';
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();

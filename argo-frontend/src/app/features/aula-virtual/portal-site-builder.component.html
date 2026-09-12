@@ -70,6 +70,7 @@
           [serviciosHubRoute]="finstruvialServiciosHubRoute(site)"
           [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+          [iconografia]="landing.iconografia"
           (lineSlugChange)="onFinstruvialLineSlugChange($event)"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
@@ -421,6 +422,7 @@
       @case ('appMobile') {
         <argo-portal-app-mobile-editor
           [appMobile]="landing.appMobile"
+          [iconografia]="landing.iconografia"
           [portalUrl]="portalUrl"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
@@ -460,6 +462,7 @@
         </p>
         <argo-portal-acerca-editor
           [acerca]="acerca"
+          [iconografia]="landing.iconografia"
           [nombreEmpresa]="portalForm.nombreEmpresa || ''"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
@@ -473,6 +476,7 @@
         </p>
         <argo-portal-fundacion-editor
           [fundacion]="landing.fundacion"
+          [iconografia]="landing.iconografia"
           [nombreEmpresa]="portalForm.nombreEmpresa || ''"
           [portalUrl]="portalUrl"
           (portalConfigUpdated)="applyPortalConfig($event)"
@@ -487,6 +491,7 @@
         </p>
         <argo-portal-cursos-conduccion-editor
           [cursosConduccion]="landing.cursosConduccion"
+          [iconografia]="landing.iconografia"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -499,6 +504,7 @@
         </p>
         <argo-portal-examen-teorico-editor
           [examenTeorico]="ensureExamenTeoricoLanding()"
+          [iconografia]="landing.iconografia"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -511,6 +517,7 @@
         </p>
         <argo-portal-mercancias-peligrosas-editor
           [mercanciasPeligrosas]="ensureMercanciasPeligrosasLanding()"
+          [iconografia]="landing.iconografia"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -523,6 +530,7 @@
         </p>
         <argo-portal-trabajo-en-alturas-editor
           [trabajoEnAlturas]="ensureTrabajoEnAlturasLanding()"
+          [iconografia]="landing.iconografia"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -542,6 +550,7 @@
         </p>
         <argo-portal-manejo-defensivo-editor
           [manejoDefensivo]="ensureManejoDefensivoLanding()"
+          [iconografia]="landing.iconografia"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -561,6 +570,7 @@
         </p>
         <argo-portal-primeros-auxilios-editor
           [primerosAuxilios]="ensurePrimerosAuxiliosLanding()"
+          [iconografia]="landing.iconografia"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -573,10 +583,15 @@
           [serviciosHubRoute]="finstruvialServiciosHubRoute(site)"
           [portalTema]="portalForm.site?.tema"
           [finstruvialServicios]="ensureFinstruvialServiciosLanding()"
+          [iconografia]="landing.iconografia"
           (lineSlugChange)="onFinstruvialLineSlugChange($event)"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
+      }
+
+      @case ('iconografia') {
+        <argo-portal-iconografia-editor [iconografia]="landing.iconografia" />
       }
 
       @case ('blog') {
@@ -797,6 +812,7 @@
           />
           <argo-portal-promo-hero-fields-editor
             [hero]="consultaCertificados"
+            [iconografia]="landing.iconografia"
             [showTheme]="true"
           />
 
@@ -839,7 +855,11 @@
             (portalConfigUpdated)="applyPortalConfig($event)"
             (avNotice)="avNotice.emit($event)"
           />
-          <argo-portal-promo-hero-fields-editor [hero]="pqr.hero" [showTheme]="true" />
+          <argo-portal-promo-hero-fields-editor
+            [hero]="pqr.hero"
+            [iconografia]="landing.iconografia"
+            [showTheme]="true"
+          />
         </div>
       }
 
@@ -856,6 +876,7 @@
           />
           <argo-portal-promo-hero-fields-editor
             [hero]="jornadasCapacitacion.hero"
+            [iconografia]="landing.iconografia"
             [showPillars]="true"
             [showCtas]="true"
             [showTheme]="true"
@@ -876,6 +897,7 @@
           />
           <argo-portal-promo-hero-fields-editor
             [hero]="evaluacionJornadas.hero"
+            [iconografia]="landing.iconografia"
             [showTheme]="true"
           />
         </div>

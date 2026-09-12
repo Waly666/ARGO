@@ -121,6 +121,7 @@ const PORTAL_ICON_ALIASES: Record<string, keyof typeof PORTAL_ICON_SET> = {
   phone: 'heroPhoneSolid',
   'map-pin': 'heroMapPinSolid',
   computer: 'heroComputerDesktopSolid',
+  'computer-desktop': 'heroComputerDesktopSolid',
   'chart-bar': 'heroChartBarSolid',
   'check-badge': 'heroCheckBadgeSolid',
   'device-mobile': 'heroDevicePhoneMobileSolid',
