@@ -108,6 +108,11 @@ export function mergePromoHeroStats(raw: string[] | undefined, defaults: string[
   return raw.map((s, i) => str(s, defaults[i] || ''));
 }
 
+/** Booleano opcional del ERP: si el usuario lo tocó, prevalece su valor. */
+export function mergeOptionalBoolean(src: unknown, defaultOn: boolean): boolean {
+  return typeof src === 'boolean' ? src : defaultOn;
+}
+
 export function mergePromoHeroRibbon(
   raw: PortalPromoHeroRibbonItem[] | undefined,
   defaults: PortalPromoHeroRibbonItem[],

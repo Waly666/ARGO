@@ -16,6 +16,7 @@ import {
 import { mergeEnlacesRelacionados } from '../portal-enlace-relacionado.util';
 import { FINSTRUVIAL_SERVICIOS_WIREFRAME } from './finstruvial-servicios-wireframe';
 import {
+  mergeOptionalBoolean,
   mergePromoHeroPillars,
   mergePromoHeroRibbon,
   mergePromoHeroStats,
@@ -621,7 +622,7 @@ export function mergeFinstruvialServicioLanding(
     highlightIcon: str(src.highlightIcon, d.highlightIcon),
     highlightTitle: str(src.highlightTitle, d.highlightTitle),
     highlightSubtitle: str(src.highlightSubtitle, d.highlightSubtitle),
-    heroHighlightRadar: src.heroHighlightRadar !== false && d.heroHighlightRadar !== false,
+    heroHighlightRadar: mergeOptionalBoolean(src.heroHighlightRadar, d.heroHighlightRadar !== false),
     ribbonLabel: str(src.ribbonLabel, d.ribbonLabel),
     ribbon: mergePromoHeroRibbon(src.ribbon, d.ribbon),
     heroImagenUrl: str(src.heroImagenUrl, d.heroImagenUrl),
@@ -772,7 +773,7 @@ export function mergeFinstruvialServicios(
       highlightIcon: str(src.hub?.highlightIcon, d.hub.highlightIcon),
       highlightTitle: str(src.hub?.highlightTitle, d.hub.highlightTitle),
       highlightSubtitle: str(src.hub?.highlightSubtitle, d.hub.highlightSubtitle),
-      heroHighlightRadar: src.hub?.heroHighlightRadar !== false && d.hub.heroHighlightRadar !== false,
+      heroHighlightRadar: mergeOptionalBoolean(src.hub?.heroHighlightRadar, d.hub.heroHighlightRadar !== false),
       ribbonLabel: str(src.hub?.ribbonLabel, d.hub.ribbonLabel),
       ribbon: mergePromoHeroRibbon(src.hub?.ribbon, d.hub.ribbon),
       formacionImagenUrl: str(src.hub?.formacionImagenUrl, d.hub.formacionImagenUrl),

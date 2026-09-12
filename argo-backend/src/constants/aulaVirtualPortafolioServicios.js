@@ -127,8 +127,7 @@ function portafolioServiciosDefaultsForTema(tema) {
 function mergePortafolioServicios(raw, tema) {
   const base = portafolioServiciosDefaultsForTema(tema);
   const paginasDefaults = base.paginas || {};
-  const src = portafolioServiciosEsServial(tema) ? servialPortafolioMediaOnly(raw) : raw;
-  return mergeFinstruvialServicios(src, paginasDefaults, base);
+  return mergeFinstruvialServicios(raw, paginasDefaults, base);
 }
 
 module.exports = {

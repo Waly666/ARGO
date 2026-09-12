@@ -81,7 +81,7 @@ function pickHubMedia(
   } as PortalFinstruvialServiciosConfig['hub'];
 }
 
-/** Conserva fotos/videos, visibilidad y overrides de ERP (slug, nombre en menú). */
+/** Solo para scripts de migración: extrae medios del portafolio Servial. No usar en merge al guardar/cargar. */
 export function servialPortafolioMediaOnly(
   raw?: Partial<PortalFinstruvialServiciosConfig> | null,
 ): Partial<PortalFinstruvialServiciosConfig> | null {

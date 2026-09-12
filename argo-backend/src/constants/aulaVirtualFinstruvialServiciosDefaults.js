@@ -1,3 +1,10 @@
+const {
+  mergeOptionalBoolean,
+  mergePromoHeroPillars,
+  mergePromoHeroRibbon,
+  mergePromoHeroStats,
+} = require('./portalPromoHeroFields');
+
 const SLUGS = [
 
   'aulaVirtual',
@@ -375,6 +382,24 @@ function mergePagina(slug, raw, defaults) {
 
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
 
+    pillarsLabel: str(src.pillarsLabel, d.pillarsLabel || ''),
+
+    pillars: mergePromoHeroPillars(src.pillars, d.pillars || []),
+
+    stats: mergePromoHeroStats(src.stats, d.stats || []),
+
+    highlightIcon: str(src.highlightIcon, d.highlightIcon || ''),
+
+    highlightTitle: str(src.highlightTitle, d.highlightTitle || ''),
+
+    highlightSubtitle: str(src.highlightSubtitle, d.highlightSubtitle || ''),
+
+    heroHighlightRadar: mergeOptionalBoolean(src.heroHighlightRadar, d.heroHighlightRadar),
+
+    ribbonLabel: str(src.ribbonLabel, d.ribbonLabel || ''),
+
+    ribbon: mergePromoHeroRibbon(src.ribbon, d.ribbon || []),
+
     heroImagenUrl: str(src.heroImagenUrl, d.heroImagenUrl),
 
     heroImagenUrlAbsoluta: src.heroImagenUrlAbsoluta?.trim() || d.heroImagenUrlAbsoluta,
@@ -540,6 +565,26 @@ function mergePagina(slug, raw, defaults) {
 
     metaDescription: str(src.metaDescription, d.metaDescription),
 
+    guionVersion: Number(src.guionVersion) || Number(d.guionVersion) || 0,
+
+    seoTextoTitulo: str(src.seoTextoTitulo, d.seoTextoTitulo || ''),
+
+    seoTextoParrafos: arr(src.seoTextoParrafos, d.seoTextoParrafos || []),
+
+    localTitulo: str(src.localTitulo, d.localTitulo || ''),
+
+    localTexto: str(src.localTexto, d.localTexto || ''),
+
+    faqTitulo: str(src.faqTitulo, d.faqTitulo || ''),
+
+    faq: arr(src.faq, d.faq || []),
+
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo || ''),
+
+    enlacesRelacionados: arr(src.enlacesRelacionados, d.enlacesRelacionados || []),
+
+    catalogoOverrides: arr(src.catalogoOverrides, d.catalogoOverrides || []),
+
   };
 
 }
@@ -621,6 +666,27 @@ function mergeFinstruvialServicios(raw, paginasDefaults = {}, configDefaults = F
       heroStats: Array.isArray(src.hub?.heroStats) && src.hub.heroStats.length
         ? src.hub.heroStats
         : d.hub.heroStats || [],
+
+      pillarsLabel: str(src.hub?.pillarsLabel, d.hub.pillarsLabel || ''),
+
+      pillars: mergePromoHeroPillars(src.hub?.pillars, d.hub.pillars || []),
+
+      stats: mergePromoHeroStats(
+        Array.isArray(src.hub?.stats) && src.hub.stats.length ? src.hub.stats : src.hub?.heroStats,
+        d.hub.stats?.length ? d.hub.stats : d.hub.heroStats || [],
+      ),
+
+      highlightIcon: str(src.hub?.highlightIcon, d.hub.highlightIcon || ''),
+
+      highlightTitle: str(src.hub?.highlightTitle, d.hub.highlightTitle || ''),
+
+      highlightSubtitle: str(src.hub?.highlightSubtitle, d.hub.highlightSubtitle || ''),
+
+      heroHighlightRadar: mergeOptionalBoolean(src.hub?.heroHighlightRadar, d.hub.heroHighlightRadar),
+
+      ribbonLabel: str(src.hub?.ribbonLabel, d.hub.ribbonLabel || ''),
+
+      ribbon: mergePromoHeroRibbon(src.hub?.ribbon, d.hub.ribbon || []),
 
       formacionImagenUrl: str(src.hub?.formacionImagenUrl, d.hub.formacionImagenUrl || ''),
 

@@ -8,8 +8,6 @@ import {
 import { FINSTRUVIAL_SERVICIOS_WIREFRAME } from '../constants/finstruvial-servicios-wireframe';
 import { SERVIAL_SERVICIOS_DEFAULTS } from '../constants/servial-servicios-defaults';
 import { SERVIAL_SERVICIOS_WIREFRAME } from '../constants/servial-servicios-wireframe';
-import { servialPortafolioMediaOnly } from '../constants/servial-portafolio-media.util';
-
 export function portafolioServiciosEsServial(tema?: PortalTemaLike | null): boolean {
   return resolvePortalHeroEstilo(tema) === 'servial-mesh';
 }
@@ -32,6 +30,5 @@ export function mergePortafolioServicios(
 ): PortalFinstruvialServiciosConfig {
   const base = portafolioServiciosDefaultsForTema(tema);
   const wireframe = portafolioServiciosWireframeForTema(tema);
-  const src = portafolioServiciosEsServial(tema) ? servialPortafolioMediaOnly(raw) : raw;
-  return mergeFinstruvialServicios(src, base, wireframe);
+  return mergeFinstruvialServicios(raw, base, wireframe);
 }

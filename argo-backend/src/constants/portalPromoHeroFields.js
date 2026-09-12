@@ -62,6 +62,18 @@ function mergePromoHeroStats(raw, defaults) {
   return raw.map((s, i) => str(s, defaults[i] || ''));
 }
 
+function mergePromoHeroRibbon(raw, defaults) {
+  if (!Array.isArray(raw) || !raw.length) return (defaults || []).map((item) => ({ ...item }));
+  return raw.map((item, i) => ({
+    icon: str(item?.icon, defaults[i]?.icon || 'document'),
+    label: str(item?.label, defaults[i]?.label || ''),
+  }));
+}
+
+function mergeOptionalBoolean(src, defaultOn) {
+  return typeof src === 'boolean' ? src : defaultOn !== false;
+}
+
 function mergePromoHeroExtras(raw, defaults) {
   const src = raw && typeof raw === 'object' ? raw : {};
   return {
@@ -91,5 +103,7 @@ module.exports = {
   mergePromoHeroTexts,
   mergePromoHeroPillars,
   mergePromoHeroStats,
+  mergePromoHeroRibbon,
+  mergeOptionalBoolean,
   mergePromoHeroExtras,
 };
