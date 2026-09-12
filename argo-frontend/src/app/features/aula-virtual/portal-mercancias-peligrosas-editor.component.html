@@ -11,91 +11,13 @@
 
   <argo-portal-seo-legend />
 
-  <section class="psb-card psb-card--highlight">
-    <h3 class="psb-card__title">Sección del inicio (página principal)</h3>
-    <p class="psb-note">
-      Bloque «Mercancías peligrosas» en el home del sitio. Actívelo o desactívelo en
-      <strong>Bloques del inicio</strong>. El botón usa el slug de la página salvo que indique otra URL abajo.
-    </p>
-    <p class="psb-hint">
-      Los títulos del teaser usan los mismos campos del <strong>H1</strong> (sección «Encabezado de la página completa»).
-    </p>
-    <div class="psb-grid3">
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
-      </label>
-    </div>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Frase destacada bajo el título" />
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.subtitulo" />
-    </label>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Enlace oficial MinTransporte (URL)</span>
-        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialUrl" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Texto del enlace oficial</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialEtiqueta" />
-      </label>
-    </div>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain psb-field--highlight">
-        <span>Texto del botón en el inicio</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaInicioTexto" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>URL del botón (opcional)</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaUrl" placeholder="Vacío = slug de la página" />
-        <small class="psb-hint">Deje vacío para usar la URL del slug configurado arriba en este editor.</small>
-      </label>
-    </div>
-    @for (item of mercanciasPeligrosas.homeItems; track $index; let i = $index) {
-      <div class="ple-card">
-        <div class="ple-card__head">
-          <strong>Tarjeta {{ i + 1 }}</strong>
-          <button type="button" class="psb-link ple-remove" (click)="removeItem(mercanciasPeligrosas.homeItems, i)">Eliminar</button>
-        </div>
-        <div class="psb-grid3">
-          <label class="psb-field psb-field--plain">
-            <span>Número</span>
-            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Acento</span>
-            <select class="psb-input" [(ngModel)]="item.acento">
-              @for (a of acentos; track a) { <option [value]="a">{{ a }}</option> }
-            </select>
-          </label>
-        </div>
-        <label class="psb-field psb-field--plain">
-          <span>Título</span>
-          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Texto</span>
-          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
-        </label>
-      </div>
-    }
-    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
-  </section>
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública.
+    Los bloques «Solo inicio» editan el home, no esta URL.
+  </p>
 
   <section class="psb-card psb-card--h1">
-    <h3 class="psb-card__title">H1 — Encabezado de la página completa</h3>
+    <h3 class="psb-card__title"><span class="pes-order">1</span> H1 — Encabezado de la página completa</h3>
     <p class="psb-note">
       El <strong>H1</strong> es el único título principal de <code>/mercancias-peligrosas</code>.
       Los mismos textos alimentan el teaser del inicio (allí se muestran como <strong>H2</strong>).
@@ -179,7 +101,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Menú de navegación</h3>
+    <h3 class="psb-card__title"><span class="pes-order">2</span> Menú de navegación</h3>
     @for (nav of mercanciasPeligrosas.nav; track $index; let i = $index) {
       <div class="ple-list__row">
         <input type="text" class="psb-input" [(ngModel)]="nav.id" placeholder="id-ancla" />
@@ -191,7 +113,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">¿Qué son las mercancías peligrosas?</h3>
+    <h3 class="psb-card__title"><span class="pes-order">3</span> ¿Qué son las mercancías peligrosas?</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.queSonTitulo" />
@@ -211,7 +133,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Marco normativo</h3>
+    <h3 class="psb-card__title"><span class="pes-order">4</span> Marco normativo</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.normativaTitulo" />
@@ -267,7 +189,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Clasificación ONU</h3>
+    <h3 class="psb-card__title"><span class="pes-order">5</span> Clasificación ONU</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.clasificacionTitulo" />
@@ -311,44 +233,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Documentación</h3>
-    <label class="psb-field psb-field--plain">
-      <span>Título</span>
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.documentacionTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Texto introductorio" />
-      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.documentacionLead"></textarea>
-    </label>
-    <argo-portal-editor-string-list [items]="mercanciasPeligrosas.documentacionItems" addLabel="+ Añadir tipo de documento" />
-    <label class="psb-field psb-field--plain">
-      <span>Hoja de seguridad — título</span>
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.hojaSeguridadTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <span>Hoja de seguridad — texto</span>
-      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.hojaSeguridadTexto"></textarea>
-    </label>
-    <label class="psb-field psb-field--plain">
-      <span>Hoja de seguridad — aviso</span>
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.hojaSeguridadAviso" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <span>Tarjeta de emergencia — título</span>
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tarjetaEmergenciaTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <span>Tarjeta de emergencia — texto</span>
-      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.tarjetaEmergenciaTexto"></textarea>
-    </label>
-    <label class="psb-field psb-field--plain">
-      <span>Tarjeta de emergencia — función</span>
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tarjetaEmergenciaFuncion" />
-    </label>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Responsabilidades</h3>
+    <h3 class="psb-card__title"><span class="pes-order">6</span> Responsabilidades</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.responsabilidadesTitulo" />
@@ -389,7 +274,44 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Seguridad y gestión del riesgo</h3>
+    <h3 class="psb-card__title"><span class="pes-order">7</span> Documentación</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.documentacionTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
+      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.documentacionLead"></textarea>
+    </label>
+    <argo-portal-editor-string-list [items]="mercanciasPeligrosas.documentacionItems" addLabel="+ Añadir tipo de documento" />
+    <label class="psb-field psb-field--plain">
+      <span>Hoja de seguridad — título</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.hojaSeguridadTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Hoja de seguridad — texto</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.hojaSeguridadTexto"></textarea>
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Hoja de seguridad — aviso</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.hojaSeguridadAviso" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Tarjeta de emergencia — título</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tarjetaEmergenciaTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Tarjeta de emergencia — texto</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.tarjetaEmergenciaTexto"></textarea>
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Tarjeta de emergencia — función</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tarjetaEmergenciaFuncion" />
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">8</span> Seguridad y gestión del riesgo</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.seguridadTitulo" />
@@ -488,7 +410,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Mitos y realidades</h3>
+    <h3 class="psb-card__title"><span class="pes-order">9</span> Mitos y realidades</h3>
     @for (mito of mercanciasPeligrosas.mitos; track $index; let i = $index) {
       <div class="ple-card">
         <div class="ple-card__head">
@@ -509,61 +431,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">SEO local e inscripciones</h3>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="H2" label="Título bloque Villavicencio" />
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Texto bloque Villavicencio" />
-      <textarea class="psb-input" rows="3" [(ngModel)]="mercanciasPeligrosas.localTexto"></textarea>
-    </label>
-    <div class="psb-grid3">
-      <label class="psb-field psb-field--plain">
-        <span>Ubicación</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localUbicacion" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Teléfono</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTelefono" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Atención</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localAtencion" />
-      </label>
-    </div>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="H2" label="Título inscripciones" />
-      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Texto inscripciones" />
-      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.inscripcionesTexto"></textarea>
-    </label>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Botón consulta</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesCtaTexto" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>URL botón consulta</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesCtaUrl" />
-      </label>
-    </div>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Texto WhatsApp</span>
-        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesWhatsappTexto" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>URL WhatsApp</span>
-        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesWhatsappUrl" />
-      </label>
-    </div>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Preguntas frecuentes</h3>
+    <h3 class="psb-card__title"><span class="pes-order">10</span> Preguntas frecuentes</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="H2" label="Título de la sección FAQ" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.faqTitulo" />
@@ -572,7 +440,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Glosario</h3>
+    <h3 class="psb-card__title"><span class="pes-order">11</span> Glosario</h3>
     @for (term of mercanciasPeligrosas.glosario; track $index; let i = $index) {
       <div class="ple-card">
         <div class="ple-card__head">
@@ -593,7 +461,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Fuentes oficiales</h3>
+    <h3 class="psb-card__title"><span class="pes-order">12</span> Fuentes oficiales</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.fuentesTitulo" />
@@ -626,7 +494,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Biblioteca de documentos PDF</h3>
+    <h3 class="psb-card__title"><span class="pes-order">13</span> Biblioteca de documentos PDF</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.documentosTitulo" />
@@ -689,6 +557,143 @@
       </div>
     }
     <button type="button" class="psb-link" (click)="addDocumentoGrupo()">+ Añadir grupo de documentos</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">14</span> SEO local e inscripciones</h3>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="H2" label="Título bloque Villavicencio" />
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Texto bloque Villavicencio" />
+      <textarea class="psb-input" rows="3" [(ngModel)]="mercanciasPeligrosas.localTexto"></textarea>
+    </label>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Ubicación</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localUbicacion" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Teléfono</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localTelefono" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Atención</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.localAtencion" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="H2" label="Título inscripciones" />
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Texto inscripciones" />
+      <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.inscripcionesTexto"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón consulta</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesCtaTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL botón consulta</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesCtaUrl" />
+      </label>
+    </div>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto WhatsApp</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesWhatsappTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL WhatsApp</span>
+        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.inscripcionesWhatsappUrl" />
+      </label>
+    </div>
+  </section>
+
+  <section class="psb-card psb-card--page-home">
+    <h3 class="psb-card__title">Solo inicio — Sección del inicio (página principal)</h3>
+    <p class="psb-note">
+      Bloque «Mercancías peligrosas» en el home del sitio. Actívelo o desactívelo en
+      <strong>Bloques del inicio</strong>. El botón usa el slug de la página salvo que indique otra URL abajo.
+    </p>
+    <p class="psb-hint">
+      Los títulos del teaser usan los mismos campos del <strong>H1</strong> (sección «Encabezado de la página completa»).
+    </p>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Frase destacada bajo el título" />
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.subtitulo" />
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Enlace oficial MinTransporte (URL)</span>
+        <input type="url" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialUrl" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto del enlace oficial</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlaceOficialEtiqueta" />
+      </label>
+    </div>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain psb-field--highlight">
+        <span>Texto del botón en el inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaInicioTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL del botón (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.ctaUrl" placeholder="Vacío = slug de la página" />
+        <small class="psb-hint">Deje vacío para usar la URL del slug configurado arriba en este editor.</small>
+      </label>
+    </div>
+    @for (item of mercanciasPeligrosas.homeItems; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Tarjeta {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(mercanciasPeligrosas.homeItems, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Acento</span>
+            <select class="psb-input" [(ngModel)]="item.acento">
+              @for (a of acentos; track a) { <option [value]="a">{{ a }}</option> }
+            </select>
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
   </section>
 
   <section class="psb-card">

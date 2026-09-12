@@ -8,30 +8,25 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las pestañas <strong>numeradas</strong> siguen el orden configurado en
+    <strong>Bloques del inicio</strong> (subir/bajar). Si mueve un bloque allí, el número aquí se actualiza.
+    Las marcadas ↗ se editan en otro panel. Menú, blog, pie y catálogo son ajustes globales.
+  </p>
+
   <div class="ple-nav">
-    @for (b of [
-      { id: 'general', label: 'Textos generales' },
-      { id: 'hero', label: 'Botones del banner' },
-      { id: 'info', label: 'Tarjetas de contacto' },
-      { id: 'nav', label: 'Nombres del menú' },
-      { id: 'ofertas', label: 'Qué ofrecemos' },
-      { id: 'beneficios', label: 'Beneficios' },
-      { id: 'licencias', label: 'Licencias' },
-      { id: 'servicios', label: 'Servicios' },
-      { id: 'valores', label: 'Por qué elegirnos' },
-      { id: 'testimonios', label: 'Testimonios' },
-      { id: 'cursos', label: 'Sección cursos' },
-      { id: 'carreras', label: 'Carreras técnicas' },
-      { id: 'pasos', label: 'Cómo matricularse' },
-      { id: 'appMobile', label: 'App Mobile' },
-      { id: 'blog', label: 'Página Blog' },
-      { id: 'faq', label: 'Preguntas frecuentes' },
-      { id: 'pilares', label: 'Capacitación' },
-      { id: 'footer', label: 'Pie de página' },
-      { id: 'catalogo', label: 'Página de cursos/tienda' }
-    ]; track b.id) {
-      <button type="button" class="ple-nav-btn" [class.active]="bloque() === b.id" (click)="toggleBloque(b.id)">
-        {{ b.label }}
+    @for (b of pestanasNav(); track b.id) {
+      <button
+        type="button"
+        class="ple-nav-btn"
+        [class.active]="bloque() === b.id"
+        [class.ple-nav-btn--external]="b.external"
+        [class.ple-nav-btn--off]="b.oculta"
+        [disabled]="!b.editable"
+        [title]="b.externalHint || (b.oculta ? 'Bloque oculto en el inicio' : '')"
+        (click)="toggleBloque(b.id)"
+      >
+        {{ etiquetaPestana(b) }}@if (b.external) { ↗}
       </button>
     }
   </div>

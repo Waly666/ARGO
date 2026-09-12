@@ -9,7 +9,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     <section class="fsv-sec" [class.fsv-sec--collapsed]="!abierta" [attr.id]="anchorId">
       <header class="fsv-sec__head">
         <button type="button" class="fsv-sec__toggle" (click)="toggle.emit()" [attr.aria-expanded]="abierta">
-          <span class="fsv-sec__step">{{ paso }}</span>
+          <span class="fsv-sec__step pes-order">{{ paso }}</span>
           <span class="fsv-sec__icon" aria-hidden="true">{{ icono }}</span>
           <span class="fsv-sec__copy">
             <strong class="fsv-sec__title">{{ titulo }}</strong>

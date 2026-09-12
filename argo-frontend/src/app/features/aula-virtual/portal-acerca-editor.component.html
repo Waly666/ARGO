@@ -9,13 +9,17 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública.
+    Los bloques «Solo inicio» editan el home, no esta URL.
+  </p>
+
   <div class="pae-nav">
     @for (b of [
-      { id: 'hero', label: 'Encabezado' },
-      { id: 'quienes', label: 'Quiénes somos' },
-      { id: 'contacto', label: 'Contacto' },
-      { id: 'valores', label: 'Valores' },
-      { id: 'cta', label: 'Botón principal' }
+      { id: 'hero', label: '1 · Encabezado' },
+      { id: 'quienes', label: '2 · Quiénes somos' },
+      { id: 'contacto', label: '3 · Contacto' },
+      { id: 'valores', label: '4 · Valores' }
     ]; track b.id) {
       <button
         type="button"
@@ -117,6 +121,17 @@
         </div>
       }
       <button type="button" class="psb-link" (click)="addParrafo()">+ Añadir párrafo</button>
+      <h4 class="psb-subtitle">Botón principal (debajo del texto)</h4>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Texto del botón</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.cta.texto" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Enlace del botón</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.cta.url" placeholder="/cursos" />
+        </label>
+      </div>
     </div>
   }
 
@@ -201,22 +216,6 @@
         </div>
       }
       <button type="button" class="psb-link" (click)="addValor()">+ Añadir tarjeta de valor</button>
-    </div>
-  }
-
-  @if (bloque() === 'cta') {
-    <div class="pae-block">
-      <div class="psb-grid2">
-        <label class="psb-field psb-field--plain">
-          <span>Texto del botón</span>
-          <input type="text" class="psb-input" [(ngModel)]="acerca.cta.texto" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Enlace del botón</span>
-          <input type="text" class="psb-input" [(ngModel)]="acerca.cta.url" placeholder="/cursos" />
-        </label>
-      </div>
-      <p class="psb-hint">Botón debajo del texto «Quiénes somos».</p>
     </div>
   }
 </div>

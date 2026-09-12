@@ -9,8 +9,13 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública.
+    Los bloques «Solo inicio» editan el home, no esta URL.
+  </p>
+
   <div class="pcc-stack">
-    <h3 class="psb-subtitle">H1 — Encabezado de la página</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">1</span> H1 — Encabezado de la página</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="p" label="Etiqueta pequeña (kicker)" />
       <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.hero.kicker" placeholder="Cursos de conducción" />
@@ -23,7 +28,7 @@
       <span>Texto institucional (habilitación Mintransporte)</span>
       <textarea class="psb-input" rows="3" [(ngModel)]="cursosConduccion.textoInstitucional"></textarea>
     </label>
-    <h3 class="psb-subtitle">Tarjeta destacada del banner</h3>
+    <h4 class="psb-subtitle">Tarjeta destacada del banner</h4>
     <p class="psb-hint">
       Tarjeta con icono y efecto radar bajo el título (como en examen teórico y servicios). Icono: nombre del set del portal
       (<code>car</code>, <code>shield-check</code>, <code>trophy</code>, etc.).
@@ -85,7 +90,7 @@
       />
     </div>
 
-    <h3 class="psb-subtitle">Carrusel de publicidad (debajo del encabezado)</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">2</span> Carrusel de publicidad (debajo del encabezado)</h3>
     <div class="pcc-card">
       <p class="psb-hint">
         Hasta {{ maxPublicidad }} imágenes PNG de publicidad. Aparecen en el sitio entre el encabezado y el bloque motivacional.
@@ -163,102 +168,7 @@
       </div>
     </div>
 
-    <h3 class="psb-subtitle">Bloque motivacional (después del encabezado)</h3>
-    <div class="pcc-card">
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
-        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.kicker" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Título</span>
-        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.titulo" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Texto principal</span>
-        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.lead"></textarea>
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Texto de acompañamiento</span>
-        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.institucion"></textarea>
-      </label>
-      <p class="psb-hint">Tarjetas de beneficios (3 columnas en el sitio)</p>
-      @for (b of cursosConduccion.invitacion.beneficios; track $index) {
-        <div class="pcc-subcard">
-          <div class="psb-grid3">
-            <label class="psb-field psb-field--plain">
-              <span>Icono</span>
-              <input type="text" class="psb-input" [(ngModel)]="b.icon" maxlength="4" />
-            </label>
-            <label class="psb-field psb-field--plain psb-field--span2">
-              <span>Título</span>
-              <input type="text" class="psb-input" [(ngModel)]="b.titulo" />
-            </label>
-          </div>
-          <label class="psb-field psb-field--plain">
-            <argo-portal-field-label tag="p" label="Descripción" />
-            <textarea class="psb-input" rows="2" [(ngModel)]="b.texto"></textarea>
-          </label>
-          <button type="button" class="psb-link" (click)="removeBeneficio($index)">Quitar tarjeta</button>
-        </div>
-      }
-      <button type="button" class="psb-link" (click)="addBeneficio()">+ Agregar tarjeta</button>
-      <label class="psb-field psb-field--plain">
-        <span>Frase destacada</span>
-        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.destacado" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Texto de cierre</span>
-        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.cierre"></textarea>
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Firma / cierre final</span>
-        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.firma" />
-      </label>
-      <div class="psb-grid2">
-        <label class="psb-field psb-field--plain">
-          <span>Botón cursos</span>
-          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.btnCursos" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Botón registro</span>
-          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.btnRegistro" />
-        </label>
-      </div>
-    </div>
-
-    <h3 class="psb-subtitle">Resoluciones (descargables)</h3>
-    @for (res of cursosConduccion.resoluciones; track $index) {
-      <div class="pcc-card">
-        <label class="psb-field psb-field--plain">
-          <span>Título de la resolución</span>
-          <input type="text" class="psb-input" [(ngModel)]="res.titulo" placeholder="Resolución 2267 de 06/08/2014 Mintransporte" />
-        </label>
-        <div class="pcc-file-row">
-          @if (res.archivoUrl) {
-            <span class="pcc-file-name">{{ res.nombreArchivo || res.archivoUrl }}</span>
-            @if (archivoPreviewUrl(res.archivoUrl); as url) {
-              <a class="psb-link" [href]="url" target="_blank" rel="noopener noreferrer">Ver PDF</a>
-            }
-            <button type="button" class="psb-link" (click)="quitarArchivoResolucion($index)">Quitar archivo</button>
-          } @else {
-            <span class="psb-hint">Sin archivo PDF cargado</span>
-          }
-          <label class="pcc-btn-file" [class.pcc-btn-file--busy]="uploadIndex() === $index">
-            {{ uploadIndex() === $index ? 'Subiendo…' : 'Subir PDF' }}
-            <input
-              type="file"
-              accept="application/pdf,.pdf"
-              (change)="onResolucionArchivo($event, $index)"
-              [disabled]="uploadIndex() === $index"
-            />
-          </label>
-        </div>
-        <button type="button" class="psb-link pcc-remove" (click)="removeResolucion($index)">Eliminar resolución</button>
-      </div>
-    }
-    <button type="button" class="psb-link" (click)="addResolucion()">+ Agregar resolución</button>
-
-    <h3 class="psb-subtitle">Licencias de conducción</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">3</span> Licencias de conducción</h3>
     <div class="pcc-card">
       <div class="psb-grid2">
         <label class="psb-field psb-field--plain">
@@ -338,13 +248,112 @@
     }
     <button type="button" class="psb-link" (click)="addLicencia()">+ Añadir licencia</button>
 
-    <h3 class="psb-subtitle">Enlaces relacionados (SEO interno)</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">4</span> Bloque motivacional (invitación)</h3>
+    <div class="pcc-card">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto principal</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.lead"></textarea>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto de acompañamiento</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.institucion"></textarea>
+      </label>
+      <p class="psb-hint">Tarjetas de beneficios (3 columnas en el sitio)</p>
+      @for (b of cursosConduccion.invitacion.beneficios; track $index) {
+        <div class="pcc-subcard">
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Icono</span>
+              <input type="text" class="psb-input" [(ngModel)]="b.icon" maxlength="4" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--span2">
+              <span>Título</span>
+              <input type="text" class="psb-input" [(ngModel)]="b.titulo" />
+            </label>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <argo-portal-field-label tag="p" label="Descripción" />
+            <textarea class="psb-input" rows="2" [(ngModel)]="b.texto"></textarea>
+          </label>
+          <button type="button" class="psb-link" (click)="removeBeneficio($index)">Quitar tarjeta</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addBeneficio()">+ Agregar tarjeta</button>
+      <label class="psb-field psb-field--plain">
+        <span>Frase destacada</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.destacado" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto de cierre</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.cierre"></textarea>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Firma / cierre final</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.firma" />
+      </label>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Botón cursos</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.btnCursos" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Botón registro</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.btnRegistro" />
+        </label>
+      </div>
+    </div>
+
+    <p class="psb-note">
+      Las secciones <strong>Metodología</strong> y <strong>Requisitos</strong> aparecen en la página pública pero no tienen campos editables en este constructor.
+    </p>
+
+    <h3 class="psb-subtitle"><span class="pes-order">5</span> Resoluciones (descargables)</h3>
+    @for (res of cursosConduccion.resoluciones; track $index) {
+      <div class="pcc-card">
+        <label class="psb-field psb-field--plain">
+          <span>Título de la resolución</span>
+          <input type="text" class="psb-input" [(ngModel)]="res.titulo" placeholder="Resolución 2267 de 06/08/2014 Mintransporte" />
+        </label>
+        <div class="pcc-file-row">
+          @if (res.archivoUrl) {
+            <span class="pcc-file-name">{{ res.nombreArchivo || res.archivoUrl }}</span>
+            @if (archivoPreviewUrl(res.archivoUrl); as url) {
+              <a class="psb-link" [href]="url" target="_blank" rel="noopener noreferrer">Ver PDF</a>
+            }
+            <button type="button" class="psb-link" (click)="quitarArchivoResolucion($index)">Quitar archivo</button>
+          } @else {
+            <span class="psb-hint">Sin archivo PDF cargado</span>
+          }
+          <label class="pcc-btn-file" [class.pcc-btn-file--busy]="uploadIndex() === $index">
+            {{ uploadIndex() === $index ? 'Subiendo…' : 'Subir PDF' }}
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              (change)="onResolucionArchivo($event, $index)"
+              [disabled]="uploadIndex() === $index"
+            />
+          </label>
+        </div>
+        <button type="button" class="psb-link pcc-remove" (click)="removeResolucion($index)">Eliminar resolución</button>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addResolucion()">+ Agregar resolución</button>
+
+    <h3 class="psb-subtitle"><span class="pes-order">6</span> Enlaces relacionados (SEO interno)</h3>
     <av-portal-editor-enlaces-relacionados
       [titulo]="cursosConduccion.enlacesRelacionadosTitulo || 'Formación relacionada en SERVIAL'"
       [enlaces]="enlacesRelacionadosEdit()"
     />
 
-    <h3 class="psb-subtitle">Bloque SEO y local</h3>
+    <h3 class="psb-subtitle"><span class="pes-order">7</span> Bloque SEO y local</h3>
     <div class="pcc-card">
       <label class="psb-field psb-field--plain">
         <span>Título bloque SEO</span>

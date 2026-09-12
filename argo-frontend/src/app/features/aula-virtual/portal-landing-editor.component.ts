@@ -15,6 +15,7 @@ import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
+import { buildLandingEditorNavTabs, LandingEditorNavTab } from './portal-landing-editor-nav.util';
 
 @Component({
   selector: 'argo-portal-landing-editor',
@@ -36,10 +37,21 @@ export class PortalLandingEditorComponent {
   @Input({ required: true }) landing!: PortalLandingConfig;
   @Input() portalForm?: PortalAulaConfig | null;
   @Input() portalUrl = '';
+  /** Incrementa al reordenar bloques del inicio (reactividad del orden de pestañas). */
+  @Input() homeOrdenRevision = 0;
   @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   bloque = signal<string | null>('general');
+
+  pestanasNav(): LandingEditorNavTab[] {
+    void this.homeOrdenRevision;
+    return buildLandingEditorNavTabs(this.portalForm?.site);
+  }
+
+  etiquetaPestana(tab: LandingEditorNavTab): string {
+    return tab.homePos != null ? `${tab.homePos} · ${tab.label}` : tab.label;
+  }
 
   /** Banner clásico (Finstruvial / azul profundo): H1 animado = heroTitulo del portal. */
   heroEsStarfield(): boolean {

@@ -8,15 +8,20 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública.
+    Los bloques «Solo inicio» editan el home, no esta URL.
+  </p>
+
   <div class="pfe-nav">
     @for (b of [
-      { id: 'hero', label: 'Encabezado' },
-      { id: 'quienes', label: 'Quiénes somos' },
-      { id: 'mision', label: 'Misión y visión' },
-      { id: 'compromiso', label: 'Nuestro compromiso' },
-      { id: 'lineas', label: 'Servicios' },
-      { id: 'cta', label: 'Invitar a inscribirse' },
-      { id: 'contacto', label: 'Datos de contacto' }
+      { id: 'hero', label: '1 · Encabezado' },
+      { id: 'quienes', label: '2 · Quiénes somos' },
+      { id: 'mision', label: '3 · Misión y visión' },
+      { id: 'compromiso', label: '4 · Nuestro compromiso' },
+      { id: 'lineas', label: '5 · Servicios' },
+      { id: 'contacto', label: '6 · Datos de contacto' },
+      { id: 'cta', label: '7 · Invitar a inscribirse' }
     ]; track b.id) {
       <button type="button" class="pfe-nav-btn" [class.active]="bloque() === b.id" (click)="toggleBloque(b.id)">
         {{ b.label }}

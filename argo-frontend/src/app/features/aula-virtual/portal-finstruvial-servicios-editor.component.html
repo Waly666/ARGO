@@ -14,6 +14,16 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública
+    @if (modo === 'hub') {
+      (<strong>/servicios</strong>).
+    } @else {
+      de esta línea de servicio.
+    }
+    La visibilidad y el banco de imágenes al final no son bloques del visitante.
+  </p>
+
   @if (modo === 'hub') {
   <section class="psb-card fsv-visibilidad">
     <div class="fsv-visibilidad__head">
@@ -61,15 +71,12 @@
     </ul>
   </section>
 
-  <section class="psb-card">
-    <div class="ple-toolbar">
-      <h3 class="psb-card__title">Menú y portafolio</h3>
-      <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarHub()">Restaurar portafolio</button>
-    </div>
-    <label class="psb-field psb-field--plain">
-      <span>Etiqueta en el menú principal</span>
-      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.menuLabel" />
-    </label>
+  <div class="ple-toolbar">
+    <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarHub()">Restaurar portafolio</button>
+  </div>
+
+  <section class="psb-card psb-card--h1">
+    <h3 class="psb-card__title"><span class="pes-order">1</span> Banner principal (H1)</h3>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
         <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
@@ -88,16 +95,6 @@
       <span>Texto principal del portafolio</span>
       <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.lead"></textarea>
     </label>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Título de la grilla de servicios</span>
-        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.gridTitulo" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Texto bajo el título de la grilla</span>
-        <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.gridLead"></textarea>
-      </label>
-    </div>
     <div class="fsv-fieldset">
       <p class="fsv-fieldset__legend">Hero animado del portafolio</p>
       <p class="psb-hint">
@@ -118,9 +115,55 @@
         Efecto radar en la tarjeta destacada
       </label>
     </div>
+    <label class="psb-field psb-field--plain">
+      <span>Texto alternativo de la imagen del banner</span>
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.heroImagenAlt" />
+    </label>
+    <argo-portal-editor-imagen-prompt
+      [promptImagen]="finstruvialServicios.hub.heroImagenPrompt || ''"
+      (promptImagenChange)="finstruvialServicios.hub.heroImagenPrompt = $event"
+      [alt]="finstruvialServicios.hub.heroImagenAlt"
+      etiqueta="Imagen del portafolio"
+      (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+      (copyError)="avNotice.emit({ message: $event, error: true })"
+    />
+    <div class="psb-imagen-slot">
+      <div class="psb-imagen-slot__head"><strong>Imagen del banner</strong></div>
+      @if (previewUrl(finstruvialServicios.hub.heroImagenUrl, finstruvialServicios.hub.heroImagenUrlAbsoluta); as src) {
+        <img class="psb-imagen-slot__preview" [src]="src" [alt]="finstruvialServicios.hub.heroImagenAlt" />
+      } @else {
+        <div class="psb-imagen-slot__empty">Sin imagen (diseño sin foto en Finstruvial)</div>
+      }
+      <div class="psb-imagen-slot__actions">
+        <label class="psb-btn psb-btn--ghost">
+          {{ uploadingId() === 'hub:hero' ? 'Subiendo…' : 'Subir imagen' }}
+          <input type="file" accept="image/*" hidden (change)="onHubImagen($event, 'hero')" />
+        </label>
+        @if (finstruvialServicios.hub.heroImagenUrl) {
+          <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen('hero')">Quitar imagen</button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">2</span> Formación integral</h3>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="H2" label="Título del bloque" />
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.seoTextoTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Párrafos (uno por línea en blanco)" />
+      <textarea
+        class="psb-input"
+        rows="5"
+        [ngModel]="(finstruvialServicios.hub.seoTextoParrafos || []).join('\n\n')"
+        (ngModelChange)="onHubSeoTextoParrafosChange($event)"
+      ></textarea>
+    </label>
     <div class="psb-grid2">
       <div class="psb-imagen-slot">
-        <div class="psb-imagen-slot__head"><strong>Imagen formación 1</strong> (bloque «Formación integral»)</div>
+        <div class="psb-imagen-slot__head"><strong>Imagen formación 1</strong></div>
         <label class="psb-field psb-field--plain">
           <span>Texto alternativo (ALT)</span>
           <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.formacionImagenAlt" />
@@ -166,27 +209,34 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">3</span> Grilla del portafolio</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta en el menú principal</span>
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.menuLabel" />
+    </label>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
-        <span>Título bloque SEO (H2)</span>
-        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.seoTextoTitulo" />
+        <argo-portal-field-label tag="H2" label="Título de la grilla" />
+        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.gridTitulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título bloque local (H2)</span>
-        <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localTitulo" />
+        <argo-portal-field-label tag="p" label="Texto bajo el título" />
+        <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.gridLead"></textarea>
       </label>
     </div>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">4</span> Ubicación y contacto local</h3>
     <label class="psb-field psb-field--plain">
-      <span>Párrafos bloque SEO (uno por línea)</span>
-      <textarea
-        class="psb-input"
-        rows="5"
-        [ngModel]="(finstruvialServicios.hub.seoTextoParrafos || []).join('\n\n')"
-        (ngModelChange)="onHubSeoTextoParrafosChange($event)"
-      ></textarea>
+      <argo-portal-field-label tag="H2" label="Título del bloque" />
+      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localTitulo" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Texto bloque local</span>
+      <argo-portal-field-label tag="p" label="Texto del bloque" />
       <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.localTexto"></textarea>
     </label>
     <div class="psb-grid3">
@@ -202,35 +252,6 @@
         <span>Correo</span>
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.localEmail" />
       </label>
-    </div>
-    <label class="psb-field psb-field--plain">
-      <span>Texto alternativo de la imagen</span>
-      <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.heroImagenAlt" />
-    </label>
-    <argo-portal-editor-imagen-prompt
-      [promptImagen]="finstruvialServicios.hub.heroImagenPrompt || ''"
-      (promptImagenChange)="finstruvialServicios.hub.heroImagenPrompt = $event"
-      [alt]="finstruvialServicios.hub.heroImagenAlt"
-      etiqueta="Imagen del portafolio"
-      (copied)="avNotice.emit({ message: 'Prompt copiado' })"
-      (copyError)="avNotice.emit({ message: $event, error: true })"
-    />
-    <div class="psb-imagen-slot">
-      <div class="psb-imagen-slot__head"><strong>Imagen del portafolio</strong></div>
-      @if (previewUrl(finstruvialServicios.hub.heroImagenUrl, finstruvialServicios.hub.heroImagenUrlAbsoluta); as src) {
-        <img class="psb-imagen-slot__preview" [src]="src" [alt]="finstruvialServicios.hub.heroImagenAlt" />
-      } @else {
-        <div class="psb-imagen-slot__empty">Sin imagen (diseño sin foto en Finstruvial)</div>
-      }
-      <div class="psb-imagen-slot__actions">
-        <label class="psb-btn psb-btn--ghost">
-          {{ uploadingId() === 'hub:hero' ? 'Subiendo…' : 'Subir imagen' }}
-          <input type="file" accept="image/*" hidden (change)="onHubImagen($event, 'hero')" />
-        </label>
-        @if (finstruvialServicios.hub.heroImagenUrl) {
-          <button type="button" class="psb-link psb-link--danger" (click)="quitarHubImagen('hero')">Quitar imagen</button>
-        }
-      </div>
     </div>
   </section>
   }
@@ -263,8 +284,11 @@
         </div>
       </nav>
 
+      <div class="fsv-editor-groups">
+
       @if (grupoVisible('portafolio')) {
         @if (metaGrupo('portafolio'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-portafolio"
           [paso]="g.paso"
@@ -329,11 +353,13 @@
       </label>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('hero')) {
         @if (metaGrupo('hero'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-hero"
           [paso]="g.paso"
@@ -451,11 +477,13 @@
       </div>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('introduccion')) {
         @if (metaGrupo('introduccion'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-introduccion"
           [paso]="g.paso"
@@ -538,11 +566,13 @@
         />
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('catalogoCursos')) {
         @if (metaGrupo('catalogoCursos'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-catalogoCursos"
           [paso]="g.paso"
@@ -570,11 +600,13 @@
         </div>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('pilares')) {
         @if (metaGrupo('pilares'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-pilares"
           [paso]="g.paso"
@@ -609,11 +641,13 @@
         <button type="button" class="psb-link" (click)="addPilarEducativo()">+ Añadir pilar</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('ruta')) {
         @if (metaGrupo('ruta'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-ruta"
           [paso]="g.paso"
@@ -635,11 +669,13 @@
         <button type="button" class="psb-link" (click)="addRutaPaso()">+ Añadir paso</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('tarjetas')) {
         @if (metaGrupo('tarjetas'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-tarjetas"
           [paso]="g.paso"
@@ -854,11 +890,13 @@
       </div>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('producto')) {
         @if (metaGrupo('producto'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-producto"
           [paso]="g.paso"
@@ -952,11 +990,13 @@
         />
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('experienciaEducativa')) {
         @if (metaGrupo('experienciaEducativa'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-experienciaEducativa"
           [paso]="g.paso"
@@ -1004,11 +1044,13 @@
       </div>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('modulosPlataforma')) {
         @if (metaGrupo('modulosPlataforma'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-modulosPlataforma"
           [paso]="g.paso"
@@ -1130,11 +1172,13 @@
         <button type="button" class="psb-link" (click)="addModuloPlataforma()">+ Añadir módulo</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('metodologia')) {
         @if (metaGrupo('metodologia'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-metodologia"
           [paso]="g.paso"
@@ -1170,11 +1214,13 @@
       <button type="button" class="psb-link" (click)="addMetodologiaPaso()">+ Añadir paso</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('resultado')) {
         @if (metaGrupo('resultado'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-resultado"
           [paso]="g.paso"
@@ -1215,11 +1261,13 @@
         <button type="button" class="psb-link" (click)="addResultadoIcono()">+ Añadir entregable</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('publicos')) {
         @if (metaGrupo('publicos'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-publicos"
           [paso]="g.paso"
@@ -1241,11 +1289,13 @@
         <button type="button" class="psb-link" (click)="addPublico()">+ Añadir público</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('ecosistema')) {
         @if (metaGrupo('ecosistema'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-ecosistema"
           [paso]="g.paso"
@@ -1300,11 +1350,13 @@
         </div>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('gamificacion')) {
         @if (metaGrupo('gamificacion'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-gamificacion"
           [paso]="g.paso"
@@ -1337,11 +1389,13 @@
         <button type="button" class="psb-link" (click)="addGamificacionItem()">+ Añadir dinámica</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('formula')) {
         @if (metaGrupo('formula'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-formula"
           [paso]="g.paso"
@@ -1366,11 +1420,13 @@
         <p class="psb-hint">Aparece centrada en un bloque visual grande, justo antes del cierre.</p>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('cierre')) {
         @if (metaGrupo('cierre'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-cierre"
           [paso]="g.paso"
@@ -1388,11 +1444,13 @@
       </label>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('listaServicios')) {
         @if (metaGrupo('listaServicios'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-listaServicios"
           [paso]="g.paso"
@@ -1427,11 +1485,13 @@
       <button type="button" class="psb-link" (click)="addListaItem()">+ Añadir ítem</button>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('contacto')) {
         @if (metaGrupo('contacto'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-contacto"
           [paso]="g.paso"
@@ -1465,11 +1525,13 @@
       <p class="psb-hint">Los enlaces de los botones van a Contacto y al portafolio de servicios (no se cambian aquí).</p>
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
 
       @if (grupoVisible('imagenes')) {
         @if (metaGrupo('imagenes'); as g) {
+        <div class="fsv-editor-group" [style.order]="g.paso">
         <argo-portal-finstruvial-editor-seccion
           anchorId="fsv-grupo-imagenes"
           [paso]="g.paso"
@@ -1541,8 +1603,11 @@
       }
       }
         </argo-portal-finstruvial-editor-seccion>
+        </div>
         }
       }
+
+      </div>
     }
   </section>
   }

@@ -13,8 +13,13 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública.
+    Los bloques «Solo inicio» editan el home, no esta URL.
+  </p>
+
   <section class="psb-card psb-card--h1">
-    <h3 class="psb-card__title">H1 — Título principal de la página</h3>
+    <h3 class="psb-card__title"><span class="pes-order">1</span> H1 — Título principal de la página</h3>
     <p class="psb-note">
       Único encabezado <strong>&lt;h1&gt;</strong> visible en <code>/curso-manejo-defensivo</code>.
       El título SEO de Google se edita en <strong>SEO (Google)</strong>.
@@ -30,29 +35,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Sección del inicio (teaser H2)</h3>
-    <div class="psb-grid3">
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
-        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.kicker" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
-        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.titulo" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
-        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.tituloLinea2" />
-      </label>
-    </div>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
-      <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.subtitulo" />
-    </label>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Curso del catálogo (botón Inscríbete)</h3>
+    <h3 class="psb-card__title"><span class="pes-order">2</span> Curso del catálogo (botón Inscríbete)</h3>
     <p class="psb-note">
       Elija el programa virtual publicado que corresponde a esta página. Al pulsar
       <strong>Inscríbete</strong> el visitante irá a esa ficha (<code>/cursos/…</code>).
@@ -76,7 +59,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Botones del encabezado</h3>
+    <h3 class="psb-card__title"><span class="pes-order">3</span> Botones del encabezado</h3>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
         <span>Inscribirse (texto)</span>
@@ -116,46 +99,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Teaser en la página de inicio</h3>
-    @for (item of manejoDefensivo.homeItems; track $index; let i = $index) {
-      <div class="ple-card">
-        <div class="ple-card__head">
-          <strong>Ítem {{ i + 1 }}</strong>
-          <button type="button" class="psb-link ple-remove" (click)="removeItem(manejoDefensivo.homeItems, i)">Eliminar</button>
-        </div>
-        <div class="psb-grid3">
-          <label class="psb-field psb-field--plain">
-            <span>Número</span>
-            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Acento</span>
-            <select class="psb-input" [(ngModel)]="item.acento">
-              @for (a of acentos; track a) {
-                <option [value]="a">{{ a }}</option>
-              }
-            </select>
-          </label>
-        </div>
-        <label class="psb-field psb-field--plain">
-          <span>Título</span>
-          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Texto</span>
-          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
-        </label>
-      </div>
-    }
-    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir ítem del inicio</button>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Bloque de confianza</h3>
+    <h3 class="psb-card__title"><span class="pes-order">4</span> Bloque de confianza</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.confianzaTitulo" />
@@ -190,7 +134,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — ¿Qué es el manejo defensivo?</h3>
+    <h3 class="psb-card__title"><span class="pes-order">5</span> H2 — ¿Qué es el manejo defensivo?</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.queEsTitulo" />
@@ -208,7 +152,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — ¿Qué aprenderás?</h3>
+    <h3 class="psb-card__title"><span class="pes-order">6</span> H2 — ¿Qué aprenderás?</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.aprenderasTitulo" />
@@ -243,7 +187,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Modalidades</h3>
+    <h3 class="psb-card__title"><span class="pes-order">7</span> H2 — Modalidades</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.modalidadesTitulo" />
@@ -310,7 +254,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Enfoque regional</h3>
+    <h3 class="psb-card__title"><span class="pes-order">8</span> H2 — Enfoque regional</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.regionalTitulo" />
@@ -324,7 +268,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Empresas</h3>
+    <h3 class="psb-card__title"><span class="pes-order">9</span> H2 — Empresas</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.empresasTitulo" />
@@ -355,7 +299,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Gestión del riesgo vial / PESV</h3>
+    <h3 class="psb-card__title"><span class="pes-order">10</span> H2 — Gestión del riesgo vial / PESV</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.pesvTitulo" />
@@ -376,7 +320,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Metodología</h3>
+    <h3 class="psb-card__title"><span class="pes-order">11</span> H2 — Metodología</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.metodologiaTitulo" />
@@ -401,7 +345,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — ¿A quién está dirigido?</h3>
+    <h3 class="psb-card__title"><span class="pes-order">12</span> H2 — ¿A quién está dirigido?</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.audienciaTitulo" />
@@ -417,7 +361,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Beneficios</h3>
+    <h3 class="psb-card__title"><span class="pes-order">13</span> H2 — Beneficios</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.beneficiosTitulo" />
@@ -426,7 +370,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Certificación (datos reales)</h3>
+    <h3 class="psb-card__title"><span class="pes-order">14</span> H2 — Certificación (datos reales)</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.certificacionTitulo" />
@@ -464,7 +408,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Instructores</h3>
+    <h3 class="psb-card__title"><span class="pes-order">15</span> H2 — Instructores</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.instructoresTitulo" />
@@ -477,7 +421,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Testimonios (solo auténticos)</h3>
+    <h3 class="psb-card__title"><span class="pes-order">16</span> H2 — Testimonios (solo auténticos)</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.testimoniosTitulo" />
@@ -509,7 +453,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Enlaces relacionados (SEO interno)</h3>
+    <h3 class="psb-card__title"><span class="pes-order">17</span> Enlaces relacionados (SEO interno)</h3>
     <av-portal-editor-enlaces-relacionados
       [titulo]="manejoDefensivo.enlacesRelacionadosTitulo || 'Formación relacionada en SERVIAL'"
       [enlaces]="enlacesRelacionadosEdit()"
@@ -517,7 +461,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Preguntas frecuentes</h3>
+    <h3 class="psb-card__title"><span class="pes-order">18</span> H2 — Preguntas frecuentes</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.faqTitulo" />
@@ -526,7 +470,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">H2 — Llamado final</h3>
+    <h3 class="psb-card__title"><span class="pes-order">19</span> H2 — Llamado final</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.ctaFinalTitulo" />
@@ -551,6 +495,63 @@
       <span>Línea SEO del pie de esta página</span>
       <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.footerSeoLine" />
     </label>
+  </section>
+
+  <section class="psb-card psb-card--page-home">
+    <h3 class="psb-card__title">Solo inicio — Teaser en la página de inicio</h3>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
+        <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
+      <input type="text" class="psb-input" [(ngModel)]="manejoDefensivo.subtitulo" />
+    </label>
+    @for (item of manejoDefensivo.homeItems; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Ítem {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(manejoDefensivo.homeItems, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Acento</span>
+            <select class="psb-input" [(ngModel)]="item.acento">
+              @for (a of acentos; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir ítem del inicio</button>
   </section>
 
   <section class="psb-card">

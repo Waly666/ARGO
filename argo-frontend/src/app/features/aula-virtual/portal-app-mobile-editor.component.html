@@ -5,8 +5,71 @@
     Después de subir el APK, pulse <strong>Publicar cambios en el sitio</strong> si también modificó textos.
   </p>
 
+  <p class="psb-note psb-editor-order-hint">
+    En la página de inicio el visitante ve primero los textos y características; el botón de descarga usa el APK subido abajo.
+  </p>
+
+  <section class="pame-texts card">
+    <h3 class="pame-section-title"><span class="pes-order">1</span> Textos de la sección en el inicio</h3>
+    <p class="pame-hint">
+      Active el bloque <strong>App Mobile</strong> en
+      <em>Bloques del inicio</em> para que esta sección sea visible en la página principal.
+    </p>
+
+    <div class="pame-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain pame-span2">
+        <argo-portal-field-label tag="H2" label="Título" />
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.titulo" />
+      </label>
+    </div>
+
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Introducción" />
+      <textarea class="psb-input" rows="2" [(ngModel)]="appMobile.lead"></textarea>
+    </label>
+
+    <div class="pame-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón descarga</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.btnDescargar" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Nota de instalación</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.notaInstalacion" />
+      </label>
+    </div>
+
+    @for (item of appMobile.features; track $index; let i = $index) {
+      <article class="pame-feature card">
+        <div class="pame-feature__head">
+          <strong>Característica {{ i + 1 }}</strong>
+          <button type="button" class="pame-link" (click)="removeFeature(i)">Quitar</button>
+        </div>
+        <div class="pame-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain pame-span2">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.title" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <argo-portal-field-label tag="p" label="Descripción" />
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.text"></textarea>
+        </label>
+      </article>
+    }
+    <button type="button" class="pame-link" (click)="addFeature()">+ Añadir característica</button>
+  </section>
+
   <section class="pame-upload card">
-    <h3 class="pame-section-title">📲 Archivo APK</h3>
+    <h3 class="pame-section-title"><span class="pes-order">2</span> Archivo APK</h3>
 
     <div class="pame-upload__row">
       <div class="pame-upload__meta">
@@ -45,64 +108,5 @@
         <p class="pame-hint">Android · máx. 200 MB · reemplaza el archivo si ya existe con el mismo nombre</p>
       </div>
     </div>
-  </section>
-
-  <section class="pame-texts">
-    <h3 class="pame-section-title">✏️ Textos de la sección en el inicio</h3>
-    <p class="pame-hint">
-      Active el bloque <strong>App Mobile</strong> en
-      <em>Bloques del inicio</em> para que esta sección sea visible en la página principal.
-    </p>
-
-    <div class="pame-grid3">
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
-        <input type="text" class="psb-input" [(ngModel)]="appMobile.kicker" />
-      </label>
-      <label class="psb-field psb-field--plain pame-span2">
-        <span>Título</span>
-        <input type="text" class="psb-input" [(ngModel)]="appMobile.titulo" />
-      </label>
-    </div>
-
-    <label class="psb-field psb-field--plain">
-      <span>Introducción</span>
-      <textarea class="psb-input" rows="2" [(ngModel)]="appMobile.lead"></textarea>
-    </label>
-
-    <div class="pame-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Texto del botón descarga</span>
-        <input type="text" class="psb-input" [(ngModel)]="appMobile.btnDescargar" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>Nota de instalación</span>
-        <input type="text" class="psb-input" [(ngModel)]="appMobile.notaInstalacion" />
-      </label>
-    </div>
-
-    @for (item of appMobile.features; track $index; let i = $index) {
-      <article class="pame-feature card">
-        <div class="pame-feature__head">
-          <strong>Característica {{ i + 1 }}</strong>
-          <button type="button" class="pame-link" (click)="removeFeature(i)">Quitar</button>
-        </div>
-        <div class="pame-grid3">
-          <label class="psb-field psb-field--plain">
-            <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
-          </label>
-          <label class="psb-field psb-field--plain pame-span2">
-            <span>Título</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.title" />
-          </label>
-        </div>
-        <label class="psb-field psb-field--plain">
-          <argo-portal-field-label tag="p" label="Descripción" />
-          <textarea class="psb-input" rows="2" [(ngModel)]="item.text"></textarea>
-        </label>
-      </article>
-    }
-    <button type="button" class="pame-link" (click)="addFeature()">+ Añadir característica</button>
   </section>
 </div>

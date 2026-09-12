@@ -11,8 +11,13 @@
 
   <argo-portal-seo-legend />
 
+  <p class="psb-note psb-editor-order-hint">
+    Las secciones <strong>numeradas</strong> siguen el orden de arriba abajo en la página pública.
+    Los bloques «Solo inicio» editan el home, no esta URL.
+  </p>
+
   <section class="psb-card psb-card--h1">
-    <h3 class="psb-card__title">H1 — Encabezado de la página</h3>
+    <h3 class="psb-card__title"><span class="pes-order">1</span> H1 — Encabezado de la página</h3>
     <p class="psb-note">
       El <strong>H1</strong> es el único título principal de <code>/trabajo-en-alturas</code>.
       Los mismos textos alimentan el teaser del inicio (allí se muestran como <strong>H2</strong>).
@@ -96,54 +101,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Sección del inicio (home)</h3>
-    <div class="psb-grid2">
-      <label class="psb-field psb-field--plain">
-        <span>Texto del botón en el inicio</span>
-        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaInicioTexto" />
-      </label>
-      <label class="psb-field psb-field--plain">
-        <span>URL del botón</span>
-        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaUrl" />
-      </label>
-    </div>
-    @for (item of trabajoEnAlturas.homeItems; track $index; let i = $index) {
-      <div class="ple-card">
-        <div class="ple-card__head">
-          <strong>Tarjeta {{ i + 1 }}</strong>
-          <button type="button" class="psb-link ple-remove" (click)="removeItem(trabajoEnAlturas.homeItems, i)">Eliminar</button>
-        </div>
-        <div class="psb-grid3">
-          <label class="psb-field psb-field--plain">
-            <span>Número</span>
-            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Icono</span>
-            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Acento</span>
-            <select class="psb-input" [(ngModel)]="item.acento">
-              @for (a of acentos; track a) { <option [value]="a">{{ a }}</option> }
-            </select>
-          </label>
-        </div>
-        <label class="psb-field psb-field--plain">
-          <span>Título</span>
-          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Texto</span>
-          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
-        </label>
-      </div>
-    }
-    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Menú de navegación</h3>
+    <h3 class="psb-card__title"><span class="pes-order">2</span> Menú de navegación</h3>
     @for (nav of trabajoEnAlturas.nav; track $index; let i = $index) {
       <div class="ple-list__row">
         <input type="text" class="psb-input" [(ngModel)]="nav.id" placeholder="id-ancla" />
@@ -155,7 +113,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Definición e introducción</h3>
+    <h3 class="psb-card__title"><span class="pes-order">3</span> Definición e introducción</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.introTitulo" />
@@ -174,7 +132,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Marco normativo</h3>
+    <h3 class="psb-card__title"><span class="pes-order">4</span> Marco normativo</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.normativaTitulo" />
@@ -244,7 +202,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Responsabilidades legales</h3>
+    <h3 class="psb-card__title"><span class="pes-order">5</span> Responsabilidades legales</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.objetivosTitulo" />
@@ -260,7 +218,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Trabajador Autorizado (requisitos)</h3>
+    <h3 class="psb-card__title"><span class="pes-order">6</span> Trabajador Autorizado (requisitos)</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.metodologiaTitulo" />
@@ -289,7 +247,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">EPI y SPCC</h3>
+    <h3 class="psb-card__title"><span class="pes-order">7</span> EPI y SPCC</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.evaluacionTitulo" />
@@ -302,7 +260,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Sector transportador</h3>
+    <h3 class="psb-card__title"><span class="pes-order">8</span> Sector transportador</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.sectorTitulo" />
@@ -331,7 +289,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Regla de las 3 C</h3>
+    <h3 class="psb-card__title"><span class="pes-order">9</span> Regla de las 3 C</h3>
     <label class="psb-field psb-field--plain">
       <span>Título</span>
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.tresCTitulo" />
@@ -360,64 +318,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Módulos del curso (referencia)</h3>
-    <p class="psb-note">Lista de módulos para referencia o futura sección en la página.</p>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="H2" label="Título de la sección" />
-      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.modulosTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Texto introductorio" />
-      <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.modulosLead"></textarea>
-    </label>
-    @for (mod of trabajoEnAlturas.modulos; track $index; let i = $index) {
-      <div class="ple-card">
-        <div class="ple-card__head">
-          <strong>Módulo {{ mod.numero }}</strong>
-          <button type="button" class="psb-link ple-remove" (click)="removeItem(trabajoEnAlturas.modulos, i)">Eliminar</button>
-        </div>
-        <div class="psb-grid2">
-          <label class="psb-field psb-field--plain">
-            <span>Número</span>
-            <input type="number" class="psb-input" [(ngModel)]="mod.numero" />
-          </label>
-          <label class="psb-field psb-field--plain">
-            <span>Miniatura (URL)</span>
-            <input type="text" class="psb-input" [(ngModel)]="mod.thumbUrl" />
-          </label>
-        </div>
-        <label class="psb-field psb-field--plain">
-          <span>Título</span>
-          <input type="text" class="psb-input" [(ngModel)]="mod.titulo" />
-        </label>
-        <label class="psb-field psb-field--plain">
-          <span>Resumen</span>
-          <textarea class="psb-input" rows="2" [(ngModel)]="mod.resumen"></textarea>
-        </label>
-      </div>
-    }
-    <button type="button" class="psb-link" (click)="addModulo()">+ Añadir módulo</button>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">SEO local (Villavicencio)</h3>
-    <label class="psb-field psb-field--plain">
-      <span>Título bloque local (H2)</span>
-      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.localTitulo" />
-    </label>
-    <label class="psb-field psb-field--plain">
-      <span>Texto bloque local</span>
-      <textarea class="psb-input" rows="3" [(ngModel)]="trabajoEnAlturas.localTexto"></textarea>
-    </label>
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Preguntas frecuentes</h3>
-    <argo-portal-editor-faq-list [items]="trabajoEnAlturas.faq" />
-  </section>
-
-  <section class="psb-card">
-    <h3 class="psb-card__title">Biblioteca de documentos PDF</h3>
+    <h3 class="psb-card__title"><span class="pes-order">10</span> Biblioteca de documentos PDF</h3>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.documentosTitulo" />
@@ -480,6 +381,110 @@
       </div>
     }
     <button type="button" class="psb-link" (click)="addDocumentoGrupo()">+ Añadir grupo de documentos</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">11</span> SEO local (Villavicencio)</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título bloque local (H2)</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.localTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto bloque local</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="trabajoEnAlturas.localTexto"></textarea>
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">12</span> Preguntas frecuentes</h3>
+    <argo-portal-editor-faq-list [items]="trabajoEnAlturas.faq" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Módulos del curso (referencia — solo ERP)</h3>
+    <p class="psb-note">Lista de módulos para referencia o futura sección en la página.</p>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.modulosTitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
+      <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.modulosLead"></textarea>
+    </label>
+    @for (mod of trabajoEnAlturas.modulos; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Módulo {{ mod.numero }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(trabajoEnAlturas.modulos, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="number" class="psb-input" [(ngModel)]="mod.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Miniatura (URL)</span>
+            <input type="text" class="psb-input" [(ngModel)]="mod.thumbUrl" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="mod.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Resumen</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="mod.resumen"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addModulo()">+ Añadir módulo</button>
+  </section>
+
+  <section class="psb-card psb-card--page-home">
+    <h3 class="psb-card__title">Solo inicio — Sección del inicio (home)</h3>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón en el inicio</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaInicioTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL del botón</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.ctaUrl" />
+      </label>
+    </div>
+    @for (item of trabajoEnAlturas.homeItems; track $index; let i = $index) {
+      <div class="ple-card">
+        <div class="ple-card__head">
+          <strong>Tarjeta {{ i + 1 }}</strong>
+          <button type="button" class="psb-link ple-remove" (click)="removeItem(trabajoEnAlturas.homeItems, i)">Eliminar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Número</span>
+            <input type="number" class="psb-input" [(ngModel)]="item.numero" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Acento</span>
+            <select class="psb-input" [(ngModel)]="item.acento">
+              @for (a of acentos; track a) { <option [value]="a">{{ a }}</option> }
+            </select>
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Texto</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.texto"></textarea>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
   </section>
 
   <section class="psb-card">

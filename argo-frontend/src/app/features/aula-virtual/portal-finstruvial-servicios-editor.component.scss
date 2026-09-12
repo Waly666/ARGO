@@ -1,5 +1,15 @@
 @use './portal-site-editor-shared';
 
+.fsv-editor-groups {
+  display: flex;
+  flex-direction: column;
+}
+
+.fsv-editor-group {
+  display: flex;
+  flex-direction: column;
+}
+
 .fsv-editor {
   &__toolbar {
     align-items: flex-start;

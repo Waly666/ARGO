@@ -37,6 +37,21 @@
     color: #fff;
     box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
   }
+
+  &--external {
+    border-style: dashed;
+    cursor: help;
+    opacity: 0.85;
+  }
+
+  &--off {
+    opacity: 0.55;
+    text-decoration: line-through;
+  }
+
+  &:disabled {
+    cursor: help;
+  }
 }
 
 .ple-block {

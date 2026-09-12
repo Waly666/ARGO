@@ -327,7 +327,7 @@ export class PortalSiteBuilderComponent {
   previewVisible = signal(true);
   aparienciaAvanzada = signal(false);
   /** Fuerza refresco de la lista de bloques del inicio tras reordenar o activar/desactivar. */
-  private homeSeccionesTick = signal(0);
+  readonly homeSeccionesTick = signal(0);
 
   get landing() {
     if (!this.portalForm.landing) {

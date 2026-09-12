@@ -1,67 +1,77 @@
 <section class="phfe">
-  <p class="psb-muted">
-    Hasta {{ maxFotos }} fotos destacadas en el inicio (aparte del hero). Si no hay fotos, el bloque no aparece en el sitio.
+  <p class="psb-note psb-editor-order-hint">
+    Bloque «Fotos del inicio» en la página principal. Las secciones numeradas siguen el orden de arriba abajo en el sitio.
   </p>
 
-  <div class="psb-grid3">
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">1</span> Encabezado del bloque</h3>
+    <p class="psb-muted">
+      Hasta {{ maxFotos }} fotos destacadas en el inicio (aparte del hero). Si no hay fotos, el bloque no aparece en el sitio.
+    </p>
+
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <input type="text" class="psb-input" [(ngModel)]="fotosInicio.kicker" placeholder="En imágenes" />
+      </label>
+      <label class="psb-field psb-field--plain psb-field--span2">
+        <argo-portal-field-label tag="H2" label="Título del bloque" />
+        <input type="text" class="psb-input" [(ngModel)]="fotosInicio.titulo" placeholder="Vida en nuestro centro" />
+      </label>
+    </div>
+
     <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
-      <input type="text" class="psb-input" [(ngModel)]="fotosInicio.kicker" placeholder="En imágenes" />
+      <argo-portal-field-label tag="p" label="Texto introductorio" />
+      <textarea class="psb-input" rows="2" [(ngModel)]="fotosInicio.lead"></textarea>
     </label>
-    <label class="psb-field psb-field--plain psb-field--span2">
-      <span>Título del bloque</span>
-      <input type="text" class="psb-input" [(ngModel)]="fotosInicio.titulo" placeholder="Vida en nuestro centro" />
-    </label>
-  </div>
+  </section>
 
-  <label class="psb-field psb-field--plain">
-    <argo-portal-field-label tag="p" label="Texto introductorio" />
-    <textarea class="psb-input" rows="2" [(ngModel)]="fotosInicio.lead"></textarea>
-  </label>
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">2</span> Galería de fotos</h3>
+    <div class="phfe-grid">
+      @for (foto of fotosInicio.fotos; track foto.url; let i = $index) {
+        <article class="phfe-slot phfe-slot--filled">
+          <div class="phfe-thumb">
+            <img [src]="previewUrl(foto)" [alt]="foto.leyenda || 'Foto inicio ' + (i + 1)" loading="lazy" />
+          </div>
+          <label class="psb-field psb-field--plain">
+            <span>Leyenda (opcional)</span>
+            <input type="text" class="psb-input" [(ngModel)]="foto.leyenda" placeholder="Ej.: Jornada de capacitación 2026" />
+          </label>
+          <argo-portal-editor-imagen-prompt
+            [promptImagen]="foto.promptImagen || ''"
+            (promptImagenChange)="foto.promptImagen = $event"
+            [alt]="foto.leyenda"
+            [etiqueta]="'Foto inicio ' + (i + 1)"
+            (copied)="avNotice.emit({ message: 'Prompt copiado' })"
+            (copyError)="avNotice.emit({ message: $event, error: true })"
+          />
+          <button type="button" class="psb-btn psb-btn--ghost phfe-quitar" [disabled]="uploading()" (click)="confirmarEliminar(foto)">
+            Quitar foto
+          </button>
+        </article>
+      }
 
-  <div class="phfe-grid">
-    @for (foto of fotosInicio.fotos; track foto.url; let i = $index) {
-      <article class="phfe-slot phfe-slot--filled">
-        <div class="phfe-thumb">
-          <img [src]="previewUrl(foto)" [alt]="foto.leyenda || 'Foto inicio ' + (i + 1)" loading="lazy" />
-        </div>
-        <label class="psb-field psb-field--plain">
-          <span>Leyenda (opcional)</span>
-          <input type="text" class="psb-input" [(ngModel)]="foto.leyenda" placeholder="Ej.: Jornada de capacitación 2026" />
-        </label>
-        <argo-portal-editor-imagen-prompt
-          [promptImagen]="foto.promptImagen || ''"
-          (promptImagenChange)="foto.promptImagen = $event"
-          [alt]="foto.leyenda"
-          [etiqueta]="'Foto inicio ' + (i + 1)"
-          (copied)="avNotice.emit({ message: 'Prompt copiado' })"
-          (copyError)="avNotice.emit({ message: $event, error: true })"
-        />
-        <button type="button" class="psb-btn psb-btn--ghost phfe-quitar" [disabled]="uploading()" (click)="confirmarEliminar(foto)">
-          Quitar foto
-        </button>
-      </article>
-    }
+      @if (puedeAgregar()) {
+        <article class="phfe-slot phfe-slot--empty">
+          <div class="phfe-placeholder">
+            <span>Foto {{ totalFotos() + 1 }}</span>
+            <p>Vista horizontal recomendada (16:9)</p>
+          </div>
+          <label class="phfe-upload">
+            {{ uploading() ? 'Subiendo…' : 'Elegir imagen' }}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              [disabled]="uploading()"
+              (change)="onArchivoSelected($event)" />
+          </label>
+        </article>
+      }
+    </div>
 
-    @if (puedeAgregar()) {
-      <article class="phfe-slot phfe-slot--empty">
-        <div class="phfe-placeholder">
-          <span>Foto {{ totalFotos() + 1 }}</span>
-          <p>Vista horizontal recomendada (16:9)</p>
-        </div>
-        <label class="phfe-upload">
-          {{ uploading() ? 'Subiendo…' : 'Elegir imagen' }}
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            [disabled]="uploading()"
-            (change)="onArchivoSelected($event)" />
-        </label>
-      </article>
-    }
-  </div>
-
-  <p class="psb-muted phfe-hint">
-    Las leyendas y textos se guardan al publicar. «Quitar foto» elimina la imagen del servidor de inmediato.
-  </p>
+    <p class="psb-muted phfe-hint">
+      Las leyendas y textos se guardan al publicar. «Quitar foto» elimina la imagen del servidor de inmediato.
+    </p>
+  </section>
 </section>
