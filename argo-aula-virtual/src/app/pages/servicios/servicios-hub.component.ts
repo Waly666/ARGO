@@ -24,6 +24,7 @@ import {
 } from '../../core/finstruvial-servicio-hero.util';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 
 @Component({
@@ -34,6 +35,7 @@ import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
     RouterLink,
     PortalPromoBannerHeroComponent,
     PortalBreadcrumbsComponent,
+    PortalIconComponent,
     RevealOnScrollDirective,
   ],
   templateUrl: './servicios-hub.component.html',

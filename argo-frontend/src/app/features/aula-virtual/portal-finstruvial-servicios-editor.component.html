@@ -95,26 +95,58 @@
       <span>Texto principal del portafolio</span>
       <textarea class="psb-input" rows="2" [(ngModel)]="finstruvialServicios.hub.lead"></textarea>
     </label>
-    <div class="fsv-fieldset">
-      <p class="fsv-fieldset__legend">Hero animado del portafolio</p>
-      <p class="psb-hint">
-        Pilares, destacado, chips y cinta del banner superior en <strong>/servicios</strong>.
-        Si deja algún bloque vacío, el portal completa con las tarjetas del portafolio o textos existentes.
-      </p>
-      <argo-portal-promo-hero-fields-editor
-        [hero]="finstruvialServicios.hub"
-        [showTitle]="false"
-        [showLead]="false"
-        [showPillars]="true"
-        [showHighlight]="true"
-        [showStats]="true"
-        [showRibbon]="true"
-      />
-      <label class="psb-check">
-        <input type="checkbox" [(ngModel)]="finstruvialServicios.hub.heroHighlightRadar" />
-        Efecto radar en la tarjeta destacada
-      </label>
-    </div>
+    @if (esHubServial()) {
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Tarjeta destacada del banner</p>
+        <p class="psb-hint">
+          Aparece bajo el párrafo introductorio en <strong>/servicios</strong>, igual que en las demás
+          páginas de servicios (icono, título y subtítulo).
+        </p>
+        <argo-portal-promo-hero-fields-editor
+          [hero]="finstruvialServicios.hub"
+          [showTitle]="false"
+          [showLead]="false"
+          [showHighlight]="true"
+        />
+        <label class="psb-check">
+          <input type="checkbox" [(ngModel)]="finstruvialServicios.hub.heroHighlightRadar" />
+          Efecto radar en la tarjeta destacada
+        </label>
+      </div>
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Chips bajo la tarjeta destacada</p>
+        <p class="psb-hint">
+          Etiquetas cortas debajo de la tarjeta (p. ej. «Villavicencio», «Meta», «Llanos Orientales»).
+        </p>
+        <argo-portal-promo-hero-fields-editor
+          [hero]="finstruvialServicios.hub"
+          [showTitle]="false"
+          [showLead]="false"
+          [showStats]="true"
+        />
+      </div>
+    } @else {
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Hero animado del portafolio (Finstruvial)</p>
+        <p class="psb-hint">
+          Pilares, destacado, chips y cinta del banner superior en <strong>/servicios</strong>.
+          Si deja algún bloque vacío, el portal completa con las tarjetas del portafolio o textos existentes.
+        </p>
+        <argo-portal-promo-hero-fields-editor
+          [hero]="finstruvialServicios.hub"
+          [showTitle]="false"
+          [showLead]="false"
+          [showPillars]="true"
+          [showHighlight]="true"
+          [showStats]="true"
+          [showRibbon]="true"
+        />
+        <label class="psb-check">
+          <input type="checkbox" [(ngModel)]="finstruvialServicios.hub.heroHighlightRadar" />
+          Efecto radar en la tarjeta destacada
+        </label>
+      </div>
+    }
     <label class="psb-field psb-field--plain">
       <span>Texto alternativo de la imagen del banner</span>
       <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.heroImagenAlt" />
@@ -161,6 +193,22 @@
         (ngModelChange)="onHubSeoTextoParrafosChange($event)"
       ></textarea>
     </label>
+    @if (esHubServial()) {
+      <div class="fsv-fieldset">
+        <p class="fsv-fieldset__legend">Etiquetas bajo los párrafos</p>
+        <p class="psb-hint">
+          Chips de áreas de formación que aparecen en este bloque en la página pública
+          (p. ej. «Seguridad vial», «Conducción certificada»).
+        </p>
+        <argo-portal-promo-hero-fields-editor
+          [hero]="finstruvialServicios.hub"
+          [showTitle]="false"
+          [showLead]="false"
+          [showPillars]="true"
+          [showPillarsLabel]="false"
+        />
+      </div>
+    }
     <div class="psb-grid2">
       <div class="psb-imagen-slot">
         <div class="psb-imagen-slot__head"><strong>Imagen formación 1</strong></div>

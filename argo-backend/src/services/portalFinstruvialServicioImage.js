@@ -93,7 +93,7 @@ async function subirImagenServicioFinstruvial(slugRaw, imagenIdRaw, file, usuari
   const imagenId = String(imagenIdRaw || 'hero').trim();
 
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing || {});
+  const landing = mergeLanding(aula.landing || {}, aula.site?.tema);
   if (!landing.finstruvialServicios?.paginas) {
     const err = new Error('Servicios Finstruvial no configurados.');
     err.status = 400;
@@ -150,7 +150,7 @@ async function quitarImagenServicioFinstruvial(slugRaw, imagenIdRaw, usuario) {
   const imagenId = String(imagenIdRaw || 'hero').trim();
 
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing || {});
+  const landing = mergeLanding(aula.landing || {}, aula.site?.tema);
   const pagina = getPagina(landing, slug);
 
   if (imagenId === 'hero') {
@@ -182,7 +182,7 @@ async function subirVideoServicioFinstruvial(slugRaw, videoIdRaw, file, usuario)
   }
 
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing || {});
+  const landing = mergeLanding(aula.landing || {}, aula.site?.tema);
   if (!landing.finstruvialServicios?.paginas) {
     const err = new Error('Servicios Finstruvial no configurados.');
     err.status = 400;
@@ -229,7 +229,7 @@ async function quitarVideoServicioFinstruvial(slugRaw, videoIdRaw, usuario) {
   }
 
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing || {});
+  const landing = mergeLanding(aula.landing || {}, aula.site?.tema);
   const pagina = getPagina(landing, slug);
   const { idx } = findVideo(pagina, videoId);
 
@@ -283,7 +283,7 @@ function resolveHubImageSlot(slotRaw) {
 async function subirImagenHubServicios(file, usuario, slotRaw) {
   const { cfg } = resolveHubImageSlot(slotRaw);
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing || {});
+  const landing = mergeLanding(aula.landing || {}, aula.site?.tema);
   const hub = landing.finstruvialServicios?.hub;
   if (!hub) {
     const err = new Error('Hub de servicios no configurado.');
@@ -314,7 +314,7 @@ async function subirImagenHubServicios(file, usuario, slotRaw) {
 async function quitarImagenHubServicios(usuario, slotRaw) {
   const { cfg } = resolveHubImageSlot(slotRaw);
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing || {});
+  const landing = mergeLanding(aula.landing || {}, aula.site?.tema);
   const hub = landing.finstruvialServicios?.hub;
   if (!hub) {
     const err = new Error('Hub de servicios no configurado.');

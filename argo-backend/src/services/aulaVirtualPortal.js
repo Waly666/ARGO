@@ -95,6 +95,7 @@ async function guardarConfigAula(body, usuario) {
   // Base = configuración actual (no DEFAULTS) para que los guardados parciales
   // (subir imagen hero/logo, etc.) NO reinicien campos no enviados como los textos del hero.
   const actual = await obtenerConfigAula();
+  const tema = body.site?.tema ?? actual.site?.tema;
   const dto = {
     ...actual,
     ...body,
@@ -116,16 +117,16 @@ async function guardarConfigAula(body, usuario) {
   delete dto.nombreCea;
   if (dto.urlLogo === undefined) delete dto.urlLogo;
   if (body.landing !== undefined) {
-    dto.landing = normalizarLanding(body.landing);
+    dto.landing = normalizarLanding(body.landing, tema);
   } else {
-    dto.landing = mergeLanding(actual.landing);
+    dto.landing = mergeLanding(actual.landing, tema);
   }
   if (body.site !== undefined) {
-    const navBase = dto.landing?.nav || mergeLanding(actual.landing).nav;
-    const footerBase = dto.landing?.footer || mergeLanding(actual.landing).footer;
+    const navBase = dto.landing?.nav || mergeLanding(actual.landing, tema).nav;
+    const footerBase = dto.landing?.footer || mergeLanding(actual.landing, tema).footer;
     const oldSite = mergePortalSite(actual.site, { nav: navBase, footer: footerBase });
     dto.site = mergePortalSite(body.site, { nav: navBase, footer: footerBase });
-    dto.landing = sincronizarNavLanding(dto.landing || mergeLanding(actual.landing), dto.site);
+    dto.landing = sincronizarNavLanding(dto.landing || mergeLanding(actual.landing, tema), dto.site);
 
     const slugChanges = detectPortalSlugChanges(oldSite, dto.site);
     if (slugChanges.length) {

@@ -615,6 +615,10 @@ export const SERVIAL_PORTAFOLIO_HUB = {
   heroImagenPrompt:
     'Imagen fotográfica horizontal 16:9 (1920×1080), ultra realista. Grupo diverso de conductores y trabajadores en capacitación de seguridad vial y transporte, ambiente profesional y moderno. Luz natural. Villavicencio, Meta, Llanos Orientales, Colombia. Personas adultas latinoamericanas auténticas. Sin texto sobre la imagen, sin logos, sin marcas comerciales, sin marca de agua.',
   heroStats: ['Villavicencio, Meta', 'Llanos Orientales', 'Personas y empresas'],
+  highlightIcon: 'shield-check',
+  highlightTitle: 'Únicos con calidad certificada',
+  highlightSubtitle: 'Formación presencial y virtual en Villavicencio y el Meta',
+  heroHighlightRadar: true,
   formacionImagenUrl: '',
   formacionImagenAlt: 'Capacitación en seguridad vial en Villavicencio',
   formacionImagen2Url: '',

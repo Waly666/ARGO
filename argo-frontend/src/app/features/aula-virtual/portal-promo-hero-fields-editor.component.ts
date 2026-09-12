@@ -52,6 +52,7 @@ export class PortalPromoHeroFieldsEditorComponent {
   @Input() showTitle = true;
   @Input() showLead = true;
   @Input() showPillars = false;
+  @Input() showPillarsLabel = true;
   @Input() showHighlight = false;
   @Input() showVirtualBadge = false;
   @Input() showBackLabel = false;

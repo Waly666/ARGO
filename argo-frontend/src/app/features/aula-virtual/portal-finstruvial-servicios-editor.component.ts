@@ -17,6 +17,7 @@ import {
 import {
   mergePortafolioServicios,
   portafolioServiciosDefaultsForTema,
+  portafolioServiciosEsServial,
 } from '../../core/utils/portafolio-servicios.util';
 import type { PortalFinstruvialLineSlugChange } from '../../core/utils/portal-slug-propagate.util';
 import type { PortalTemaLike } from '../../core/utils/portal-theme-css-base.util';
@@ -112,6 +113,11 @@ export class PortalFinstruvialServiciosEditorComponent implements OnInit {
 
   private mergePortafolio(raw?: Partial<PortalFinstruvialServiciosConfig> | null) {
     return mergePortafolioServicios(raw ?? this.finstruvialServicios, this.portalTema);
+  }
+
+  /** El hub Servial usa un banner propio (sin cinta, radar ni tarjeta destacada Finstruvial). */
+  esHubServial(): boolean {
+    return this.modo === 'hub' && portafolioServiciosEsServial(this.portalTema);
   }
 
   lineas() {

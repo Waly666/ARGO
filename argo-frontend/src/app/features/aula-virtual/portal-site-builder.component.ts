@@ -27,6 +27,7 @@ import {
   snapshotServialPlantillaInicio,
 } from '../../core/utils/servial-plantilla-inicio.util';
 import { portafolioServiciosEsServial } from '../../core/utils/portafolio-servicios.util';
+import { preservePortafolioServiciosEdits } from '../../core/utils/preserve-portafolio-servicios-edits.util';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 import { PortalSeoTagComponent } from './portal-seo-tag.component';
@@ -998,16 +999,10 @@ export class PortalSiteBuilderComponent {
       this.portalForm.site.tema.fuenteTitulos = '';
     }
     this.portalForm.landing = mergePortalLanding(config.landing, this.portalForm.site.tema);
-    if (prevFinstruvial?.paginas && this.portalForm.landing.finstruvialServicios?.paginas) {
-      for (const slug of FINSTRUVIAL_SERVICIO_SLUGS) {
-        const prevUrl = prevFinstruvial.paginas[slug]?.heroVideoYoutubeUrl?.trim();
-        if (!prevUrl) continue;
-        const next = this.portalForm.landing.finstruvialServicios.paginas[slug];
-        if (!next?.heroVideoYoutubeUrl?.trim()) {
-          next.heroVideoYoutubeUrl = prevUrl;
-        }
-      }
-    }
+    preservePortafolioServiciosEdits(
+      prevFinstruvial,
+      this.portalForm.landing.finstruvialServicios,
+    );
     loadPortalGoogleFonts(this.doc, this.portalForm.site.tema);
   }
 

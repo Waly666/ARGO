@@ -106,7 +106,7 @@ function quitarImagenAnterior(imagenUrl, uploadKey) {
 async function guardarHeroImagenLanding(pageKey, imagenUrl, usuario) {
   const cfg = getPageConfig(pageKey);
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing);
+  const landing = mergeLanding(aula.landing, aula.site?.tema);
   const { leaf, leafKey, parent } = getLandingTarget(landing, cfg);
   parent[leafKey] = {
     ...leaf,
@@ -127,7 +127,7 @@ async function subirLandingHeroImagen(pageKey, file, usuario) {
   }
 
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing);
+  const landing = mergeLanding(aula.landing, aula.site?.tema);
   const prevUrl = readHeroImageUrl(landing, cfg);
   quitarImagenAnterior(prevUrl, cfg.uploadKey);
 
@@ -144,7 +144,7 @@ async function subirLandingHeroImagen(pageKey, file, usuario) {
 async function quitarLandingHeroImagen(pageKey, usuario) {
   const cfg = getPageConfig(pageKey);
   const aula = await obtenerConfigAula();
-  const landing = mergeLanding(aula.landing);
+  const landing = mergeLanding(aula.landing, aula.site?.tema);
   const prevUrl = readHeroImageUrl(landing, cfg);
   quitarImagenAnterior(prevUrl, cfg.uploadKey);
   await guardarHeroImagenLanding(pageKey, '', usuario);

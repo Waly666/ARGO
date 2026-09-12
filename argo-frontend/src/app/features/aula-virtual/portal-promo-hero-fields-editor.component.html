@@ -79,10 +79,12 @@
 
   @if (showPillars && hero.pillars) {
     <h4 class="pphe__subtitle">Pilares / chips del banner</h4>
-    <label class="psb-field psb-field--plain">
-      <span>Etiqueta de la lista (accesibilidad)</span>
-      <input type="text" class="psb-input" [(ngModel)]="hero.pillarsLabel" />
-    </label>
+    @if (showPillarsLabel) {
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta de la lista (accesibilidad)</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.pillarsLabel" />
+      </label>
+    }
     @for (p of hero.pillars; track $index; let i = $index) {
       <div class="pphe__row">
         <input type="text" class="psb-input" [(ngModel)]="hero.pillars[i].icon" placeholder="icono" />

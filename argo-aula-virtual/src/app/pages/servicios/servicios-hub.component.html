@@ -23,6 +23,27 @@
           @if (hub().lead.trim()) {
             <p class="fsv-hero__lead">{{ hub().lead }}</p>
           }
+          @if (hubHeroHighlight(); as h) {
+            <div
+              class="fsv-hero__highlight"
+              [class.fsv-hero__highlight--radar]="hubHeroHighlightRadar()"
+            >
+              @if (hubHeroHighlightRadar()) {
+                <div class="fsv-hero__highlight-radar" aria-hidden="true">
+                  <span class="fsv-hero__highlight-ring"></span>
+                  <span class="fsv-hero__highlight-ring"></span>
+                  <span class="fsv-hero__highlight-ring"></span>
+                </div>
+              }
+              <div class="fsv-hero__highlight-icon" aria-hidden="true">
+                <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
+              </div>
+              <div class="fsv-hero__highlight-copy">
+                <strong>{{ h.title }}</strong>
+                <span>{{ h.subtitle }}</span>
+              </div>
+            </div>
+          }
           @if (hubHeroStats().length) {
             <div class="fsv-hero__stats" aria-label="Cobertura del servicio">
               @for (stat of hubHeroStats(); track stat) {
