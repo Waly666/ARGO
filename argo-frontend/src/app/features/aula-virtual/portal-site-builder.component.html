@@ -598,7 +598,7 @@
               <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
               <input type="text" class="psb-input" [(ngModel)]="landing.blog.kicker" placeholder="Blog" />
             </label>
-            <label class="psb-field psb-field--plain psb-field--span2">
+            <label class="psb-field psb-field--plain psb-field--span2 psb-field--h1">
               <argo-portal-field-label tag="H1" label="Título de la página" />
               <input type="text" class="psb-input" [(ngModel)]="landing.blog.titulo" placeholder="Noticias y artículos" />
             </label>
@@ -738,14 +738,12 @@
           } @else {
             <p class="psb-hint">Es la frase animada que aparece en el banner del inicio (no es el nombre de la empresa).</p>
           }
-          <label class="psb-field psb-field--plain">
-            <span>
-              @if (esSitioServial()) {
-                <argo-portal-seo-tag tag="H1" /> Línea 2 del título (dorada, animada)
-              } @else {
-                <argo-portal-seo-tag tag="H1" /> Frase principal del banner
-              }
-            </span>
+          <label class="psb-field psb-field--plain psb-field--h1">
+            @if (esSitioServial()) {
+              <argo-portal-field-label tag="H1" label="Línea 2 del título (dorada, animada)" />
+            } @else {
+              <argo-portal-field-label tag="H1" label="Frase principal del banner" />
+            }
             <input type="text" class="psb-input" [(ngModel)]="portalForm.heroTitulo" placeholder="Ej. Capacitación en seguridad vial" />
           </label>
           <label class="psb-field psb-field--plain">

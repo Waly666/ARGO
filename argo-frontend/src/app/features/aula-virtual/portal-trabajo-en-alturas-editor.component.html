@@ -11,19 +11,23 @@
 
   <argo-portal-seo-legend />
 
-  <section class="psb-card">
-    <h3 class="psb-card__title">Encabezado (hero)</h3>
+  <section class="psb-card psb-card--h1">
+    <h3 class="psb-card__title">H1 — Encabezado de la página</h3>
+    <p class="psb-note">
+      El <strong>H1</strong> es el único título principal de <code>/trabajo-en-alturas</code>.
+      Los mismos textos alimentan el teaser del inicio (allí se muestran como <strong>H2</strong>).
+    </p>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña (kicker)" />
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.kicker" />
       </label>
-      <label class="psb-field psb-field--plain">
+      <label class="psb-field psb-field--plain psb-field--h1">
         <argo-portal-field-label tag="H1" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.titulo" />
       </label>
-      <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H1" label="Título — línea 2" />
+      <label class="psb-field psb-field--plain psb-field--h1">
+        <argo-portal-field-label tag="H1" label="Título — línea 2 / acento" />
         <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.tituloLinea2" />
       </label>
     </div>

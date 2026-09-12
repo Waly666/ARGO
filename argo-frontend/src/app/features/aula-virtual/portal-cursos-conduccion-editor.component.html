@@ -10,13 +10,13 @@
   <argo-portal-seo-legend />
 
   <div class="pcc-stack">
-    <h3 class="psb-subtitle">Encabezado de la página</h3>
+    <h3 class="psb-subtitle">H1 — Encabezado de la página</h3>
     <label class="psb-field psb-field--plain">
-      <span>Etiqueta pequeña (kicker)</span>
+      <argo-portal-field-label tag="p" label="Etiqueta pequeña (kicker)" />
       <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.hero.kicker" placeholder="Cursos de conducción" />
     </label>
-    <label class="psb-field psb-field--plain">
-      <span>Título principal</span>
+    <label class="psb-field psb-field--plain psb-field--h1">
+      <argo-portal-field-label tag="H1" label="Título principal" />
       <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.tituloPrincipal" />
     </label>
     <label class="psb-field psb-field--plain">

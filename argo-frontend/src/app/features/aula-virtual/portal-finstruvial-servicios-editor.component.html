@@ -75,12 +75,12 @@
         <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.kicker" />
       </label>
-      <label class="psb-field psb-field--plain">
+      <label class="psb-field psb-field--plain psb-field--h1">
         <argo-portal-field-label tag="H1" label="Título — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.tituloLinea" />
       </label>
-      <label class="psb-field psb-field--plain">
-        <span>Título (acento)</span>
+      <label class="psb-field psb-field--plain psb-field--h1">
+        <argo-portal-field-label tag="H1" label="Título — línea 2 / acento" />
         <input type="text" class="psb-input" [(ngModel)]="finstruvialServicios.hub.tituloAcento" />
       </label>
     </div>
@@ -350,15 +350,15 @@
         <p class="fsv-fieldset__legend">Títulos del banner</p>
       <div class="psb-grid3">
         <label class="psb-field psb-field--plain">
-          <span>Texto superior pequeño</span>
+          <argo-portal-field-label tag="p" label="Texto superior pequeño" />
           <input type="text" class="psb-input" [(ngModel)]="p.kicker" placeholder="Ej. Plataforma educativa" />
         </label>
-        <label class="psb-field psb-field--plain">
-          <span>Título principal</span>
+        <label class="psb-field psb-field--plain psb-field--h1">
+          <argo-portal-field-label tag="H1" label="Título — línea 1" />
           <input type="text" class="psb-input" [(ngModel)]="p.tituloLinea" placeholder="Ej. Aula Virtual" />
         </label>
-        <label class="psb-field psb-field--plain">
-          <span>Título destacado (color)</span>
+        <label class="psb-field psb-field--plain psb-field--h1">
+          <argo-portal-field-label tag="H1" label="Título — línea 2 / acento" />
           <input type="text" class="psb-input" [(ngModel)]="p.tituloAcento" placeholder="Ej. FINSTRUVIAL" />
         </label>
       </div>

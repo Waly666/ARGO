@@ -6,7 +6,7 @@ import { PortalSeoHtmlTag, PortalSeoTagComponent } from './portal-seo-tag.compon
   selector: 'argo-portal-field-label',
   standalone: true,
   imports: [PortalSeoTagComponent],
-  template: `<span class="psb-field-label"><argo-portal-seo-tag [tag]="tag" /> {{ label }}</span>`,
+  template: `<span class="psb-field-label" [class.psb-field-label--h1]="tag === 'H1'"><argo-portal-seo-tag [tag]="tag" /> {{ label }}</span>`,
 })
 export class PortalFieldLabelComponent {
   @Input({ required: true }) tag!: PortalSeoHtmlTag;

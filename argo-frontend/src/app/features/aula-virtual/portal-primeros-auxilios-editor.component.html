@@ -13,32 +13,40 @@
 
   <argo-portal-seo-legend />
 
-  <section class="psb-card">
-    <h3 class="psb-card__title">Encabezado / H1</h3>
-    <label class="psb-field psb-field--plain">
-      <span>H1 (visible en la página)</span>
+  <section class="psb-card psb-card--h1">
+    <h3 class="psb-card__title">H1 — Título principal de la página</h3>
+    <p class="psb-note">
+      Único encabezado <strong>&lt;h1&gt;</strong> visible en <code>/curso-primeros-auxilios</code>.
+      El título SEO de Google se edita en <strong>SEO (Google)</strong>.
+    </p>
+    <label class="psb-field psb-field--plain psb-field--h1">
+      <argo-portal-field-label tag="H1" label="Título principal (visible en la página)" />
       <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.h1" />
     </label>
     <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Subtítulo" />
+      <argo-portal-field-label tag="p" label="Subtítulo bajo el H1" />
       <textarea class="psb-input" rows="2" [(ngModel)]="primerosAuxilios.heroLead"></textarea>
     </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Sección del inicio (teaser H2)</h3>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
-        <span>Etiqueta (inicio)</span>
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título teaser inicio</span>
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.titulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Acento teaser inicio</span>
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
         <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.tituloLinea2" />
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Subtítulo del teaser en inicio</span>
+      <argo-portal-field-label tag="p" label="Subtítulo del teaser" />
       <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.subtitulo" />
     </label>
   </section>

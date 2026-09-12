@@ -17,17 +17,20 @@
       Bloque «Mercancías peligrosas» en el home del sitio. Actívelo o desactívelo en
       <strong>Bloques del inicio</strong>. El botón usa el slug de la página salvo que indique otra URL abajo.
     </p>
+    <p class="psb-hint">
+      Los títulos del teaser usan los mismos campos del <strong>H1</strong> (sección «Encabezado de la página completa»).
+    </p>
     <div class="psb-grid3">
       <label class="psb-field psb-field--plain">
         <argo-portal-field-label tag="p" label="Etiqueta pequeña" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
       </label>
       <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H2" label="Título — línea 1" />
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <argo-portal-field-label tag="H2" label="Título — línea 2" />
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
         <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
       </label>
     </div>
@@ -91,10 +94,32 @@
     <button type="button" class="psb-link" (click)="addHomeItem()">+ Añadir tarjeta del inicio</button>
   </section>
 
-  <section class="psb-card">
-    <h3 class="psb-card__title">Encabezado de la página completa</h3>
+  <section class="psb-card psb-card--h1">
+    <h3 class="psb-card__title">H1 — Encabezado de la página completa</h3>
+    <p class="psb-note">
+      El <strong>H1</strong> es el único título principal de <code>/mercancias-peligrosas</code>.
+      Los mismos textos alimentan el teaser del inicio (allí se muestran como <strong>H2</strong>).
+    </p>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta pequeña (kicker)" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain psb-field--h1">
+        <argo-portal-field-label tag="H1" label="Título — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain psb-field--h1">
+        <argo-portal-field-label tag="H1" label="Título — línea 2 / acento" />
+        <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.tituloLinea2" />
+      </label>
+    </div>
     <label class="psb-field psb-field--plain">
-      <argo-portal-field-label tag="p" label="Texto principal del inicio" />
+      <argo-portal-field-label tag="p" label="Subtítulo bajo el H1" />
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.subtitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Texto principal del banner" />
       <textarea class="psb-input" rows="2" [(ngModel)]="mercanciasPeligrosas.heroLead"></textarea>
     </label>
     <argo-portal-promo-hero-fields-editor

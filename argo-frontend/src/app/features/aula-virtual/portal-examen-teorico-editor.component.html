@@ -18,19 +18,22 @@
     (avNotice)="avNotice.emit($event)"
   />
 
-  <h3 class="psb-subtitle">Sección del inicio</h3>
+  <h3 class="psb-subtitle">Sección del inicio (teaser H2)</h3>
   <div class="pete-card">
+    <p class="psb-hint">
+      Los títulos del teaser usan los mismos campos del <strong>H1</strong> (sección «Página completa»).
+    </p>
     <label class="psb-field psb-field--plain">
       <argo-portal-field-label tag="p" label="Etiqueta (kicker)" />
       <input type="text" class="psb-input" [(ngModel)]="examenTeorico.kicker" />
     </label>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
-        <span>Título línea 1</span>
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 1" />
         <input type="text" class="psb-input" [(ngModel)]="examenTeorico.titulo" />
       </label>
       <label class="psb-field psb-field--plain">
-        <span>Título línea 2</span>
+        <argo-portal-field-label tag="H2" label="Teaser inicio — línea 2" />
         <input type="text" class="psb-input" [(ngModel)]="examenTeorico.tituloLinea2" />
       </label>
     </div>
@@ -55,10 +58,23 @@
     </label>
   </div>
 
-  <h3 class="psb-subtitle">Página completa (/examen-teorico)</h3>
-  <div class="pete-card">
+  <h3 class="psb-subtitle">H1 — Página completa (/examen-teorico)</h3>
+  <div class="pete-card psb-card--h1">
+    <p class="psb-note">
+      El <strong>H1</strong> es el único título principal de la página oculta del menú.
+    </p>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain psb-field--h1">
+        <argo-portal-field-label tag="H1" label="Título — línea 1" />
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain psb-field--h1">
+        <argo-portal-field-label tag="H1" label="Título — línea 2 / acento" />
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.tituloLinea2" />
+      </label>
+    </div>
     <label class="psb-field psb-field--plain">
-      <span>Introducción de la página</span>
+      <argo-portal-field-label tag="p" label="Introducción bajo el H1" />
       <textarea class="psb-input" rows="3" [(ngModel)]="examenTeorico.paginaIntro"></textarea>
     </label>
     <div class="psb-grid2">
@@ -128,7 +144,7 @@
       </label>
     </div>
     <label class="psb-field psb-field--plain">
-      <span>Título</span>
+      <argo-portal-field-label tag="H2" label="Título de la sección" />
       <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.titulo" />
     </label>
     <label class="psb-field psb-field--plain">
