@@ -141,6 +141,9 @@
             <article class="mp-card">
               <p class="mp-card__eyebrow">{{ ntc.codigo }}</p>
               <h3>{{ ntc.titulo }}</h3>
+              @if (ntc.texto.trim()) {
+                <p>{{ ntc.texto }}</p>
+              }
             </article>
           }
         </div>

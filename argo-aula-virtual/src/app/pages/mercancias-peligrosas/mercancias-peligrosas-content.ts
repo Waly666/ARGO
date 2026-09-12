@@ -320,9 +320,24 @@ export const MERCANCIAS_PELIGROSAS_LANDING: PortalMercanciasPeligrosasLanding = 
   normativaDecretoTexto:
     'Establece el marco reglamentario del sector transporte y contiene la regulación relacionada con el transporte terrestre automotor de mercancías peligrosas por carretera.',
   normativaNtcs: [
-    { codigo: 'NTC 1692', titulo: 'Clasificación, marcado, etiquetado y rotulado.', texto: '' },
-    { codigo: 'NTC 4435', titulo: 'Hojas de seguridad para materiales.', texto: '' },
-    { codigo: 'NTC 4532', titulo: 'Tarjetas de emergencia para el transporte de materiales.', texto: '' },
+    {
+      codigo: 'NTC 1692',
+      titulo: 'Clasificación, marcado, etiquetado y rotulado.',
+      texto:
+        'Establece criterios de clasificación, marcado, etiquetado y rotulado de mercancías peligrosas y de las unidades de transporte.',
+    },
+    {
+      codigo: 'NTC 4435',
+      titulo: 'Hojas de seguridad para materiales.',
+      texto:
+        'Proporcionan información sobre características y riesgos de los materiales para consulta por quienes corresponda.',
+    },
+    {
+      codigo: 'NTC 4532',
+      titulo: 'Tarjetas de emergencia para el transporte de materiales.',
+      texto:
+        'Establecen criterios para preparar tarjetas con información clara para el transporte de materiales peligrosos.',
+    },
   ],
   actualizacionTitulo: 'Actualización normativa',
   actualizacionAviso: 'La normativa puede cambiar. Verifique siempre la versión vigente antes de una operación real.',
@@ -552,6 +567,18 @@ function mergeImagenes(raw: MpImagen[] | undefined, fb: MpImagen[]): MpImagen[] 
 const HOME_ITEM_3_TEXTO_LEGACY =
   '26 PDFs de apoyo: normativa, SGA, emergencias y cartillas por clase.';
 
+function mergeNormativaNtcs(raw: MpTarjeta[] | undefined, fallback: MpTarjeta[]): MpTarjeta[] {
+  const src = Array.isArray(raw) && raw.length ? raw : fallback;
+  return src.map((item, i) => {
+    const fb = fallback.find((f) => f.codigo === item.codigo) || fallback[i] || { codigo: '', titulo: '', texto: '' };
+    return {
+      codigo: String(item.codigo ?? fb.codigo ?? '').trim() || fb.codigo || '',
+      titulo: String(item.titulo ?? fb.titulo ?? '').trim() || fb.titulo || '',
+      texto: String(item.texto ?? fb.texto ?? '').trim() || fb.texto || '',
+    };
+  });
+}
+
 function mergeHomeItems(raw: MpHomeItem[] | undefined, fallback: MpHomeItem[]): MpHomeItem[] {
   const items = (Array.isArray(raw) && raw.length ? raw : fallback).map((item) => ({ ...item }));
   const defaultItem3 = fallback.find((item) => item.numero === 3);
@@ -618,7 +645,7 @@ export function mergeMercanciasPeligrosasLanding(
     normativaLead: str(src.normativaLead, d.normativaLead),
     normativaDecretoTitulo: str(src.normativaDecretoTitulo, d.normativaDecretoTitulo),
     normativaDecretoTexto: str(src.normativaDecretoTexto, d.normativaDecretoTexto),
-    normativaNtcs: arr(src.normativaNtcs, d.normativaNtcs),
+    normativaNtcs: mergeNormativaNtcs(src.normativaNtcs, d.normativaNtcs),
     actualizacionTitulo: str(src.actualizacionTitulo, d.actualizacionTitulo),
     actualizacionTexto: str(src.actualizacionTexto, d.actualizacionTexto),
     actualizacionAviso: str(src.actualizacionAviso, d.actualizacionAviso),
