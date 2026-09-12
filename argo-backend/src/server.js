@@ -60,6 +60,10 @@ const HOST = process.env.HOST || '0.0.0.0';
         if (n > 0) console.log(`[ARGO] Tipos de egreso: ${n} registro(s) con defaults de nómina`);
       })
       .catch((err) => console.warn('[ARGO] sync tipoEgreso:', err.message));
+    const { initPortalSlugRedirects } = require('./services/aulaVirtualPortal');
+    initPortalSlugRedirects().catch((err) =>
+      console.warn('[ARGO] init portal slug redirects:', err.message),
+    );
 
     const { initForoSocket } = require('./services/foroSocket');
     const { initChatSocket } = require('./services/chatSocket');

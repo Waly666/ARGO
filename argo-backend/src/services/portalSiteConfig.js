@@ -151,6 +151,23 @@ function normalizarHome(raw) {
   return { orden, secciones };
 }
 
+function normalizarSlugRedirects(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const from = str(item.from);
+    const to = str(item.to);
+    if (!from || !to || from === to) continue;
+    const id = `${from}→${to}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ from, to });
+  }
+  return out;
+}
+
 function normalizarPortalSite(raw, { nav, footer } = {}) {
   const src = raw && typeof raw === 'object' ? raw : {};
   return {
@@ -159,6 +176,7 @@ function normalizarPortalSite(raw, { nav, footer } = {}) {
     marca: normalizarMarca(src.marca, footer),
     home: normalizarHome(src.home),
     seo: normalizarSeo(src.seo),
+    slugRedirects: normalizarSlugRedirects(src.slugRedirects),
   };
 }
 

@@ -84,6 +84,11 @@ export interface PortalHomeConfig {
   secciones: Record<string, boolean>;
 }
 
+export interface PortalSlugRedirect {
+  from: string;
+  to: string;
+}
+
 export interface PortalSiteConfig {
   paginas: Record<PortalPaginaKey, PortalPaginaConfig>;
   tema: PortalTemaConfig;
@@ -93,6 +98,8 @@ export interface PortalSiteConfig {
   homeSeccionesOrden?: string[];
   /** SEO por página (editor del sitio). Vacío = textos automáticos del portal. */
   seo?: Partial<Record<PortalSeoPageKey, PortalSeoPageConfig>>;
+  /** 301 automáticos: rutas antiguas → slug actual. */
+  slugRedirects?: PortalSlugRedirect[];
 }
 
 export { PORTAL_FUENTES } from '../utils/portal-fonts.util';
@@ -292,5 +299,10 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
     homeSeccionesLabels: raw?.homeSeccionesLabels,
     homeSeccionesOrden: raw?.homeSeccionesOrden,
     seo: mergePortalSeoPages(raw?.seo),
+    slugRedirects: Array.isArray(raw?.slugRedirects)
+      ? raw!.slugRedirects!.filter(
+          (r) => r?.from?.trim() && r?.to?.trim() && r.from.trim() !== r.to.trim(),
+        )
+      : [],
   };
 }

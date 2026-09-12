@@ -162,6 +162,8 @@ export interface PortalSiteConfig {
       keywords?: string;
     }
   >;
+  /** 301 automáticos: rutas antiguas → slug actual (generado al cambiar slugs en el ERP). */
+  slugRedirects?: { from: string; to: string }[];
 }
 
 export interface PortalConfig {

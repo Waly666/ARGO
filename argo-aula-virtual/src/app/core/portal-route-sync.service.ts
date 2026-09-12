@@ -87,6 +87,19 @@ export class PortalRouteSyncService {
       addAlias(customSeg, source, defaultSeg);
     }
 
+    for (const rule of config?.site?.slugRedirects || []) {
+      const fromSeg = normalizePortalPageSlug(String(rule.from || '').replace(/^\//, ''));
+      const toSeg = normalizePortalPageSlug(String(rule.to || '').replace(/^\//, ''));
+      if (!fromSeg || !toSeg || fromSeg === toSeg || seenPaths.has(fromSeg)) continue;
+      seenPaths.add(fromSeg);
+      out.push({
+        path: fromSeg,
+        redirectTo: toSeg,
+        pathMatch: 'full',
+        data: { portalAlias: true },
+      });
+    }
+
     const hubSeg = finstruvialHubSegmentFromConfig(config);
     const hubSource = baseChildren.find((r) => r.path === 'servicios');
     const lineSource = baseChildren.find((r) => r.path === 'servicios/:slug');

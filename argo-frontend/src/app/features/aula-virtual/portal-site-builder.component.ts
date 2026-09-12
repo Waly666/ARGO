@@ -96,6 +96,11 @@ import {
   PortalFinstruvialLineSlugChange,
   PortalSlugChange,
 } from '../../core/utils/portal-slug-propagate.util';
+import {
+  appendPortalSlugRedirect,
+  finstruvialLineToRedirectPaths,
+  mergeSlugRedirects,
+} from '../../core/utils/portal-slug-redirects.util';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -917,6 +922,7 @@ export class PortalSiteBuilderComponent {
     if (result.acercaDeHtml !== undefined) {
       this.portalForm.acercaDeHtml = result.acercaDeHtml;
     }
+    this.recordFinstruvialSlugRedirect(change);
     const msg = formatPortalSlugPropagateMessage(result);
     if (msg) this.avNotice.emit({ message: msg });
   }
@@ -942,6 +948,7 @@ export class PortalSiteBuilderComponent {
   private applyPendingFinstruvialSlugPropagation(): string | null {
     const change = this.finstruvialEditor?.commitPendingRouteSegment();
     if (!change) return null;
+    this.recordFinstruvialSlugRedirect(change);
     const result = propagateFinstruvialLineSlugChange({
       landing: this.landing,
       acercaDeHtml: this.portalForm.acercaDeHtml,
@@ -958,6 +965,7 @@ export class PortalSiteBuilderComponent {
   }
 
   private applySlugPropagation(changes: PortalSlugChange[]): string | null {
+    this.recordPageSlugRedirects(changes);
     const result = propagatePortalSlugChanges({
       landing: this.landing,
       acercaDeHtml: this.portalForm.acercaDeHtml,
@@ -969,6 +977,27 @@ export class PortalSiteBuilderComponent {
     const msg = formatPortalSlugPropagateMessage(result);
     if (msg) this.avNotice.emit({ message: msg });
     return msg;
+  }
+
+  private recordPageSlugRedirects(changes: PortalSlugChange[]): void {
+    const site = this.portalForm.site ?? mergePortalSiteDefaults();
+    this.portalForm.site = site;
+    if (!site.slugRedirects) site.slugRedirects = [];
+    for (const change of changes) {
+      appendPortalSlugRedirect(site, change);
+    }
+  }
+
+  private recordFinstruvialSlugRedirect(change: PortalFinstruvialLineSlugChange): void {
+    const rules = finstruvialLineToRedirectPaths(
+      change.hubPrefix,
+      change.fromSegment,
+      change.toSegment,
+    );
+    if (!rules.length) return;
+    const site = this.portalForm.site ?? mergePortalSiteDefaults();
+    this.portalForm.site = site;
+    site.slugRedirects = mergeSlugRedirects(site.slugRedirects, rules);
   }
 
   applyPortalConfig(config: PortalAulaConfig) {

@@ -26,6 +26,7 @@ services:
     volumes:
       - ./data/uploads:/app/uploads
       - ./data/backups:/app/backups
+      - ./data/portal-redirects:/app/data/portal-redirects
       - ./apk:/app/apk
     depends_on:
       - argo-mongo
@@ -69,6 +70,7 @@ services:
       - "8085:80"
     volumes:
       - ./apk:/usr/share/nginx/html/apk:ro
+      - ./data/portal-redirects:/etc/nginx/argo-redirects:ro
     depends_on:
       - argo-backend
     networks:

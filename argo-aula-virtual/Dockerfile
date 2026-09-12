@@ -18,7 +18,15 @@ RUN pnpm run build
 
 FROM nginx:alpine
 
+RUN apk add --no-cache inotify-tools
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-nginx-reload-redirects.sh /docker-nginx-reload-redirects.sh
+RUN chmod +x /docker-nginx-reload-redirects.sh
+
 COPY --from=build /app/dist/argo-aula-virtual/browser /usr/share/nginx/html
 
 EXPOSE 80
+
+CMD ["/bin/sh", "-c", "/docker-nginx-reload-redirects.sh && exec nginx -g 'daemon off;'"]
+

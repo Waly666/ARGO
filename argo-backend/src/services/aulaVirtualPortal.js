@@ -12,6 +12,10 @@ const {
 const { urlPublicaVerificacion } = require('./portalGoogleSearchConsole');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const { detectPortalSlugChanges, propagatePortalSlugChanges } = require('../utils/portalSlugPropagate');
+const {
+  applySlugRedirectChanges,
+  syncPortalSlugRedirectsFromSite,
+} = require('../utils/portalSlugRedirects');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -134,10 +138,25 @@ async function guardarConfigAula(body, usuario) {
       if (propagated.acercaDeHtml !== undefined) {
         dto.acercaDeHtml = propagated.acercaDeHtml;
       }
+      dto.site.slugRedirects = applySlugRedirectChanges(dto.site, slugChanges);
+    } else if (!Array.isArray(dto.site.slugRedirects)) {
+      dto.site.slugRedirects = applySlugRedirectChanges(oldSite, []);
+    } else {
+      dto.site.slugRedirects = applySlugRedirectChanges(
+        { ...dto.site, slugRedirects: dto.site.slugRedirects },
+        [],
+      );
     }
   }
   await Config.updateOne({ clave: CLAVE_AULA }, { $set: dto }, { upsert: true });
-  return obtenerConfigAula();
+  const saved = await obtenerConfigAula();
+  const landingSync = mergeLanding(saved.landing, saved.site?.tema);
+  const siteSync = mergePortalSite(saved.site, {
+    nav: landingSync.nav,
+    footer: landingSync.footer,
+  });
+  await syncPortalSlugRedirectsFromSite(siteSync);
+  return saved;
 }
 
 /** Config editable en admin (rellena con Recibos si el portal aún no tiene datos). */
@@ -206,6 +225,17 @@ async function obtenerConfigPortalPublica() {
   };
 }
 
+async function initPortalSlugRedirects() {
+  try {
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing, aula.site?.tema);
+    const site = mergePortalSite(aula.site, { nav: landing.nav, footer: landing.footer });
+    await syncPortalSlugRedirectsFromSite(site);
+  } catch (err) {
+    console.warn('[ARGO] portal slug redirects:', err.message);
+  }
+}
+
 module.exports = {
   obtenerConfigAula,
   guardarConfigAula,
@@ -216,4 +246,5 @@ module.exports = {
   logoAbsoluto,
   DEFAULTS_AULA,
   mergeLanding,
+  initPortalSlugRedirects,
 };
