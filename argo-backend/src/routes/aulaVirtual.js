@@ -80,6 +80,11 @@ router.get(
   ctrl.buscarAlumnoRegistro,
 );
 router.get(
+  '/certificados/verificar/:codigo/html',
+  buscarAlumnoLimiter,
+  ctrl.certificadoVerificacionHtml,
+);
+router.get(
   '/certificados/consulta',
   buscarAlumnoLimiter,
   turnstilePortal,

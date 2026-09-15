@@ -313,6 +313,14 @@ export class AulaApiService {
     return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/consulta?${q.toString()}`);
   }
 
+  certificadoVerificacionHtml(codigo: string, token: string): Observable<string> {
+    const q = new URLSearchParams({ t: token });
+    return this.http.get(
+      `${this.base}/certificados/verificar/${encodeURIComponent(codigo)}/html?${q.toString()}`,
+      { responseType: 'text' },
+    );
+  }
+
   descargarCertificadoConsulta(
     certId: string,
     numDoc: string | number,

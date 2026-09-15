@@ -6,6 +6,12 @@ const { buscarPrograma } = require('./programaServicio');
 const { configPorPrograma } = require('./aulaVirtualCatalogo');
 const { generarHtmlCertificado } = require('./certificadoRender');
 const { armarDatosCertificado } = require('./certificadoRenderData');
+const {
+  verifyCertificadoQrToken,
+  codigoVerificacionCert,
+  normalizarCodigoVerificacion,
+} = require('./certificadoQrToken');
+const { obtenerConfigPortalPublica } = require('./aulaVirtualPortal');
 const { reciboResumenPorLiquidacion } = require('./aulaVirtualRecibos');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
 
@@ -141,6 +147,48 @@ async function htmlCertificadoPortal(numDoc, certId, publicOrigin) {
   return generarHtmlCertificado(data, { publicOrigin });
 }
 
+/** Vista pública del certificado al escanear el QR impreso (token firmado en la URL). */
+async function htmlCertificadoVerificacionQr(codigoRaw, tokenRaw, publicOrigin) {
+  const certId = verifyCertificadoQrToken(tokenRaw);
+  if (!certId) {
+    const err = new Error('Enlace de verificación inválido o expirado.');
+    err.status = 403;
+    throw err;
+  }
+
+  const cert = await Certificado.findById(certId).lean();
+  if (!cert) {
+    const err = new Error('Certificado no encontrado.');
+    err.status = 404;
+    throw err;
+  }
+
+  const codigoUrl = normalizarCodigoVerificacion(codigoRaw);
+  const codigoCert = codigoVerificacionCert(cert);
+  if (!codigoUrl || codigoUrl !== codigoCert) {
+    const err = new Error('El código de verificación no coincide con el enlace.');
+    err.status = 403;
+    throw err;
+  }
+
+  const data = await armarDatosCertificado(certId);
+  if (!data) {
+    const err = new Error('Certificado no encontrado.');
+    err.status = 404;
+    throw err;
+  }
+
+  const cfg = await obtenerConfigPortalPublica();
+  const marcaAguaCopia = cfg.landing?.consultaCertificados?.marcaAguaCopia !== false;
+
+  return generarHtmlCertificado(data, {
+    publicOrigin,
+    embedLocalAssets: true,
+    marcaAguaCopia,
+    modoVerificacionPublica: true,
+  });
+}
+
 async function pdfCertificadoConsultaPublico(numDoc, certId, publicOrigin, { marcaAguaCopia = false } = {}) {
   const cert = await verificarCertificadoAlumno(numDoc, certId);
   const data = await armarDatosCertificado(certId);
@@ -169,5 +217,6 @@ module.exports = {
   consultarCertificadosPublico,
   verificarCertificadoAlumno,
   htmlCertificadoPortal,
+  htmlCertificadoVerificacionQr,
   pdfCertificadoConsultaPublico,
 };

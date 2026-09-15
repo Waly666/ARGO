@@ -212,6 +212,28 @@ export class PortalSeoService {
     });
   }
 
+  applyVerificarCertificado(codigo: string) {
+    const code = String(codigo || '').trim();
+    const url = this.pageUrl(
+      code ? `/verificar-certificado/${encodeURIComponent(code)}` : '/verificar-certificado',
+    );
+    const pageTitle = code
+      ? `Verificación de certificado ${code} | ${SEO_BRAND}`
+      : `Verificación de certificado | ${SEO_BRAND}`;
+    const description = code
+      ? `Copia digital verificada del certificado ${code} expedido por ${DEFAULT_CEA_NOMBRE}.`
+      : `Verifique en línea la autenticidad de un certificado expedido por ${DEFAULT_CEA_NOMBRE}.`;
+    this.applyPageMeta({
+      pageTitle,
+      description: this.truncate(description),
+      url,
+      image: this.defaultImage(null),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(null),
+      robots: 'noindex, nofollow',
+    });
+  }
+
   applyBlog(config: PortalConfig | null) {
     const landing = config?.landing;
     const fallbackTitle = landing?.blog?.titulo

@@ -1,0 +1,24 @@
+<div class="verify-page">
+  @if (loading()) {
+    <section class="verify-status">
+      <h1>Verificando certificado…</h1>
+      <p>Cargando la copia digital del certificado.</p>
+    </section>
+  } @else if (error()) {
+    <section class="verify-status verify-status--error">
+      <h1>No se pudo verificar</h1>
+      <p>{{ error() }}</p>
+      @if (codigo()) {
+        <p class="verify-code">Código: <strong>{{ codigo() }}</strong></p>
+      }
+      <a routerLink="/consulta-certificados" class="verify-link">Consultar por cédula</a>
+    </section>
+  } @else if (certSrcDoc()) {
+    <iframe
+      class="verify-cert-frame"
+      title="Certificado verificado"
+      [srcdoc]="certSrcDoc()!"
+      loading="eager"
+    ></iframe>
+  }
+</div>

@@ -13,6 +13,8 @@ const {
 } = require('./reciboHtmlShared');
 const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
 const { informePrintToolbar } = require('./informePrintToolbar');
+const { resolverBasePortal, buildActivacionUrl } = require('../utils/portalPublicUrl');
+const { emitCertificadoQrToken, codigoVerificacionCert } = require('./certificadoQrToken');
 
 function esc(s) {
   return String(s ?? '')
@@ -39,6 +41,18 @@ function payloadQrCertificado(certificado, alumno, encabezado, nombres) {
     nombres: nombres || nombreCompleto(alumno),
     encabezado: encabezado || '',
   };
+}
+
+function urlQrVerificacionCertificado(certificado, publicOrigin) {
+  const base = resolverBasePortal({ origin: publicOrigin });
+  if (!base) return '';
+  const codigo = codigoVerificacionCert(certificado);
+  if (!codigo) return '';
+  const token = emitCertificadoQrToken(String(certificado._id));
+  if (!token) return '';
+  return buildActivacionUrl(base, `/verificar-certificado/${encodeURIComponent(codigo)}`, {
+    linkToken: token,
+  });
 }
 
 function nombreCompleto(a) {
@@ -248,9 +262,10 @@ async function generarHtmlCertificado(data, options = {}) {
     certId: codigo,
   };
 
-  const qrPayload = JSON.stringify(
-    payloadQrCertificado(certificado, alumno, curso, nombre),
-  );
+  const qrUrl = urlQrVerificacionCertificado(certificado, publicOrigin);
+  const qrPayload =
+    qrUrl ||
+    JSON.stringify(payloadQrCertificado(certificado, alumno, curso, nombre));
   const mostrarQr = config?.mostrarQr !== false;
   const qrEstilo = resolverQr(config, tipo, orientacion);
   let qrDataUrl = '';
@@ -281,10 +296,13 @@ async function generarHtmlCertificado(data, options = {}) {
   const atPage = await atPageCssPara('certificados', {
     sizeOverride: `${L.pageW} ${L.pageH}`,
   });
-  const toolbar = informePrintToolbar({
-    label: 'Acciones del certificado',
-    pdfName: `certificado-${codigo || 'argo'}`,
-  });
+  const modoVerificacionPublica = options.modoVerificacionPublica === true;
+  const toolbar = modoVerificacionPublica
+    ? { css: '', html: '', script: '' }
+    : informePrintToolbar({
+        label: 'Acciones del certificado',
+        pdfName: `certificado-${codigo || 'argo'}`,
+      });
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -374,9 +392,13 @@ async function generarHtmlCertificado(data, options = {}) {
 </head>
 <body class="${anulado.bodyClass.trim()}">
   ${toolbar.html}
-  <p class="no-print" style="font:13px/1.4 sans-serif;color:#334155;margin:0 0 10px;text-align:left;padding:0 4px">
+  ${
+    modoVerificacionPublica
+      ? ''
+      : `<p class="no-print" style="font:13px/1.4 sans-serif;color:#334155;margin:0 0 10px;text-align:left;padding:0 4px">
     En el diálogo de impresión use escala <strong>100%</strong> (sin «Ajustar a página»).
-  </p>
+  </p>`
+  }
   ${anulado.html}
   <div class="sheet">
     ${fondoImg}

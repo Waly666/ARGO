@@ -53,6 +53,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'verificar-certificado/:codigo',
+        loadComponent: () =>
+          import('./pages/verificar-certificado/verificar-certificado.component').then(
+            (m) => m.VerificarCertificadoComponent,
+          ),
+      },
+      {
         path: 'cursos-conduccion',
         canActivate: [portalPageGuard],
         loadComponent: () =>

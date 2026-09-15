@@ -37,6 +37,7 @@ const {
   listarMisCertificados,
   consultarCertificadosPublico,
   htmlCertificadoPortal,
+  htmlCertificadoVerificacionQr,
   pdfCertificadoConsultaPublico,
 } = require('../services/aulaVirtualCertificados');
 const { emitConsultaDescargaToken } = require('../services/certificadoConsultaToken');
@@ -577,6 +578,22 @@ exports.consultarCertificados = async (req, res, next) => {
     res.json(data);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.certificadoVerificacionHtml = async (req, res, next) => {
+  try {
+    const html = await htmlCertificadoVerificacionQr(
+      req.params.codigo,
+      req.query.t,
+      publicOriginFromReq(req),
+    );
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(html);
+  } catch (e) {
+    if (e.status) return res.status(e.status).send(e.message);
     next(e);
   }
 };
