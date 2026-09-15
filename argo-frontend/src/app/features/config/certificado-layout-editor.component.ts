@@ -129,7 +129,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   } | null>(null);
 
   private readonly umbralArrastrePx = 4;
-  private readonly umbralDesanclarCentroPct = 1.2;
 
   ngOnInit(): void {
     ensureCertificadoGoogleFonts();
@@ -452,8 +451,8 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
     if (live?.mantenerCentro) {
       patch.align = 'center';
-      patch.left = undefined;
-      patch.right = undefined;
+      patch.left = null;
+      patch.right = null;
     } else if (live?.right != null) {
       patch.right = `${live.right}%`;
       patch.left = undefined;
@@ -776,7 +775,12 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   setCentrado(id: CampoCertificadoId, centrado: boolean) {
     const d = this.defectoCampo(id) as CampoLayoutCert;
     if (centrado) {
-      this.patchCampo(id, { left: null, right: null, align: 'center', w: d.w || '82%' });
+      this.patchCampo(id, {
+        left: null,
+        right: null,
+        align: 'center',
+        w: `${this.anchoActual(id)}%`,
+      });
     } else {
       this.patchCampo(id, {
         left: d.left || '34%',
@@ -1311,8 +1315,8 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         if (live.fs != null) patch.fs = `${live.fs}pt`;
         if (live.mantenerCentro) {
           patch.align = 'center';
-          patch.left = undefined;
-          patch.right = undefined;
+          patch.left = null;
+          patch.right = null;
           if (live.w != null) patch.w = `${live.w}%`;
         } else if (live.right != null) {
           patch.right = `${live.right}%`;
@@ -1515,7 +1519,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       } = {
         w: d.origW,
         fs: d.origPt,
-        mantenerCentro: d.wasCentered,
+        mantenerCentro: false,
       };
 
       if (d.useBottom && d.origBottom != null) {
@@ -1524,45 +1528,52 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         live.top = d.origTop;
       }
 
-      if (d.anchorRight && d.origRight != null) {
-        live.right = d.origRight;
-        live.mantenerCentro = false;
-      } else if (d.wasCentered && d.mode === 's') {
+      if (d.wasCentered && !d.anchorRight) {
         live.mantenerCentro = true;
-      } else if (d.origLeft != null) {
-        live.left = d.origLeft;
+        if (d.mode === 'e' || d.mode === 'se') {
+          live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+        } else if (d.mode === 'w') {
+          live.w = Math.min(92, Math.max(18, d.origW - dxPct));
+        }
+        if (d.mode === 's' || d.mode === 'se') {
+          live.fs = Math.min(
+            this.fuenteMaxPt,
+            Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+          );
+        }
+      } else {
+        if (d.anchorRight && d.origRight != null) {
+          live.right = d.origRight;
+        } else if (d.origLeft != null) {
+          live.left = d.origLeft;
+        }
+
+        if (d.mode === 'e') {
+          live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+        } else if (d.mode === 'w') {
+          live.w = Math.min(92, Math.max(18, d.origW - dxPct));
+          if (d.origLeft != null) {
+            live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
+          }
+        } else if (d.mode === 'se') {
+          live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+          live.fs = Math.min(
+            this.fuenteMaxPt,
+            Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+          );
+        } else if (d.mode === 's') {
+          live.fs = Math.min(
+            this.fuenteMaxPt,
+            Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+          );
+        }
       }
 
-      if (d.mode === 'e') {
-        live.w = Math.min(92, Math.max(18, d.origW + dxPct));
-        live.mantenerCentro = false;
-      } else if (d.mode === 'w') {
-        live.w = Math.min(92, Math.max(18, d.origW - dxPct));
-        if (d.origLeft != null) {
-          live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
-        }
-        live.mantenerCentro = false;
-      } else if (d.mode === 'se') {
-        live.w = Math.min(92, Math.max(18, d.origW + dxPct));
-        live.fs = Math.min(
-          this.fuenteMaxPt,
-          Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
-        );
-        live.mantenerCentro = false;
-      } else if (d.mode === 's') {
-        live.fs = Math.min(
-          this.fuenteMaxPt,
-          Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
-        );
-      }
-      if (d.wasCentered && d.mode !== 's') live.mantenerCentro = false;
       this.dragVista.set({ texto: { [d.id]: live } });
       return;
     }
 
     if (d.kind === 'move-text') {
-      const desanclarCentro =
-        d.wasCentered && Math.abs(dxPct) > this.umbralDesanclarCentroPct;
       const live: {
         top?: number;
         bottom?: number;
@@ -1582,14 +1593,14 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         ),
       );
 
-      if (d.anchorRight && d.origRight != null) {
+      if (d.wasCentered && !d.anchorRight) {
+        live.mantenerCentro = true;
+      } else if (d.anchorRight && d.origRight != null) {
         live.right = Math.min(88, Math.max(2, d.origRight - dxPct));
         live.mantenerCentro = false;
-      } else if (desanclarCentro || !d.wasCentered) {
+      } else {
         live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
         live.mantenerCentro = false;
-      } else {
-        live.mantenerCentro = true;
       }
 
       this.dragVista.set({ texto: { [d.id]: live } });
