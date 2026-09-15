@@ -158,7 +158,8 @@ function blockStyle(pos, colorDefault, orientacion, multiline = false) {
   const align = pos.align || 'center';
   const anclaLeft = tieneAnclaPct(pos.left);
   const anclaRight = !anclaLeft && tieneAnclaPct(pos.right);
-  const centrado = !anclaLeft && !anclaRight && align !== 'left' && align !== 'right';
+  const centrado =
+    align === 'center' && !anclaLeft && !anclaRight;
   const parts = [
     'position:absolute',
     'z-index:2',

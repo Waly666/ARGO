@@ -18,8 +18,8 @@ export type CampoCertificadoId =
 
 export interface CampoLayoutCert {
   top?: string | null;
-  left?: string;
-  right?: string;
+  left?: string | null;
+  right?: string | null;
   bottom?: string | null;
   w?: string;
   align?: 'left' | 'center' | 'right';

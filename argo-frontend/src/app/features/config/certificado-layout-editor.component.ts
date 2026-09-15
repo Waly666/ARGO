@@ -129,7 +129,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   } | null>(null);
 
   private readonly umbralArrastrePx = 4;
-  private readonly umbralDesanclarCentroPct = 0.35;
+  private readonly umbralDesanclarCentroPct = 1.2;
 
   ngOnInit(): void {
     ensureCertificadoGoogleFonts();
@@ -174,14 +174,39 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   /** Mezcla campos guardados en `campos` con valores legados en la raíz del slot. */
+  private limpiarAnclasPorAlineacion(
+    campo: CampoLayoutCert | undefined,
+    modern?: CampoLayoutCert,
+  ): CampoLayoutCert {
+    if (!campo || typeof campo !== 'object') return {};
+    const out = { ...campo };
+    if (out.align === 'center') {
+      const modernFijoLeft =
+        modern &&
+        Object.prototype.hasOwnProperty.call(modern, 'left') &&
+        modern.left != null &&
+        String(modern.left).trim() !== '';
+      const modernFijoRight =
+        modern &&
+        Object.prototype.hasOwnProperty.call(modern, 'right') &&
+        modern.right != null &&
+        String(modern.right).trim() !== '';
+      if (!modernFijoLeft) delete out.left;
+      if (!modernFijoRight) delete out.right;
+    }
+    if (out.left === null) delete out.left;
+    if (out.right === null) delete out.right;
+    return out;
+  }
+
   private campoFrom(layout: LayoutPorTipoCert, id: CampoCertificadoId): CampoLayoutCert {
     const s = this.slotFrom(layout);
     const legacy = (s as LayoutOrientacionCert & Record<string, CampoLayoutCert | undefined>)[id];
     const modern = s.campos?.[id];
     if (modern != null && legacy != null && typeof modern === 'object' && typeof legacy === 'object') {
-      return { ...legacy, ...modern };
+      return this.limpiarAnclasPorAlineacion({ ...legacy, ...modern }, modern);
     }
-    return modern ?? legacy ?? {};
+    return this.limpiarAnclasPorAlineacion(modern ?? legacy ?? {}, modern);
   }
 
   campo(id: CampoCertificadoId): CampoLayoutCert {
@@ -339,7 +364,17 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     for (const meta of this.campos) {
       const id = meta.id;
       const eff = this.campoEfectivo(id);
-      campos[id] = eff.visible === false ? { visible: false } : { ...eff, visible: true };
+      if (eff.visible === false) {
+        campos[id] = { visible: false };
+        continue;
+      }
+      const row: CampoLayoutCert = { ...eff, visible: true };
+      if (this.esCentrado(id)) {
+        delete row.left;
+        delete row.right;
+        row.align = 'center';
+      }
+      campos[id] = row;
     }
     this.patchSlot({ campos });
   }
@@ -353,7 +388,19 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     for (const meta of this.campos) {
       const id = meta.id;
       const eff = this.campoEfectivoFrom(layoutSrc, id);
-      campos[id] = eff.visible === false ? { visible: false } : { ...eff, visible: true };
+      if (eff.visible === false) {
+        campos[id] = { visible: false };
+        continue;
+      }
+      const row: CampoLayoutCert = { ...eff, visible: true };
+      const sinLeft = !row.left || String(row.left).trim() === '';
+      const sinRight = !row.right || String(row.right).trim() === '';
+      if (!this.esCampoPosicional(id) && sinLeft && sinRight && (row.align || 'center') === 'center') {
+        delete row.left;
+        delete row.right;
+        row.align = 'center';
+      }
+      campos[id] = row;
     }
     const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({
       ...slotBase,
@@ -473,8 +520,10 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     };
     if (partial.top === null) delete next.top;
     if (partial.bottom === null) delete next.bottom;
-    if (partial.left === undefined) delete next.left;
-    if (partial.right === undefined) delete next.right;
+    if (partial.left === null) next.left = null;
+    else if (partial.left === undefined) delete next.left;
+    if (partial.right === null) next.right = null;
+    else if (partial.right === undefined) delete next.right;
     campos[id] = this.normalizarAnclasCampo(next);
     this.patchSlot({ campos });
   }
@@ -727,7 +776,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   setCentrado(id: CampoCertificadoId, centrado: boolean) {
     const d = this.defectoCampo(id) as CampoLayoutCert;
     if (centrado) {
-      this.patchCampo(id, { left: undefined, align: 'center', w: d.w || '82%' });
+      this.patchCampo(id, { left: null, right: null, align: 'center', w: d.w || '82%' });
     } else {
       this.patchCampo(id, {
         left: d.left || '34%',
@@ -1012,8 +1061,8 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
     this.patchCampo(id, {
       align: 'center',
-      left: undefined,
-      right: undefined,
+      left: null,
+      right: null,
       w: `${w}%`,
     });
   }

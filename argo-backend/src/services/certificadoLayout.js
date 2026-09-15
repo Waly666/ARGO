@@ -84,18 +84,49 @@ function normalizeCampo(raw, defaults) {
   } else if (d.top != null) {
     out.top = limpiarPct(r.top, d.top);
   }
-  if (d.left != null || r.left != null) out.left = limpiarPct(r.left, d.left);
-  if (d.right != null || r.right != null) out.right = limpiarPct(r.right, d.right);
+  const usuarioFijoAlign = r.align != null && String(r.align).trim() !== '';
+  const align = limpiarAlign(r.align, d.align || 'center');
+  out.align = align;
+
+  const leftUsuario = r.left != null && String(r.left).trim() !== '';
+  const rightUsuario = r.right != null && String(r.right).trim() !== '';
+  const quitaLeft = r.left === null;
+  const quitaRight = r.right === null;
+
+  /** Centrado en la hoja (nombre, curso…): sin ancla left/right. */
+  const centroEnHoja =
+    align === 'center' &&
+    !leftUsuario &&
+    !rightUsuario &&
+    (usuarioFijoAlign || quitaLeft || quitaRight);
+
+  if (!centroEnHoja) {
+    if (quitaLeft) {
+      /* sin ancla izquierda */
+    } else if (leftUsuario) {
+      out.left = limpiarPct(r.left, d.left);
+    } else if (d.left != null && !usuarioFijoAlign) {
+      out.left = d.left;
+    }
+
+    if (quitaRight) {
+      /* sin ancla derecha */
+    } else if (rightUsuario) {
+      out.right = limpiarPct(r.right, d.right);
+    } else if (d.right != null && !usuarioFijoAlign) {
+      out.right = d.right;
+    }
+  }
+
   if (d.w != null || r.w != null) out.w = limpiarPct(r.w, d.w);
   const fsRaw = r.fs != null && String(r.fs).trim() !== '' ? r.fs : null;
   if (fsRaw != null || d.fs != null) out.fs = limpiarSize(fsRaw, d.fs);
   const fwRaw = r.fw != null && String(r.fw).trim() !== '' ? r.fw : null;
   if (fwRaw != null || d.fw != null) out.fw = String(fwRaw ?? d.fw).trim() || d.fw;
   if (d.ls != null || r.ls != null) out.ls = String(r.ls ?? d.ls).trim() || d.ls;
-  if (d.align != null || r.align != null) out.align = limpiarAlign(r.align, d.align || 'center');
-  // Campos con left por defecto (expedida, tipoDoc, doc…): no heredar center si no hubo left explícito
-  const leftUsuario = r.left != null && String(r.left).trim() !== '';
-  if (d.left && d.align === 'left' && out.align === 'center' && !leftUsuario) {
+
+  // Campos con left por defecto (tipoDoc, doc…): alinear a la izquierda si no hubo override
+  if (!usuarioFijoAlign && d.left && d.align === 'left' && out.align === 'center' && !leftUsuario) {
     out.align = 'left';
   }
   const ffRaw =
@@ -109,13 +140,36 @@ function normalizeCampo(raw, defaults) {
 }
 
 /** Mezcla layout legado (campos en raíz del slot) con layout nuevo (slot.campos). */
+function limpiarAnclasPorAlineacion(campo, modern) {
+  if (!campo || typeof campo !== 'object') return campo;
+  const out = { ...campo };
+  if (out.align === 'center') {
+    const modernFijoLeft =
+      modern &&
+      Object.prototype.hasOwnProperty.call(modern, 'left') &&
+      modern.left != null &&
+      String(modern.left).trim() !== '';
+    const modernFijoRight =
+      modern &&
+      Object.prototype.hasOwnProperty.call(modern, 'right') &&
+      modern.right != null &&
+      String(modern.right).trim() !== '';
+    if (!modernFijoLeft) delete out.left;
+    if (!modernFijoRight) delete out.right;
+  }
+  if (out.left === null) delete out.left;
+  if (out.right === null) delete out.right;
+  return out;
+}
+
 function savedCampo(slot, id) {
   const legacy = slot[id];
   const modern = slot.campos?.[id];
   if (modern != null && legacy != null && typeof modern === 'object' && typeof legacy === 'object') {
-    return { ...legacy, ...modern };
+    return limpiarAnclasPorAlineacion({ ...legacy, ...modern }, modern);
   }
-  return modern != null ? modern : legacy;
+  const pick = modern != null ? modern : legacy;
+  return limpiarAnclasPorAlineacion(pick, modern);
 }
 
 function normalizeLayoutOrientacion(raw, orientacion) {
