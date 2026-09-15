@@ -77,14 +77,33 @@ function uploadsBase(publicOrigin) {
   return `${resolvePublicOrigin(publicOrigin)}/uploads`;
 }
 
+function resolverOrigenUploadsCertificado(publicOrigin, modoVerificacionPublica) {
+  if (modoVerificacionPublica) {
+    const portal = resolverBasePortal({ origin: publicOrigin });
+    if (portal) return portal;
+  }
+  return resolvePublicOrigin(publicOrigin);
+}
+
 function urlUpload(rel, publicOrigin) {
   if (!rel) return '';
   const s = String(rel).trim();
   if (/^https?:\/\//i.test(s)) return s;
   const p = s.replace(/^\/+/, '');
-  const base = resolvePublicOrigin(publicOrigin).replace(/\/$/, '');
+  const base = String(publicOrigin || resolvePublicOrigin(null)).replace(/\/$/, '');
   if (p.startsWith('uploads/')) return `${base}/${p}`;
   return `${base}/uploads/${p}`;
+}
+
+function resolverFondoCertificado(urlFondoRel, publicOrigin, options = {}) {
+  const modoVerificacionPublica = options.modoVerificacionPublica === true;
+  const origin = resolverOrigenUploadsCertificado(publicOrigin, modoVerificacionPublica);
+  let fondo = urlUpload(urlFondoRel, origin);
+  if (options.embedLocalAssets || modoVerificacionPublica) {
+    const dataUrl = uploadFileToDataUrl(urlFondoRel);
+    if (dataUrl) fondo = dataUrl;
+  }
+  return fondo;
 }
 
 
@@ -218,12 +237,9 @@ async function generarHtmlCertificado(data, options = {}) {
     clasificarPrograma(programa);
   const L = resolverLayout(config, tipo, orientacion);
   const oriKey = orientacion;
-  // PDF/ZIP: embeber fondo local evita N peticiones HTTP + esperas de red en Chromium.
-  let fondo = urlUpload(plantilla?.urlFondo, publicOrigin);
-  if (options.embedLocalAssets) {
-    const dataUrl = uploadFileToDataUrl(plantilla?.urlFondo);
-    if (dataUrl) fondo = dataUrl;
-  }
+  const modoVerificacionPublica = options.modoVerificacionPublica === true;
+  // PDF/ZIP/QR: embeber fondo local evita fallos de carga en iframe o Chromium headless.
+  const fondo = resolverFondoCertificado(plantilla?.urlFondo, publicOrigin, options);
   const color = L.color;
 
   const nombre = nombreCompleto(alumno);
@@ -296,7 +312,6 @@ async function generarHtmlCertificado(data, options = {}) {
   const atPage = await atPageCssPara('certificados', {
     sizeOverride: `${L.pageW} ${L.pageH}`,
   });
-  const modoVerificacionPublica = options.modoVerificacionPublica === true;
   const toolbar = modoVerificacionPublica
     ? { css: '', html: '', script: '' }
     : informePrintToolbar({

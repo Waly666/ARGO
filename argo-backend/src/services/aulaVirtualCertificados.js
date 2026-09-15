@@ -12,6 +12,7 @@ const {
   normalizarCodigoVerificacion,
 } = require('./certificadoQrToken');
 const { obtenerConfigPortalPublica } = require('./aulaVirtualPortal');
+const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const { reciboResumenPorLiquidacion } = require('./aulaVirtualRecibos');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
 
@@ -181,8 +182,10 @@ async function htmlCertificadoVerificacionQr(codigoRaw, tokenRaw, publicOrigin) 
   const cfg = await obtenerConfigPortalPublica();
   const marcaAguaCopia = cfg.landing?.consultaCertificados?.marcaAguaCopia !== false;
 
+  const portalOrigin = resolverBasePortal({ origin: publicOrigin }) || publicOrigin;
+
   return generarHtmlCertificado(data, {
-    publicOrigin,
+    publicOrigin: portalOrigin,
     embedLocalAssets: true,
     marcaAguaCopia,
     modoVerificacionPublica: true,

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
@@ -14,16 +14,18 @@ import { PortalSeoService } from '../../core/portal-seo.service';
   templateUrl: './verificar-certificado.component.html',
   styleUrl: './verificar-certificado.component.scss',
 })
-export class VerificarCertificadoComponent implements OnInit {
+export class VerificarCertificadoComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private api = inject(AulaApiService);
   private sanitizer = inject(DomSanitizer);
   private seo = inject(PortalSeoService);
 
+  private blobUrl: string | null = null;
+
   loading = signal(true);
   error = signal('');
   codigo = signal('');
-  certSrcDoc = signal<SafeHtml | null>(null);
+  certFrameUrl = signal<SafeResourceUrl | null>(null);
 
   ngOnInit() {
     const codigo = String(this.route.snapshot.paramMap.get('codigo') || '').trim();
@@ -45,7 +47,10 @@ export class VerificarCertificadoComponent implements OnInit {
     this.api.certificadoVerificacionHtml(codigo, token).subscribe({
       next: (html) => {
         const adapted = rewriteCertificadoHtmlForScreen(html);
-        this.certSrcDoc.set(this.sanitizer.bypassSecurityTrustHtml(adapted));
+        const blob = new Blob([adapted], { type: 'text/html;charset=utf-8' });
+        this.revokeBlobUrl();
+        this.blobUrl = URL.createObjectURL(blob);
+        this.certFrameUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.blobUrl));
         this.loading.set(false);
       },
       error: async (e) => {
@@ -67,5 +72,16 @@ export class VerificarCertificadoComponent implements OnInit {
         this.error.set(msg);
       },
     });
+  }
+
+  ngOnDestroy() {
+    this.revokeBlobUrl();
+  }
+
+  private revokeBlobUrl() {
+    if (this.blobUrl) {
+      URL.revokeObjectURL(this.blobUrl);
+      this.blobUrl = null;
+    }
   }
 }

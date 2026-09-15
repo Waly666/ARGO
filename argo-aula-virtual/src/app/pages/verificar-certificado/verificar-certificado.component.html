@@ -13,11 +13,11 @@
       }
       <a routerLink="/consulta-certificados" class="verify-link">Consultar por cédula</a>
     </section>
-  } @else if (certSrcDoc()) {
+  } @else if (certFrameUrl()) {
     <iframe
       class="verify-cert-frame"
       title="Certificado verificado"
-      [srcdoc]="certSrcDoc()!"
+      [src]="certFrameUrl()!"
       loading="eager"
     ></iframe>
   }
