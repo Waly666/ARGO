@@ -115,7 +115,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
           right?: number;
           w?: number;
           fs?: number;
-          mantenerCentro?: boolean;
         }
       >
     >;
@@ -173,26 +172,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   /** Mezcla campos guardados en `campos` con valores legados en la raíz del slot. */
-  private limpiarAnclasPorAlineacion(
-    campo: CampoLayoutCert | undefined,
-    modern?: CampoLayoutCert,
-  ): CampoLayoutCert {
+  private limpiarAnclasPorAlineacion(campo: CampoLayoutCert | undefined): CampoLayoutCert {
     if (!campo || typeof campo !== 'object') return {};
     const out = { ...campo };
-    if (out.align === 'center') {
-      const modernFijoLeft =
-        modern &&
-        Object.prototype.hasOwnProperty.call(modern, 'left') &&
-        modern.left != null &&
-        String(modern.left).trim() !== '';
-      const modernFijoRight =
-        modern &&
-        Object.prototype.hasOwnProperty.call(modern, 'right') &&
-        modern.right != null &&
-        String(modern.right).trim() !== '';
-      if (!modernFijoLeft) delete out.left;
-      if (!modernFijoRight) delete out.right;
-    }
     if (out.left === null) delete out.left;
     if (out.right === null) delete out.right;
     return out;
@@ -203,9 +185,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     const legacy = (s as LayoutOrientacionCert & Record<string, CampoLayoutCert | undefined>)[id];
     const modern = s.campos?.[id];
     if (modern != null && legacy != null && typeof modern === 'object' && typeof legacy === 'object') {
-      return this.limpiarAnclasPorAlineacion({ ...legacy, ...modern }, modern);
+      return this.limpiarAnclasPorAlineacion({ ...legacy, ...modern });
     }
-    return this.limpiarAnclasPorAlineacion(modern ?? legacy ?? {}, modern);
+    return this.limpiarAnclasPorAlineacion(modern ?? legacy ?? {});
   }
 
   campo(id: CampoCertificadoId): CampoLayoutCert {
@@ -367,13 +349,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         campos[id] = { visible: false };
         continue;
       }
-      const row: CampoLayoutCert = { ...eff, visible: true };
-      if (this.esCentrado(id)) {
-        delete row.left;
-        delete row.right;
-        row.align = 'center';
-      }
-      campos[id] = row;
+      campos[id] = { ...eff, visible: true };
     }
     this.patchSlot({ campos });
   }
@@ -391,15 +367,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         campos[id] = { visible: false };
         continue;
       }
-      const row: CampoLayoutCert = { ...eff, visible: true };
-      const sinLeft = !row.left || String(row.left).trim() === '';
-      const sinRight = !row.right || String(row.right).trim() === '';
-      if (!this.esCampoPosicional(id) && sinLeft && sinRight && (row.align || 'center') === 'center') {
-        delete row.left;
-        delete row.right;
-        row.align = 'center';
-      }
-      campos[id] = row;
+      campos[id] = { ...eff, visible: true };
     }
     const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({
       ...slotBase,
@@ -449,14 +417,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       patch.bottom = null;
     }
 
-    if (live?.mantenerCentro) {
-      patch.align = 'center';
-      patch.left = null;
-      patch.right = null;
-    } else if (live?.right != null) {
+    if (live?.right != null) {
       patch.right = `${live.right}%`;
       patch.left = undefined;
-      patch.align = 'right';
     } else if (live?.left != null) {
       patch.left = `${live.left}%`;
       patch.right = undefined;
@@ -465,10 +428,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       patch.left = undefined;
     } else if (eff.left) {
       patch.left = eff.left;
-      patch.right = undefined;
-    } else if (this.esCentrado(id)) {
-      patch.align = 'center';
-      patch.left = undefined;
       patch.right = undefined;
     }
 
@@ -765,29 +724,28 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     this.patchCampo(id, { left: `${n}%` });
   }
 
-  esCentrado(id: CampoCertificadoId): boolean {
+  /** Cuadro centrado en la hoja (sin ancla left/right explícita). */
+  esCuadroCentradoEnHoja(id: CampoCertificadoId): boolean {
     if (this.esCampoPosicional(id)) return false;
     const eff = this.campoEfectivo(id);
     const sinLeft = !eff.left || String(eff.left).trim() === '';
-    return sinLeft && (eff.align || 'center') === 'center';
+    const sinRight = !eff.right || String(eff.right).trim() === '';
+    return sinLeft && sinRight;
   }
 
-  setCentrado(id: CampoCertificadoId, centrado: boolean) {
-    const d = this.defectoCampo(id) as CampoLayoutCert;
-    if (centrado) {
-      this.patchCampo(id, {
-        left: null,
-        right: null,
-        align: 'center',
-        w: `${this.anchoActual(id)}%`,
-      });
-    } else {
-      this.patchCampo(id, {
-        left: d.left || '34%',
-        align: (d.align as CampoLayoutCert['align']) || 'left',
-        w: d.w,
-      });
-    }
+  private leftCentradoEnHoja(id: CampoCertificadoId): number {
+    const w = this.anchoActual(id);
+    return Math.max(2, Math.min(88, (100 - w) / 2));
+  }
+
+  /** Fija left explícito cuando el cuadro estaba centrado en la hoja (para mover o alinear texto). */
+  private materializarLeftSiCuadroEnHoja(id: CampoCertificadoId): Partial<CampoLayoutCert> | null {
+    if (!this.esCuadroCentradoEnHoja(id)) return null;
+    return {
+      left: `${this.leftCentradoEnHoja(id)}%`,
+      right: undefined,
+      w: `${this.anchoActual(id)}%`,
+    };
   }
 
   fsPt(v?: string): number {
@@ -823,8 +781,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       }
       return;
     }
-    if (this.esCentrado(id)) this.setCentrado(id, false);
-    const l = this.leftActual(id) + (dir === 'left' ? -paso : paso);
+    const mat = this.materializarLeftSiCuadroEnHoja(id);
+    if (mat) this.patchCampo(id, mat);
+    const l = this.leftVirtualParaArrastre(id) + (dir === 'left' ? -paso : paso);
     this.onLeft(id, Math.min(90, Math.max(2, l)));
   }
 
@@ -936,12 +895,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         st['bottom'] = 'auto';
         hasVertical = true;
       }
-      if (live.mantenerCentro) {
-        st['left'] = '50%';
-        st['transform'] = 'translateX(-50%)';
-        st['width'] = `${live.w ?? this.anchoActual(id)}%`;
-        return;
-      }
       if (live.right != null) {
         st['right'] = `${live.right}%`;
         st['left'] = 'auto';
@@ -964,7 +917,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         } else if (eff.left) {
           st['left'] = eff.left;
           st['transform'] = 'none';
-        } else if (align === 'center') {
+        } else if (this.esCuadroCentradoEnHoja(id)) {
           st['left'] = '50%';
           st['transform'] = 'translateX(-50%)';
         }
@@ -986,7 +939,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       st['left'] = eff.left;
       st['width'] = eff.w || '30%';
       st['transform'] = 'none';
-    } else if (align === 'center') {
+    } else if (this.esCuadroCentradoEnHoja(id)) {
       st['left'] = '50%';
       st['transform'] = 'translateX(-50%)';
       st['width'] = eff.w || (this.esMultilinea(id) ? '82%' : '82%');
@@ -996,7 +949,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   estiloOverlay(id: CampoCertificadoId): Record<string, string> {
     const eff = this.campoEfectivo(id);
     const live = this.dragVista()?.texto?.[id];
-    const align = live?.mantenerCentro ? 'center' : eff.align || 'center';
+    const align = eff.align || 'center';
     const color = eff.color || this.colorGlobal();
     const st: Record<string, string> = {
       color,
@@ -1005,7 +958,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         this.orientacion,
       ),
       fontWeight: String(eff.fw || '600'),
-      textAlign: align === 'center' ? 'center' : align,
+      textAlign: align === 'right' ? 'right' : align === 'left' ? 'left' : 'center',
       fontFamily: eff.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
     };
     this.aplicarPosicionOverlay(st, id, eff, align);
@@ -1023,50 +976,20 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   setAlineacion(id: CampoCertificadoId, align: 'left' | 'center' | 'right') {
     this.dragVista.set(null);
-    if (align === 'center' && !this.esCampoPosicional(id)) {
-      this.setCentrado(id, true);
-      return;
-    }
     const w = this.anchoActual(id);
-    if (align === 'left') {
-      this.patchCampo(id, {
-        align: 'left',
-        left: `${Math.max(2, this.esCentrado(id) ? (100 - w) / 2 : this.leftActual(id))}%`,
-        right: undefined,
-        w: `${w}%`,
-      });
-    } else {
-      this.patchCampo(id, {
-        align: 'right',
-        right: `${this.usaAnclaDerecha(id) ? this.rightActual(id) : 8}%`,
-        left: undefined,
-        w: `${w}%`,
-      });
-    }
+    const patch: Partial<CampoLayoutCert> = { align, w: `${w}%` };
+    Object.assign(patch, this.materializarLeftSiCuadroEnHoja(id) || {});
+    this.patchCampo(id, patch);
   }
 
-  /** Centra el cuadro solo en horizontal; mantiene la posición vertical actual. */
+  /** Centra el cuadro en horizontal; no cambia la alineación del texto dentro del cuadro. */
   centrarCuadroEnCertificado(id: CampoCertificadoId) {
     this.dragVista.set(null);
-    const w = this.anchoActual(id);
-
     if (this.esCampoPosicional(id)) return;
-
-    if (this.usaAnclaAbajo(id)) {
-      const left = Math.max(2, Math.min(88, (100 - w) / 2));
-      this.patchCampo(id, {
-        left: `${left}%`,
-        align: 'left',
-        w: `${w}%`,
-        right: undefined,
-      });
-      return;
-    }
-
+    const w = this.anchoActual(id);
     this.patchCampo(id, {
-      align: 'center',
-      left: null,
-      right: null,
+      left: `${this.leftCentradoEnHoja(id)}%`,
+      right: undefined,
       w: `${w}%`,
     });
   }
@@ -1194,7 +1117,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         useBottom: boolean;
         anchorRight: boolean;
         origRight?: number;
-        wasCentered: boolean;
       }
     | {
         kind: 'move-qr';
@@ -1229,7 +1151,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         origRight?: number;
         origW: number;
         origPt: number;
-        wasCentered: boolean;
         useBottom: boolean;
         anchorRight: boolean;
       }
@@ -1247,7 +1168,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         useBottom: boolean;
         anchorRight: boolean;
         origRight?: number;
-        wasCentered: boolean;
         pointerId: number;
       }
     | {
@@ -1270,12 +1190,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     return this.certCanvas?.nativeElement.getBoundingClientRect() ?? null;
   }
 
-  /** Posición horizontal virtual para arrastre sin alterar alineación guardada. */
+  /** Posición horizontal efectiva para arrastre (materializa cuadro centrado en hoja). */
   private leftVirtualParaArrastre(id: CampoCertificadoId): number {
-    if (this.esCentrado(id)) {
-      const w = this.anchoActual(id);
-      return Math.max(2, Math.min(88, (100 - w) / 2));
-    }
+    if (this.esCuadroCentradoEnHoja(id)) return this.leftCentradoEnHoja(id);
     return this.leftActual(id);
   }
 
@@ -1313,21 +1230,14 @@ export class CertificadoLayoutEditorComponent implements OnInit {
           patch.bottom = null;
         }
         if (live.fs != null) patch.fs = `${live.fs}pt`;
-        if (live.mantenerCentro) {
-          patch.align = 'center';
-          patch.left = null;
-          patch.right = null;
-          if (live.w != null) patch.w = `${live.w}%`;
-        } else if (live.right != null) {
+        if (live.right != null) {
           patch.right = `${live.right}%`;
           patch.left = undefined;
-          patch.align = 'right';
           if (live.w != null) patch.w = `${live.w}%`;
         } else if (live.left != null) {
           patch.left = `${live.left}%`;
           patch.right = undefined;
-          patch.align = 'left';
-          patch.w = `${live.w ?? this.anchoActual(id)}%`;
+          if (live.w != null) patch.w = `${live.w}%`;
         } else if (live.w != null) {
           patch.w = `${live.w}%`;
         }
@@ -1367,7 +1277,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
     const useBottom = this.usaAnclaAbajo(id);
     const anchorRight = this.usaAnclaDerecha(id);
-    const wasCentered = this.esCentrado(id);
     this.capturarCanvas(ev);
 
     this.arrastrePendiente = {
@@ -1381,7 +1290,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       useBottom,
       anchorRight,
       origRight: anchorRight ? this.rightActual(id) : undefined,
-      wasCentered,
       pointerId: ev.pointerId,
     };
   }
@@ -1393,7 +1301,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     this.capturarCanvas(ev);
     const useBottom = this.usaAnclaAbajo(id);
     const anchorRight = this.anclaDerechaEfectiva(id);
-    const wasCentered = this.esCentrado(id);
     this.drag = {
       kind: 'resize-text',
       id,
@@ -1402,11 +1309,10 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       startY: ev.clientY,
       origTop: useBottom ? undefined : this.topActual(id),
       origBottom: useBottom ? this.bottomActual(id) : undefined,
-      origLeft: anchorRight || wasCentered ? undefined : this.leftVirtualParaArrastre(id),
+      origLeft: anchorRight ? undefined : this.leftVirtualParaArrastre(id),
       origRight: anchorRight ? this.rightActual(id) : undefined,
       origW: this.anchoActual(id),
       origPt: this.tamanoActual(id),
-      wasCentered,
       useBottom,
       anchorRight,
     };
@@ -1515,11 +1421,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         right?: number;
         w?: number;
         fs?: number;
-        mantenerCentro?: boolean;
       } = {
         w: d.origW,
         fs: d.origPt,
-        mantenerCentro: false,
       };
 
       if (d.useBottom && d.origBottom != null) {
@@ -1528,45 +1432,30 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         live.top = d.origTop;
       }
 
-      if (d.wasCentered && !d.anchorRight) {
-        live.mantenerCentro = true;
-        if (d.mode === 'e' || d.mode === 'se') {
-          live.w = Math.min(92, Math.max(18, d.origW + dxPct));
-        } else if (d.mode === 'w') {
-          live.w = Math.min(92, Math.max(18, d.origW - dxPct));
-        }
-        if (d.mode === 's' || d.mode === 'se') {
-          live.fs = Math.min(
-            this.fuenteMaxPt,
-            Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
-          );
-        }
-      } else {
-        if (d.anchorRight && d.origRight != null) {
-          live.right = d.origRight;
-        } else if (d.origLeft != null) {
-          live.left = d.origLeft;
-        }
+      if (d.anchorRight && d.origRight != null) {
+        live.right = d.origRight;
+      } else if (d.origLeft != null) {
+        live.left = d.origLeft;
+      }
 
-        if (d.mode === 'e') {
-          live.w = Math.min(92, Math.max(18, d.origW + dxPct));
-        } else if (d.mode === 'w') {
-          live.w = Math.min(92, Math.max(18, d.origW - dxPct));
-          if (d.origLeft != null) {
-            live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
-          }
-        } else if (d.mode === 'se') {
-          live.w = Math.min(92, Math.max(18, d.origW + dxPct));
-          live.fs = Math.min(
-            this.fuenteMaxPt,
-            Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
-          );
-        } else if (d.mode === 's') {
-          live.fs = Math.min(
-            this.fuenteMaxPt,
-            Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
-          );
+      if (d.mode === 'e') {
+        live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+      } else if (d.mode === 'w') {
+        live.w = Math.min(92, Math.max(18, d.origW - dxPct));
+        if (d.origLeft != null) {
+          live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
         }
+      } else if (d.mode === 'se') {
+        live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+        live.fs = Math.min(
+          this.fuenteMaxPt,
+          Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+        );
+      } else if (d.mode === 's') {
+        live.fs = Math.min(
+          this.fuenteMaxPt,
+          Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+        );
       }
 
       this.dragVista.set({ texto: { [d.id]: live } });
@@ -1579,7 +1468,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         bottom?: number;
         left?: number;
         right?: number;
-        mantenerCentro?: boolean;
       } = {};
 
       Object.assign(
@@ -1593,14 +1481,10 @@ export class CertificadoLayoutEditorComponent implements OnInit {
         ),
       );
 
-      if (d.wasCentered && !d.anchorRight) {
-        live.mantenerCentro = true;
-      } else if (d.anchorRight && d.origRight != null) {
+      if (d.anchorRight && d.origRight != null) {
         live.right = Math.min(88, Math.max(2, d.origRight - dxPct));
-        live.mantenerCentro = false;
       } else {
         live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
-        live.mantenerCentro = false;
       }
 
       this.dragVista.set({ texto: { [d.id]: live } });

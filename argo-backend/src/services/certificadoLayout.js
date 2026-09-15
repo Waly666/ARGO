@@ -140,23 +140,9 @@ function normalizeCampo(raw, defaults) {
 }
 
 /** Mezcla layout legado (campos en raíz del slot) con layout nuevo (slot.campos). */
-function limpiarAnclasPorAlineacion(campo, modern) {
+function limpiarAnclasPorAlineacion(campo) {
   if (!campo || typeof campo !== 'object') return campo;
   const out = { ...campo };
-  if (out.align === 'center') {
-    const modernFijoLeft =
-      modern &&
-      Object.prototype.hasOwnProperty.call(modern, 'left') &&
-      modern.left != null &&
-      String(modern.left).trim() !== '';
-    const modernFijoRight =
-      modern &&
-      Object.prototype.hasOwnProperty.call(modern, 'right') &&
-      modern.right != null &&
-      String(modern.right).trim() !== '';
-    if (!modernFijoLeft) delete out.left;
-    if (!modernFijoRight) delete out.right;
-  }
   if (out.left === null) delete out.left;
   if (out.right === null) delete out.right;
   return out;
@@ -166,10 +152,10 @@ function savedCampo(slot, id) {
   const legacy = slot[id];
   const modern = slot.campos?.[id];
   if (modern != null && legacy != null && typeof modern === 'object' && typeof legacy === 'object') {
-    return limpiarAnclasPorAlineacion({ ...legacy, ...modern }, modern);
+    return limpiarAnclasPorAlineacion({ ...legacy, ...modern });
   }
   const pick = modern != null ? modern : legacy;
-  return limpiarAnclasPorAlineacion(pick, modern);
+  return limpiarAnclasPorAlineacion(pick);
 }
 
 function normalizeLayoutOrientacion(raw, orientacion) {

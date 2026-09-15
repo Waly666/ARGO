@@ -73,24 +73,24 @@
                 <button
                   type="button"
                   class="tb-btn"
-                  [class.active]="alineacionActual(tbId) === 'left' && !esCentrado(tbId)"
-                  title="Alinear texto a la izquierda"
+                  [class.active]="alineacionActual(tbId) === 'left'"
+                  title="Alinear texto a la izquierda dentro del cuadro"
                   (click)="setAlineacion(tbId, 'left')">
                   <span class="tb-icon tb-icon-left"></span>
                 </button>
                 <button
                   type="button"
                   class="tb-btn"
-                  [class.active]="esCentrado(tbId)"
-                  title="Alinear texto al centro"
+                  [class.active]="alineacionActual(tbId) === 'center'"
+                  title="Centrar texto dentro del cuadro"
                   (click)="setAlineacion(tbId, 'center')">
                   <span class="tb-icon tb-icon-center"></span>
                 </button>
                 <button
                   type="button"
                   class="tb-btn"
-                  [class.active]="alineacionActual(tbId) === 'right' && !esCentrado(tbId)"
-                  title="Alinear texto a la derecha"
+                  [class.active]="alineacionActual(tbId) === 'right'"
+                  title="Alinear texto a la derecha dentro del cuadro"
                   (click)="setAlineacion(tbId, 'right')">
                   <span class="tb-icon tb-icon-right"></span>
                 </button>
