@@ -82,6 +82,24 @@ const EXAMEN_TEORICO_DEFAULTS = {
   mostrarBadgeVirtual: false,
   heroImagenUrl: '',
   heroImagenAlt: '',
+  enlacesRelacionadosTitulo: 'Formación relacionada',
+  enlacesRelacionados: [
+    {
+      texto: '¿Necesitas formación para tu licencia?',
+      etiqueta: 'Ver cursos disponibles',
+      url: '/cursos',
+    },
+    {
+      texto: '¿Buscas técnicas de conducción preventiva?',
+      etiqueta: 'Curso de Manejo Defensivo',
+      url: '/curso-manejo-defensivo',
+    },
+    {
+      texto: '¿Prefieres formación virtual?',
+      etiqueta: 'Acceder al Aula Virtual',
+      url: '/servicios/aula-virtual',
+    },
+  ],
 };
 
 function examenTeoricoContenidoAntiguo(raw) {

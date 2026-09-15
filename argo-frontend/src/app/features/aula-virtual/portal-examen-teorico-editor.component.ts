@@ -8,6 +8,9 @@ import {
   mergeExamenTeoricoLanding,
   PortalExamenTeoricoLanding,
 } from '../../core/constants/examen-teorico-landing-defaults';
+import { FINSTRUVIAL_ENLACES_TITULO } from '../../core/constants/portal-enlaces-relacionados-finstruvial';
+import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.util';
+import { PortalEditorEnlacesRelacionadosComponent } from './portal-editor-enlaces-relacionados.component';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
@@ -25,6 +28,7 @@ import { PortalSeoLegendComponent } from './portal-seo-legend.component';
     PortalIconPickerComponent,
     PortalPromoHeroImagenEditorComponent,
     PortalSeoLegendComponent,
+    PortalEditorEnlacesRelacionadosComponent,
     CommonModule,
     FormsModule,
   ],
@@ -42,6 +46,16 @@ export class PortalExamenTeoricoEditorComponent {
   uploadIndex = signal<number | null>(null);
   uploadNormIndex = signal<number | null>(null);
   readonly acentos = ['blue', 'teal', 'orange', 'green', 'purple'] as const;
+
+  enlacesRelacionadosEdit(): PortalEnlaceRelacionado[] {
+    if (!this.examenTeorico.enlacesRelacionados) {
+      this.examenTeorico.enlacesRelacionados = [];
+    }
+    if (!this.examenTeorico.enlacesRelacionadosTitulo) {
+      this.examenTeorico.enlacesRelacionadosTitulo = FINSTRUVIAL_ENLACES_TITULO;
+    }
+    return this.examenTeorico.enlacesRelacionados;
+  }
 
   restaurarDefaults() {
     Object.assign(this.examenTeorico, mergeExamenTeoricoLanding(EXAMEN_TEORICO_LANDING_DEFAULTS));

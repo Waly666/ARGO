@@ -1,6 +1,11 @@
 /** Sección inicio + página /examen-teorico (sin menú). */
 
+import { mergeEnlacesRelacionados, PortalEnlaceRelacionado } from '../portal-enlace-relacionado.util';
 import { mergePromoHeroTheme, PortalPromoHeroTheme } from './portal-promo-hero-fields.util';
+import {
+  FINSTRUVIAL_ENLACES_EXAMEN_TEORICO,
+  FINSTRUVIAL_ENLACES_TITULO,
+} from './portal-enlaces-relacionados-finstruvial';
 import {
   ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES,
   mergeNormogramaLanding,
@@ -55,6 +60,8 @@ export interface PortalExamenTeoricoLanding {
   heroImagenUrl: string;
   heroImagenUrlAbsoluta?: string;
   heroImagenAlt: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
   /** Solo ERP */
   heroImagenPrompt?: string;
 }
@@ -137,6 +144,8 @@ export const EXAMEN_TEORICO_LANDING_DEFAULTS: PortalExamenTeoricoLanding = {
   mostrarBadgeVirtual: false,
   heroImagenUrl: '',
   heroImagenAlt: '',
+  enlacesRelacionadosTitulo: FINSTRUVIAL_ENLACES_TITULO,
+  enlacesRelacionados: FINSTRUVIAL_ENLACES_EXAMEN_TEORICO.map((e) => ({ ...e })),
 };
 
 const ACENTOS: ExamenTeoricoAcento[] = ['blue', 'teal', 'orange', 'green', 'purple'];
@@ -230,5 +239,7 @@ export function mergeExamenTeoricoLanding(
     heroImagenUrlAbsoluta: String(src.heroImagenUrlAbsoluta ?? '').trim() || undefined,
     heroImagenAlt: String(src.heroImagenAlt ?? '').trim(),
     heroImagenPrompt: String(src.heroImagenPrompt ?? '').trim(),
+    enlacesRelacionadosTitulo: String(src.enlacesRelacionadosTitulo ?? d.enlacesRelacionadosTitulo).trim() || d.enlacesRelacionadosTitulo,
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
   };
 }

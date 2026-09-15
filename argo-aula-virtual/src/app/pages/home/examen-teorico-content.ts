@@ -6,9 +6,9 @@ import {
   PortalEnlaceRelacionado,
 } from '../../core/portal-enlace-relacionado.util';
 import {
-  SERVIAL_ENLACES_EXAMEN_TEORICO,
-  SERVIAL_ENLACES_TITULO,
-} from '../../core/constants/portal-enlaces-relacionados-servial';
+  FINSTRUVIAL_ENLACES_EXAMEN_TEORICO,
+  FINSTRUVIAL_ENLACES_TITULO,
+} from '../../core/constants/portal-enlaces-relacionados-finstruvial';
 import {
   ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES,
   mergeNormogramaLanding,
@@ -146,8 +146,8 @@ export const EXAMEN_TEORICO_LANDING: PortalExamenTeoricoLanding = {
   mostrarBadgeVirtual: false,
   heroImagenUrl: '',
   heroImagenAlt: '',
-  enlacesRelacionadosTitulo: SERVIAL_ENLACES_TITULO,
-  enlacesRelacionados: SERVIAL_ENLACES_EXAMEN_TEORICO.map((e) => ({ ...e })),
+  enlacesRelacionadosTitulo: FINSTRUVIAL_ENLACES_TITULO,
+  enlacesRelacionados: FINSTRUVIAL_ENLACES_EXAMEN_TEORICO.map((e) => ({ ...e })),
 };
 
 const ACENTOS: ExamenTeoricoAcento[] = ['blue', 'teal', 'orange', 'green', 'purple'];

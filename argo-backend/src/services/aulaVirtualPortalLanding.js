@@ -218,6 +218,22 @@ function normalizarExamenTeorico(raw, fallback) {
       publicUploadUrl(str(src.heroImagenUrl, fallback.heroImagenUrl)) ||
       str(src.heroImagenUrlAbsoluta, fallback.heroImagenUrlAbsoluta),
     heroImagenAlt: str(src.heroImagenAlt, fallback.heroImagenAlt),
+    enlacesRelacionadosTitulo: str(
+      src.enlacesRelacionadosTitulo,
+      fallback.enlacesRelacionadosTitulo || 'Formación relacionada',
+    ),
+    enlacesRelacionados: (() => {
+      const fbLinks = Array.isArray(fallback.enlacesRelacionados) ? fallback.enlacesRelacionados : [];
+      const rawLinks = Array.isArray(src.enlacesRelacionados) ? src.enlacesRelacionados : [];
+      if (!rawLinks.length) return fbLinks.map((e) => ({ ...e }));
+      return rawLinks
+        .map((item, i) => ({
+          texto: str(item?.texto, fbLinks[i]?.texto),
+          etiqueta: str(item?.etiqueta, fbLinks[i]?.etiqueta),
+          url: str(item?.url, fbLinks[i]?.url),
+        }))
+        .filter((e) => e.etiqueta && e.url);
+    })(),
   };
 }
 

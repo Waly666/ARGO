@@ -32,3 +32,21 @@ export const FINSTRUVIAL_ENLACES_PRIMEROS_AUXILIOS: PortalEnlaceRelacionado[] = 
     url: '/servicios/aula-virtual',
   },
 ];
+
+export const FINSTRUVIAL_ENLACES_EXAMEN_TEORICO: PortalEnlaceRelacionado[] = [
+  {
+    texto: '¿Necesitas formación para tu licencia?',
+    etiqueta: 'Ver cursos disponibles',
+    url: '/cursos',
+  },
+  {
+    texto: '¿Buscas técnicas de conducción preventiva?',
+    etiqueta: 'Curso de Manejo Defensivo',
+    url: '/curso-manejo-defensivo',
+  },
+  {
+    texto: '¿Prefieres formación virtual?',
+    etiqueta: 'Acceder al Aula Virtual',
+    url: '/servicios/aula-virtual',
+  },
+];
