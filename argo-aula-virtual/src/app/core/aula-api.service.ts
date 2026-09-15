@@ -321,6 +321,12 @@ export class AulaApiService {
     );
   }
 
+  /** URL same-origin para iframe: el HTML carga /uploads desde el dominio del portal. */
+  certificadoVerificacionFrameUrl(codigo: string, token: string): string {
+    const q = new URLSearchParams({ t: token });
+    return `${this.base}/certificados/verificar/${encodeURIComponent(codigo)}/html?${q.toString()}`;
+  }
+
   descargarCertificadoConsulta(
     certId: string,
     numDoc: string | number,

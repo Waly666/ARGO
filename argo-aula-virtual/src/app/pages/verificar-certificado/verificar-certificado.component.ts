@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
-import { rewriteCertificadoHtmlForScreen } from '../../core/certificado-mobile-html';
 import { PortalSeoService } from '../../core/portal-seo.service';
 
 @Component({
@@ -14,13 +13,11 @@ import { PortalSeoService } from '../../core/portal-seo.service';
   templateUrl: './verificar-certificado.component.html',
   styleUrl: './verificar-certificado.component.scss',
 })
-export class VerificarCertificadoComponent implements OnInit, OnDestroy {
+export class VerificarCertificadoComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private api = inject(AulaApiService);
   private sanitizer = inject(DomSanitizer);
   private seo = inject(PortalSeoService);
-
-  private blobUrl: string | null = null;
 
   loading = signal(true);
   error = signal('');
@@ -44,44 +41,8 @@ export class VerificarCertificadoComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.api.certificadoVerificacionHtml(codigo, token).subscribe({
-      next: (html) => {
-        const adapted = rewriteCertificadoHtmlForScreen(html);
-        const blob = new Blob([adapted], { type: 'text/html;charset=utf-8' });
-        this.revokeBlobUrl();
-        this.blobUrl = URL.createObjectURL(blob);
-        this.certFrameUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.blobUrl));
-        this.loading.set(false);
-      },
-      error: async (e) => {
-        this.loading.set(false);
-        let msg = 'No se pudo verificar el certificado.';
-        const body = e?.error;
-        if (typeof body === 'string' && body.trim()) {
-          msg = body.trim();
-        } else if (body instanceof Blob) {
-          try {
-            const txt = await body.text();
-            if (txt.trim()) msg = txt.trim();
-          } catch {
-            /* ignore */
-          }
-        } else if (body?.message) {
-          msg = body.message;
-        }
-        this.error.set(msg);
-      },
-    });
-  }
-
-  ngOnDestroy() {
-    this.revokeBlobUrl();
-  }
-
-  private revokeBlobUrl() {
-    if (this.blobUrl) {
-      URL.revokeObjectURL(this.blobUrl);
-      this.blobUrl = null;
-    }
+    const frameUrl = this.api.certificadoVerificacionFrameUrl(codigo, token);
+    this.certFrameUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(frameUrl));
+    this.loading.set(false);
   }
 }

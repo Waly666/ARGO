@@ -11,7 +11,8 @@ const {
   estilosMarcaAguaAnulado,
   estilosMarcaAguaCopia,
 } = require('./reciboHtmlShared');
-const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
+const { uploadFileToDataUrl, publicUploadUrl } = require('../utils/uploadPublicUrl');
+const { certificadoVerificacionMobileCss } = require('./certificadoVerificacionMobile');
 const { informePrintToolbar } = require('./informePrintToolbar');
 const { resolverBasePortal, buildActivacionUrl } = require('../utils/portalPublicUrl');
 const { emitCertificadoQrToken, codigoVerificacionCert } = require('./certificadoQrToken');
@@ -97,13 +98,24 @@ function urlUpload(rel, publicOrigin) {
 
 function resolverFondoCertificado(urlFondoRel, publicOrigin, options = {}) {
   const modoVerificacionPublica = options.modoVerificacionPublica === true;
-  const origin = resolverOrigenUploadsCertificado(publicOrigin, modoVerificacionPublica);
-  let fondo = urlUpload(urlFondoRel, origin);
+
   if (options.embedLocalAssets || modoVerificacionPublica) {
     const dataUrl = uploadFileToDataUrl(urlFondoRel);
-    if (dataUrl) fondo = dataUrl;
+    if (dataUrl) return dataUrl;
   }
-  return fondo;
+
+  if (modoVerificacionPublica) {
+    const rel = publicUploadUrl(urlFondoRel);
+    if (rel) return rel;
+  }
+
+  const origin = resolverOrigenUploadsCertificado(publicOrigin, modoVerificacionPublica);
+  const abs = urlUpload(urlFondoRel, origin);
+  if (modoVerificacionPublica && abs && /^https?:\/\/(?:localhost|127\.0\.0\.1)/i.test(abs)) {
+    const rel = publicUploadUrl(urlFondoRel);
+    if (rel) return rel;
+  }
+  return abs;
 }
 
 
@@ -319,11 +331,20 @@ async function generarHtmlCertificado(data, options = {}) {
         pdfName: `certificado-${codigo || 'argo'}`,
       });
 
+  const portalOrigin = modoVerificacionPublica
+    ? resolverOrigenUploadsCertificado(publicOrigin, true)
+    : '';
+  const mobileCss = modoVerificacionPublica
+    ? certificadoVerificacionMobileCss(horizontal)
+    : '';
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
+  ${modoVerificacionPublica ? '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4"/>' : ''}
   <title>Certificado ${esc(codigo)}</title>
+  ${portalOrigin ? `<base href="${esc(portalOrigin)}/"/>` : ''}
   ${googleFonts}
   <style>
     ${atPage}
@@ -403,6 +424,7 @@ async function generarHtmlCertificado(data, options = {}) {
         text-size-adjust: none !important;
       }
     }
+    ${mobileCss}
   </style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
