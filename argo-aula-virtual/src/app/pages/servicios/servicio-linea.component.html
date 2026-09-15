@@ -993,15 +993,69 @@
               <p class="fsv-section-head__kicker">{{ s.experienciaSeccionKicker || 'Experiencias' }}</p>
               <h2 class="fsv-section__title">{{ s.experienciaSeccionTitulo || 'Experiencia educativa' }}</h2>
             </header>
-            <div class="fsv-grid fsv-grid--bloques reveal" avRevealOnScroll [revealDelay]="60">
-              @for (item of s.experienciaItems; track item.titulo) {
-                <article class="fsv-card">
-                  <span class="fsv-card__icon" aria-hidden="true">{{ item.icon }}</span>
-                  <h3>{{ item.titulo }}</h3>
-                  <p>{{ item.texto }}</p>
-                </article>
-              }
-            </div>
+            @if (experienciaModoCarpas(s.slug)) {
+              <div class="fsv-capto-grid reveal" avRevealOnScroll [revealDelay]="60">
+                @for (item of s.experienciaItems; track item.titulo; let i = $index) {
+                  @let parsed = parseExperienciaCapto(item.texto);
+                  <article class="fsv-carpa-card" [style.--carpa-hue]="carpaHue(i)">
+                    <div class="fsv-carpa-card__canopy" aria-hidden="true">
+                      <span class="fsv-carpa-card__peak"></span>
+                      <span class="fsv-carpa-card__icon">{{ item.icon }}</span>
+                      <span class="fsv-carpa-card__arch"></span>
+                    </div>
+                    <div class="fsv-carpa-card__body">
+                      @if (parsed.actividad) {
+                        <span class="fsv-carpa-card__badge">{{ parsed.actividad }}</span>
+                      }
+                      <h3 class="fsv-carpa-card__title">{{ item.titulo }}</h3>
+                      @if (parsed.descripcion) {
+                        <p class="fsv-carpa-card__desc">{{ parsed.descripcion }}</p>
+                      } @else if (parsed.rawFallback) {
+                        <p class="fsv-carpa-card__desc">{{ parsed.rawFallback }}</p>
+                      }
+                      @if (parsed.sede || parsed.instructores || parsed.capacidad || parsed.duracion) {
+                        <ul class="fsv-carpa-card__meta">
+                          @if (parsed.sede) {
+                            <li>
+                              <span class="fsv-carpa-card__meta-icon" aria-hidden="true">📍</span>
+                              <span>{{ parsed.sede }}</span>
+                            </li>
+                          }
+                          @if (parsed.instructores) {
+                            <li>
+                              <span class="fsv-carpa-card__meta-icon" aria-hidden="true">👥</span>
+                              <span>{{ parsed.instructores }}</span>
+                            </li>
+                          }
+                          @if (parsed.capacidad) {
+                            <li>
+                              <span class="fsv-carpa-card__meta-icon" aria-hidden="true">🧑‍🤝‍🧑</span>
+                              <span>{{ parsed.capacidad }}</span>
+                            </li>
+                          }
+                          @if (parsed.duracion) {
+                            <li>
+                              <span class="fsv-carpa-card__meta-icon" aria-hidden="true">⏱️</span>
+                              <span>{{ parsed.duracion }}</span>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            } @else {
+              <div class="fsv-grid fsv-grid--bloques reveal" avRevealOnScroll [revealDelay]="60">
+                @for (item of s.experienciaItems; track item.titulo) {
+                  <article class="fsv-card">
+                    <span class="fsv-card__icon" aria-hidden="true">{{ item.icon }}</span>
+                    <h3>{{ item.titulo }}</h3>
+                    <p>{{ item.texto }}</p>
+                  </article>
+                }
+              </div>
+            }
           </div>
         </section>
       }

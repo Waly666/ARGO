@@ -20,6 +20,10 @@ import {
   finstruvialServicioHeroStats,
 } from '../../core/finstruvial-servicio-hero.util';
 import {
+  parseExperienciaCaptoTexto,
+  type ExperienciaCaptoParsed,
+} from '../../core/finstruvial-experiencia-capto.util';
+import {
   finstruvialServicioHeroPhoto,
   finstruvialServicioImagenUrl,
   finstruvialServicioVideoUrl,
@@ -306,6 +310,20 @@ export class ServicioLineaComponent implements OnInit {
   /** Grilla de 3 tarjetas con foto arriba (Capacitación y Sensibilización). */
   bloquesModoFotoTarjetas(slug: string): boolean {
     return slug === 'capacitacionSensibilizacion';
+  }
+
+  /** Carpas interactivas CAPTO: tarjetas tipo luneta con metadata estructurada. */
+  experienciaModoCarpas(slug: string): boolean {
+    return slug === 'capacitacionSensibilizacion';
+  }
+
+  parseExperienciaCapto(texto: string): ExperienciaCaptoParsed {
+    return parseExperienciaCaptoTexto(texto);
+  }
+
+  carpaHue(index: number): number {
+    const hues = [210, 198, 222, 186, 204, 192, 216, 200, 180, 208];
+    return hues[index % hues.length];
   }
 
   /** Destacados con foto + grilla de iconos (Estudios y Diagnósticos Técnicos). */
