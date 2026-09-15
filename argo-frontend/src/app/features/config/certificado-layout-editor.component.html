@@ -315,7 +315,7 @@
               <div class="control-block">
                 <label class="field-label">Tipo de letra</label>
                 <select
-                  [ngModel]="campo(id).fontFamily || fuenteDefault"
+                  [ngModel]="fuenteActual(id)"
                   (ngModelChange)="patchCampo(id, { fontFamily: $event })">
                   @for (f of fuentes; track f.value) {
                     <option [value]="f.value">{{ f.label }}</option>

@@ -131,6 +131,13 @@ function declFontSize(pos, orientacion) {
   ];
 }
 
+function fontFamilyCampo(pos, campoId = '') {
+  if (campoId === 'certId' && !String(pos?.fontFamily ?? '').trim()) {
+    return 'Consolas, monospace';
+  }
+  return cssFontFamily(pos?.fontFamily);
+}
+
 function reglasTipografia(L, orientacion) {
   const rules = [];
   for (const id of CAMPOS_IDS) {
@@ -138,7 +145,7 @@ function reglasTipografia(L, orientacion) {
     if (!pos || pos.visible === false) continue;
     const decl = [...declFontSize(pos, orientacion)];
     if (pos.fw) decl.push(`font-weight:${pos.fw} !important`);
-    if (pos.fontFamily) decl.push(`font-family:${cssFontFamily(pos.fontFamily)} !important`);
+    decl.push(`font-family:${fontFamilyCampo(pos, id)} !important`);
     if (pos.ls) decl.push(`letter-spacing:${pos.ls}`);
     if (pos.color) decl.push(`color:${pos.color} !important`);
     const sel = id === 'certId' ? '.cert-id.dato' : `.dato.${id}`;
@@ -152,7 +159,7 @@ function tieneAnclaPct(v) {
 }
 
 /** Posicionamiento alineado con el editor (left/right + text-align, sin ignorar left por align). */
-function blockStyle(pos, colorDefault, orientacion, multiline = false) {
+function blockStyle(pos, colorDefault, orientacion, multiline = false, campoId = '') {
   if (!pos || pos.visible === false) return '';
   const color = pos.color || colorDefault;
   const align = pos.align || 'center';
@@ -196,7 +203,7 @@ function blockStyle(pos, colorDefault, orientacion, multiline = false) {
   }
   if (pos.fw) parts.push(`font-weight:${pos.fw}`);
   if (pos.ls) parts.push(`letter-spacing:${pos.ls}`);
-  if (pos.fontFamily) parts.push(`font-family:${cssFontFamily(pos.fontFamily)}`);
+  parts.push(`font-family:${fontFamilyCampo(pos, campoId)}`);
 
   if (multiline) {
     parts.push(
@@ -224,7 +231,7 @@ function datoHtml(pos, value, className, colorDefault, orientacion) {
   if (!v || !pos || pos.visible === false) return '';
   const campo = campoDesdeClase(className);
   const multiline = CAMPOS_MULTILINEA.has(campo);
-  const st = blockStyle(pos, colorDefault, orientacion, multiline);
+  const st = blockStyle(pos, colorDefault, orientacion, multiline, campo);
   if (!st) return '';
   return `<div class="${className}" style="${st}">${esc(v)}</div>`;
 }
@@ -232,7 +239,7 @@ function datoHtml(pos, value, className, colorDefault, orientacion) {
 function certIdHtml(pos, codigo, colorDefault, orientacion) {
   const v = String(codigo ?? '').trim();
   if (!v || !pos || pos.visible === false) return '';
-  const st = blockStyle(pos, colorDefault, orientacion);
+  const st = blockStyle(pos, colorDefault, orientacion, false, 'certId');
   if (!st) return '';
   return `<div class="cert-id dato" style="${st}">${esc(v)}</div>`;
 }
@@ -316,7 +323,6 @@ async function generarHtmlCertificado(data, options = {}) {
     .map((id) => datoHtml(L[id], valores[id], `dato ${id}`, color, oriKey))
     .join('\n');
 
-  const fontBase = cssFontFamily(L.nombre?.fontFamily);
   const tipografiaCss = reglasTipografia(L, oriKey);
   const googleFonts = googleFontsHeadHtml();
   const anulado = bloqueComprobanteAnulado(certificado);
@@ -380,7 +386,6 @@ async function generarHtmlCertificado(data, options = {}) {
       position: absolute;
       inset: 0;
       z-index: 2;
-      font-family: ${fontBase};
       container-type: size;
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;

@@ -757,6 +757,12 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     return this.fsPt(this.campoEfectivo(id).fs);
   }
 
+  fuenteActual(id: CampoCertificadoId): string {
+    const ff = this.campo(id).fontFamily;
+    if (ff && String(ff).trim()) return ff;
+    return FUENTE_CERTIFICADO_DEFAULT;
+  }
+
   onTamano(id: CampoCertificadoId, n: number) {
     const v = Math.min(this.fuenteMaxPt, Math.max(this.fuenteMinPt, Number(n) || this.fuenteMinPt));
     this.patchCampo(id, {
@@ -959,7 +965,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       ),
       fontWeight: String(eff.fw || '600'),
       textAlign: align === 'right' ? 'right' : align === 'left' ? 'left' : 'center',
-      fontFamily: eff.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
+      fontFamily: this.fuenteActual(id),
     };
     this.aplicarPosicionOverlay(st, id, eff, align);
     if (this.visible(id) === false) st['display'] = 'none';
