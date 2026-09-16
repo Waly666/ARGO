@@ -170,10 +170,11 @@ git pull origin main
 grep AULA_VIRTUAL_ZIP_MAX_MB deploy/.env || echo 'AULA_VIRTUAL_ZIP_MAX_MB=400' >> deploy/.env
 # Si ya existe con valor bajo, editar: nano deploy/.env
 
-# 3) Actualizar nginx del HOST desde las plantillas del repo
-sudo cp deploy/nginx/servial.edu.co.conf /etc/nginx/sites-available/servial.edu.co.conf
-sudo cp deploy/nginx/app.servial.edu.co.conf /etc/nginx/sites-available/app.servial.edu.co.conf
-sudo nginx -t && sudo systemctl reload nginx
+# 3) Actualizar nginx del HOST (incluye SSL con Certbot — no solo cp)
+sudo bash deploy/setup-nginx-ssl-servial.sh
+
+> **⚠️ No copies solo los .conf encima del nginx en producción.** Las plantillas traen puerto 80;
+> si reemplazas un archivo que ya tenía `listen 443 ssl` de Certbot, Cloudflare muestra **Error 526**.
 
 # 4) Reconstruir contenedores (nginx interno + backend con nuevo límite)
 docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml build argo-backend argo-frontend argo-aula-virtual
