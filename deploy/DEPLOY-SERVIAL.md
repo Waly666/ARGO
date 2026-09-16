@@ -188,7 +188,38 @@ df -h /opt/argo-servial/data
 
 1. Entrar a **https://app.servial.edu.co**
 2. **Aula virtual** → curso mercancías peligrosas → **Subir paquete ZIP**
-3. Si falla, revisar en F12 → Network la URL con 413 (debe ser `POST .../paquete`)
+
+#### Error 413 con `<center>cloudflare</center>` en la respuesta
+
+**No es nginx ni el backend.** Cloudflare (plan Free/Pro) **rechaza subidas mayores a ~100 MB** antes de que lleguen al VPS. El curso de mercancías peligrosas suele pesar **150–300 MB**.
+
+**Opción A — Subir desde la VPS (recomendado, sin tocar Cloudflare)**
+
+1. Copia el ZIP al servidor (WinSCP) → `/tmp/curso-11.zip`
+2. En el ERP logueado, copia el **token JWT** (F12 → Application → localStorage, o header `Authorization` de una petición `/api/`)
+3. En la VPS:
+
+```bash
+cd /opt/argo-servial
+bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'PEGAR_TOKEN_AQUI'
+```
+
+**Opción B — Nube gris en Cloudflare (solo durante la subida)**
+
+1. Cloudflare → DNS → `app.servial.edu.co` → clic en nube **naranja** → **gris** (DNS only)
+2. Sube el ZIP desde el ERP (va directo al VPS, sin límite de 100 MB de Cloudflare)
+3. Vuelve a poner la nube **naranja** cuando termine
+
+**Opción C — Copiar carpeta ya extraída (WinSCP)**
+
+Destino: `/opt/argo-servial/data/uploads/aula-virtual-cursos/11/`  
+Luego en el ERP marca el curso como publicado / verifica `index.html` con:
+
+```bash
+curl -sI http://127.0.0.1:5012/uploads/aula-virtual-cursos/11/index.html
+```
+
+Si la respuesta HTML del 413 **no** dice cloudflare, entonces revisa nginx/backend (sección anterior).
 
 Alternativa: copiar la carpeta del curso desde tu PC a la VPS:
 
