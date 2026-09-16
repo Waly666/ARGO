@@ -245,6 +245,7 @@ En el navegador: **Mi aula** → entrar al curso. Si hay 404 en `/uploads/...`, 
 
 | Archivo | Contenido |
 |---------|-----------|
+| [GUIA-CURSOS-VIRTUALES-VPS.md](./GUIA-CURSOS-VIRTUALES-VPS.md) | **413 Cloudflare, 526 SSL, subir ZIP grande, 404 curso** |
 | [GUIA-GIT-DESPLIEGUE.md](./GUIA-GIT-DESPLIEGUE.md) | Flujo commit → push → pull → docker |
 | [GUIA-NUEVO-CLIENTE-VPS.md](./GUIA-NUEVO-CLIENTE-VPS.md) | § 6.1 — dos instalaciones en un VPS |
 | [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md) | Plan fases cliente nuevo |
