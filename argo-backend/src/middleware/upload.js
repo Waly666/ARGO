@@ -16,7 +16,7 @@ function formatTsInicio(d) {
 
 const ZIP_MAX_MB = Math.min(
   500,
-  Math.max(10, Number(process.env.AULA_VIRTUAL_ZIP_MAX_MB) || 200),
+  Math.max(10, Number(process.env.AULA_VIRTUAL_ZIP_MAX_MB) || 350),
 );
 
 function build(subdir, maxMb = 10) {

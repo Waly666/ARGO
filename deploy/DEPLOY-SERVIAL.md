@@ -25,12 +25,14 @@ Contenedores Docker de Servial: `argo-servial-backend`, `argo-servial-frontend`,
 | `servial.edu.co` / `www` | API, uploads, socket.io, sitemap | `http://127.0.0.1:5012/...` |
 | `servial.edu.co` / `www` | Portal aula virtual | `http://127.0.0.1:8095` |
 
-Archivos en el servidor:
+Archivos en el servidor (plantillas en el repo):
 
-- `/etc/nginx/sites-available/app.servial.edu.co.conf`
-- `/etc/nginx/sites-available/servial.edu.co.conf`
+- `/etc/nginx/sites-available/app.servial.edu.co.conf` ← `deploy/nginx/app.servial.edu.co.conf`
+- `/etc/nginx/sites-available/servial.edu.co.conf` ← `deploy/nginx/servial.edu.co.conf`
 
 Snippets del repo: `/opt/argo-servial/deploy/nginx/snippets/`.
+
+**Cursos virtuales grandes (mercancías peligrosas, error 413):** ver § [Cursos virtuales — ZIP y 413](#cursos-virtuales--zip-y-413) más abajo.
 
 Verificar que Educarte sigue en 8083/8085/5002 y **no** mezclar puertos entre clientes:
 
@@ -137,6 +139,73 @@ docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml up -d
 - `container_name` prefijados con `argo-servial-*`
 
 No commitees cambios de puertos en el `docker-compose.yml` raíz solo para Servial; usa siempre este override.
+
+---
+
+## Cursos virtuales — ZIP y 413
+
+El error **413** al subir el paquete ZIP del curso significa que **nginx o el backend rechazaron el tamaño del archivo** (no es timeout; timeout sería 504).
+
+### Qué debe tener Servial
+
+| Capa | Dónde | Qué configurar |
+|------|--------|----------------|
+| Nginx host ERP | `app.servial.edu.co.conf` | `client_max_body_size 400m;` |
+| Nginx host portal | `servial.edu.co.conf` | `client_max_body_size 400m;` en `/api/` |
+| Nginx contenedor ERP | `argo-frontend/nginx.conf` (en imagen Docker) | `client_max_body_size 250m+` en `/api/` |
+| Backend | `deploy/.env` | `AULA_VIRTUAL_ZIP_MAX_MB=400` |
+
+Los archivos del curso **no van en Git**. Van en disco:
+
+`/opt/argo-servial/data/uploads/aula-virtual-cursos/{idPrograma}/`
+
+### Pasos en la VPS (orden recomendado)
+
+```bash
+# 1) Conectar y entrar a Servial
+cd /opt/argo-servial
+git pull origin main
+
+# 2) Límite ZIP en backend
+grep AULA_VIRTUAL_ZIP_MAX_MB deploy/.env || echo 'AULA_VIRTUAL_ZIP_MAX_MB=400' >> deploy/.env
+# Si ya existe con valor bajo, editar: nano deploy/.env
+
+# 3) Actualizar nginx del HOST desde las plantillas del repo
+sudo cp deploy/nginx/servial.edu.co.conf /etc/nginx/sites-available/servial.edu.co.conf
+sudo cp deploy/nginx/app.servial.edu.co.conf /etc/nginx/sites-available/app.servial.edu.co.conf
+sudo nginx -t && sudo systemctl reload nginx
+
+# 4) Reconstruir contenedores (nginx interno + backend con nuevo límite)
+docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml build argo-backend argo-frontend argo-aula-virtual
+docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml up -d --force-recreate argo-backend argo-frontend argo-aula-virtual
+
+# 5) Verificar espacio en disco antes de subir ~300 MB
+df -h /opt/argo-servial/data
+```
+
+### Subir el curso (ERP)
+
+1. Entrar a **https://app.servial.edu.co**
+2. **Aula virtual** → curso mercancías peligrosas → **Subir paquete ZIP**
+3. Si falla, revisar en F12 → Network la URL con 413 (debe ser `POST .../paquete`)
+
+Alternativa: copiar la carpeta del curso desde tu PC a la VPS:
+
+```bash
+# En la VPS, tras copiar con WinSCP/rsync:
+ls -la /opt/argo-servial/data/uploads/aula-virtual-cursos/
+du -sh /opt/argo-servial/data/uploads/aula-virtual-cursos/*/
+```
+
+### Verificar que el alumno puede abrir el curso
+
+```bash
+# Cambiar 11 por el idPrograma real del curso
+curl -sI http://127.0.0.1:5012/uploads/aula-virtual-cursos/11/index.html
+curl -sf http://127.0.0.1:5012/api/health && echo OK
+```
+
+En el navegador: **Mi aula** → entrar al curso. Si hay 404 en `/uploads/...`, faltan archivos en `data/uploads/`.
 
 ---
 
