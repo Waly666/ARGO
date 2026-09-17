@@ -86,7 +86,9 @@ function resolverModalidadPrograma(prog, serviciosProg) {
 function programaAdmiteMatriculaVirtual(prog, serviciosProg) {
   const info = resolverModalidadPrograma(prog, serviciosProg);
   if (!info.admiteVirtual) return false;
-  return (serviciosProg || []).some((s) => num(s.tarifaVirtual) > 0);
+  const tarifaEnServicio = (serviciosProg || []).some((s) => num(s.tarifaVirtual) > 0);
+  const tarifaEnPrograma = num(prog?.tarifaVirtual) > 0;
+  return tarifaEnServicio || tarifaEnPrograma;
 }
 
 function validarModalidadesParaPrograma(modalidades, body, { esJornada = false } = {}) {

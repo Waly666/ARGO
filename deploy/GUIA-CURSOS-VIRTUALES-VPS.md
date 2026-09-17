@@ -96,7 +96,7 @@ docker logs argo-backend --tail 40
 |----------------|----------|
 | `No se encontró index.html` | Reempaquetar: `index.html` en raíz del ZIP o dentro de **una** carpeta |
 | `No se pudo extraer el ZIP` | ZIP corrupto; volver a copiar con WinSCP o regenerar el ZIP |
-| `no admite modalidad virtual` | En ERP: programa 11 con tarifa/modalidad **virtual** activa |
+| `no admite modalidad virtual` | Modalidad **Virtual** marcada **y** **Tarifa virtual (4) > 0** en el programa. Guarde de nuevo el programa en ERP. Diagnóstico: `docker exec argo-backend node scripts/diagnostico-programa-virtual.js 11` |
 | `No llegó el archivo ZIP` | Archivo no `.zip` o campo incorrecto (el script usa `paquete=@...`) |
 
 ### Alternativa — nube gris Cloudflare
