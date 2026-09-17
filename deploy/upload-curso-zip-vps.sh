@@ -16,7 +16,10 @@ set -euo pipefail
 
 ZIP="${1:?Falta ruta al ZIP (ej. /tmp/curso-11.zip)}"
 ID="${2:?Falta idPrograma (ej. 11)}"
-TOKEN="${3:?Falta token JWT del ERP}"
+TOKEN="${3:?Falta token JWT del ERP (sin la palabra Bearer)}"
+# Quitar "Bearer " si lo copiaron del header completo
+TOKEN="${TOKEN#Bearer }"
+TOKEN="${TOKEN#bearer }"
 
 resolve_api_port() {
   if [[ -n "${ARGO_API_PORT:-}" ]]; then
@@ -77,10 +80,24 @@ echo ">> Cliente detectado: puerto API ${PORT}"
 echo ">> Subiendo ${ZIP} (${SIZE_MB} MB) → curso ${ID}"
 echo ">> URL: ${URL}"
 
-curl -f -S -X POST "$URL" \
+HTTP_CODE="$(curl -sS -w '%{http_code}' -o /tmp/argo-upload-curso-resp.json -X POST "$URL" \
   -H "Authorization: Bearer ${TOKEN}" \
-  -F "paquete=@${ZIP}"
+  -F "paquete=@${ZIP}")"
 
+if [[ "$HTTP_CODE" != "200" && "$HTTP_CODE" != "201" ]]; then
+  echo "ERROR HTTP ${HTTP_CODE}"
+  cat /tmp/argo-upload-curso-resp.json 2>/dev/null || true
+  echo ""
+  if [[ "$HTTP_CODE" == "401" ]]; then
+    echo ">> 401 = token inválido o expirado."
+    echo "   - Pegue SOLO el JWT (sin 'Bearer ')."
+    echo "   - Copie un token nuevo desde app.finstruvial.edu.co (F12 → Network → /api/ → Authorization)."
+    echo "   - Debe ser token del MISMO servidor (Finstruvial en :5002, no Servial)."
+  fi
+  exit 1
+fi
+
+cat /tmp/argo-upload-curso-resp.json
 echo ""
 echo ">> Listo. Verificar:"
 echo "   curl -sI http://127.0.0.1:${PORT}/uploads/aula-virtual-cursos/${ID}/index.html"

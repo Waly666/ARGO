@@ -79,7 +79,9 @@ bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN_JWT_AQUI'
 ARGO_API_PORT=5012 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
 ```
 
-**Token JWT:** ERP logueado → F12 → Network → cualquier `/api/` → `Authorization: Bearer ...`
+**Token JWT:** ERP logueado → F12 → Network → cualquier `/api/` → header `Authorization` → copie **solo** la parte después de `Bearer ` (sin la palabra Bearer).
+
+Si sale **401**: token expirado, mal copiado, o incluyó `Bearer` dos veces. Genere uno nuevo entrando otra vez al ERP.
 
 ### Alternativa — nube gris Cloudflare
 
