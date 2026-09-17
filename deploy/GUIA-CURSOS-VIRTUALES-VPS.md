@@ -83,6 +83,22 @@ ARGO_API_PORT=5012 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOK
 
 Si sale **401**: token expirado, mal copiado, o incluyó `Bearer` dos veces. Genere uno nuevo entrando otra vez al ERP.
 
+Si sale **400**: lea el JSON (`message`). Ejecute de nuevo el script (muestra el cuerpo) o:
+
+```bash
+cat /tmp/argo-upload-curso-resp.json
+unzip -l /tmp/curso-11.zip | head -25
+ls -la /opt/argo/data/uploads/aula-virtual-cursos/11/
+docker logs argo-backend --tail 40
+```
+
+| Mensaje típico | Solución |
+|----------------|----------|
+| `No se encontró index.html` | Reempaquetar: `index.html` en raíz del ZIP o dentro de **una** carpeta |
+| `No se pudo extraer el ZIP` | ZIP corrupto; volver a copiar con WinSCP o regenerar el ZIP |
+| `no admite modalidad virtual` | En ERP: programa 11 con tarifa/modalidad **virtual** activa |
+| `No llegó el archivo ZIP` | Archivo no `.zip` o campo incorrecto (el script usa `paquete=@...`) |
+
 ### Alternativa — nube gris Cloudflare
 
 1. DNS → `app.finstruvial.edu.co` o `app.servial.edu.co` → nube **gris**

@@ -93,6 +93,19 @@ if [[ "$HTTP_CODE" != "200" && "$HTTP_CODE" != "201" ]]; then
     echo "   - Pegue SOLO el JWT (sin 'Bearer ')."
     echo "   - Copie un token nuevo desde app.finstruvial.edu.co (F12 → Network → /api/ → Authorization)."
     echo "   - Debe ser token del MISMO servidor (Finstruvial en :5002, no Servial)."
+  elif [[ "$HTTP_CODE" == "400" ]]; then
+    echo ">> 400 = el servidor rechazó el ZIP. Lea el JSON de arriba (campo message)."
+    echo "   Causas frecuentes:"
+    echo "   - No hay index.html en la raíz del ZIP (o dentro de UNA sola carpeta)."
+    echo "   - ZIP dañado o subida incompleta (220 MB debe llegar entero)."
+    echo "   - Programa ${ID} sin modalidad virtual / tarifa virtual en el ERP."
+    echo ""
+    echo "   Diagnóstico en la VPS:"
+    echo "   unzip -l ${ZIP} | head -25"
+    echo "   ls -la /opt/argo/data/uploads/aula-virtual-cursos/${ID}/ 2>/dev/null | head"
+    echo "   docker logs argo-backend --tail 40"
+  elif [[ "$HTTP_CODE" == "413" ]]; then
+    echo ">> 413 = ZIP supera AULA_VIRTUAL_ZIP_MAX_MB en deploy/.env (poner 400 y recrear backend)."
   fi
   exit 1
 fi
