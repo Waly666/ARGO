@@ -3,11 +3,12 @@
 #
 # Finstruvial (/opt/argo) — API puerto 5002:
 #   cd /opt/argo
-#   bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN_JWT'
+#   bash deploy/upload-curso-zip-vps.sh /tmp/curso.zip 16 'TOKEN_JWT'
+#   (idPrograma: ver en ERP → Aula virtual o Programas; mercancías peligrosas Finstruvial = 16)
 #
 # Servial (/opt/argo-servial) — API puerto 5012:
 #   cd /opt/argo-servial
-#   bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN_JWT'
+#   bash deploy/upload-curso-zip-vps.sh /tmp/curso.zip <idPrograma> 'TOKEN_JWT'
 #
 # Forzar puerto: ARGO_API_PORT=5002 bash deploy/upload-curso-zip-vps.sh ...
 #

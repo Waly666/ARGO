@@ -19,6 +19,17 @@ Casos frecuentes al subir o abrir cursos pesados (ej. **mercancías peligrosas**
 
 **Error típico:** `Failed to connect to 127.0.0.1 port 5012` en Finstruvial → estás usando el puerto de **Servial**. Finstruvial usa **5002**, no 5012 ni 5212.
 
+### idPrograma — siempre verificar en el ERP
+
+El **idPrograma no es igual en todas las instalaciones**. No asuma `11` por documentación local.
+
+| Dónde verlo | Ruta |
+|-------------|------|
+| ERP → Aula virtual | Columna **idPrograma** en la lista de cursos |
+| ERP → Programas | Editar curso → encabezado **#16**, etc. |
+
+Ejemplo Finstruvial producción (mercancías peligrosas): **idPrograma = 16** (no 11).
+
 Comprobar qué API está viva:
 
 ```bash
@@ -61,10 +72,10 @@ cd /opt/argo
 git pull origin main
 
 # Debe detectar puerto 5002 solo por estar en /opt/argo
-bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN_JWT_AQUI'
+bash deploy/upload-curso-zip-vps.sh /tmp/curso-16.zip 16 'TOKEN_JWT_AQUI'
 
-# O explícito:
-ARGO_API_PORT=5002 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
+# O explícito (mercancías peligrosas Finstruvial = 16):
+ARGO_API_PORT=5002 bash deploy/upload-curso-zip-vps.sh /tmp/curso-16.zip 16 'TOKEN'
 ```
 
 **Servial:**
