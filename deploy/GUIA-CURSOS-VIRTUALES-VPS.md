@@ -1,224 +1,190 @@
-# Guía: cursos virtuales grandes en VPS (Servial / Finstruvial)
+# Guía: cursos virtuales grandes en VPS (Finstruvial / Servial)
 
 Casos frecuentes al subir o abrir cursos pesados (ej. **mercancías peligrosas**, ~150–300 MB en ZIP).
 
 ---
 
-## Mapa rápido de errores
+## ⚠️ Puertos distintos por cliente (no mezclar)
 
-| Síntoma | Código | Quién lo causa | Dónde mirar |
-|---------|--------|----------------|-------------|
-| Subida ZIP falla, HTML dice `cloudflare` | **413** | **Cloudflare** (~100 MB máx.) | Esta guía § 1 |
-| Subida ZIP falla, sin mención a Cloudflare | **413** | Nginx o backend | § 2 y § 3 |
-| `Invalid SSL certificate` en navegador | **526** | Cloudflare + nginx sin HTTPS | § 4 |
-| Curso en blanco / recursos no cargan | **404** | Archivos no en `data/uploads/` | § 5 |
-| Carga muy lenta y se corta | **504** | Timeout nginx en `/uploads/` | § 6 |
-| Disco lleno al extraer | **507** | VPS sin espacio | § 7 |
+| | **Finstruvial** | **Servial** |
+|---|-----------------|-------------|
+| **Carpeta VPS** | `/opt/argo` | `/opt/argo-servial` |
+| **API backend** | **5002** | **5012** |
+| **ERP** | **8083** | **8093** |
+| **Portal** | **8085** | **8095** |
+| **Dominio ERP** | `app.finstruvial.edu.co` | `app.servial.edu.co` |
+| **Dominio portal** | `finstruvial.edu.co` | `servial.edu.co` |
+| **Contenedor backend** | `argo-backend` | `argo-servial-backend` |
+| **Uploads en disco** | `/opt/argo/data/uploads/` | `/opt/argo-servial/data/uploads/` |
 
-**Timeout ≠ 413.** Timeout suele ser **504** o **502**. **413 = archivo demasiado grande** para quien recibe la petición.
+**Error típico:** `Failed to connect to 127.0.0.1 port 5012` en Finstruvial → estás usando el puerto de **Servial**. Finstruvial usa **5002**, no 5012 ni 5212.
+
+Comprobar qué API está viva:
+
+```bash
+curl -sf http://127.0.0.1:5002/api/health && echo " → Finstruvial OK"
+curl -sf http://127.0.0.1:5012/api/health && echo " → Servial OK"
+```
 
 ---
 
-## 1. Error 413 con `<center>cloudflare</center>` (más común)
+## Mapa rápido de errores
 
-### Qué pasa
+| Síntoma | Código | Quién lo causa | Sección |
+|---------|--------|----------------|---------|
+| Subida ZIP, HTML dice `cloudflare` | **413** | Cloudflare (~100 MB máx.) | § 1 |
+| Subida ZIP, sin `cloudflare` | **413** | Nginx o backend | § 2–3 |
+| `Invalid SSL certificate` | **526** | Nginx sin HTTPS tras copiar `.conf` | § 4 |
+| Curso en blanco | **404** | Archivos no en `data/uploads/` | § 5 |
+| Carga lenta y se corta | **504** | Timeout nginx `/uploads/` | § 6 |
+| Disco lleno | **507** | VPS sin espacio | § 7 |
+| `Failed to connect` puerto | — | **Puerto incorrecto** (5002 vs 5012) | Arriba |
 
-Cloudflare (plan Free/Pro) **bloquea subidas mayores a ~100 MB** antes de que lleguen al VPS.  
-Aunque nginx y el backend tengan límite de 400 MB, **la petición no llega**.
+**413 = tamaño. 504/502 = timeout. No son lo mismo.**
 
-### Cómo confirmarlo
+---
 
-- F12 → Network → petición `POST .../admin/cursos/XX/paquete`
-- Respuesta HTML con título **413 Payload Too Large** y texto **cloudflare**
+## 1. Error 413 con `<center>cloudflare</center>`
 
-### Qué hacer (Servial)
+Cloudflare (Free/Pro) **bloquea subidas > ~100 MB** antes del VPS.
 
-**Opción A — Subir desde la VPS (recomendado)**
+### Confirmar
 
-1. Copiar ZIP con WinSCP → `/tmp/curso-11.zip` (cambia `11` por `idPrograma`)
-2. Token JWT del ERP: F12 → Network → cualquier `/api/` → header `Authorization: Bearer ...`
-3. En la VPS:
+F12 → Network → `POST .../admin/cursos/XX/paquete` → respuesta HTML con **cloudflare**.
+
+### Solución — subir desde la VPS (bypass Cloudflare)
+
+**Finstruvial:**
+
+```bash
+cd /opt/argo
+git pull origin main
+
+# Debe detectar puerto 5002 solo por estar en /opt/argo
+bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN_JWT_AQUI'
+
+# O explícito:
+ARGO_API_PORT=5002 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
+```
+
+**Servial:**
 
 ```bash
 cd /opt/argo-servial
 git pull origin main
+
 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN_JWT_AQUI'
+
+# O explícito:
+ARGO_API_PORT=5012 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
 ```
 
-**Opción B — Nube gris en Cloudflare (solo durante la subida)**
+**Token JWT:** ERP logueado → F12 → Network → cualquier `/api/` → `Authorization: Bearer ...`
 
-1. Cloudflare → DNS → `app.servial.edu.co` → nube **naranja → gris**
+### Alternativa — nube gris Cloudflare
+
+1. DNS → `app.finstruvial.edu.co` o `app.servial.edu.co` → nube **gris**
 2. Subir ZIP desde el ERP
-3. Volver a nube **naranja** al terminar
+3. Volver nube **naranja**
 
-**Opción C — Copiar carpeta ya extraída**
+### Verificar paquete
 
-Destino Servial:
+**Finstruvial:**
 
-```text
-/opt/argo-servial/data/uploads/aula-virtual-cursos/{idPrograma}/
+```bash
+curl -sI http://127.0.0.1:5002/uploads/aula-virtual-cursos/11/index.html
+ls -la /opt/argo/data/uploads/aula-virtual-cursos/11/ | head
 ```
 
-Verificar:
+**Servial:**
 
 ```bash
 curl -sI http://127.0.0.1:5012/uploads/aula-virtual-cursos/11/index.html
-```
-
-### Finstruvial
-
-Mismo principio. Cambiar puerto API a **5002** y carpeta a `/opt/argo/data/uploads/`:
-
-```bash
-cd /opt/argo
-ARGO_API_PORT=5002 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
+ls -la /opt/argo-servial/data/uploads/aula-virtual-cursos/11/ | head
 ```
 
 ---
 
-## 2. Error 413 sin Cloudflare (nginx del VPS)
+## 2. Error 413 sin Cloudflare (nginx)
 
-### Qué pasa
+Nginx rechaza el cuerpo (`client_max_body_size` bajo o falta en bloque **443**).
 
-Nginx del host o del contenedor ERP rechaza el cuerpo de la petición (`client_max_body_size` bajo o ausente en el bloque **443**).
-
-### Qué debe tener Servial
-
-En `/etc/nginx/sites-available/app.servial.edu.co.conf`, en el bloque con `listen 443 ssl`:
-
-```nginx
-client_max_body_size 400m;
-
-location / {
-    client_max_body_size 400m;
-    proxy_connect_timeout 600s;
-    proxy_send_timeout 600s;
-    proxy_read_timeout 600s;
-    proxy_request_buffering off;
-    ...
-}
-```
-
-Comprobar:
+**Finstruvial** — revisar:
 
 ```bash
-grep -n client_max_body_size /etc/nginx/sites-available/app.servial.edu.co.conf
+grep client_max_body_size /etc/nginx/sites-available/app.finstruvial.edu.co.conf
+grep client_max_body_size /etc/nginx/sites-available/finstruvial.edu.co.conf
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Plantillas en el repo: `deploy/nginx/app.servial.edu.co.conf`, `deploy/nginx/servial.edu.co.conf`.
+Plantillas: `deploy/nginx/app.finstruvial.edu.co.conf`, `deploy/nginx/finstruvial.edu.co.conf`
 
-**Instalar / actualizar nginx + SSL:**
+**Servial** — revisar:
 
 ```bash
-cd /opt/argo-servial
-sudo bash deploy/setup-nginx-ssl-servial.sh
+grep client_max_body_size /etc/nginx/sites-available/app.servial.edu.co.conf
+sudo bash /opt/argo-servial/deploy/setup-nginx-ssl-servial.sh
 ```
+
+Debe haber `client_max_body_size 400m;` en el bloque con `listen 443 ssl`.
 
 ---
 
 ## 3. Error 413 del backend (Multer)
 
-### Qué pasa
-
-El ZIP llegó al backend pero supera el límite interno.
-
-### Qué hacer
-
-En `deploy/.env`:
+En `deploy/.env` del cliente:
 
 ```env
 AULA_VIRTUAL_ZIP_MAX_MB=400
 ```
 
-Recrear backend (y frontend si hace falta nginx interno):
+**Finstruvial:**
+
+```bash
+cd /opt/argo
+docker compose build argo-backend argo-frontend
+docker compose up -d --force-recreate argo-backend argo-frontend
+docker exec argo-backend node -e "console.log(process.env.AULA_VIRTUAL_ZIP_MAX_MB || 'default')"
+```
+
+**Servial:**
 
 ```bash
 cd /opt/argo-servial
 docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml build argo-backend argo-frontend
 docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml up -d --force-recreate argo-backend argo-frontend
-```
-
-Verificar:
-
-```bash
 docker exec argo-servial-backend node -e "console.log(process.env.AULA_VIRTUAL_ZIP_MAX_MB || 'default')"
 ```
 
 ---
 
-## 4. Error 526 — Invalid SSL certificate (Cloudflare)
+## 4. Error 526 — Invalid SSL certificate
 
-### Qué pasa
+Copiar plantilla nginx **solo puerto 80** encima de config con Certbot borra HTTPS.
 
-Se copió una plantilla nginx **solo con puerto 80** encima de la config que Certbot ya había dejado con **443 ssl**. Cloudflare intenta HTTPS al origen y no encuentra certificado válido.
+**Servial:** `sudo bash deploy/setup-nginx-ssl-servial.sh`  
+**Finstruvial:** `sudo bash deploy/setup-nginx-ssl.sh` (desde `/opt/argo`)
 
-### Síntoma
+Parche rápido Cloudflare: **Flexible**. Luego restaurar **Full (strict)**.
 
-Pantalla Cloudflare: **Invalid SSL certificate** (526). Caen `app.servial.edu.co` y/o `servial.edu.co`.
-
-### Arreglo rápido (2 min)
-
-Cloudflare → SSL/TLS → **Flexible** (temporal).
-
-### Arreglo definitivo
-
-```bash
-cd /opt/argo-servial
-git pull origin main
-sudo bash deploy/setup-nginx-ssl-servial.sh
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-Comprobar:
-
-```bash
-grep -E "listen 443|ssl_certificate" /etc/nginx/sites-available/app.servial.edu.co.conf
-grep -E "listen 443|ssl_certificate" /etc/nginx/sites-available/servial.edu.co.conf
-```
-
-Volver Cloudflare a **Full (strict)** cuando el certificado esté OK.
-
-### Regla
-
-> **No hagas solo `sudo cp deploy/nginx/*.conf` en producción** sin volver a ejecutar Certbot o `setup-nginx-ssl-servial.sh`.
+> No hagas solo `sudo cp deploy/nginx/*.conf` sin re-ejecutar Certbot.
 
 ---
 
-## 5. Curso no carga / 404 en `/uploads/`
+## 5. Curso no carga / 404
 
-### Qué pasa
+Los paquetes **no van en Git**. Deben existir en disco:
 
-El curso **no está en disco** en la VPS (los ZIP/carpetas **no van en Git**).
-
-### Dónde deben estar (Servial)
-
-```text
-/opt/argo-servial/data/uploads/aula-virtual-cursos/{idPrograma}/index.html
-```
-
-### Diagnóstico
-
-```bash
-ls -la /opt/argo-servial/data/uploads/aula-virtual-cursos/
-du -sh /opt/argo-servial/data/uploads/aula-virtual-cursos/*/
-curl -sI http://127.0.0.1:5012/uploads/aula-virtual-cursos/11/index.html
-```
-
-- **404** → subir paquete (§ 1) o copiar carpeta
-- **200** → el paquete existe; revisar acceso del alumno (pago, matrícula, `publicadoPortal`)
+| Cliente | Ruta |
+|---------|------|
+| Finstruvial | `/opt/argo/data/uploads/aula-virtual-cursos/{id}/index.html` |
+| Servial | `/opt/argo-servial/data/uploads/aula-virtual-cursos/{id}/index.html` |
 
 ---
 
-## 6. Timeout al cargar PDFs/videos del curso (504)
+## 6. Timeout al cargar PDFs/videos (504)
 
-### Qué pasa
-
-Nginx corta la descarga de archivos grandes en `/uploads/` (timeout por defecto ~60 s).
-
-### Qué hacer
-
-En nginx del host, bloque `/uploads/` debe incluir (snippet del repo):
+Incluir en nginx del host, bloque `/uploads/`:
 
 ```nginx
 proxy_read_timeout 600s;
@@ -227,74 +193,71 @@ proxy_connect_timeout 600s;
 proxy_buffering off;
 ```
 
-Servial: `deploy/nginx/snippets/argo-uploads-proxy.conf` incluido en `servial.edu.co.conf`.
+Snippet: `deploy/nginx/snippets/argo-uploads-proxy.conf`
 
-```bash
-sudo nginx -t && sudo systemctl reload nginx
-```
+**Finstruvial:** incluido en `deploy/nginx/finstruvial.edu.co.conf` → proxy a **5002**  
+**Servial:** incluido en `deploy/nginx/servial.edu.co.conf` → proxy a **5012**
 
 ---
 
 ## 7. Disco lleno (507)
 
 ```bash
-df -h /opt/argo-servial/data
+df -h /opt/argo/data              # Finstruvial
+df -h /opt/argo-servial/data      # Servial
 ```
 
-El curso descomprimido puede ocupar **250 MB+**. Dejar al menos **1 GB libre** antes de subir.
+Dejar **≥ 1 GB libre** antes de extraer un curso grande.
 
 ---
 
-## Checklist antes de subir un curso grande (Servial)
+## Checklist Finstruvial
 
 ```bash
-# 1. Espacio
+cd /opt/argo
+git pull origin main
+
+df -h /opt/argo/data
+curl -sf http://127.0.0.1:5002/api/health && echo " API OK (5002)"
+grep AULA_VIRTUAL_ZIP_MAX_MB deploy/.env
+
+# Subir ZIP (>100 MB → script, no ERP directo)
+ARGO_API_PORT=5002 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
+
+curl -sI http://127.0.0.1:5002/uploads/aula-virtual-cursos/11/index.html
+```
+
+---
+
+## Checklist Servial
+
+```bash
+cd /opt/argo-servial
+git pull origin main
+
 df -h /opt/argo-servial/data
+curl -sf http://127.0.0.1:5012/api/health && echo " API OK (5012)"
+grep AULA_VIRTUAL_ZIP_MAX_MB deploy/.env
 
-# 2. API viva
-curl -sf http://127.0.0.1:5012/api/health && echo OK
+ARGO_API_PORT=5012 bash deploy/upload-curso-zip-vps.sh /tmp/curso-11.zip 11 'TOKEN'
 
-# 3. Límite backend
-grep AULA_VIRTUAL_ZIP_MAX_MB /opt/argo-servial/deploy/.env
-
-# 4. Nginx ERP (400m en 443)
-grep client_max_body_size /etc/nginx/sites-available/app.servial.edu.co.conf
-
-# 5. Subida
-#    - ZIP > 100 MB → usar upload-curso-zip-vps.sh (§ 1)
-#    - ZIP < 100 MB → ERP normal o script
-
-# 6. Verificar paquete
 curl -sI http://127.0.0.1:5012/uploads/aula-virtual-cursos/11/index.html
 ```
 
 ---
 
-## Puertos y rutas de referencia
+## Archivos útiles
 
-| Cliente | Carpeta | API | ERP | Portal |
-|---------|---------|-----|-----|--------|
-| **Servial** | `/opt/argo-servial` | **5012** | **8093** | **8095** |
-| **Finstruvial / Educarte** | `/opt/argo` | **5002** | **8083** | **8085** |
-
-| Dominio Servial | Uso |
-|-----------------|-----|
-| `app.servial.edu.co` | ERP (subir ZIP desde UI) |
-| `servial.edu.co` | Portal (alumnos abren curso) |
-
----
-
-## Archivos útiles en el repo
-
-| Archivo | Para qué |
-|---------|----------|
-| `deploy/upload-curso-zip-vps.sh` | Subir ZIP bypass Cloudflare |
-| `deploy/setup-nginx-ssl-servial.sh` | Nginx + Certbot Servial |
-| `deploy/nginx/app.servial.edu.co.conf` | Plantilla ERP |
-| `deploy/nginx/servial.edu.co.conf` | Plantilla portal |
-| `deploy/nginx/snippets/argo-uploads-proxy.conf` | Timeouts `/uploads/` |
+| Archivo | Uso |
+|---------|-----|
+| `deploy/upload-curso-zip-vps.sh` | Subir ZIP bypass Cloudflare (auto-detecta 5002/5012) |
+| `deploy/setup-nginx-ssl.sh` | SSL Finstruvial |
+| `deploy/setup-nginx-ssl-servial.sh` | SSL Servial |
+| `deploy/nginx/finstruvial.edu.co.conf` | Portal Finstruvial → API **5002**, SPA **8085** |
+| `deploy/nginx/app.finstruvial.edu.co.conf` | ERP Finstruvial → **8083** |
+| `deploy/nginx/servial.edu.co.conf` | Portal Servial → API **5012**, SPA **8095** |
 | `deploy/DEPLOY-SERVIAL.md` | Despliegue general Servial |
 
 ---
 
-*Última actualización: septiembre 2026 — casos reales: mercancías peligrosas, Cloudflare 413, nginx 526 Servial.*
+*Última actualización: septiembre 2026 — puertos Finstruvial 5002/8083/8085 vs Servial 5012/8093/8095.*
