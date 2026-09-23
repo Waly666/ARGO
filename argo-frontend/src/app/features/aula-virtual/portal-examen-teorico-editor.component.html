@@ -217,10 +217,11 @@
     <p class="psb-muted">
       Bloque antes del pie de página en <strong>/examen-teorico</strong>. Use textos y enlaces de su CEA, no de otro cliente.
     </p>
-    <av-portal-editor-enlaces-relacionados
-      [titulo]="examenTeorico.enlacesRelacionadosTitulo || 'Formación relacionada'"
-      [enlaces]="enlacesRelacionadosEdit()"
-    />
+    <label class="psb-field psb-field--plain">
+      <span>Título de la sección</span>
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.enlacesRelacionadosTitulo" placeholder="Formación relacionada" />
+    </label>
+    <av-portal-editor-enlaces-relacionados [enlaces]="enlacesRelacionadosEdit()" />
   </div>
 
   <h3 class="psb-subtitle">Solo inicio — Sección del inicio (teaser H2)</h3>

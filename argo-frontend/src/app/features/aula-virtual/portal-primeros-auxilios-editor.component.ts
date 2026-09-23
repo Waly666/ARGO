@@ -23,6 +23,9 @@ import {
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
 import { PortalIconografiaConfig } from '../../core/constants/portal-icon-catalog.types';
+import { FINSTRUVIAL_ENLACES_TITULO } from '../../core/constants/portal-enlaces-relacionados-finstruvial';
+import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.util';
+import { PortalEditorEnlacesRelacionadosComponent } from './portal-editor-enlaces-relacionados.component';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
 import { PortalIconPickerComponent } from './portal-icon-picker.component';
 
@@ -30,6 +33,7 @@ import { PortalIconPickerComponent } from './portal-icon-picker.component';
   selector: 'argo-portal-primeros-auxilios-editor',
   standalone: true,
   imports: [
+    PortalEditorEnlacesRelacionadosComponent,
     PortalEditorFaqListComponent,
     PortalEditorStringListComponent,
     PortalFieldLabelComponent,
@@ -55,6 +59,16 @@ export class PortalPrimerosAuxiliosEditorComponent implements OnInit {
   readonly removeItem = removeAt;
   opcionesCursos = signal<EnumBuscarOption[]>([]);
   copiadoPromptId = signal<string | null>(null);
+
+  enlacesRelacionadosEdit(): PortalEnlaceRelacionado[] {
+    if (!this.primerosAuxilios.enlacesRelacionados) {
+      this.primerosAuxilios.enlacesRelacionados = [];
+    }
+    if (!this.primerosAuxilios.enlacesRelacionadosTitulo?.trim()) {
+      this.primerosAuxilios.enlacesRelacionadosTitulo = FINSTRUVIAL_ENLACES_TITULO;
+    }
+    return this.primerosAuxilios.enlacesRelacionados;
+  }
 
   ngOnInit() {
     this.api.listarCursos().subscribe({

@@ -13,6 +13,11 @@ import {
   MpDocumento,
   MpDocumentoGrupo,
 } from './mercancias-peligrosas-documentos';
+import {
+  FINSTRUVIAL_ENLACES_MERCANCIAS,
+  FINSTRUVIAL_ENLACES_TITULO,
+} from './portal-enlaces-relacionados-finstruvial';
+import { mergeEnlacesRelacionados, PortalEnlaceRelacionado } from '../portal-enlace-relacionado.util';
 import { promptFotoHorizontal } from '../utils/portal-imagen-prompt.util';
 import { mergeHomeCursoCtaUrl } from '../utils/portal-page-route.util';
 
@@ -195,6 +200,8 @@ export interface PortalMercanciasPeligrosasLanding {
   inscripcionesCtaUrl: string;
   inscripcionesWhatsappTexto: string;
   inscripcionesWhatsappUrl: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
 }
 
 export const MERCANCIAS_PELIGROSAS_LANDING_DEFAULTS: PortalMercanciasPeligrosasLanding = {
@@ -557,6 +564,8 @@ export const MERCANCIAS_PELIGROSAS_LANDING_DEFAULTS: PortalMercanciasPeligrosasL
   inscripcionesCtaUrl: '/cursos',
   inscripcionesWhatsappTexto: 'Inscribirme por WhatsApp',
   inscripcionesWhatsappUrl: 'https://wa.me/573213039595',
+  enlacesRelacionadosTitulo: FINSTRUVIAL_ENLACES_TITULO,
+  enlacesRelacionados: FINSTRUVIAL_ENLACES_MERCANCIAS.map((e) => ({ ...e })),
 };
 
 function mergeImagenes(raw: MpImagen[] | undefined, fb: MpImagen[]): MpImagen[] {
@@ -727,5 +736,7 @@ export function mergeMercanciasPeligrosasLanding(
     inscripcionesCtaUrl: str(src.inscripcionesCtaUrl, d.inscripcionesCtaUrl),
     inscripcionesWhatsappTexto: str(src.inscripcionesWhatsappTexto, d.inscripcionesWhatsappTexto),
     inscripcionesWhatsappUrl: str(src.inscripcionesWhatsappUrl, d.inscripcionesWhatsappUrl),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
   };
 }

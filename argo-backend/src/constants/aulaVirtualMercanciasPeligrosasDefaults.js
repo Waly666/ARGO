@@ -1,4 +1,5 @@
 const { MERCANCIAS_PELIGROSAS_DOCUMENTOS_GRUPOS } = require('./aulaVirtualMercanciasPeligrosasDocumentos');
+const { mergeEnlacesRelacionados } = require('../utils/portalEnlacesRelacionados');
 const {
   mergePromoHeroPillars,
   mergePromoHeroStats,
@@ -403,6 +404,19 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
   inscripcionesCtaUrl: '/cursos',
   inscripcionesWhatsappTexto: 'Inscribirme por WhatsApp',
   inscripcionesWhatsappUrl: 'https://wa.me/573213039595',
+  enlacesRelacionadosTitulo: 'Formación relacionada',
+  enlacesRelacionados: [
+    {
+      texto: '¿Necesitas formación complementaria para conductores?',
+      etiqueta: 'Ver Curso de Manejo Defensivo',
+      url: '/curso-manejo-defensivo',
+    },
+    {
+      texto: '¿Prefieres formación virtual?',
+      etiqueta: 'Acceder al Aula Virtual',
+      url: '/servicios/aula-virtual',
+    },
+  ],
 };
 
 function mergeImagenes(raw, fb) {
@@ -579,6 +593,8 @@ function mergeMercanciasPeligrosasLanding(raw) {
     inscripcionesCtaUrl: str(src.inscripcionesCtaUrl, d.inscripcionesCtaUrl),
     inscripcionesWhatsappTexto: str(src.inscripcionesWhatsappTexto, d.inscripcionesWhatsappTexto),
     inscripcionesWhatsappUrl: str(src.inscripcionesWhatsappUrl, d.inscripcionesWhatsappUrl),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
   };
 }
 

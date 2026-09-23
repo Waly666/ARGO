@@ -1,4 +1,5 @@
 const landingJson = require('./manejo-defensivo-landing.json');
+const { mergeEnlacesRelacionados } = require('../utils/portalEnlacesRelacionados');
 
 const MANEJO_DEFENSIVO_DEFAULTS = JSON.parse(JSON.stringify(landingJson));
 
@@ -135,6 +136,8 @@ function mergeManejoDefensivoLanding(raw, defaults = MANEJO_DEFENSIVO_DEFAULTS) 
     ctaFinalUbicacion: str(src.ctaFinalUbicacion, d.ctaFinalUbicacion),
     ctaFinalFrase: str(src.ctaFinalFrase, d.ctaFinalFrase),
     footerSeoLine: str(src.footerSeoLine, d.footerSeoLine),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     imagenes: mergeImagenes(src.imagenes, d.imagenes),
   };
 }

@@ -453,7 +453,17 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title"><span class="pes-order">17</span> H2 — Preguntas frecuentes</h3>
+    <h3 class="psb-card__title"><span class="pes-order">17</span> Enlaces relacionados (SEO interno)</h3>
+    <p class="psb-muted">Bloque al final de <strong>/curso-primeros-auxilios</strong>. Use textos y enlaces de su CEA.</p>
+    <label class="psb-field psb-field--plain">
+      <span>Título de la sección</span>
+      <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.enlacesRelacionadosTitulo" placeholder="Formación relacionada" />
+    </label>
+    <av-portal-editor-enlaces-relacionados [enlaces]="enlacesRelacionadosEdit()" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">18</span> H2 — Preguntas frecuentes</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.faqTitulo" />
@@ -462,7 +472,7 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title"><span class="pes-order">18</span> H2 — Llamado final</h3>
+    <h3 class="psb-card__title"><span class="pes-order">19</span> H2 — Llamado final</h3>
     <label class="psb-field psb-field--plain">
       <span>H2</span>
       <input type="text" class="psb-input" [(ngModel)]="primerosAuxilios.ctaFinalTitulo" />

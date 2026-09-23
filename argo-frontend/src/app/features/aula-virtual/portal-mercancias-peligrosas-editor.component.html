@@ -614,6 +614,16 @@
     </div>
   </section>
 
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">15</span> Enlaces relacionados (SEO interno)</h3>
+    <p class="psb-muted">Bloque al final de <strong>/mercancias-peligrosas</strong>. Use textos y enlaces de su CEA.</p>
+    <label class="psb-field psb-field--plain">
+      <span>Título de la sección</span>
+      <input type="text" class="psb-input" [(ngModel)]="mercanciasPeligrosas.enlacesRelacionadosTitulo" placeholder="Formación relacionada" />
+    </label>
+    <av-portal-editor-enlaces-relacionados [enlaces]="enlacesRelacionadosEdit()" />
+  </section>
+
   <section class="psb-card psb-card--page-home">
     <h3 class="psb-card__title">Solo inicio — Sección del inicio (página principal)</h3>
     <p class="psb-note">

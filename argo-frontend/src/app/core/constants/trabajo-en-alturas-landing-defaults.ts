@@ -13,6 +13,11 @@ import {
   TaDocumento,
   TaDocumentoGrupo,
 } from './trabajo-en-alturas-documentos';
+import {
+  FINSTRUVIAL_ENLACES_TITULO,
+  FINSTRUVIAL_ENLACES_TRABAJO_ALTURAS,
+} from './portal-enlaces-relacionados-finstruvial';
+import { mergeEnlacesRelacionados, PortalEnlaceRelacionado } from '../portal-enlace-relacionado.util';
 import { mergeHomeCursoCtaUrl } from '../utils/portal-page-route.util';
 import { promptFotoHorizontal } from '../utils/portal-imagen-prompt.util';
 
@@ -141,6 +146,8 @@ export interface PortalTrabajoEnAlturasLanding {
   documentosGrupos: TaDocumentoGrupo[];
   localTitulo: string;
   localTexto: string;
+  enlacesRelacionadosTitulo: string;
+  enlacesRelacionados: PortalEnlaceRelacionado[];
   faq: TaFaq[];
 }
 
@@ -406,6 +413,8 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
   localTitulo: 'Curso de Trabajo en Alturas en Villavicencio, Meta',
   localTexto:
     'SERVIAL Colombia brinda capacitación en trabajo seguro en alturas para trabajadores, contratistas y empresas de Villavicencio, Meta y los Llanos Orientales.',
+  enlacesRelacionadosTitulo: FINSTRUVIAL_ENLACES_TITULO,
+  enlacesRelacionados: FINSTRUVIAL_ENLACES_TRABAJO_ALTURAS.map((e) => ({ ...e })),
   faq: [
     {
       pregunta: '¿A partir de qué altura aplica la normativa de trabajo en alturas?',
@@ -548,6 +557,8 @@ export function mergeTrabajoEnAlturasLanding(
     documentosGrupos: arr(src.documentosGrupos, d.documentosGrupos),
     localTitulo: str(src.localTitulo, d.localTitulo),
     localTexto: str(src.localTexto, d.localTexto),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     faq: arr(src.faq, d.faq),
   };
 }

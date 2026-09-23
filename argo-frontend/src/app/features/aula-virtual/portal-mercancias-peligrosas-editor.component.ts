@@ -37,12 +37,16 @@ import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields
 
 import { PortalSeoLegendComponent } from './portal-seo-legend.component';
 
+import { FINSTRUVIAL_ENLACES_TITULO } from '../../core/constants/portal-enlaces-relacionados-finstruvial';
+import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.util';
+import { PortalEditorEnlacesRelacionadosComponent } from './portal-editor-enlaces-relacionados.component';
 import { PortalFieldLabelComponent } from './portal-field-label.component';
 
 @Component({
   selector: 'argo-portal-mercancias-peligrosas-editor',
   standalone: true,
   imports: [
+    PortalEditorEnlacesRelacionadosComponent,
     PortalEditorFaqListComponent,
     PortalEditorStringListComponent,
     PortalFieldLabelComponent,
@@ -66,6 +70,16 @@ export class PortalMercanciasPeligrosasEditorComponent {
   uploadingId = signal<string | null>(null);
   copiadoPromptId = signal<string | null>(null);
   readonly acentos = PORTAL_EDITOR_ACENTOS;
+
+  enlacesRelacionadosEdit(): PortalEnlaceRelacionado[] {
+    if (!this.mercanciasPeligrosas.enlacesRelacionados) {
+      this.mercanciasPeligrosas.enlacesRelacionados = [];
+    }
+    if (!this.mercanciasPeligrosas.enlacesRelacionadosTitulo?.trim()) {
+      this.mercanciasPeligrosas.enlacesRelacionadosTitulo = FINSTRUVIAL_ENLACES_TITULO;
+    }
+    return this.mercanciasPeligrosas.enlacesRelacionados;
+  }
 
   readonly removeItem = removeAt;
   readonly addNav = addNavItem;

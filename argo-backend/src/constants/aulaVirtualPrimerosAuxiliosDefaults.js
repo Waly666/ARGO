@@ -1,4 +1,5 @@
 const landingJson = require('./primeros-auxilios-landing.json');
+const { mergeEnlacesRelacionados } = require('../utils/portalEnlacesRelacionados');
 
 const PRIMEROS_AUXILIOS_GUION_VERSION = Number(landingJson.guionVersion) || 2;
 const PRIMEROS_AUXILIOS_DEFAULTS = JSON.parse(JSON.stringify(landingJson));
@@ -161,6 +162,8 @@ function mergePrimerosAuxiliosLanding(raw, defaults = PRIMEROS_AUXILIOS_DEFAULTS
     ctaFinalUbicacion: str(src.ctaFinalUbicacion, d.ctaFinalUbicacion),
     ctaFinalFrase: str(src.ctaFinalFrase, d.ctaFinalFrase),
     footerSeoLine: str(src.footerSeoLine, d.footerSeoLine),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     imagenes: mergeImagenes(src.imagenes, d.imagenes),
   };
 }

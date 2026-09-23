@@ -13,6 +13,7 @@ import {
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { PORTAL_EDITOR_ACENTOS, removeAt } from './portal-landing-editor-helpers';
+import { FINSTRUVIAL_ENLACES_TITULO } from '../../core/constants/portal-enlaces-relacionados-finstruvial';
 import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.util';
 import { PortalEditorEnlacesRelacionadosComponent } from './portal-editor-enlaces-relacionados.component';
 import { PortalEditorFaqListComponent } from './portal-editor-faq-list.component';
@@ -63,8 +64,8 @@ export class PortalManejoDefensivoEditorComponent implements OnInit {
     if (!this.manejoDefensivo.enlacesRelacionados) {
       this.manejoDefensivo.enlacesRelacionados = [];
     }
-    if (!this.manejoDefensivo.enlacesRelacionadosTitulo) {
-      this.manejoDefensivo.enlacesRelacionadosTitulo = 'Formación relacionada en SERVIAL';
+    if (!this.manejoDefensivo.enlacesRelacionadosTitulo?.trim()) {
+      this.manejoDefensivo.enlacesRelacionadosTitulo = FINSTRUVIAL_ENLACES_TITULO;
     }
     return this.manejoDefensivo.enlacesRelacionados;
   }

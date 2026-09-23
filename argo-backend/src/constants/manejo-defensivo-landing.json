@@ -253,6 +253,24 @@
   "ctaFinalUbicacion": "Villavicencio | Meta | Llanos Orientales | Colombia",
   "ctaFinalFrase": "Anticípate al riesgo. Conduce para proteger la vida.",
   "footerSeoLine": "Cursos de Seguridad Vial | Manejo Defensivo | Capacitación Empresarial | PESV | Formación de Conductores",
+  "enlacesRelacionadosTitulo": "Formación relacionada",
+  "enlacesRelacionados": [
+    {
+      "texto": "¿Necesitas formación complementaria?",
+      "etiqueta": "Ver cursos disponibles",
+      "url": "/cursos"
+    },
+    {
+      "texto": "¿Buscas primeros auxilios?",
+      "etiqueta": "Curso de Primeros Auxilios",
+      "url": "/curso-primeros-auxilios"
+    },
+    {
+      "texto": "¿Prefieres formación virtual?",
+      "etiqueta": "Acceder al Aula Virtual",
+      "url": "/servicios/aula-virtual"
+    }
+  ],
   "imagenes": [
     {
       "id": "hero",

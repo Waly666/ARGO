@@ -11,7 +11,6 @@ import { PortalEnlaceRelacionado } from '../../core/portal-enlace-relacionado.ut
   templateUrl: './portal-editor-enlaces-relacionados.component.html',
 })
 export class PortalEditorEnlacesRelacionadosComponent {
-  @Input({ required: true }) titulo!: string;
   @Input({ required: true }) enlaces!: PortalEnlaceRelacionado[];
 
   addEnlace() {

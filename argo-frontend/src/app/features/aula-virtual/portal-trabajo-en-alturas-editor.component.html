@@ -397,7 +397,17 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title"><span class="pes-order">12</span> Preguntas frecuentes</h3>
+    <h3 class="psb-card__title"><span class="pes-order">12</span> Enlaces relacionados (SEO interno)</h3>
+    <p class="psb-muted">Bloque al final de <strong>/trabajo-en-alturas</strong>. Use textos y enlaces de su CEA.</p>
+    <label class="psb-field psb-field--plain">
+      <span>Título de la sección</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.enlacesRelacionadosTitulo" placeholder="Formación relacionada" />
+    </label>
+    <av-portal-editor-enlaces-relacionados [enlaces]="enlacesRelacionadosEdit()" />
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title"><span class="pes-order">13</span> Preguntas frecuentes</h3>
     <argo-portal-editor-faq-list [items]="trabajoEnAlturas.faq" />
   </section>
 

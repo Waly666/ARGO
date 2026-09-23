@@ -439,10 +439,11 @@
     <button type="button" class="psb-link" (click)="addResolucion()">+ Agregar resolución</button>
 
     <h3 class="psb-subtitle"><span class="pes-order">7</span> Enlaces relacionados (SEO interno)</h3>
-    <av-portal-editor-enlaces-relacionados
-      [titulo]="cursosConduccion.enlacesRelacionadosTitulo || 'Formación relacionada en SERVIAL'"
-      [enlaces]="enlacesRelacionadosEdit()"
-    />
+    <label class="psb-field psb-field--plain">
+      <span>Título de la sección</span>
+      <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.enlacesRelacionadosTitulo" placeholder="Formación relacionada" />
+    </label>
+    <av-portal-editor-enlaces-relacionados [enlaces]="enlacesRelacionadosEdit()" />
 
     <h3 class="psb-subtitle"><span class="pes-order">8</span> Bloque SEO y local</h3>
     <div class="pcc-card">

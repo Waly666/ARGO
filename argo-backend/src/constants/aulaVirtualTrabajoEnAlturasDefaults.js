@@ -1,4 +1,5 @@
 const { TRABAJO_EN_ALTURAS_DOCUMENTOS_GRUPOS } = require('./aulaVirtualTrabajoEnAlturasDocumentos');
+const { mergeEnlacesRelacionados } = require('../utils/portalEnlacesRelacionados');
 const {
   mergePromoHeroPillars,
   mergePromoHeroStats,
@@ -216,6 +217,8 @@ function mergeTrabajoEnAlturasLanding(raw) {
     documentosGrupos: arr(src.documentosGrupos, d.documentosGrupos),
     localTitulo: str(src.localTitulo, d.localTitulo),
     localTexto: str(src.localTexto, d.localTexto),
+    enlacesRelacionadosTitulo: str(src.enlacesRelacionadosTitulo, d.enlacesRelacionadosTitulo),
+    enlacesRelacionados: mergeEnlacesRelacionados(src.enlacesRelacionados, d.enlacesRelacionados),
     faq: arr(src.faq, d.faq),
   };
 }
