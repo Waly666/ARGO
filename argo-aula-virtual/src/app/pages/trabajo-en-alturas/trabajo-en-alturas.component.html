@@ -126,8 +126,8 @@
           <p class="ta-section-head__lead">{{ contenido().normativaLead }}</p>
         </header>
         <div class="ta-normativa-stats reveal" avRevealOnScroll [revealDelay]="40">
-          @for (d of contenido().normativaDestacados; track d.etiqueta) {
-            <article class="ta-stat-card">
+          @for (d of contenido().normativaDestacados; track d.etiqueta; let i = $index) {
+            <article [class]="'ta-stat-card ' + surfaceToneClass(i)">
               <p class="ta-stat-card__label">{{ d.etiqueta }}</p>
               <p class="ta-stat-card__value">{{ d.valor }}</p>
               <p class="ta-stat-card__detail">{{ d.detalle }}</p>
@@ -135,7 +135,7 @@
           }
         </div>
         <div class="ta-normativa-grid reveal" avRevealOnScroll [revealDelay]="60">
-          <article class="ta-card ta-card--featured">
+          <article class="ta-card ta-card--featured ta-surface--tone-0">
             <span class="ta-card__icon" aria-hidden="true">
               <av-portal-icon icon="document" size="1.5rem" color="currentColor" />
             </span>
@@ -143,8 +143,8 @@
             <h3>{{ contenido().normativaResolucionTitulo }}</h3>
             <p>{{ contenido().normativaResolucionTexto }}</p>
           </article>
-          @for (art of contenido().normativaArticulos; track art.articulo) {
-            <article class="ta-card">
+          @for (art of contenido().normativaArticulos; track art.articulo; let i = $index) {
+            <article [class]="'ta-card ' + surfaceToneClass(i + 1)">
               <p class="ta-card__eyebrow">{{ art.articulo }}</p>
               <h3>{{ art.titulo }}</h3>
               <p>{{ art.texto }}</p>
@@ -350,10 +350,22 @@
           <h2 class="ta-section__title">Preguntas frecuentes</h2>
         </header>
         <div class="ta-faq reveal" avRevealOnScroll [revealDelay]="60">
-          @for (item of contenido().faq; track item.pregunta) {
-            <details class="ta-faq__item">
-              <summary>{{ item.pregunta }}</summary>
-              <p>{{ item.respuesta }}</p>
+          @for (item of contenido().faq; track item.pregunta; let i = $index) {
+            <details [class]="'ta-faq__item ' + faqItemToneClass(i)">
+              <summary class="ta-faq__summary">
+                <span class="ta-faq__num">{{ faqNumero(i) }}</span>
+                <span class="ta-faq__icon" aria-hidden="true">{{ faqIcono(i) }}</span>
+                <span class="ta-faq__head">
+                  <span class="ta-faq__tag">{{ faqEtiqueta(i) }}</span>
+                  <span class="ta-faq__question">{{ item.pregunta }}</span>
+                </span>
+                <span class="ta-faq__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="ta-faq__panel">
+                <div class="ta-faq__answer">
+                  <p>{{ item.respuesta }}</p>
+                </div>
+              </div>
             </details>
           }
         </div>

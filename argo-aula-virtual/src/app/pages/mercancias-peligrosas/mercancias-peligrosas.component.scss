@@ -1,11 +1,16 @@
 @use '../shared/portal-hero-buttons' as heroBtns;
 @use '../shared/portal-page-effects' as fx;
 @use '../shared/portal-hero-banner-extra';
+@use '../shared/finstruvial-landing-polish' as finPolish;
+@use '../shared/portal-faq-accordion' as faqAccordion;
+@use '../shared/portal-landing-surfaces' as portalSurfaces;
 
 :host {
   display: block;
   font-family: var(--av-font-sans);
   --pp-fx-accent-rgb: 74, 222, 128;
+  --landing-accent: var(--mp-accent, #10b981);
+  --landing-accent-soft: var(--mp-accent-soft, #ecfdf5);
 }
 
 .mp-page {
@@ -25,6 +30,8 @@
     radial-gradient(ellipse at 100% 30%, rgba(37, 99, 235, 0.03), transparent 40%),
     #f8fafc;
   color: var(--mp-ink);
+
+  @include portalSurfaces.portal-surface-tones('.mp-page', 'mp-surface');
 }
 
 .container {
@@ -438,21 +445,14 @@
 }
 
 .mp-card {
-  padding: 1.15rem;
+  @include portalSurfaces.portal-interactive-card;
+  padding: 1.2rem 1.25rem 1.25rem;
   border-radius: var(--mp-radius);
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  box-shadow: var(--mp-shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--mp-shadow-md);
-  }
 
   h3 {
     margin: 0.35rem 0 0;
     font-size: 1rem;
+    color: var(--surface-accent, var(--mp-teal));
   }
 
   p {
@@ -462,9 +462,11 @@
   }
 
   &--featured {
-    border-color: #6ee7b7;
-    background: linear-gradient(145deg, #ecfdf5 0%, #fff 60%);
-    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.12);
+    background: linear-gradient(
+      155deg,
+      #fff 0%,
+      color-mix(in srgb, var(--surface-soft, var(--mp-accent-soft)) 65%, #fff) 100%
+    );
   }
 
   &--actor {
@@ -474,15 +476,21 @@
   }
 
   &__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 12px;
-    color: var(--mp-teal);
-    background: var(--mp-accent-soft);
-    border: 1px solid #a7f3d0;
+    display: inline-grid;
+    place-content: center;
+    width: 2.65rem;
+    height: 2.65rem;
+    border-radius: 14px;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #fff;
+    background: linear-gradient(
+      145deg,
+      var(--surface-accent, var(--mp-teal)),
+      color-mix(in srgb, var(--surface-accent, var(--mp-teal)) 62%, #0f172a)
+    );
+    border: 1px solid color-mix(in srgb, var(--surface-accent, var(--mp-teal)) 45%, #fff);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--surface-accent, var(--mp-teal)) 32%, transparent);
 
     &--actor {
       margin-bottom: 0.15rem;
@@ -495,7 +503,7 @@
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--mp-teal);
+    color: var(--surface-accent, var(--mp-teal));
   }
 }
 
@@ -1284,58 +1292,7 @@
   }
 }
 
-.mp-faq__item {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  background: #fff;
-  box-shadow: var(--mp-shadow-sm);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &[open] {
-    border-color: #a7f3d0;
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
-  }
-
-  summary {
-    cursor: pointer;
-    font-weight: 700;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-
-    &::after {
-      content: '+';
-      flex-shrink: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      display: grid;
-      place-content: center;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--mp-teal);
-      background: var(--mp-accent-soft);
-    }
-  }
-
-  &[open] summary::after {
-    content: '−';
-  }
-
-  p {
-    margin: 0.65rem 0 0;
-    color: var(--mp-muted);
-    line-height: 1.55;
-  }
-}
-
-.mp-faq {
-  display: grid;
-  gap: 0.65rem;
-}
+@include faqAccordion.portal-faq-accordion('mp-faq');
 
 .mp-glosario {
   display: grid;
@@ -1586,3 +1543,5 @@
     }
   }
 }
+
+@include finPolish.finstruvial-mercancias-peligrosas();

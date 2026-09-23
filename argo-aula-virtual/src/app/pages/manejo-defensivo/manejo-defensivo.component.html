@@ -46,27 +46,43 @@
         </a>
       }
     </div>
+
+    @if (!imagenUrl('hero')) {
+      <figure ppbh-below class="md-hero-placeholder" aria-hidden="false">
+        <div class="md-placeholder md-placeholder--hero" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('hero')">
+          <span class="md-placeholder__icon" aria-hidden="true">📷</span>
+          <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('hero') }}</span>
+          <span class="md-placeholder__hint">Suba la foto en el ERP → Aula virtual → Manejo defensivo</span>
+        </div>
+      </figure>
+    }
   </av-portal-promo-banner-hero>
 
   <div class="container md-page__body">
 
-    <section class="md-block" aria-labelledby="md-confianza">
-      <h2 id="md-confianza">{{ contenido().confianzaTitulo }}</h2>
-      <p>{{ contenido().confianzaTexto }}</p>
-      <ul class="md-pilares">
-        @for (p of contenido().pilares; track p.titulo) {
-          <li>
-            <span class="md-pilares__icon" aria-hidden="true">{{ p.icono }}</span>
-            <strong>{{ p.titulo }}</strong>
-            <span>{{ p.texto }}</span>
-          </li>
-        }
-      </ul>
+    <section class="md-block md-block--confianza" aria-labelledby="md-confianza">
+      <div class="md-confianza__layout">
+        <div class="md-confianza__intro">
+          <h2 id="md-confianza">{{ contenido().confianzaTitulo }}</h2>
+          <p class="md-confianza__lead">{{ contenido().confianzaTexto }}</p>
+        </div>
+        <ul class="md-pilares md-pilares--confianza">
+          @for (p of contenido().pilares; track p.titulo; let i = $index) {
+            <li [class]="'md-pilares__item ' + surfaceToneClass(i)">
+              <span class="md-pilares__icon" aria-hidden="true">{{ p.icono }}</span>
+              <span class="md-pilares__body">
+                <strong class="md-pilares__title">{{ p.titulo }}</strong>
+                <span class="md-pilares__text">{{ p.texto }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
     </section>
 
     <section class="md-block" aria-labelledby="md-que-es">
       <h2 id="md-que-es">{{ contenido().queEsTitulo }}</h2>
-      <p>{{ contenido().queEsTexto }}</p>
+      <p class="md-section-lead">{{ contenido().queEsTexto }}</p>
       <div class="md-ciclo">
         <ol>
           @for (paso of contenido().cicloPasos; track paso; let last = $last) {
@@ -80,21 +96,27 @@
         </ol>
         <p class="md-ciclo__frase">{{ contenido().cicloFrase }}</p>
       </div>
-      @if (imagenUrl('infografia'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure">
+        @if (imagenUrl('infografia'); as src) {
           <img [src]="src" [alt]="imagen('infografia')?.alt || contenido().cicloFrase" width="960" height="420" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('infografia')">
+            <span class="md-placeholder__icon" aria-hidden="true">📊</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('infografia') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
     </section>
 
-    <section class="md-block" aria-labelledby="md-aprenderas">
+    <section class="md-block md-block--aprenderas" aria-labelledby="md-aprenderas">
       <h2 id="md-aprenderas">{{ contenido().aprenderasTitulo }}</h2>
-      <ul class="md-cards">
-        @for (item of contenido().aprendizajes; track item.numero + item.titulo) {
-          <li>
+      <ul class="md-cards md-cards--large">
+        @for (item of contenido().aprendizajes; track item.numero + item.titulo; let i = $index) {
+          <li [class]="'md-cards__item ' + surfaceToneClass(i)">
             <span class="md-cards__num">{{ item.numero }}</span>
-            <h3>{{ item.titulo }}</h3>
-            <p>{{ item.texto }}</p>
+            <h3 class="md-cards__title">{{ item.titulo }}</h3>
+            <p class="md-cards__text">{{ item.texto }}</p>
           </li>
         }
       </ul>
@@ -104,26 +126,37 @@
       <blockquote id="md-frase-aprendizaje">
         <p>{{ contenido().fraseAprendizaje }}</p>
       </blockquote>
-      @if (imagenUrl('aprendizaje'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure">
+        @if (imagenUrl('aprendizaje'); as src) {
           <img [src]="src" [alt]="imagen('aprendizaje')?.alt || contenido().fraseAprendizaje" width="960" height="480" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('aprendizaje')">
+            <span class="md-placeholder__icon" aria-hidden="true">🛣</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('aprendizaje') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
     </section>
 
     <section class="md-block" aria-labelledby="md-modalidades">
       <h2 id="md-modalidades">{{ contenido().modalidadesTitulo }}</h2>
       <div class="md-modos">
-        @for (modo of [contenido().virtual, contenido().presencial]; track modo.titulo) {
-          <section class="md-modo">
+        @for (modo of [contenido().virtual, contenido().presencial]; track modo.titulo; let i = $index) {
+          <section [class]="'md-modo ' + surfaceToneClass(i)">
             <p class="md-kicker">{{ modo.kicker }}</p>
             <h3>{{ modo.titulo }}</h3>
             <p>{{ modo.lead }}</p>
-            @if (imagenUrl(modo.imagenId); as src) {
-              <figure>
+            <figure class="md-figure md-figure--modo">
+              @if (imagenUrl(modo.imagenId); as src) {
                 <img [src]="src" [alt]="imagen(modo.imagenId)?.alt || modo.titulo" width="640" height="360" />
-              </figure>
-            }
+              } @else {
+                <div class="md-placeholder md-placeholder--compact" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta(modo.imagenId)">
+                  <span class="md-placeholder__icon" aria-hidden="true">🎓</span>
+                  <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta(modo.imagenId) }}</span>
+                </div>
+              }
+            </figure>
             <h4>Ideal para</h4>
             <ul>
               @for (item of modo.idealPara; track item) {
@@ -156,11 +189,17 @@
           <li>{{ m }}</li>
         }
       </ul>
-      @if (imagenUrl('regional'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure">
+        @if (imagenUrl('regional'); as src) {
           <img [src]="src" [alt]="imagen('regional')?.alt || contenido().regionalTitulo" width="960" height="420" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('regional')">
+            <span class="md-placeholder__icon" aria-hidden="true">🗺</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('regional') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
     </section>
 
     <section class="md-block" aria-labelledby="md-empresas">
@@ -171,7 +210,7 @@
           <li>{{ t }}</li>
         }
       </ul>
-      <div class="md-cta-box">
+      <div class="md-cta-box md-surface--tone-2">
         <h3>{{ contenido().empresasCtaTitulo }}</h3>
         <p>{{ contenido().empresasCtaTexto }}</p>
         @if (contenido().empresasCtaBoton) {
@@ -186,14 +225,20 @@
           }
         }
       </div>
-      @if (imagenUrl('empresas'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure">
+        @if (imagenUrl('empresas'); as src) {
           <img [src]="src" [alt]="imagen('empresas')?.alt || contenido().empresasTitulo" width="960" height="420" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('empresas')">
+            <span class="md-placeholder__icon" aria-hidden="true">🏢</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('empresas') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
     </section>
 
-    <section class="md-block" aria-labelledby="md-pesv">
+    <section class="md-block md-block--simple-list" aria-labelledby="md-pesv">
       <h2 id="md-pesv">{{ contenido().pesvTitulo }}</h2>
       <p>{{ contenido().pesvLead }}</p>
       <ul>
@@ -218,27 +263,33 @@
       <h2 id="md-metodologia">{{ contenido().metodologiaTitulo }}</h2>
       <ol class="md-pasos">
         @for (paso of contenido().metodologiaPasos; track paso.titulo; let i = $index) {
-          <li>
+          <li [class]="'md-pasos__item ' + surfaceToneClass(i)">
             <span class="md-pasos__n">{{ i + 1 }}</span>
-            <h3>{{ paso.titulo }}</h3>
-            <p>{{ paso.texto }}</p>
+            <h3 class="md-pasos__title">{{ paso.titulo }}</h3>
+            <p class="md-pasos__text">{{ paso.texto }}</p>
           </li>
         }
       </ol>
-      @if (imagenUrl('metodologia'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure">
+        @if (imagenUrl('metodologia'); as src) {
           <img [src]="src" [alt]="imagen('metodologia')?.alt || contenido().metodologiaTitulo" width="960" height="360" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('metodologia')">
+            <span class="md-placeholder__icon" aria-hidden="true">📋</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('metodologia') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
     </section>
 
     <section class="md-block" aria-labelledby="md-audiencia">
       <h2 id="md-audiencia">{{ contenido().audienciaTitulo }}</h2>
       <ul class="md-audiencia">
-        @for (a of contenido().audiencias; track a.titulo) {
-          <li>
-            <span aria-hidden="true">{{ a.icono }}</span>
-            <strong>{{ a.titulo }}</strong>
+        @for (a of contenido().audiencias; track a.titulo; let i = $index) {
+          <li [class]="'md-audiencia__item ' + surfaceToneClass(i)">
+            <span class="md-audiencia__icon" aria-hidden="true">{{ a.icono }}</span>
+            <strong class="md-audiencia__title">{{ a.titulo }}</strong>
           </li>
         }
       </ul>
@@ -246,37 +297,48 @@
 
     <section class="md-block" aria-labelledby="md-beneficios">
       <h2 id="md-beneficios">{{ contenido().beneficiosTitulo }}</h2>
-      <ul class="md-check">
-        @for (b of contenido().beneficios; track b) {
-          <li>{{ b }}</li>
+      <ul class="md-check md-check--grid">
+        @for (b of contenido().beneficios; track b; let i = $index) {
+          <li [class]="surfaceToneClass(i)">{{ b }}</li>
         }
       </ul>
-      @if (imagenUrl('beneficios'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure">
+        @if (imagenUrl('beneficios'); as src) {
           <img [src]="src" [alt]="imagen('beneficios')?.alt || contenido().beneficiosTitulo" width="960" height="420" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('beneficios')">
+            <span class="md-placeholder__icon" aria-hidden="true">✅</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('beneficios') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
     </section>
 
     <section class="md-block" aria-labelledby="md-cert">
       <h2 id="md-cert">{{ contenido().certificacionTitulo }}</h2>
       <p>{{ contenido().certificacionTexto }}</p>
       <dl class="md-dl">
-        <div><dt>Duración</dt><dd>{{ contenido().certificacion.duracion }}</dd></div>
-        <div><dt>Modalidad</dt><dd>{{ contenido().certificacion.modalidad }}</dd></div>
-        <div><dt>Evaluación</dt><dd>{{ contenido().certificacion.evaluacion }}</dd></div>
-        <div><dt>Certificado</dt><dd>{{ contenido().certificacion.certificado }}</dd></div>
-        <div><dt>Vigencia</dt><dd>{{ contenido().certificacion.vigencia }}</dd></div>
-        <div><dt>Entidad que certifica</dt><dd>{{ contenido().certificacion.entidad }}</dd></div>
+        @for (row of certificacionFilas(); track row.label; let i = $index) {
+          <div [class]="'md-dl__row ' + surfaceToneClass(i)">
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+        }
       </dl>
-      @if (imagenUrl('certificado'); as src) {
-        <figure class="md-figure md-figure--narrow">
+      <figure class="md-figure md-figure--narrow">
+        @if (imagenUrl('certificado'); as src) {
           <img [src]="src" [alt]="imagen('certificado')?.alt || contenido().certificacionTitulo" width="640" height="420" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder md-placeholder--compact" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('certificado')">
+            <span class="md-placeholder__icon" aria-hidden="true">📜</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('certificado') }}</span>
+          </div>
+        }
+      </figure>
     </section>
 
-    <section class="md-block" aria-labelledby="md-instructores">
+    <section class="md-block md-block--simple-list" aria-labelledby="md-instructores">
       <h2 id="md-instructores">{{ contenido().instructoresTitulo }}</h2>
       <p>{{ contenido().instructoresTexto }}</p>
       <ul>
@@ -284,19 +346,24 @@
           <li>{{ item }}</li>
         }
       </ul>
-      @if (imagenUrl('instructor'); as src) {
-        <figure class="md-figure md-figure--narrow">
+      <figure class="md-figure md-figure--narrow">
+        @if (imagenUrl('instructor'); as src) {
           <img [src]="src" [alt]="imagen('instructor')?.alt || contenido().instructoresTitulo" width="480" height="480" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder md-placeholder--square" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('instructor')">
+            <span class="md-placeholder__icon" aria-hidden="true">👨‍🏫</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('instructor') }}</span>
+          </div>
+        }
+      </figure>
     </section>
 
     @if (contenido().testimonios.length) {
       <section class="md-block" aria-labelledby="md-testimonios">
         <h2 id="md-testimonios">{{ contenido().testimoniosTitulo }}</h2>
         <ul class="md-quotes">
-          @for (t of contenido().testimonios; track t.autor + t.texto) {
-            <li>
+          @for (t of contenido().testimonios; track t.autor + t.texto; let i = $index) {
+            <li [class]="'md-quotes__item ' + surfaceToneClass(i)">
               <p class="md-quotes__stars" [attr.aria-label]="t.estrellas + ' de 5'">{{ estrellas(t.estrellas) }}</p>
               <blockquote>
                 <p>{{ t.texto }}</p>
@@ -308,25 +375,38 @@
       </section>
     }
 
-    <av-portal-enlaces-relacionados
-      class="md-block"
-      [titulo]="contenido().enlacesRelacionadosTitulo"
-      [enlaces]="contenido().enlacesRelacionados"
-    />
+    <div class="md-block md-block--enlaces">
+      <av-portal-enlaces-relacionados
+        [titulo]="contenido().enlacesRelacionadosTitulo"
+        [enlaces]="contenido().enlacesRelacionados"
+      />
+    </div>
 
     <section class="md-block" aria-labelledby="md-faq">
       <h2 id="md-faq">{{ contenido().faqTitulo }}</h2>
       <div class="md-faq">
-        @for (item of contenido().faq; track item.pregunta) {
-          <details>
-            <summary>{{ item.pregunta }}</summary>
-            <p>{{ item.respuesta }}</p>
+        @for (item of contenido().faq; track item.pregunta; let i = $index) {
+          <details [class]="'md-faq__item ' + faqItemToneClass(i)">
+            <summary class="md-faq__summary">
+              <span class="md-faq__num">{{ faqNumero(i) }}</span>
+              <span class="md-faq__icon" aria-hidden="true">{{ faqIcono(i) }}</span>
+              <span class="md-faq__head">
+                <span class="md-faq__tag">{{ faqEtiqueta(i) }}</span>
+                <span class="md-faq__question">{{ item.pregunta }}</span>
+              </span>
+              <span class="md-faq__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="md-faq__panel">
+              <div class="md-faq__answer">
+                <p>{{ item.respuesta }}</p>
+              </div>
+            </div>
           </details>
         }
       </div>
     </section>
 
-    <section class="md-block md-close" aria-labelledby="md-cierre">
+    <section class="md-close" aria-labelledby="md-cierre">
       <h2 id="md-cierre">{{ contenido().ctaFinalTitulo }}</h2>
       <p class="md-lead">{{ contenido().ctaFinalLead }}</p>
       <p>{{ contenido().ctaFinalTexto }}</p>
@@ -361,11 +441,17 @@
       </div>
       <p class="md-ubi">{{ contenido().ctaFinalUbicacion }}</p>
       <p class="md-frase">{{ contenido().ctaFinalFrase }}</p>
-      @if (imagenUrl('cierre'); as src) {
-        <figure class="md-figure">
+      <figure class="md-figure md-figure--finale">
+        @if (imagenUrl('cierre'); as src) {
           <img [src]="src" [alt]="imagen('cierre')?.alt || contenido().ctaFinalFrase" width="960" height="420" />
-        </figure>
-      }
+        } @else {
+          <div class="md-placeholder md-placeholder--on-dark" role="img" [attr.aria-label]="imagenPlaceholderEtiqueta('cierre')">
+            <span class="md-placeholder__icon" aria-hidden="true">🌅</span>
+            <span class="md-placeholder__label">{{ imagenPlaceholderEtiqueta('cierre') }}</span>
+            <span class="md-placeholder__hint">ERP → imágenes de la página</span>
+          </div>
+        }
+      </figure>
       <p class="md-seo-line">{{ contenido().footerSeoLine }}</p>
     </section>
   </div>

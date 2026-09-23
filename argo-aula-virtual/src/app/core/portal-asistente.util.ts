@@ -4,8 +4,11 @@ import {
   PortalAsistenteConfig,
   PortalAsistentePaginaConfig,
   PortalAsistenteViewConfig,
+  PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT,
   PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT,
 } from './portal-asistente.types';
+
+export { PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT } from './portal-asistente.types';
 
 export type { LegacyConsultaAsistente } from './portal-asistente.types';
 
@@ -42,13 +45,18 @@ function asistentePaginaKeys(): PortalPaginaKey[] {
 }
 
 function textoDefaultPagina(key: PortalPaginaKey): string {
-  return key === 'consultaCertificados' ? PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT : '';
+  if (key === 'consultaCertificados') return PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT;
+  if (key === 'aula') return PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT;
+  return '';
 }
 
 export function defaultAsistentePaginas(): Record<PortalPaginaKey, PortalAsistentePaginaConfig> {
   const paginas = {} as Record<PortalPaginaKey, PortalAsistentePaginaConfig>;
   for (const key of asistentePaginaKeys()) {
-    paginas[key] = { activo: false, texto: textoDefaultPagina(key) };
+    paginas[key] = {
+      activo: false,
+      texto: textoDefaultPagina(key),
+    };
   }
   return paginas;
 }
@@ -97,7 +105,7 @@ export function asistenteVistaParaPagina(
   asistente: PortalAsistenteConfig | undefined | null,
   pagina: PortalPaginaKey | null,
 ): PortalAsistenteViewConfig | null {
-  if (!asistente || !pagina) return null;
+  if (!asistente || !pagina || pagina === 'aula') return null;
   const page = asistente.paginas?.[pagina];
   if (!page?.activo || !page.texto?.trim()) return null;
 

@@ -10,12 +10,15 @@ import {
 } from '@angular/core';
 
 import { PortalAsistenteViewConfig } from '../../core/portal-landing';
+import { PortalPaginaKey } from '../../core/portal-site';
 import { resolveConsultaAsistenteVideoUrl } from '../../core/consulta-asistente-video.util';
 import { startAssistantChromaLoop } from './consulta-asistente-chroma.util';
 
-const POSITION_KEY = 'argo.consulta-certificados.asistente.position';
-const INTRO_KEY = 'argo.consulta-certificados.asistente.intro';
-const VOICE_KEY = 'argo.consulta-certificados.asistente.voice';
+const VOICE_KEY = 'argo.portal-asistente.voice';
+
+function storageScope(pagina: PortalPaginaKey | null | undefined): string {
+  return pagina?.trim() || 'consultaCertificados';
+}
 
 const FEMALE_VOICE_HINTS =
   /\b(dalia|salome|elena|catalina|paloma|paulina|luciana|penelope|helena|sofia|maria|laura|monica|beatriz|isabella|raquel|sabina|ximena|renata|valentina|female|mujer|woman|girl)\b/i;
@@ -31,6 +34,8 @@ const MALE_VOICE_HINTS =
 })
 export class ConsultaCertificadosAsistenteComponent implements AfterViewInit, OnDestroy {
   @Input({ required: true }) config!: PortalAsistenteViewConfig;
+  /** Página del portal (posición e intro independientes por ruta). */
+  @Input() paginaKey: PortalPaginaKey | null = null;
 
   @ViewChild('root') rootRef?: ElementRef<HTMLElement>;
   @ViewChild('video') videoRef?: ElementRef<HTMLVideoElement>;
@@ -73,8 +78,9 @@ export class ConsultaCertificadosAsistenteComponent implements AfterViewInit, On
 
     queueMicrotask(() => this.setupVideo());
 
-    if (!localStorage.getItem(INTRO_KEY)) {
-      localStorage.setItem(INTRO_KEY, '1');
+    const introKey = this.introStorageKey();
+    if (!localStorage.getItem(introKey)) {
+      localStorage.setItem(introKey, '1');
       window.setTimeout(() => {
         this.showBubble('Hola, soy tu guía. Arrástrame y haz clic para que te lea el mensaje.');
       }, 900);
@@ -99,6 +105,14 @@ export class ConsultaCertificadosAsistenteComponent implements AfterViewInit, On
 
   texto(): string {
     return this.config?.asistenteTexto?.trim() || '';
+  }
+
+  private introStorageKey(): string {
+    return `argo.portal-asistente.${storageScope(this.paginaKey)}.intro`;
+  }
+
+  private positionStorageKey(): string {
+    return `argo.portal-asistente.${storageScope(this.paginaKey)}.position`;
   }
 
   private enforceAvatarVideoSilent(video?: HTMLVideoElement | null): void {
@@ -395,7 +409,7 @@ export class ConsultaCertificadosAsistenteComponent implements AfterViewInit, On
 
   private restorePosition(root: HTMLElement): void {
     try {
-      const saved = JSON.parse(localStorage.getItem(POSITION_KEY) || 'null') as {
+      const saved = JSON.parse(localStorage.getItem(this.positionStorageKey()) || 'null') as {
         left?: number;
         top?: number;
       } | null;
@@ -429,7 +443,7 @@ export class ConsultaCertificadosAsistenteComponent implements AfterViewInit, On
     root.style.bottom = 'auto';
 
     if (persist) {
-      localStorage.setItem(POSITION_KEY, JSON.stringify({ left: nextLeft, top: nextTop }));
+      localStorage.setItem(this.positionStorageKey(), JSON.stringify({ left: nextLeft, top: nextTop }));
     }
   }
 

@@ -1,5 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, computed, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  PLATFORM_ID,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
@@ -24,19 +35,23 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl, resolveUploadsPath } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
+import { AulaGuiaTourComponent } from './aula-guia-tour.component';
+import { AULA_GUIA_TOUR_STORAGE_KEY } from './aula-guia-tour.steps';
+import type { AulaGuiaPanelKey } from './aula-guia-tour.steps';
 
 export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'foro';
 
 @Component({
   selector: 'av-aula',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ForoChatComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ForoChatComponent, AulaGuiaTourComponent],
   templateUrl: './aula.component.html',
   styleUrl: './aula.component.scss',
 })
 export class AulaComponent implements OnInit, OnDestroy {
   auth = inject(PortalAuthService);
   private api = inject(AulaApiService);
+  private platformId = inject(PLATFORM_ID);
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
   private seo = inject(PortalSeoService);
@@ -59,6 +74,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   panel = signal<PanelAula>('tablero');
   sidebarCollapsed = signal(false);
   mobileNavOpen = signal(false);
+  guiaTourOpen = signal(false);
 
   safePlayerUrl = signal<SafeResourceUrl | null>(null);
   playerTitulo = signal('');
@@ -153,6 +169,14 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.cargarCohortes();
     window.addEventListener('message', this.onMessage);
     document.addEventListener('visibilitychange', this.onVisibility);
+
+    if (isPlatformBrowser(this.platformId) && !localStorage.getItem(AULA_GUIA_TOUR_STORAGE_KEY)) {
+      window.setTimeout(() => {
+        if (this.auth.isLoggedIn() && !this.safePlayerUrl()) {
+          this.guiaTourOpen.set(true);
+        }
+      }, 600);
+    }
   }
 
   ngOnDestroy() {
@@ -160,6 +184,22 @@ export class AulaComponent implements OnInit, OnDestroy {
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.detenerPoll();
     this.initTimers.forEach(clearTimeout);
+  }
+
+  abrirGuiaTour(): void {
+    this.panel.set('tablero');
+    this.guiaTourOpen.set(true);
+  }
+
+  cerrarGuiaTour(reason: 'done' | 'skip'): void {
+    this.guiaTourOpen.set(false);
+    if (reason === 'done' && isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(AULA_GUIA_TOUR_STORAGE_KEY, '1');
+    }
+  }
+
+  onGuiaPanelChange(p: AulaGuiaPanelKey): void {
+    this.irPanel(p);
   }
 
   irPanel(p: PanelAula) {

@@ -1,0 +1,21 @@
+@use '../shared/portal-landing-surfaces' as portal;
+
+@mixin md-surface-tones($root: '.md-page') {
+  @include portal.portal-surface-tones($root, 'md-surface');
+}
+
+@mixin md-compact-card-grid {
+  @include portal.portal-compact-card-grid;
+}
+
+@mixin md-compact-card-cell {
+  @include portal.portal-compact-card-cell;
+}
+
+@mixin md-compact-card-text {
+  @include portal.portal-compact-card-text;
+}
+
+@mixin md-interactive-card {
+  @include portal.portal-interactive-card;
+}

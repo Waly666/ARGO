@@ -196,6 +196,23 @@ export interface PortalAsistenteViewConfig {
   asistenteVideoUrlAbsoluta?: string;
 }
 
+export const PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT = `Bienvenido al aula virtual.
+
+Soy tu guía en pantalla. Puedes arrastrarme a un lado que no estorbe y hacer clic cuando quieras que te lea este mensaje en voz alta. Doble clic pausa o reanuda la lectura.
+
+En el menú de la izquierda encontrará:
+• Tablero: resumen de su avance.
+• Mis cursos: cursos virtuales, clases y evaluaciones en línea.
+• Presenciales: grupos, materiales y calendario de clases en sede.
+• Puntajes: resultados de sus evaluaciones.
+• Certificados: descargue sus certificados cuando estén disponibles.
+• Mi perfil: revise sus datos de contacto.
+• Foro: participa en el foro del curso que tenga abierto.
+
+Para estudiar un curso virtual, entre en Mis cursos, elija el curso y abra la clase. Use el botón de menú en el celular si no ve la barra lateral.
+
+Si tiene dudas, use el foro del curso o los canales de contacto de su centro de formación.`;
+
 export const PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT = `🚘 FORMACIÓN QUE ABRE CAMINOS Y GENERA CONFIANZA
 
 En nuestro Centro de Enseñanza Automovilística, trabajamos con el compromiso de brindar una formación integral, responsable y de alta calidad.

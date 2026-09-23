@@ -124,4 +124,26 @@ export class TrabajoEnAlturasComponent implements OnInit {
   toggleNav() {
     this.navAbierto.update((v) => !v);
   }
+
+  surfaceToneClass(index: number): string {
+    return `ta-surface--tone-${index % 4}`;
+  }
+
+  faqItemToneClass(index: number): string {
+    return `ta-faq__item--tone-${index % 4}`;
+  }
+
+  faqNumero(index: number): string {
+    return String(index + 1).padStart(2, '0');
+  }
+
+  faqEtiqueta(index: number): string {
+    const tags = ['NORMATIVA', 'SEGURIDAD', 'EPI', 'CERTIFICACIÓN'];
+    return tags[index % tags.length];
+  }
+
+  faqIcono(index: number): string {
+    const icons = ['📋', '🪜', '🦺', '📜'];
+    return icons[index % icons.length];
+  }
 }

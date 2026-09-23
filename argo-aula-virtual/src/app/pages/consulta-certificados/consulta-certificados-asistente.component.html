@@ -8,7 +8,7 @@
     [class.is-dragging]="dragging()"
     [class.has-video-avatar]="!useImageFallback()"
     [class.has-transparent-avatar]="hasTransparentAvatar()"
-    aria-label="Asistente virtual de certificados"
+    [attr.aria-label]="paginaKey === 'aula' ? 'Asistente del aula virtual' : 'Asistente virtual del portal'"
     (click)="closeVoiceMenu()"
   >
     <div

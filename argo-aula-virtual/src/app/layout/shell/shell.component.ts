@@ -100,9 +100,11 @@ export class ShellComponent implements OnInit, AfterViewInit {
 
   popupConfig = computed(() => this.landing().popup);
 
+  asistentePaginaKey = computed(() => clavePaginaPorRuta(this.rutaActual(), this.config()));
+
   asistenteConfig = computed(() => {
     const landing = this.landing();
-    const key = clavePaginaPorRuta(this.rutaActual(), this.config());
+    const key = this.asistentePaginaKey();
     return asistenteVistaParaPagina(landing.asistente, key);
   });
 

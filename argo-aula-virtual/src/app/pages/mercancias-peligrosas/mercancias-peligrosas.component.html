@@ -129,7 +129,7 @@
           <p class="mp-section-head__lead">{{ contenido().normativaLead }}</p>
         </header>
         <div class="mp-normativa-grid reveal" avRevealOnScroll [revealDelay]="60">
-          <article class="mp-card mp-card--featured">
+          <article class="mp-card mp-card--featured mp-surface--tone-0">
             <span class="mp-card__icon" aria-hidden="true">
               <av-portal-icon icon="document" size="1.5rem" color="currentColor" />
             </span>
@@ -137,8 +137,8 @@
             <h3>{{ contenido().normativaDecretoTitulo }}</h3>
             <p>{{ contenido().normativaDecretoTexto }}</p>
           </article>
-          @for (ntc of contenido().normativaNtcs; track ntc.codigo) {
-            <article class="mp-card">
+          @for (ntc of contenido().normativaNtcs; track ntc.codigo; let i = $index) {
+            <article [class]="'mp-card ' + surfaceToneClass(i + 1)">
               <p class="mp-card__eyebrow">{{ ntc.codigo }}</p>
               <h3>{{ ntc.titulo }}</h3>
               @if (ntc.texto.trim()) {
@@ -209,7 +209,7 @@
         </header>
         <div class="mp-actores">
           @for (a of contenido().actores; track a.rol; let i = $index) {
-            <article class="mp-card mp-card--actor reveal" avRevealOnScroll [revealDelay]="50 + i * 40">
+            <article [class]="'mp-card mp-card--actor reveal ' + surfaceToneClass(i)" avRevealOnScroll [revealDelay]="50 + i * 40">
               <span class="mp-card__icon mp-card__icon--actor" aria-hidden="true">
                 <av-portal-icon [icon]="i === 0 ? 'building' : i === 1 ? 'truck' : i === 2 ? 'user-circle' : 'users'" size="1.35rem" color="currentColor" />
               </span>
@@ -399,10 +399,22 @@
       <div class="container">
         <h2 class="mp-section__title">{{ contenido().faqTitulo }}</h2>
         <div class="mp-faq">
-          @for (item of contenido().faq; track item.pregunta) {
-            <details class="mp-faq__item">
-              <summary>{{ item.pregunta }}</summary>
-              <p>{{ item.respuesta }}</p>
+          @for (item of contenido().faq; track item.pregunta; let i = $index) {
+            <details [class]="'mp-faq__item ' + faqItemToneClass(i)">
+              <summary class="mp-faq__summary">
+                <span class="mp-faq__num">{{ faqNumero(i) }}</span>
+                <span class="mp-faq__icon" aria-hidden="true">{{ faqIcono(i) }}</span>
+                <span class="mp-faq__head">
+                  <span class="mp-faq__tag">{{ faqEtiqueta(i) }}</span>
+                  <span class="mp-faq__question">{{ item.pregunta }}</span>
+                </span>
+                <span class="mp-faq__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="mp-faq__panel">
+                <div class="mp-faq__answer">
+                  <p>{{ item.respuesta }}</p>
+                </div>
+              </div>
             </details>
           }
         </div>

@@ -16,7 +16,7 @@
 set -euo pipefail
 
 ZIP="${1:?Falta ruta al ZIP (ej. /tmp/curso-11.zip)}"
-ID="${2:?Falta idPrograma (ej. 11)}"
+ID="${2:?Falta idPrograma (ver en ERP Aula virtual; ej. 16 mercancías Finstruvial)}"
 TOKEN="${3:?Falta token JWT del ERP (sin la palabra Bearer)}"
 # Quitar "Bearer " si lo copiaron del header completo
 TOKEN="${TOKEN#Bearer }"

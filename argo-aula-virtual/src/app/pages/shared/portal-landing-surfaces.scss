@@ -1,0 +1,84 @@
+@mixin portal-surface-tones($root, $tone-class: 'portal-surface') {
+  #{$root} .#{$tone-class}--tone-0 {
+    --surface-accent: #1d4ed8;
+    --surface-soft: rgba(37, 99, 235, 0.14);
+    --surface-border: rgba(37, 99, 235, 0.38);
+  }
+
+  #{$root} .#{$tone-class}--tone-1 {
+    --surface-accent: #0d9488;
+    --surface-soft: rgba(13, 148, 136, 0.14);
+    --surface-border: rgba(13, 148, 136, 0.38);
+  }
+
+  #{$root} .#{$tone-class}--tone-2 {
+    --surface-accent: #c2410c;
+    --surface-soft: rgba(234, 88, 12, 0.14);
+    --surface-border: rgba(234, 88, 12, 0.4);
+  }
+
+  #{$root} .#{$tone-class}--tone-3 {
+    --surface-accent: #7c3aed;
+    --surface-soft: rgba(124, 58, 237, 0.14);
+    --surface-border: rgba(124, 58, 237, 0.38);
+  }
+}
+
+@mixin portal-compact-card-grid {
+  align-items: stretch;
+  grid-auto-rows: var(--portal-compact-card-h, 9.75rem);
+}
+
+@mixin portal-compact-card-cell {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: var(--portal-compact-card-h, 9.75rem);
+  max-height: var(--portal-compact-card-h, 9.75rem);
+}
+
+@mixin portal-compact-card-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@mixin portal-interactive-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 2px solid var(--surface-border, color-mix(in srgb, var(--landing-accent, #1d4ed8) 30%, #e2e8f0));
+  border-top: 3px solid color-mix(in srgb, var(--surface-accent, var(--landing-accent, #1d4ed8)) 42%, #e2e8f0);
+  background: linear-gradient(
+    155deg,
+    #fff 0%,
+    color-mix(in srgb, var(--surface-soft, var(--landing-accent-soft, rgba(37, 99, 235, 0.12))) 55%, #fff) 100%
+  );
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--surface-accent, var(--landing-accent, #1d4ed8)) 10%, rgba(15, 23, 42, 0.07));
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-top-color: var(--surface-accent, var(--landing-accent, #1d4ed8));
+    border-color: color-mix(in srgb, var(--surface-accent, var(--landing-accent, #1d4ed8)) 52%, #e2e8f0);
+    box-shadow: 0 18px 44px color-mix(in srgb, var(--surface-accent, var(--landing-accent, #1d4ed8)) 14%, rgba(15, 23, 42, 0.1));
+  }
+}
+
+@mixin portal-section-card-polish($card-selector: '.portal-card') {
+  #{$card-selector} {
+    @include portal-interactive-card();
+    position: relative;
+    overflow: hidden;
+    transition:
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+
+    &:hover {
+      transform: translateY(-4px);
+    }
+  }
+}

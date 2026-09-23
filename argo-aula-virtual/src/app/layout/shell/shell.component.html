@@ -280,7 +280,7 @@
 <av-portal-popup [config]="popupConfig()" [openTick]="popupOpenTick()" />
 
 @if (asistenteConfig(); as asistente) {
-  <av-consulta-certificados-asistente [config]="asistente" />
+  <av-consulta-certificados-asistente [config]="asistente" [paginaKey]="asistentePaginaKey()" />
 }
 
 @if (whatsappHref(); as waUrl) {

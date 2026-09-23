@@ -132,4 +132,26 @@ export class MercanciasPeligrosasComponent implements OnInit {
   toggleNav() {
     this.navAbierto.update((v) => !v);
   }
+
+  surfaceToneClass(index: number): string {
+    return `mp-surface--tone-${index % 4}`;
+  }
+
+  faqItemToneClass(index: number): string {
+    return `mp-faq__item--tone-${index % 4}`;
+  }
+
+  faqNumero(index: number): string {
+    return String(index + 1).padStart(2, '0');
+  }
+
+  faqEtiqueta(index: number): string {
+    const tags = ['NORMATIVA', 'TRANSPORTE', 'SEGURIDAD', 'CERTIFICACIÓN'];
+    return tags[index % tags.length];
+  }
+
+  faqIcono(index: number): string {
+    const icons = ['⚠️', '🚛', '🧯', '📋'];
+    return icons[index % icons.length];
+  }
 }

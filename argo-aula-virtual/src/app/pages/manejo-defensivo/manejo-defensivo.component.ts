@@ -49,6 +49,18 @@ export class ManejoDefensivoComponent implements OnInit {
     ),
   );
 
+  certificacionFilas = computed(() => {
+    const c = this.contenido().certificacion;
+    return [
+      { label: 'Duración', value: c.duracion },
+      { label: 'Modalidad', value: c.modalidad },
+      { label: 'Evaluación', value: c.evaluacion },
+      { label: 'Certificado', value: c.certificado },
+      { label: 'Vigencia', value: c.vigencia },
+      { label: 'Entidad que certifica', value: c.entidad },
+    ];
+  });
+
   breadcrumbs = computed(() => [
     { label: 'Inicio', path: '/' },
     { label: 'Cursos', path: '/cursos' },
@@ -87,6 +99,10 @@ export class ManejoDefensivoComponent implements OnInit {
     return resolveUploadUrl(url) || url;
   }
 
+  imagenPlaceholderEtiqueta(id: string): string {
+    return this.imagen(id)?.etiqueta?.trim() || 'Imagen del curso';
+  }
+
   isExternal(url: string | null | undefined): boolean {
     return /^https?:\/\//i.test(String(url || '').trim());
   }
@@ -104,5 +120,27 @@ export class ManejoDefensivoComponent implements OnInit {
   estrellas(n: number): string {
     const count = Math.min(5, Math.max(0, Number(n) || 0));
     return '★'.repeat(count) + '☆'.repeat(5 - count);
+  }
+
+  surfaceToneClass(index: number): string {
+    return `md-surface--tone-${index % 4}`;
+  }
+
+  faqItemToneClass(index: number): string {
+    return `md-faq__item--tone-${index % 4}`;
+  }
+
+  faqNumero(index: number): string {
+    return String(index + 1).padStart(2, '0');
+  }
+
+  faqEtiqueta(index: number): string {
+    const tags = ['GENERAL', 'MODALIDAD', 'CERTIFICACIÓN', 'INSCRIPCIÓN'];
+    return tags[index % tags.length];
+  }
+
+  faqIcono(index: number): string {
+    const icons = ['❓', '🛣️', '📜', '📝'];
+    return icons[index % icons.length];
   }
 }

@@ -1,0 +1,133 @@
+.aula-guia {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  pointer-events: none;
+}
+
+.aula-guia__backdrop {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.58);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.aula-guia__spotlight {
+  position: fixed;
+  z-index: 12001;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 3px rgba(56, 189, 248, 0.95),
+    0 0 0 9999px rgba(15, 23, 42, 0.58);
+  pointer-events: none;
+  transition:
+    top 0.2s ease,
+    left 0.2s ease,
+    width 0.2s ease,
+    height 0.2s ease;
+}
+
+.aula-guia__card {
+  position: fixed;
+  z-index: 12002;
+  width: min(360px, calc(100vw - 2rem));
+  padding: 1.15rem 1.2rem 1rem;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  pointer-events: auto;
+  transition:
+    top 0.22s ease,
+    left 0.22s ease,
+    transform 0.22s ease;
+}
+
+.aula-guia__close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.55rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+}
+
+.aula-guia__title {
+  margin: 0 2rem 0.5rem 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ea580c;
+}
+
+.aula-guia__body {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.aula-guia__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 1rem 0 0.85rem;
+}
+
+.aula-guia__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #cbd5e1;
+
+  &.is-active {
+    background: #2563eb;
+    transform: scale(1.15);
+  }
+}
+
+.aula-guia__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.aula-guia__btn {
+  min-width: 5.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+
+  &--ghost {
+    background: #fff;
+    border-color: #e2e8f0;
+    color: #334155;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  &--primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+  }
+}

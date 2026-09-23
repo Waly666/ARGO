@@ -17,6 +17,7 @@ import {
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import {
   mergePortalLanding,
+  PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT,
   PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT,
   PORTAL_LANDING_DEFAULTS,
   type PortalLandingConfig,
@@ -1054,7 +1055,11 @@ export class PortalSiteBuilderComponent {
 
   restaurarTextoAsistentePagina(key: PortalPaginaKey) {
     this.asistentePagina(key).texto =
-      key === 'consultaCertificados' ? PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT : '';
+      key === 'consultaCertificados'
+        ? PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT
+        : key === 'aula'
+          ? PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT
+          : '';
   }
 
   onAsistenteVideo(ev: Event) {

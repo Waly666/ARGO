@@ -1,0 +1,45 @@
+@if (open) {
+  <div class="aula-guia" role="presentation">
+    <button type="button" class="aula-guia__backdrop" aria-label="Cerrar guía" (click)="close()"></button>
+
+    @if (spotlight(); as spot) {
+      <div
+        class="aula-guia__spotlight"
+        [style.top.px]="spot.top"
+        [style.left.px]="spot.left"
+        [style.width.px]="spot.width"
+        [style.height.px]="spot.height"
+        aria-hidden="true"
+      ></div>
+    }
+
+    <div
+      class="aula-guia__card"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="currentStep().title"
+      [style.top]="cardStyle().top"
+      [style.left]="cardStyle().left"
+      [style.transform]="cardStyle().transform"
+    >
+      <button type="button" class="aula-guia__close" aria-label="Cerrar" (click)="close()">×</button>
+      <h3 class="aula-guia__title">{{ currentStep().title }}</h3>
+      <p class="aula-guia__body">{{ currentStep().body }}</p>
+
+      <div class="aula-guia__dots" aria-hidden="true">
+        @for (s of steps; track $index) {
+          <span class="aula-guia__dot" [class.is-active]="$index === stepIndex()"></span>
+        }
+      </div>
+
+      <footer class="aula-guia__foot">
+        <button type="button" class="aula-guia__btn aula-guia__btn--ghost" [disabled]="isFirst()" (click)="back()">
+          Atrás
+        </button>
+        <button type="button" class="aula-guia__btn aula-guia__btn--primary" (click)="next()">
+          {{ isLast() ? 'Finalizar' : 'Siguiente' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}

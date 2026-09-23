@@ -12,7 +12,10 @@ export type {
   PortalAsistentePaginaConfig,
   PortalAsistenteViewConfig,
 } from './portal-asistente.types';
-export { PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT } from './portal-asistente.types';
+export {
+  PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT,
+  PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT,
+} from './portal-asistente.types';
 import {
   ACERCA_LANDING_DEFAULTS,
   mergeAcercaLanding,

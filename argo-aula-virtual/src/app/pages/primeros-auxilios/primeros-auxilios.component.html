@@ -72,23 +72,29 @@
 
   <div class="container Pa-page__body">
 
-    <section class="Pa-block" aria-labelledby="Pa-confianza">
-      <h2 id="Pa-confianza">{{ contenido().confianzaTitulo }}</h2>
-      <p>{{ contenido().confianzaTexto }}</p>
-      <ul class="Pa-pilares">
-        @for (p of contenido().pilares; track p.titulo) {
-          <li>
-            <span class="Pa-pilares__icon" aria-hidden="true">{{ p.icono }}</span>
-            <strong>{{ p.titulo }}</strong>
-            <span>{{ p.texto }}</span>
-          </li>
-        }
-      </ul>
+    <section class="Pa-block Pa-block--confianza" aria-labelledby="Pa-confianza">
+      <div class="Pa-confianza__layout">
+        <div class="Pa-confianza__intro">
+          <h2 id="Pa-confianza">{{ contenido().confianzaTitulo }}</h2>
+          <p class="Pa-confianza__lead">{{ contenido().confianzaTexto }}</p>
+        </div>
+        <ul class="Pa-pilares Pa-pilares--confianza">
+          @for (p of contenido().pilares; track p.titulo; let i = $index) {
+            <li [class]="'Pa-pilares__item ' + surfaceToneClass(i)">
+              <span class="Pa-pilares__icon" aria-hidden="true">{{ p.icono }}</span>
+              <span class="Pa-pilares__body">
+                <strong class="Pa-pilares__title">{{ p.titulo }}</strong>
+                <span class="Pa-pilares__text">{{ p.texto }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
     </section>
 
     <section class="Pa-block" aria-labelledby="Pa-que-es">
       <h2 id="Pa-que-es">{{ contenido().queEsTitulo }}</h2>
-      <p>{{ contenido().queEsTexto }}</p>
+      <p class="Pa-section-lead">{{ contenido().queEsTexto }}</p>
       <div class="Pa-ciclo">
         <ol>
           @for (paso of contenido().cicloPasos; track paso; let last = $last) {
@@ -109,14 +115,14 @@
       }
     </section>
 
-    <section class="Pa-block" aria-labelledby="Pa-aprenderas">
+    <section class="Pa-block Pa-block--aprenderas" aria-labelledby="Pa-aprenderas">
       <h2 id="Pa-aprenderas">{{ contenido().aprenderasTitulo }}</h2>
-      <ul class="Pa-cards">
-        @for (item of contenido().aprendizajes; track item.numero + item.titulo) {
-          <li>
+      <ul class="Pa-cards Pa-cards--large">
+        @for (item of contenido().aprendizajes; track item.numero + item.titulo; let i = $index) {
+          <li [class]="'Pa-cards__item ' + surfaceToneClass(i)">
             <span class="Pa-cards__num">{{ item.numero }}</span>
-            <h3>{{ item.titulo }}</h3>
-            <p>{{ item.texto }}</p>
+            <h3 class="Pa-cards__title">{{ item.titulo }}</h3>
+            <p class="Pa-cards__text">{{ item.texto }}</p>
           </li>
         }
       </ul>
@@ -136,8 +142,8 @@
     <section class="Pa-block" aria-labelledby="Pa-modalidades">
       <h2 id="Pa-modalidades">{{ contenido().modalidadesTitulo }}</h2>
       <div class="Pa-modos">
-        @for (modo of [contenido().virtual, contenido().presencial]; track modo.titulo) {
-          <section class="Pa-modo">
+        @for (modo of [contenido().virtual, contenido().presencial]; track modo.titulo; let i = $index) {
+          <section [class]="'Pa-modo ' + surfaceToneClass(i)">
             <p class="Pa-kicker">{{ modo.kicker }}</p>
             <h3>{{ modo.titulo }}</h3>
             <p>{{ modo.lead }}</p>
@@ -193,7 +199,7 @@
           <li>{{ t }}</li>
         }
       </ul>
-      <div class="Pa-cta-box">
+      <div class="Pa-cta-box Pa-surface--tone-2">
         <h3>{{ contenido().empresasCtaTitulo }}</h3>
         <p>{{ contenido().empresasCtaTexto }}</p>
         @if (contenido().empresasCtaBoton) {
@@ -215,7 +221,7 @@
       }
     </section>
 
-    <section class="Pa-block" aria-labelledby="Pa-pesv">
+    <section class="Pa-block Pa-block--simple-list" aria-labelledby="Pa-pesv">
       <h2 id="Pa-pesv">{{ contenido().pesvTitulo }}</h2>
       <p>{{ contenido().pesvLead }}</p>
       <ul>
@@ -240,10 +246,10 @@
       <h2 id="Pa-metodologia">{{ contenido().metodologiaTitulo }}</h2>
       <ol class="Pa-pasos">
         @for (paso of contenido().metodologiaPasos; track paso.titulo; let i = $index) {
-          <li>
+          <li [class]="'Pa-pasos__item ' + surfaceToneClass(i)">
             <span class="Pa-pasos__n">{{ i + 1 }}</span>
-            <h3>{{ paso.titulo }}</h3>
-            <p>{{ paso.texto }}</p>
+            <h3 class="Pa-pasos__title">{{ paso.titulo }}</h3>
+            <p class="Pa-pasos__text">{{ paso.texto }}</p>
           </li>
         }
       </ol>
@@ -257,10 +263,10 @@
     <section class="Pa-block" aria-labelledby="Pa-audiencia">
       <h2 id="Pa-audiencia">{{ contenido().audienciaTitulo }}</h2>
       <ul class="Pa-audiencia">
-        @for (a of contenido().audiencias; track a.titulo) {
-          <li>
-            <span aria-hidden="true">{{ a.icono }}</span>
-            <strong>{{ a.titulo }}</strong>
+        @for (a of contenido().audiencias; track a.titulo; let i = $index) {
+          <li [class]="'Pa-audiencia__item ' + surfaceToneClass(i)">
+            <span class="Pa-audiencia__icon" aria-hidden="true">{{ a.icono }}</span>
+            <strong class="Pa-audiencia__title">{{ a.titulo }}</strong>
           </li>
         }
       </ul>
@@ -268,9 +274,9 @@
 
     <section class="Pa-block" aria-labelledby="Pa-beneficios">
       <h2 id="Pa-beneficios">{{ contenido().beneficiosTitulo }}</h2>
-      <ul class="Pa-check">
-        @for (b of contenido().beneficios; track b) {
-          <li>{{ b }}</li>
+      <ul class="Pa-check Pa-check--grid">
+        @for (b of contenido().beneficios; track b; let i = $index) {
+          <li [class]="surfaceToneClass(i)">{{ b }}</li>
         }
       </ul>
       @if (imagenUrl('beneficios'); as src) {
@@ -284,12 +290,12 @@
       <h2 id="Pa-cert">{{ contenido().certificacionTitulo }}</h2>
       <p>{{ contenido().certificacionTexto }}</p>
       <dl class="Pa-dl">
-        <div><dt>Duración</dt><dd>{{ contenido().certificacion.duracion }}</dd></div>
-        <div><dt>Modalidad</dt><dd>{{ contenido().certificacion.modalidad }}</dd></div>
-        <div><dt>Evaluación</dt><dd>{{ contenido().certificacion.evaluacion }}</dd></div>
-        <div><dt>Certificado</dt><dd>{{ contenido().certificacion.certificado }}</dd></div>
-        <div><dt>Vigencia</dt><dd>{{ contenido().certificacion.vigencia }}</dd></div>
-        <div><dt>Entidad que certifica</dt><dd>{{ contenido().certificacion.entidad }}</dd></div>
+        @for (row of certificacionFilas(); track row.label; let i = $index) {
+          <div [class]="'Pa-dl__row ' + surfaceToneClass(i)">
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+        }
       </dl>
       @if (imagenUrl('certificado'); as src) {
         <figure class="Pa-figure Pa-figure--narrow">
@@ -298,7 +304,7 @@
       }
     </section>
 
-    <section class="Pa-block" aria-labelledby="Pa-instructores">
+    <section class="Pa-block Pa-block--simple-list" aria-labelledby="Pa-instructores">
       <h2 id="Pa-instructores">{{ contenido().instructoresTitulo }}</h2>
       <p>{{ contenido().instructoresTexto }}</p>
       <ul>
@@ -317,8 +323,8 @@
       <section class="Pa-block" aria-labelledby="Pa-testimonios">
         <h2 id="Pa-testimonios">{{ contenido().testimoniosTitulo }}</h2>
         <ul class="Pa-quotes">
-          @for (t of contenido().testimonios; track t.autor + t.texto) {
-            <li>
+          @for (t of contenido().testimonios; track t.autor + t.texto; let i = $index) {
+            <li [class]="'Pa-quotes__item ' + surfaceToneClass(i)">
               <p class="Pa-quotes__stars" [attr.aria-label]="t.estrellas + ' de 5'">{{ estrellas(t.estrellas) }}</p>
               <blockquote>
                 <p>{{ t.texto }}</p>
@@ -330,25 +336,38 @@
       </section>
     }
 
-    <av-portal-enlaces-relacionados
-      class="Pa-block"
-      [titulo]="contenido().enlacesRelacionadosTitulo"
-      [enlaces]="contenido().enlacesRelacionados"
-    />
+    <div class="Pa-block Pa-block--enlaces">
+      <av-portal-enlaces-relacionados
+        [titulo]="contenido().enlacesRelacionadosTitulo"
+        [enlaces]="contenido().enlacesRelacionados"
+      />
+    </div>
 
     <section class="Pa-block" aria-labelledby="Pa-faq">
       <h2 id="Pa-faq">{{ contenido().faqTitulo }}</h2>
       <div class="Pa-faq">
-        @for (item of contenido().faq; track item.pregunta) {
-          <details>
-            <summary>{{ item.pregunta }}</summary>
-            <p>{{ item.respuesta }}</p>
+        @for (item of contenido().faq; track item.pregunta; let i = $index) {
+          <details [class]="'Pa-faq__item ' + faqItemToneClass(i)">
+            <summary class="Pa-faq__summary">
+              <span class="Pa-faq__num">{{ faqNumero(i) }}</span>
+              <span class="Pa-faq__icon" aria-hidden="true">{{ faqIcono(i) }}</span>
+              <span class="Pa-faq__head">
+                <span class="Pa-faq__tag">{{ faqEtiqueta(i) }}</span>
+                <span class="Pa-faq__question">{{ item.pregunta }}</span>
+              </span>
+              <span class="Pa-faq__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="Pa-faq__panel">
+              <div class="Pa-faq__answer">
+                <p>{{ item.respuesta }}</p>
+              </div>
+            </div>
           </details>
         }
       </div>
     </section>
 
-    <section class="Pa-block Pa-close" aria-labelledby="Pa-cierre">
+    <section class="Pa-close" aria-labelledby="Pa-cierre">
       <h2 id="Pa-cierre">{{ contenido().ctaFinalTitulo }}</h2>
       <p class="Pa-lead">{{ contenido().ctaFinalLead }}</p>
       <p>{{ contenido().ctaFinalTexto }}</p>
