@@ -1,0 +1,82 @@
+<div class="aula-entrar" role="presentation" (click)="onBackdropClick($event)">
+  <button type="button" class="aula-entrar__backdrop" data-backdrop="1" aria-label="Cerrar"></button>
+
+  <div
+    class="aula-entrar__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aula-entrar-title"
+    aria-describedby="aula-entrar-desc"
+  >
+    <div class="aula-entrar__glow" aria-hidden="true"></div>
+
+    <button type="button" class="aula-entrar__close" (click)="cerrar()" aria-label="Cerrar">×</button>
+
+    <header class="aula-entrar__head">
+      <span class="aula-entrar__emoji" aria-hidden="true">🎓</span>
+      <div class="aula-entrar__head-text">
+        <p class="aula-entrar__kicker">¡Buen estudio!</p>
+        <h2 id="aula-entrar-title" class="aula-entrar__title">{{ cursoNombre() }}</h2>
+        <p id="aula-entrar-desc" class="aula-entrar__lead">
+          Consejos rápidos para estudiar cómodo. Tómese un minuto y luego pulse empezar.
+        </p>
+      </div>
+    </header>
+
+    <div class="aula-entrar__body">
+      @if (asistenteVisible()) {
+        <section class="aula-entrar__block aula-entrar__block--assistant" aria-labelledby="aula-entrar-asistente">
+          <h3 id="aula-entrar-asistente" class="aula-entrar__block-title">
+            <span aria-hidden="true">🤖</span> Asistente en pantalla
+          </h3>
+          <ul class="aula-entrar__bullets">
+            <li>
+              <strong>Silenciar:</strong> un clic sobre el asistente para que deje de leer; otro clic lo reactiva.
+            </li>
+            <li><strong>Pausar:</strong> doble clic pausa o reanuda la lectura.</li>
+            <li><strong>Mover:</strong> arrástrelo a un rincón para que no tape el curso.</li>
+          </ul>
+        </section>
+      }
+
+      <ul class="aula-entrar__grid">
+        <li class="aula-entrar__card">
+          <span class="aula-entrar__card-icon" aria-hidden="true">💾</span>
+          <div>
+            <strong>Avance guardado</strong>
+            <p>Al terminar, use <strong>Cerrar curso</strong> para sincronizar su progreso.</p>
+          </div>
+        </li>
+        <li class="aula-entrar__card">
+          <span class="aula-entrar__card-icon" aria-hidden="true">💬</span>
+          <div>
+            <strong>Foro</strong>
+            <p>Debajo del visor puede escribir dudas a tutores y compañeros.</p>
+          </div>
+        </li>
+        <li class="aula-entrar__card">
+          <span class="aula-entrar__card-icon" aria-hidden="true">📱</span>
+          <div>
+            <strong>Celular</strong>
+            <p>Menú ☰ del aula para cambiar de sección sin salir del curso.</p>
+          </div>
+        </li>
+        <li class="aula-entrar__card aula-entrar__card--focus">
+          <span class="aula-entrar__card-icon" aria-hidden="true">✨</span>
+          <div>
+            <strong>Concentración</strong>
+            <p>Maximice el visor del curso y silencie notificaciones mientras estudia.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <footer class="aula-entrar__foot">
+      <label class="aula-entrar__remember">
+        <input type="checkbox" [checked]="noMostrarMas()" (change)="noMostrarMas.set($any($event.target).checked)" />
+        No volver a mostrar
+      </label>
+      <button type="button" class="aula-entrar__cta" (click)="cerrar()">Entendido, empezar</button>
+    </footer>
+  </div>
+</div>

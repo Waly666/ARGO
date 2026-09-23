@@ -116,3 +116,20 @@ export function asistenteVistaParaPagina(
     asistenteVideoUrlAbsoluta: asistente.videoUrlAbsoluta,
   };
 }
+
+/** Asistente flotante mientras el alumno tiene un curso virtual abierto en el aula (no en el panel general). */
+export function asistenteVistaParaCursoVirtual(
+  asistente: PortalAsistenteConfig | undefined | null,
+): PortalAsistenteViewConfig | null {
+  if (!asistente) return null;
+  const page = asistente.paginas?.aula;
+  const texto = page?.texto?.trim() || PORTAL_AULA_ASISTENTE_TEXTO_DEFAULT;
+  if (!texto) return null;
+
+  return {
+    asistenteActivo: true,
+    asistenteTexto: texto,
+    asistenteVideoUrl: asistente.videoUrl,
+    asistenteVideoUrlAbsoluta: asistente.videoUrlAbsoluta,
+  };
+}

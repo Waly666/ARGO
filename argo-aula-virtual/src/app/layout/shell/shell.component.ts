@@ -18,7 +18,8 @@ import {
 } from '../../core/portal-site';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
-import { asistenteVistaParaPagina } from '../../core/portal-asistente.util';
+import { AulaCursoPlayerService } from '../../core/aula-curso-player.service';
+import { asistenteVistaParaCursoVirtual, asistenteVistaParaPagina } from '../../core/portal-asistente.util';
 import { PortalThemeService } from '../../core/portal-theme.service';
 import {
   finstruvialServicioPublicRouteWithConfig,
@@ -90,6 +91,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private portalTheme = inject(PortalThemeService);
   private iconografiaSvc = inject(PortalIconografiaService);
   auth = inject(PortalAuthService);
+  private aulaCursoPlayer = inject(AulaCursoPlayerService);
 
   config = this.portalConfig.config;
   portalReady = this.portalConfig.ready;
@@ -100,11 +102,18 @@ export class ShellComponent implements OnInit, AfterViewInit {
 
   popupConfig = computed(() => this.landing().popup);
 
-  asistentePaginaKey = computed(() => clavePaginaPorRuta(this.rutaActual(), this.config()));
+  asistentePaginaKey = computed(() => {
+    const key = clavePaginaPorRuta(this.rutaActual(), this.config());
+    if (key === 'aula' && this.aulaCursoPlayer.abierto()) return 'aula';
+    return key;
+  });
 
   asistenteConfig = computed(() => {
     const landing = this.landing();
     const key = this.asistentePaginaKey();
+    if (key === 'aula' && this.aulaCursoPlayer.abierto()) {
+      return asistenteVistaParaCursoVirtual(landing.asistente);
+    }
     return asistenteVistaParaPagina(landing.asistente, key);
   });
 

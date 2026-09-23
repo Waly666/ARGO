@@ -35,16 +35,28 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl, resolveUploadsPath } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
+import { AulaCursoPlayerService } from '../../core/aula-curso-player.service';
 import { AulaGuiaTourComponent } from './aula-guia-tour.component';
 import { AULA_GUIA_TOUR_STORAGE_KEY } from './aula-guia-tour.steps';
 import type { AulaGuiaPanelKey } from './aula-guia-tour.steps';
+import {
+  AulaEntrarCursoModalComponent,
+  AULA_ENTRAR_CURSO_MODAL_SKIP_KEY,
+} from './aula-entrar-curso-modal.component';
 
 export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'foro';
 
 @Component({
   selector: 'av-aula',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ForoChatComponent, AulaGuiaTourComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ForoChatComponent,
+    AulaGuiaTourComponent,
+    AulaEntrarCursoModalComponent,
+  ],
   templateUrl: './aula.component.html',
   styleUrl: './aula.component.scss',
 })
@@ -55,6 +67,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
   private seo = inject(PortalSeoService);
+  private aulaCursoPlayer = inject(AulaCursoPlayerService);
 
   cursos = signal<CursoVirtual[]>([]);
   cohortes = signal<CohorteAlumno[]>([]);
@@ -75,6 +88,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   sidebarCollapsed = signal(false);
   mobileNavOpen = signal(false);
   guiaTourOpen = signal(false);
+  entrarCursoModalOpen = signal(false);
 
   safePlayerUrl = signal<SafeResourceUrl | null>(null);
   playerTitulo = signal('');
@@ -179,7 +193,17 @@ export class AulaComponent implements OnInit, OnDestroy {
     }
   }
 
+  private debeMostrarEntrarCursoModal(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    try {
+      return !localStorage.getItem(AULA_ENTRAR_CURSO_MODAL_SKIP_KEY);
+    } catch {
+      return true;
+    }
+  }
+
   ngOnDestroy() {
+    this.aulaCursoPlayer.marcarCerrado();
     window.removeEventListener('message', this.onMessage);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.detenerPoll();
@@ -617,10 +641,18 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.playerForoNombre.set(curso.nombreProg);
     this.cursoActivo.set(curso);
     this.avisoPlayer.set('');
+    this.aulaCursoPlayer.marcarAbierto(curso.nombreProg);
+    this.entrarCursoModalOpen.set(this.debeMostrarEntrarCursoModal());
     this.iniciarPoll(curso);
   }
 
+  cerrarEntrarCursoModal(): void {
+    this.entrarCursoModalOpen.set(false);
+  }
+
   cerrarPlayer() {
+    this.entrarCursoModalOpen.set(false);
+    this.aulaCursoPlayer.marcarCerrado();
     this.detenerPoll();
     this.initTimers.forEach(clearTimeout);
     this.initTimers = [];

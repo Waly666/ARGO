@@ -1,0 +1,323 @@
+.aula-entrar {
+  position: fixed;
+  inset: 0;
+  z-index: 11800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  animation: aulaEntrarFade 0.35s ease;
+  box-sizing: border-box;
+}
+
+.aula-entrar__backdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.aula-entrar__dialog {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: min(920px, 100%);
+  max-height: min(94vh, 880px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(1.1rem, 2.5vw, 1.65rem) clamp(1.15rem, 3vw, 1.85rem);
+  border-radius: 22px;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 55%, #fff7ed 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 28px 80px rgba(15, 23, 42, 0.35);
+  animation: aulaEntrarPop 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.aula-entrar__glow {
+  position: absolute;
+  top: -35%;
+  right: -15%;
+  width: 55%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(251, 146, 60, 0.28), transparent 70%);
+  pointer-events: none;
+}
+
+.aula-entrar__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.85rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #64748b;
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+
+  &:hover {
+    background: #fff;
+    color: #0f172a;
+  }
+}
+
+.aula-entrar__head {
+  display: flex;
+  gap: 1.1rem;
+  align-items: flex-start;
+  padding-right: 2.5rem;
+  flex-shrink: 0;
+}
+
+.aula-entrar__emoji {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: 2.1rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fb923c, #ea580c);
+  box-shadow: 0 12px 28px rgba(234, 88, 12, 0.4);
+}
+
+.aula-entrar__head-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.aula-entrar__kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #ea580c;
+}
+
+.aula-entrar__title {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: #0f172a;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.aula-entrar__lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.aula-entrar__body {
+  flex: 1;
+  min-height: 0;
+  margin-top: 1.15rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.15rem;
+  scrollbar-gutter: stable;
+}
+
+.aula-entrar__block {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e2e8f0;
+
+  &--assistant {
+    border-color: rgba(234, 88, 12, 0.35);
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+    box-shadow: 0 10px 28px rgba(234, 88, 12, 0.1);
+  }
+}
+
+.aula-entrar__block-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.aula-entrar__bullets {
+  margin: 0;
+  padding: 0 0 0 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #475569;
+
+  strong {
+    color: #0f172a;
+  }
+}
+
+.aula-entrar__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.aula-entrar__card {
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+
+  p {
+    margin: 0.2rem 0 0;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: #475569;
+  }
+
+  strong {
+    display: block;
+    font-size: 0.92rem;
+    color: #0f172a;
+  }
+
+  &--focus {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+  }
+}
+
+.aula-entrar__card-icon {
+  flex-shrink: 0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.aula-entrar__foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.aula-entrar__remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #64748b;
+  cursor: pointer;
+  min-width: 0;
+
+  input {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    accent-color: #ea580c;
+  }
+}
+
+.aula-entrar__cta {
+  flex: 1 1 auto;
+  min-width: min(100%, 220px);
+  max-width: 320px;
+  margin-left: auto;
+  padding: 0.9rem 1.25rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  box-shadow: 0 10px 28px rgba(234, 88, 12, 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(234, 88, 12, 0.42);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .aula-entrar__head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-right: 0;
+  }
+
+  .aula-entrar__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aula-entrar__foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .aula-entrar__cta {
+    max-width: none;
+    margin-left: 0;
+  }
+}
+
+@keyframes aulaEntrarFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aulaEntrarPop {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aula-entrar,
+  .aula-entrar__dialog {
+    animation: none;
+  }
+}
