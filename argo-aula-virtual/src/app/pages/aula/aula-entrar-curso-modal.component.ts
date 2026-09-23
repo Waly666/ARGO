@@ -12,7 +12,6 @@ export const AULA_ENTRAR_CURSO_MODAL_SKIP_KEY = 'argo.aula.curso-entrar-modal.v1
 })
 export class AulaEntrarCursoModalComponent {
   cursoNombre = input.required<string>();
-  asistenteVisible = input(true);
 
   closed = output<void>();
 

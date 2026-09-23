@@ -35,7 +35,6 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl, resolveUploadsPath } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
-import { AulaCursoPlayerService } from '../../core/aula-curso-player.service';
 import { AulaGuiaTourComponent } from './aula-guia-tour.component';
 import { AULA_GUIA_TOUR_STORAGE_KEY } from './aula-guia-tour.steps';
 import type { AulaGuiaPanelKey } from './aula-guia-tour.steps';
@@ -67,7 +66,6 @@ export class AulaComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
   private seo = inject(PortalSeoService);
-  private aulaCursoPlayer = inject(AulaCursoPlayerService);
 
   cursos = signal<CursoVirtual[]>([]);
   cohortes = signal<CohorteAlumno[]>([]);
@@ -203,7 +201,6 @@ export class AulaComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.aulaCursoPlayer.marcarCerrado();
     window.removeEventListener('message', this.onMessage);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.detenerPoll();
@@ -641,7 +638,6 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.playerForoNombre.set(curso.nombreProg);
     this.cursoActivo.set(curso);
     this.avisoPlayer.set('');
-    this.aulaCursoPlayer.marcarAbierto(curso.nombreProg);
     this.entrarCursoModalOpen.set(this.debeMostrarEntrarCursoModal());
     this.iniciarPoll(curso);
   }
@@ -652,7 +648,6 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   cerrarPlayer() {
     this.entrarCursoModalOpen.set(false);
-    this.aulaCursoPlayer.marcarCerrado();
     this.detenerPoll();
     this.initTimers.forEach(clearTimeout);
     this.initTimers = [];

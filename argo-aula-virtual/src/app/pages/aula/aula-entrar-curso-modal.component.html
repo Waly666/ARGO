@@ -24,20 +24,18 @@
     </header>
 
     <div class="aula-entrar__body">
-      @if (asistenteVisible()) {
-        <section class="aula-entrar__block aula-entrar__block--assistant" aria-labelledby="aula-entrar-asistente">
-          <h3 id="aula-entrar-asistente" class="aula-entrar__block-title">
-            <span aria-hidden="true">🤖</span> Asistente en pantalla
-          </h3>
-          <ul class="aula-entrar__bullets">
-            <li>
-              <strong>Silenciar:</strong> un clic sobre el asistente para que deje de leer; otro clic lo reactiva.
-            </li>
-            <li><strong>Pausar:</strong> doble clic pausa o reanuda la lectura.</li>
-            <li><strong>Mover:</strong> arrástrelo a un rincón para que no tape el curso.</li>
-          </ul>
-        </section>
-      }
+      <section class="aula-entrar__block aula-entrar__block--assistant" aria-labelledby="aula-entrar-asistente">
+        <h3 id="aula-entrar-asistente" class="aula-entrar__block-title">
+          <span aria-hidden="true">🤖</span> Asistente del curso
+        </h3>
+        <ul class="aula-entrar__bullets">
+          <li>
+            <strong>Silenciar:</strong> haga clic sobre el personaje <em>dentro del curso</em> para que deje de hablar;
+            otro clic lo reactiva.
+          </li>
+          <li>Si no desea escucharlo, use el control de silencio que muestra el propio curso.</li>
+        </ul>
+      </section>
 
       <ul class="aula-entrar__grid">
         <li class="aula-entrar__card">
