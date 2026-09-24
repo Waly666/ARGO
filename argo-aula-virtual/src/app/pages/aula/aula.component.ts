@@ -40,7 +40,7 @@ import { AULA_GUIA_TOUR_STORAGE_KEY } from './aula-guia-tour.steps';
 import type { AulaGuiaPanelKey } from './aula-guia-tour.steps';
 import {
   AulaEntrarCursoModalComponent,
-  AULA_ENTRAR_CURSO_MODAL_SKIP_KEY,
+  AULA_ENTRAR_CURSO_MODAL_SKIP_PREFIX,
 } from './aula-entrar-curso-modal.component';
 
 export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'foro';
@@ -191,10 +191,17 @@ export class AulaComponent implements OnInit, OnDestroy {
     }
   }
 
+  entrarCursoModalSkipKey(): string {
+    const doc = this.auth.user()?.numDoc;
+    return doc != null
+      ? `${AULA_ENTRAR_CURSO_MODAL_SKIP_PREFIX}.${doc}`
+      : AULA_ENTRAR_CURSO_MODAL_SKIP_PREFIX;
+  }
+
   private debeMostrarEntrarCursoModal(): boolean {
     if (!isPlatformBrowser(this.platformId)) return false;
     try {
-      return !localStorage.getItem(AULA_ENTRAR_CURSO_MODAL_SKIP_KEY);
+      return !localStorage.getItem(this.entrarCursoModalSkipKey());
     } catch {
       return true;
     }

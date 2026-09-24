@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output, signal } from '@angular/core';
 
+/** Prefijo v2: v1 quedó en muchos navegadores al marcar «No volver a mostrar» en pruebas. */
+export const AULA_ENTRAR_CURSO_MODAL_SKIP_PREFIX = 'argo.aula.curso-entrar-modal.v2.skip';
+
+/** @deprecated Use {@link AULA_ENTRAR_CURSO_MODAL_SKIP_PREFIX} + id de alumno. */
 export const AULA_ENTRAR_CURSO_MODAL_SKIP_KEY = 'argo.aula.curso-entrar-modal.v1.skip';
 
 @Component({
@@ -12,6 +16,8 @@ export const AULA_ENTRAR_CURSO_MODAL_SKIP_KEY = 'argo.aula.curso-entrar-modal.v1
 })
 export class AulaEntrarCursoModalComponent {
   cursoNombre = input.required<string>();
+  /** Clave localStorage al marcar «No volver a mostrar» (por alumno / tenant). */
+  skipStorageKey = input.required<string>();
 
   closed = output<void>();
 
@@ -19,7 +25,7 @@ export class AulaEntrarCursoModalComponent {
 
   cerrar(): void {
     if (this.noMostrarMas() && typeof localStorage !== 'undefined') {
-      localStorage.setItem(AULA_ENTRAR_CURSO_MODAL_SKIP_KEY, '1');
+      localStorage.setItem(this.skipStorageKey(), '1');
     }
     this.closed.emit();
   }

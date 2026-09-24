@@ -116,12 +116,6 @@
 
     <main class="dash-main">
       @if (safePlayerUrl(); as url) {
-        @if (entrarCursoModalOpen()) {
-          <av-aula-entrar-curso-modal
-            [cursoNombre]="playerTitulo()"
-            (closed)="cerrarEntrarCursoModal()"
-          />
-        }
         <section class="dash-player">
           <header class="dash-player-head">
             <div>
@@ -1069,6 +1063,14 @@
         }
       }
     </main>
+
+    @if (safePlayerUrl() && entrarCursoModalOpen()) {
+      <av-aula-entrar-curso-modal
+        [cursoNombre]="playerTitulo()"
+        [skipStorageKey]="entrarCursoModalSkipKey()"
+        (closed)="cerrarEntrarCursoModal()"
+      />
+    }
 
     <av-aula-guia-tour
       [open]="guiaTourOpen()"
