@@ -7,7 +7,7 @@ import { forkJoin, interval, of } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 import { AuthService } from '../../core/services/auth.service';
-import { rutaAccesible } from '../../core/utils/auth-routes.util';
+import { PERMISOS_MENU_PESV, rutaAccesible } from '../../core/utils/auth-routes.util';
 import { SedeService, SedeDto } from '../../core/services/sede.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
@@ -574,6 +574,63 @@ export class ShellComponent {
     { kind: 'link', label: 'Dashboard', icon: '◆', path: '/app/dashboard', iconTone: 'violet', permiso: 'dashboard' },
     {
       kind: 'group',
+      label: 'PESV',
+      icon: '🛡',
+      iconTone: 'emerald',
+      permiso: [...PERMISOS_MENU_PESV],
+      children: [
+        {
+          kind: 'link',
+          label: 'Inicio PESV',
+          path: '/app/pesv',
+          icon: '⌂',
+          iconTone: 'emerald',
+          permiso: [...PERMISOS_MENU_PESV],
+        },
+        {
+          kind: 'link',
+          label: 'Autodiagnóstico de nivel',
+          path: '/app/pesv/autodiagnostico',
+          icon: '◎',
+          iconTone: 'cyan',
+          permiso: [...PERMISOS_MENU_PESV],
+        },
+        {
+          kind: 'link',
+          label: 'Fase 1 — Implementación',
+          path: '/app/pesv/fase1',
+          icon: '▤',
+          iconTone: 'teal',
+          permiso: [...PERMISOS_MENU_PESV],
+        },
+        {
+          kind: 'link',
+          label: 'Fase 2 — Seguimiento',
+          path: '/app/pesv/fase2',
+          icon: '▥',
+          iconTone: 'amber',
+          permiso: [...PERMISOS_MENU_PESV],
+        },
+        {
+          kind: 'link',
+          label: 'Tablero de indicadores',
+          path: '/app/pesv/tablero',
+          icon: '◫',
+          iconTone: 'violet',
+          permiso: [...PERMISOS_MENU_PESV],
+        },
+        {
+          kind: 'link',
+          label: 'Configuración PESV',
+          path: '/app/pesv/config',
+          icon: '⚙',
+          iconTone: 'indigo',
+          permiso: [...PERMISOS_MENU_PESV],
+        },
+      ],
+    },
+    {
+      kind: 'group',
       label: 'Operación del día',
       icon: '☀',
       iconTone: 'amber',
@@ -1007,143 +1064,77 @@ export class ShellComponent {
       permiso: ['contabilidad', 'caja.admin', 'facturacion'],
       children: [
         {
-          kind: 'subgroup',
-          label: 'Contabilidad',
-          icon: '∑',
+          kind: 'link',
+          label: 'Inicio',
+          path: '/app/contabilidad/inicio',
+          icon: '⌂',
           iconTone: 'teal',
-          children: [
-            {
-              kind: 'link',
-              label: 'Inicio',
-              path: '/app/contabilidad/inicio',
-              icon: '⌂',
-              iconTone: 'teal',
-              permiso: 'contabilidad',
-            },
-            {
-              kind: 'link',
-              label: 'Ingresos',
-              path: '/app/contabilidad/ingresos',
-              icon: '↑',
-              iconTone: 'emerald',
-              permiso: 'contabilidad',
-            },
-            {
-              kind: 'link',
-              label: 'Egresos',
-              path: '/app/contabilidad/egresos',
-              icon: '↓',
-              iconTone: 'rose',
-              permiso: 'contabilidad',
-            },
-            {
-              kind: 'link',
-              label: 'Cuadres de caja',
-              path: '/app/contabilidad/cuadres',
-              icon: '▣',
-              iconTone: 'indigo',
-              permiso: 'contabilidad',
-            },
-            {
-              kind: 'link',
-              label: 'Cierre general',
-              path: '/app/contabilidad/cierre-general',
-              icon: '⊞',
-              iconTone: 'amber',
-              permiso: 'contabilidad',
-            },
-            {
-              kind: 'link',
-              label: 'Descuadres',
-              path: '/app/contabilidad/descuadres',
-              icon: '⚠',
-              iconTone: 'amber',
-              permiso: 'contabilidad',
-            },
-            {
-              kind: 'link',
-              label: 'Pagos en línea',
-              path: '/app/contabilidad/pagos-en-linea',
-              icon: '🌐',
-              iconTone: 'cyan',
-              permiso: 'contabilidad',
-              rolesMenu: ['admin', 'contador'],
-            },
-            {
-              kind: 'link',
-              label: 'Facturación (contabilidad)',
-              path: '/app/contabilidad/facturacion',
-              icon: '$',
-              iconTone: 'emerald',
-              permiso: ['contabilidad', 'facturacion'],
-            },
-          ],
+          permiso: 'contabilidad',
         },
         {
-          kind: 'subgroup',
-          label: 'Facturación y caja',
+          kind: 'link',
+          label: 'Ingresos',
+          path: '/app/caja/ingresos-todos',
+          icon: '↑',
+          iconTone: 'emerald',
+          permiso: ['caja.admin', 'contabilidad'],
+        },
+        {
+          kind: 'link',
+          label: 'Egresos',
+          path: '/app/caja/egresos-todos',
+          icon: '↓',
+          iconTone: 'rose',
+          permiso: ['caja.admin', 'contabilidad'],
+        },
+        {
+          kind: 'link',
+          label: 'Cierres de caja',
+          path: '/app/cierres',
+          icon: '▣',
+          iconTone: 'indigo',
+          permiso: ['caja.admin', 'contabilidad'],
+        },
+        {
+          kind: 'link',
+          label: 'Cierre general',
+          path: '/app/cierre-general',
+          icon: '⊞',
+          iconTone: 'amber',
+          permiso: ['caja.admin', 'contabilidad'],
+        },
+        {
+          kind: 'link',
+          label: 'Descuadres',
+          path: '/app/caja/descuadres',
+          icon: '⚠',
+          iconTone: 'amber',
+          permiso: ['caja.admin', 'contabilidad'],
+        },
+        {
+          kind: 'link',
+          label: 'Pagos en línea',
+          path: '/app/contabilidad/pagos-en-linea',
+          icon: '🌐',
+          iconTone: 'cyan',
+          permiso: 'contabilidad',
+          rolesMenu: ['admin', 'contador'],
+        },
+        {
+          kind: 'link',
+          label: 'Facturación (contabilidad)',
+          path: '/app/contabilidad/facturacion',
           icon: '$',
           iconTone: 'emerald',
-          children: [
-            {
-              kind: 'link',
-              label: 'Facturación',
-              path: '/app/facturacion',
-              icon: '$',
-              iconTone: 'emerald',
-              permiso: 'facturacion',
-            },
-            {
-              kind: 'link',
-              label: 'Cierres',
-              path: '/app/cierres',
-              icon: '▣',
-              iconTone: 'indigo',
-              permiso: ['caja.admin', 'contabilidad'],
-              permisoMenu: ['caja.admin', 'contabilidad'],
-              rolesMenu: ['admin', 'contador'],
-            },
-            {
-              kind: 'link',
-              label: 'Cierre general (caja)',
-              path: '/app/cierre-general',
-              icon: '⊞',
-              iconTone: 'amber',
-              permiso: ['caja.admin', 'contabilidad'],
-              permisoMenu: ['caja.admin', 'contabilidad'],
-              rolesMenu: ['admin', 'contador'],
-            },
-            {
-              kind: 'link',
-              label: 'Todos los ingresos',
-              path: '/app/caja/ingresos-todos',
-              icon: '$',
-              iconTone: 'emerald',
-              permiso: ['caja.admin', 'contabilidad'],
-              permisoMenu: ['caja.admin', 'contabilidad'],
-              rolesMenu: ['admin', 'contador'],
-            },
-            {
-              kind: 'link',
-              label: 'Todos los egresos',
-              path: '/app/caja/egresos-todos',
-              icon: '⇣',
-              iconTone: 'rose',
-              permiso: ['caja.admin', 'contabilidad'],
-              permisoMenu: ['caja.admin', 'contabilidad'],
-              rolesMenu: ['admin', 'contador'],
-            },
-            {
-              kind: 'link',
-              label: 'Descuadres de caja',
-              path: '/app/caja/descuadres',
-              icon: '⚠',
-              iconTone: 'amber',
-              permiso: ['caja.admin', 'contabilidad'],
-              permisoMenu: ['caja.admin', 'contabilidad'],
-              rolesMenu: ['admin', 'contador'],
-            },
-          ],
+          permiso: ['contabilidad', 'facturacion'],
+        },
+        {
+          kind: 'link',
+          label: 'Facturación',
+          path: '/app/facturacion',
+          icon: '$',
+          iconTone: 'emerald',
+          permiso: 'facturacion',
         },
       ],
     },
@@ -2389,6 +2380,7 @@ export class ShellComponent {
     const u = url.split('?')[0];
     const patch: Record<string, boolean> = {
       'Operación del día': false,
+      PESV: false,
       Académico: false,
       Finanzas: false,
       'Talento y flota': false,
@@ -2442,6 +2434,10 @@ export class ShellComponent {
       this.syncGroupSubgroupsFromUrl('Finanzas', u, patch);
     }
 
+    if (u.includes('/pesv')) {
+      patch['PESV'] = true;
+    }
+
     if (u.includes('/rrhh') || u.includes('/vehiculos')) {
       patch['Talento y flota'] = true;
       this.syncGroupSubgroupsFromUrl('Talento y flota', u, patch);
@@ -2482,6 +2478,10 @@ export class ShellComponent {
 
   isFinanzasGroup(label: string): boolean {
     return label === 'Finanzas';
+  }
+
+  isPesvGroup(label: string): boolean {
+    return label === 'PESV';
   }
 
   isTalentoGroup(label: string): boolean {
@@ -2531,6 +2531,11 @@ export class ShellComponent {
       u.includes('/caja/egresos-todos') ||
       u.includes('/caja/descuadres')
     );
+  }
+
+  pesvGroupActive(): boolean {
+    const u = this.router.url.split('?')[0];
+    return u.includes('/pesv');
   }
 
   talentoGroupActive(): boolean {
@@ -2626,6 +2631,12 @@ export class ShellComponent {
     }
     if (link.path === '/app/rrhh/inicio') {
       return url === link.path || url === '/app/rrhh' || url === '/app/rrhh/';
+    }
+    if (link.path === '/app/pesv') {
+      return url === '/app/pesv' || url === '/app/pesv/';
+    }
+    if (link.path.startsWith('/app/pesv/')) {
+      return url === link.path || url.startsWith(`${link.path}/`);
     }
     if (link.path === '/app/programacion-cea') {
       return url === '/app/programacion-cea' || url === '/app/programacion-cea/';

@@ -57,6 +57,7 @@ const DEFAULTS = {
   ciudad: '',
   telefono: '',
   email: '',
+  representanteLegal: '',
   urlLogo: '',
   prefijoFactura: 'FV',
   consecutivoFactura: 0,

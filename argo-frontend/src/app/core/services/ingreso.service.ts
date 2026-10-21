@@ -120,4 +120,46 @@ export class IngresoService {
       { params },
     );
   }
+
+  exportarTodosExcel(opts?: {
+    q?: string;
+    numDoc?: string;
+    desde?: string;
+    hasta?: string;
+    idSesion?: number;
+    tercero?: string;
+    tipo?: string;
+    concepto?: string;
+  }): Observable<Blob> {
+    let params = new HttpParams();
+    if (opts?.q) params = params.set('q', opts.q);
+    if (opts?.numDoc) params = params.set('numDoc', opts.numDoc);
+    if (opts?.desde) params = params.set('desde', opts.desde);
+    if (opts?.hasta) params = params.set('hasta', opts.hasta);
+    if (opts?.idSesion != null) params = params.set('idSesion', String(opts.idSesion));
+    if (opts?.tercero) params = params.set('tercero', opts.tercero);
+    if (opts?.tipo) params = params.set('tipo', opts.tipo);
+    if (opts?.concepto) params = params.set('concepto', opts.concepto);
+    return this.http.get(`${this.base}/admin/todos/excel`, { params, responseType: 'blob' });
+  }
+
+  exportarTodosZip(opts?: {
+    q?: string;
+    numDoc?: string;
+    desde?: string;
+    hasta?: string;
+    idSesion?: number;
+    tipo?: string;
+    concepto?: string;
+  }): Observable<Blob> {
+    let params = new HttpParams();
+    if (opts?.q) params = params.set('q', opts.q);
+    if (opts?.numDoc) params = params.set('numDoc', opts.numDoc);
+    if (opts?.desde) params = params.set('desde', opts.desde);
+    if (opts?.hasta) params = params.set('hasta', opts.hasta);
+    if (opts?.idSesion != null) params = params.set('idSesion', String(opts.idSesion));
+    if (opts?.tipo) params = params.set('tipo', opts.tipo);
+    if (opts?.concepto) params = params.set('concepto', opts.concepto);
+    return this.http.get(`${this.base}/admin/todos/zip`, { params, responseType: 'blob' });
+  }
 }

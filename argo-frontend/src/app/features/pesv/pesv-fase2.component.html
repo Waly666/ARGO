@@ -1,0 +1,131 @@
+<section class="pesv-page card pesv-fase2">
+  <header class="pesv-hero">
+    <div class="pesv-hero-icon">▥</div>
+    <div class="pesv-hero-text">
+      <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Fase 2</p>
+      <h1>Seguimiento por periodo</h1>
+      <p class="pesv-lead">Siniestros (trimestral), administrativo, funcionamiento y vehículos (mensual).</p>
+    </div>
+  </header>
+
+  <argo-pesv-nav active="fase2" />
+
+  <div class="pesv-toolbar">
+    <label>
+      Vigencia
+      <input type="number" [ngModel]="vigencia()" (ngModelChange)="vigencia.set(+$event); cargar()" />
+    </label>
+    <label>
+      Mes
+      <input type="number" min="1" max="12" [ngModel]="mes()" (ngModelChange)="mes.set(+$event); cargar()" />
+    </label>
+    <label class="inline-check">
+      <input type="checkbox" [ngModel]="obligado()" (ngModelChange)="setObligado($event)" />
+      Obligado PESV
+    </label>
+    <label class="inline-check">
+      <input type="checkbox" [ngModel]="enviadoSt()" (ngModelChange)="setEnviadoSt($event)" />
+      Marcado enviado ST
+    </label>
+    <button type="button" (click)="guardar()" [disabled]="saving()">Guardar periodo</button>
+  </div>
+
+  @if (sugerencias(); as sf) {
+    <p class="hint flota-hint">
+      Flota: {{ sf.vehiculosEnFlota }} vehículos · {{ sf.registrosPlacaDia }} inspecciones placa/día en el mes ·
+      <button type="button" class="linkish" (click)="aplicarSugerenciasFlota()">Aplicar sugerencia 7.x / 9.x</button>
+    </p>
+  }
+
+  <nav class="tabs">
+    <button type="button" [class.active]="tab() === 'siniestros'" (click)="tab.set('siniestros')">A. Siniestros</button>
+    <button type="button" [class.active]="tab() === 'administrativo'" (click)="tab.set('administrativo')">
+      B. Administrativo
+    </button>
+    <button type="button" [class.active]="tab() === 'funcionamiento'" (click)="tab.set('funcionamiento')">
+      C. Funcionamiento
+    </button>
+    <button type="button" [class.active]="tab() === 'vehiculos'" (click)="tab.set('vehiculos')">D. Vehículos</button>
+  </nav>
+
+  @if (loading()) {
+    <p class="hint">Cargando periodo…</p>
+  } @else {
+    @if (tab() === 'siniestros') {
+      <div class="pesv-panel wide">
+        @if (!mesPermite('siniestros')) {
+          <p class="hint">Carga trimestral: marzo, junio, septiembre y diciembre.</p>
+        }
+        <p>{{ catalogo()?.SINIESTROS_EVIDENCIA?.label }} (Excel, máx. 50 MB)</p>
+        <input type="file" accept=".xlsx" (change)="onUpload('siniestros', 'a1', $event)" />
+        @if (payload()?.siniestros?.adjuntoNombre; as n) {
+          <p><a [href]="urlSiniestros()!" target="_blank" rel="noopener">{{ n }}</a></p>
+        }
+      </div>
+    }
+    @if (tab() === 'administrativo') {
+      <div class="pesv-panel wide">
+        @if (!mesPermite('administrativo')) {
+          <p class="hint">Carga trimestral: mar / jun / sep / dic.</p>
+        }
+        <p class="hint">{{ catalogo()?.ADMINISTRATIVO_PLACEHOLDER?.nota }}</p>
+        <h3>Variables del periodo</h3>
+        @for (row of adminVars(); track $index; let i = $index) {
+          <div class="admin-row">
+            <input placeholder="Código variable" [ngModel]="row.id" (ngModelChange)="patchAdminId(i, $event)" />
+            <input placeholder="Valor" [ngModel]="row.valor" (ngModelChange)="patchAdminValor(i, $event)" />
+          </div>
+        }
+        <button type="button" (click)="addAdminVar()">+ Variable</button>
+      </div>
+    }
+    @if (tab() === 'funcionamiento') {
+      <div class="pesv-panel wide">
+        @for (v of catalogo()?.VARIABLES_FUNCIONAMIENTO || []; track v.id) {
+          <label>
+            {{ v.id }} — {{ v.label }}
+            <input type="number" min="0" [ngModel]="varFunc(v.id)" (ngModelChange)="setVarFunc(v.id, +$event)" />
+          </label>
+        }
+        <h3>Evidencias</h3>
+        @for (e of catalogo()?.EVIDENCIAS_FUNCIONAMIENTO || []; track e.id) {
+          <div class="ev-row">
+            <span>{{ e.label }}</span>
+            <input type="file" [accept]="acceptForTipo(e.tipo)" (change)="onUpload('funcionamiento', e.id, $event)" />
+            @if (nombreEvidencia('funcionamiento', e.id); as n) {
+              <a [href]="adjuntoEvidencia('funcionamiento', e.id)!" target="_blank" rel="noopener">{{ n }}</a>
+            }
+          </div>
+        }
+      </div>
+    }
+    @if (tab() === 'vehiculos') {
+      <div class="pesv-panel wide">
+        @for (v of catalogo()?.VARIABLES_VEHICULOS || []; track v.id) {
+          <label>
+            {{ v.id }} — {{ v.label }}
+            <input type="number" min="0" [ngModel]="varVeh(v.id)" (ngModelChange)="setVarVeh(v.id, +$event)" />
+          </label>
+        }
+        <h3>Evidencias</h3>
+        @for (e of catalogo()?.EVIDENCIAS_VEHICULOS || []; track e.id) {
+          <div class="ev-row">
+            <span>{{ e.id }} — {{ e.label }}</span>
+            @if (e.tipo === 'entero') {
+              <input type="number" min="0" [ngModel]="evVehEntero(e.id)" (ngModelChange)="setEvVehEntero(e.id, +$event)" />
+            } @else {
+              <input type="file" [accept]="acceptForTipo(e.tipo)" (change)="onUpload('vehiculos', e.id, $event)" />
+              @if (nombreEvidencia('vehiculos', e.id); as n) {
+                <a [href]="adjuntoEvidencia('vehiculos', e.id)!" target="_blank" rel="noopener">{{ n }}</a>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (msg()) {
+    <p class="msg">{{ msg() }}</p>
+  }
+</section>

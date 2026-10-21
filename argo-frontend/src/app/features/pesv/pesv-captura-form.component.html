@@ -1,0 +1,182 @@
+<section class="pesv-page card pesv-captura">
+  @if (payload(); as p) {
+    <header class="pesv-hero">
+      <div class="pesv-hero-icon">▣</div>
+      <div class="pesv-hero-text">
+        <p class="pesv-crumb">
+          <a routerLink="/app/pesv">PESV</a> ·
+          <a routerLink="/app/pesv/fase1">Fase 1</a> · Ítem {{ p.itemNo }}
+        </p>
+        <h1>{{ p.formulario.titulo }}</h1>
+        <p class="pesv-lead">{{ p.catalogoItem.pregunta }}</p>
+        @if (p.formulario.descripcion) {
+          <p class="hint">{{ p.formulario.descripcion }}</p>
+        }
+        <p class="pesv-captura-meta">
+          Vigencia {{ p.vigencia }} · Completitud
+          <strong>{{ p.completitud.pct }}%</strong>
+          ({{ p.completitud.ok }}/{{ p.completitud.total }} campos clave)
+        </p>
+      </div>
+    </header>
+  }
+
+  <argo-pesv-nav active="fase1" />
+
+  <div class="pesv-captura-org-aviso">
+    La sección <strong>Organización</strong> se llena con los datos de
+    <a routerLink="/app/configuracion/empresa">Configuración → Empresa</a>
+    (razón social / nombre, NIT, representante legal, ciudad). Actualice allí una vez y reutilice en todos los formularios PESV.
+  </div>
+
+  @if (loading()) {
+    <p class="hint">Cargando formulario…</p>
+  } @else if (payload()) {
+    <form class="pesv-captura-form" (ngSubmit)="guardar()">
+      @for (sec of payload()!.formulario.secciones; track sec.id) {
+        <fieldset class="pesv-captura-seccion" [class.pesv-captura-seccion--org]="sec.id === 'org'">
+          <legend>{{ sec.titulo }}</legend>
+          @if (sec.id === 'org') {
+            <p class="hint pesv-org-seccion-hint">
+              Valores sugeridos desde su ficha de empresa. Puede ajustarlos aquí si este documento requiere un dato distinto.
+            </p>
+          }
+          @for (campo of sec.campos; track campo.key) {
+            @if (esTabla(campo)) {
+              <div class="pesv-tabla-block">
+                <div class="pesv-tabla-head">
+                  <span>{{ campo.label }}</span>
+                  @if (puedeEditar()) {
+                    <button type="button" class="btn-sm" (click)="agregarFila(campo)">+ Fila</button>
+                  }
+                </div>
+                @if (filasTabla(campo).length === 0) {
+                  <p class="hint">Sin filas — agregue al menos una.</p>
+                } @else {
+                  <div class="table-wrap">
+                    <table class="pesv-tabla-editable">
+                      <thead>
+                        <tr>
+                          @for (col of campo.columnas; track col.key) {
+                            <th>{{ col.label }}</th>
+                          }
+                          @if (puedeEditar()) {
+                            <th></th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (row of filasTabla(campo); track $index; let i = $index) {
+                          <tr>
+                            @for (col of campo.columnas; track col.key) {
+                              <td>
+                                <input
+                                  type="text"
+                                  [ngModel]="row[col.key]"
+                                  (ngModelChange)="setCelda(campo, i, col.key, $event)"
+                                  [name]="campo.key + '_' + i + '_' + col.key"
+                                  [disabled]="!puedeEditar()"
+                                />
+                              </td>
+                            }
+                            @if (puedeEditar()) {
+                              <td>
+                                <button type="button" class="btn-sm btn-danger" (click)="quitarFila(campo, i)">
+                                  Quitar
+                                </button>
+                              </td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            } @else {
+              <label class="pesv-field">
+                <span>
+                  {{ campo.label }}
+                  @if (campo.requerido) {
+                    <em class="req">*</em>
+                  }
+                </span>
+                @switch (campo.tipo) {
+                  @case ('textarea') {
+                    <textarea
+                      rows="4"
+                      [ngModel]="valorCampo(campo.key)"
+                      (ngModelChange)="setCampo(campo.key, $event)"
+                      [name]="campo.key"
+                      [disabled]="!puedeEditar()"
+                    ></textarea>
+                  }
+                  @case ('date') {
+                    <input
+                      type="date"
+                      [ngModel]="valorCampo(campo.key)"
+                      (ngModelChange)="setCampo(campo.key, $event)"
+                      [name]="campo.key"
+                      [disabled]="!puedeEditar()"
+                    />
+                  }
+                  @case ('number') {
+                    <input
+                      type="number"
+                      [ngModel]="valorCampo(campo.key)"
+                      (ngModelChange)="setCampo(campo.key, $event)"
+                      [name]="campo.key"
+                      [disabled]="!puedeEditar()"
+                    />
+                  }
+                  @case ('boolean') {
+                    <input
+                      type="checkbox"
+                      [ngModel]="!!valorCampo(campo.key)"
+                      (ngModelChange)="setCampo(campo.key, $event)"
+                      [name]="campo.key"
+                      [disabled]="!puedeEditar()"
+                    />
+                  }
+                  @case ('select') {
+                    <select
+                      [ngModel]="valorCampo(campo.key)"
+                      (ngModelChange)="setCampo(campo.key, $event)"
+                      [name]="campo.key"
+                      [disabled]="!puedeEditar()"
+                    >
+                      <option value="">—</option>
+                      @for (op of campo.opciones; track op) {
+                        <option [value]="op">{{ op }}</option>
+                      }
+                    </select>
+                  }
+                  @default {
+                    <input
+                      type="text"
+                      [ngModel]="valorCampo(campo.key)"
+                      (ngModelChange)="setCampo(campo.key, $event)"
+                      [name]="campo.key"
+                      [disabled]="!puedeEditar()"
+                    />
+                  }
+                }
+              </label>
+            }
+          }
+        </fieldset>
+      }
+
+      <div class="pesv-captura-actions">
+        <a routerLink="/app/pesv/fase1" class="btn-link">← Volver a la lista</a>
+        @if (puedeEditar()) {
+          <button type="submit" [disabled]="saving()">Guardar formulario</button>
+        }
+      </div>
+    </form>
+  }
+
+  @if (msg()) {
+    <p class="msg">{{ msg() }}</p>
+  }
+</section>

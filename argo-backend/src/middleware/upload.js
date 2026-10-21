@@ -225,6 +225,37 @@ function buildGoogleVerificationHtml() {
   });
 }
 
+function buildPesvEvidencia(subdir, maxMb = 50) {
+  const dest = path.join(BASE, subdir);
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^\w.\-]+/g, '_');
+      const name = `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}`;
+      cb(null, name);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const okPdf = mime === 'application/pdf' || ext === '.pdf';
+      const okXlsx =
+        ext === '.xlsx' ||
+        mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      if (!okPdf && !okXlsx) {
+        const err = new Error('Solo PDF o Excel (.xlsx)');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
 function buildPdf(subdir, maxMb = 15) {
   const dest = path.join(BASE, subdir);
   ensureDir(dest);
@@ -385,6 +416,10 @@ module.exports = {
   evidenciasCap: buildEvidenciaCap(),
   evidenciasCapJornadaAdicional: buildEvidenciaCapJornadaAdicional(),
   evidenciaJornadaMemoria: buildEvidenciaJornadaMemoria(),
+  pesvFase1: buildPesvEvidencia('pesv-evidencias', 5),
+  pesvFase2: buildPesvEvidencia('pesv-evidencias', 50),
+  pesvPdfLayout: buildImagen('pesv-pdf-layout', 4),
+  pesvPdfPortada: buildImagen('pesv-pdf-portadas', 8),
   memory,
   baseDir: BASE,
   formatTsInicio,

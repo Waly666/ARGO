@@ -23,7 +23,7 @@
           <div>
             <h2 class="emp-section-title">Identidad de la institución</h2>
             <p class="emp-section-desc">
-              Nombre, NIT y datos de contacto. Aparecen en recibos de caja, nómina, comprobantes y documentos electrónicos.
+              Nombre, NIT, representante legal y contacto. Aparecen en recibos, PESV, comprobantes y documentos electrónicos.
             </p>
           </div>
         </header>
@@ -57,6 +57,18 @@
                 placeholder="601 000 0000" />
             </label>
           </div>
+          <label class="emp-field emp-field--representante">
+            <span class="emp-label">Representante legal</span>
+            <input
+              type="text"
+              [ngModel]="recibo().representanteLegal"
+              (ngModelChange)="patchRecibo('representanteLegal', $event)"
+              placeholder="Nombre completo del representante legal"
+              autocomplete="organization-title" />
+            <span class="emp-hint emp-hint--field">
+              Obligatorio en documentos PESV (sección «Organización»). Guarde identidad y luego abra cualquier formulario Fase 1: el nombre se copia automáticamente.
+            </span>
+          </label>
           <div class="emp-grid emp-grid--empresa2">
             <label class="emp-field emp-field--grow">
               <span class="emp-label">Dirección</span>

@@ -2,15 +2,52 @@
 
 .filtros {
   display: grid;
-  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto auto;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 10px;
   align-items: end;
 
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+
+  select {
+    width: 100%;
+  }
+
   .filtro-actions {
+    grid-column: 1 / -1;
     display: flex;
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
+  }
+
+  &.filtros-amplios {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 20px;
+    padding: 1.15rem 1.35rem 1.25rem;
+
+    > label,
+    > argo-date-input {
+      min-width: 0;
+    }
+
+    label {
+      gap: 6px;
+      font-size: 0.88rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 2.6rem;
+      font-size: 0.95rem;
+      padding: 0.45rem 0.75rem;
+    }
   }
 
   .count {
@@ -166,10 +203,18 @@
   .filtros {
     grid-template-columns: 1fr 1fr;
   }
+
+  .filtros.filtros-amplios {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 560px) {
   .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros.filtros-amplios {
     grid-template-columns: 1fr;
   }
 }

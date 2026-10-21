@@ -10,6 +10,8 @@ const ConfigSchema = new mongoose.Schema(
     ciudad: { type: String, trim: true, default: '' },
     telefono: { type: String, trim: true, default: '' },
     email: { type: String, trim: true, default: '' },
+    /** Representante legal (PESV, contratos, documentos institucionales). */
+    representanteLegal: { type: String, trim: true, default: '' },
     urlLogo: { type: String, trim: true, default: '' },
     prefijoFactura: { type: String, trim: true, default: 'FV' },
     consecutivoFactura: { type: Number, default: 0 },

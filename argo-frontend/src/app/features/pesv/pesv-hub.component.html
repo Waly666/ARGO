@@ -1,0 +1,104 @@
+<section class="pesv-hub card">
+  <header class="pesv-hero">
+    <div class="pesv-hero-icon" aria-hidden="true">🛡</div>
+    <div class="pesv-hero-text">
+      <p class="pesv-crumb"><a routerLink="/app/dashboard">Inicio ERP</a> · PESV</p>
+      <h1>Plan Estratégico de Seguridad Vial</h1>
+      <p class="pesv-lead">
+        Captura datos en ARGO → genera documentos institucionales (plantillas PESV) → usted los carga en SISI/CCPS.
+        Autodiagnóstico, Fase 1 (generación), Fase 2 (indicadores) y tablero — vigencia {{ vigencia() }}.
+      </p>
+    </div>
+    <span class="pesv-chip">Módulo PESV</span>
+  </header>
+
+  <argo-pesv-nav active="inicio" />
+
+  @if (msg()) {
+    <p class="msg err">{{ msg() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="hint">Cargando resumen…</p>
+  } @else {
+    <section class="pesv-section">
+      <header class="pesv-section-head">
+        <span class="pesv-section-badge">1</span>
+        <h2>Flujo recomendado</h2>
+      </header>
+      <div class="pesv-section-body">
+        <div class="pesv-workflow">
+          <a class="pesv-wf-step" routerLink="/app/pesv/autodiagnostico">
+            <span class="num">1</span>
+            <strong>Autodiagnóstico</strong>
+            <span>Nivel Básico / Estándar / Avanzado</span>
+          </a>
+          <span class="pesv-wf-arrow">→</span>
+          <a class="pesv-wf-step" routerLink="/app/pesv/fase1">
+            <span class="num">2</span>
+            <strong>Fase 1</strong>
+            <span>Checklist implementación</span>
+          </a>
+          <span class="pesv-wf-arrow">→</span>
+          <a class="pesv-wf-step" routerLink="/app/pesv/fase2">
+            <span class="num">3</span>
+            <strong>Fase 2</strong>
+            <span>Periodos y evidencias</span>
+          </a>
+          <span class="pesv-wf-arrow">→</span>
+          <a class="pesv-wf-step" routerLink="/app/pesv/tablero">
+            <span class="num">4</span>
+            <strong>Tablero</strong>
+            <span>Indicadores 6.x · 8.x · 9.x</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="pesv-stats">
+      <article class="pesv-stat-card">
+        <h3>Nivel PESV</h3>
+        <p class="pesv-stat-value">{{ resumen()?.nivelLabel || '—' }}</p>
+        <a routerLink="/app/pesv/autodiagnostico">Actualizar autodiagnóstico</a>
+      </article>
+      <article class="pesv-stat-card">
+        <h3>Fase 1</h3>
+        <p class="pesv-stat-value">
+          {{ resumen()?.fase1?.conRespuesta || 0 }}/{{ resumen()?.fase1?.aplicables || 0 }}
+        </p>
+        <a routerLink="/app/pesv/fase1">Abrir checklist</a>
+      </article>
+      <article class="pesv-stat-card">
+        <h3>Flota (lectura)</h3>
+        <p class="pesv-stat-value">{{ resumen()?.flota?.vehiculosActivos || 0 }}</p>
+        <span class="hint">{{ resumen()?.flota?.inspeccionesMesActual || 0 }} inspecciones este mes</span>
+        <a class="pesv-stat-link" routerLink="/app/vehiculos">Ir a vehículos</a>
+      </article>
+    </div>
+
+    <section class="pesv-section">
+      <header class="pesv-section-head">
+        <span class="pesv-section-badge">2</span>
+        <h2>Accesos del módulo</h2>
+      </header>
+      <div class="pesv-section-body pesv-tiles">
+        <a class="pesv-tile" routerLink="/app/pesv/fase1">
+          <strong>Fase 1 — Implementación</strong>
+          <span>Captura de datos y generación PDF/Excel (no carga manual de documentos)</span>
+        </a>
+        <a class="pesv-tile" routerLink="/app/pesv/fase2">
+          <strong>Fase 2 — Seguimiento</strong>
+          <span>Siniestros, administrativo, funcionamiento, vehículos</span>
+        </a>
+        <a class="pesv-tile" routerLink="/app/pesv/tablero">
+          <strong>Tablero anual</strong>
+          <span>Vista mes a mes de variables mínimas</span>
+        </a>
+        <a class="pesv-tile" routerLink="/app/pesv/config">
+          <strong>Configuración</strong>
+          <span>Organización, vigencia activa, datos NIT</span>
+        </a>
+      </div>
+    </section>
+  }
+</section>

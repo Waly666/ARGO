@@ -1,0 +1,605 @@
+<section class="pesv-page card pesv-config-page">
+  <header class="pesv-hero">
+    <div class="pesv-hero-icon">⚙</div>
+    <div class="pesv-hero-text">
+      <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Configuración</p>
+      <h1>Configuración PESV</h1>
+      <p class="pesv-lead">
+        Vigencia del plan y apariencia de los <strong>PDF</strong> (encabezado y pie globales; título, versión, vigencia y portada por documento).
+        Los datos de empresa salen de
+        <a routerLink="/app/configuracion/empresa">Configuración → Empresa</a>.
+      </p>
+    </div>
+  </header>
+
+  <argo-pesv-nav active="config" />
+
+  <div class="tabs pesv-config-tabs">
+    <button type="button" [class.active]="tab() === 'pdf'" (click)="tab.set('pdf')">Documentos PDF</button>
+    <button type="button" [class.active]="tab() === 'general'" (click)="tab.set('general')">General</button>
+  </div>
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else if (tab() === 'general') {
+    <div class="pesv-panel wide">
+      <label>
+        Vigencia activa
+        <input type="number" [ngModel]="form().vigenciaActiva" (ngModelChange)="patch({ vigenciaActiva: +$event })" />
+      </label>
+      <label>
+        Tipo de organización (autodiagnóstico)
+        <select [ngModel]="form().tipoOrganizacion" (ngModelChange)="patch({ tipoOrganizacion: $event })">
+          <option value="cea">CEA</option>
+          <option value="empresa">Empresa</option>
+        </select>
+      </label>
+      <button type="button" (click)="guardarGeneral()" [disabled]="saving()">Guardar general</button>
+    </div>
+  } @else if (pdfForm()) {
+    <div class="pesv-config-pdf-subtabs">
+      <button type="button" [class.active]="pdfTab() === 'global'" (click)="pdfTab.set('global')">
+        Encabezado, pie y hoja
+      </button>
+      <button type="button" [class.active]="pdfTab() === 'documentos'" (click)="pdfTab.set('documentos')">
+        Cada documento (Fase 1)
+      </button>
+    </div>
+
+    <div class="pesv-config-pdf-layout">
+      <aside class="pesv-config-preview" aria-label="Vista previa aproximada">
+        <h2>Vista previa</h2>
+        @if (pdfTab() === 'documentos') {
+          <p class="hint preview-hint">
+            Ítem {{ docItemSeleccionado() ?? '—' }} · hoja de contenido (encabezado y pie globales).
+          </p>
+        } @else {
+          <p class="hint preview-hint">
+            Hoja {{ etiquetaTamano(pdf()!.tamanoHoja) }} · {{ pdf()!.orientacion === 'landscape' ? 'horizontal' : 'vertical' }}.
+          </p>
+        }
+
+        @if (previewDocMeta(); as dc) {
+          @if (dc.portada.activa && urlImagen(dc.portada.imagenRuta); as portadaUrl) {
+            <div class="preview-sheet preview-sheet--portada-only" [class.preview-sheet--landscape]="pdf()!.orientacion === 'landscape'">
+              <div class="preview-cover">
+                <img [src]="portadaUrl" alt="Portada" />
+              </div>
+              <p class="preview-cover-note">Portada — sin encabezado ni pie</p>
+            </div>
+          }
+        }
+
+        <div class="preview-sheet" [class.preview-sheet--landscape]="pdf()!.orientacion === 'landscape'">
+          @if (pdf()!.marcaAgua.activa) {
+            <div
+              class="preview-watermark"
+              [style.opacity]="pdf()!.marcaAgua.opacidad"
+              [style.transform]="'rotate(' + pdf()!.marcaAgua.rotacionGrados + 'deg)'"
+            >
+              @if (marcaAguaPreviewUrl(); as wu) {
+                <img [src]="wu" alt="" [ngStyle]="estilosMarcaAguaLogo()" />
+              } @else {
+                <span class="preview-placeholder">Logo empresa</span>
+              }
+            </div>
+          }
+          @if (pdf()!.encabezado.activo) {
+            <div class="preview-header preview-header--layered" [style.minHeight.px]="pdf()!.encabezado.alturaMm * 2.8">
+              @if (pdf()!.encabezado.modo === 'imagen' || pdf()!.encabezado.modo === 'mixto') {
+                @if (urlImagen(pdf()!.encabezado.imagenRuta); as hu) {
+                  <img class="preview-block-img" [src]="hu" alt="" />
+                } @else {
+                  <span class="preview-placeholder">Imagen encabezado</span>
+                }
+              }
+              @if (pdf()!.encabezado.modo === 'datos' || pdf()!.encabezado.modo === 'mixto') {
+                @if (logoActivoEn('encabezado') && logoPreviewUrl(); as lu) {
+                  <img class="preview-logo-layer" [src]="lu" alt="" [ngStyle]="estilosLogoCapa('encabezado')" />
+                }
+                <div class="preview-header-stack" [ngStyle]="estilosTipografiaBloque('encabezado')">
+                  @for (fila of previewFilasBloque('encabezado'); track fila.id) {
+                    <div class="preview-layout-line" [style.textAlign]="fila.align">
+                      <span>{{ fila.text }}</span>
+                    </div>
+                  }
+                  @if (previewDocMeta(); as dc) {
+                    @if (previewFilasEncabezadoDocumento(dc).length) {
+                      <div class="preview-doc-header-sep" aria-hidden="true"></div>
+                    }
+                    @for (fila of previewFilasEncabezadoDocumento(dc); track fila.id) {
+                      <div
+                        class="preview-layout-line preview-doc-line"
+                        [class.preview-doc-line--title]="fila.id === 'titulo'"
+                        [style.textAlign]="fila.align"
+                        [ngStyle]="estilosLineaDocumento(fila.id, dc)"
+                      >
+                        {{ fila.text }}
+                      </div>
+                    }
+                  }
+                  @if (!previewFilasBloque('encabezado').length && !previewDocMeta()) {
+                    <span class="preview-placeholder">Activa campos y ordénalos abajo</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+          <div class="preview-body preview-body--solo-marca">
+            <span class="preview-placeholder">Cuerpo del documento — solo marca de agua por ahora; el contenido del formulario se configurará después.</span>
+          </div>
+          @if (pdf()!.piePagina.activo) {
+            <div class="preview-footer preview-footer--layered" [style.minHeight.px]="pdf()!.piePagina.alturaMm * 2.8">
+              @if (pdf()!.piePagina.modo === 'imagen' || pdf()!.piePagina.modo === 'mixto') {
+                @if (urlImagen(pdf()!.piePagina.imagenRuta); as fu) {
+                  <img class="preview-block-img" [src]="fu" alt="" />
+                } @else {
+                  <span class="preview-placeholder">Imagen pie</span>
+                }
+              }
+              @if (pdf()!.piePagina.modo === 'datos' || pdf()!.piePagina.modo === 'mixto') {
+                @if (logoActivoEn('piePagina') && logoPreviewUrl(); as lu) {
+                  <img class="preview-logo-layer" [src]="lu" alt="" [ngStyle]="estilosLogoCapa('piePagina')" />
+                }
+                <div class="preview-footer-stack" [ngStyle]="estilosTipografiaBloque('piePagina')">
+                  @for (fila of previewFilasBloque('piePagina'); track fila.id) {
+                    <div class="preview-layout-line" [style.textAlign]="fila.align">
+                      @if (fila.numeracion) {
+                        <span class="preview-page-num-inline">{{
+                          previewDocMeta()?.portada?.activa && previewDocMeta()?.portada?.imagenRuta ? '1 / N' : '1 / 1'
+                        }}</span>
+                      } @else {
+                        <span>{{ fila.text }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </aside>
+
+      <div class="pesv-config-form">
+        @if (pdfTab() === 'documentos') {
+          <section class="pesv-config-block pesv-config-block--docs">
+            <h2>Metadatos y portada por ítem</h2>
+            <p class="hint">
+              El encabezado y pie de empresa son <strong>generales</strong>. Por ítem defines
+              <strong>título, subtítulo, versión y vigencia</strong> — van en el <strong>encabezado</strong> del PDF, no en el cuerpo.
+              Activa o desactiva cada línea del encabezado del documento. El cuerpo lleva únicamente la marca de agua hasta que existan plantillas de contenido.
+              Portada opcional (PNG/JPG) sin encabezado ni pie en esa hoja.
+            </p>
+            <label>
+              Buscar documento
+              <input type="search" [ngModel]="filtroDoc()" (ngModelChange)="filtroDoc.set($event)" placeholder="Nº ítem o nombre…" />
+            </label>
+            <label>
+              Documento Fase 1
+              <select [ngModel]="docItemSeleccionado()" (ngModelChange)="docItemSeleccionado.set(+$event)">
+                @for (d of catalogoDocumentosFiltrado(); track d.itemNo) {
+                  <option [ngValue]="d.itemNo">Ítem {{ d.itemNo }} — {{ d.config?.nombre || d.tituloCatalogo }}</option>
+                }
+              </select>
+            </label>
+            @if (docConfigActual(); as dc) {
+              @if (docCatalogoSeleccionado(); as cat) {
+                <p class="hint doc-ref">Checklist SISI: {{ cat.pregunta }}</p>
+              }
+              <p class="hint">Marca qué líneas van en el <strong>encabezado</strong> del PDF (como los datos de empresa).</p>
+              <div class="pesv-config-campos">
+                @for (cid of ['nombre', 'titulo', 'subtitulo', 'versionDocumento', 'vigenciaDocumento']; track cid) {
+                  <label class="chk">
+                    <input type="checkbox" [checked]="campoDocEncabezadoActivo(cid)" (change)="toggleCampoDocEncabezado(cid)" />
+                    {{ etiquetaCampoDocEncabezado(cid) }}
+                  </label>
+                }
+              </div>
+              @if (campoDocEncabezadoActivo('nombre')) {
+                <label>
+                  Nombre (encabezado PDF)
+                  <input type="text" [ngModel]="dc.nombre" (ngModelChange)="patchDocItem({ nombre: $event })" placeholder="Nombre en el encabezado" />
+                </label>
+              }
+              @if (campoDocEncabezadoActivo('titulo')) {
+                <label>
+                  Título
+                  <input type="text" [ngModel]="dc.titulo" (ngModelChange)="patchDocItem({ titulo: $event })" />
+                </label>
+              }
+              @if (campoDocEncabezadoActivo('subtitulo')) {
+                <label>
+                  Subtítulo
+                  <input type="text" [ngModel]="dc.subtitulo" (ngModelChange)="patchDocItem({ subtitulo: $event })" />
+                </label>
+              }
+              @if (campoDocEncabezadoActivo('versionDocumento')) {
+                <label>
+                  Versión (alfanumérica)
+                  <input type="text" [ngModel]="dc.versionDocumento" (ngModelChange)="patchDocItem({ versionDocumento: $event })" placeholder="Ej. 1, 2.0, Rev. A" autocomplete="off" />
+                </label>
+              }
+              @if (campoDocEncabezadoActivo('vigenciaDocumento')) {
+                <label>
+                  Vigencia (fecha)
+                  <input type="date" [ngModel]="vigenciaFechaInput(dc)" (ngModelChange)="onVigenciaFechaChange($event)" />
+                </label>
+              }
+              <div class="pesv-subblock">
+                <h3>Tipografía en encabezado (este documento)</h3>
+                <div class="pesv-config-grid">
+                  <label>
+                    Fuente
+                    <select [ngModel]="dc.tipografia?.familia || 'helvetica'" (ngModelChange)="patchDocTipografia({ familia: $event })">
+                      @for (f of fuentesPdf(); track f.id) {
+                        <option [value]="f.id">{{ f.label }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <div class="pesv-config-grid pesv-config-grid--4">
+                  @if (campoDocEncabezadoActivo('nombre')) {
+                    <label>Nombre (pt) <input type="number" min="6" max="14" [ngModel]="dc.tipografia?.tamanoNombrePt ?? 7" (ngModelChange)="patchDocTipografia({ tamanoNombrePt: +$event })" /></label>
+                  }
+                  @if (campoDocEncabezadoActivo('titulo')) {
+                    <label>Título (pt) <input type="number" min="8" max="24" [ngModel]="dc.tipografia?.tamanoTituloPt ?? 14" (ngModelChange)="patchDocTipografia({ tamanoTituloPt: +$event })" /></label>
+                  }
+                  @if (campoDocEncabezadoActivo('subtitulo')) {
+                    <label>Subtítulo (pt) <input type="number" min="7" max="18" [ngModel]="dc.tipografia?.tamanoSubtituloPt ?? 10" (ngModelChange)="patchDocTipografia({ tamanoSubtituloPt: +$event })" /></label>
+                  }
+                  @if (campoDocEncabezadoActivo('versionDocumento')) {
+                    <label>Versión (pt) <input type="number" min="6" max="14" [ngModel]="dc.tipografia?.tamanoVersionPt ?? 8" (ngModelChange)="patchDocTipografia({ tamanoVersionPt: +$event })" /></label>
+                  }
+                  @if (campoDocEncabezadoActivo('vigenciaDocumento')) {
+                    <label>Vigencia (pt) <input type="number" min="6" max="14" [ngModel]="dc.tipografia?.tamanoVigenciaPt ?? 8" (ngModelChange)="patchDocTipografia({ tamanoVigenciaPt: +$event })" /></label>
+                  }
+                </div>
+              </div>
+              <div class="pesv-layout-editor">
+                <h3>Orden y alineación en el encabezado</h3>
+                <p class="hint">Título, subtítulo, versión y vigencia (no van en el cuerpo).</p>
+                @for (el of layoutEncabezadoDocumento(); track el.id; let idx = $index) {
+                  <div class="pesv-layout-row">
+                    <span class="pesv-layout-label">{{ etiquetaLayoutId(el.id) }}</span>
+                    <div class="pesv-layout-actions">
+                      <button type="button" class="pesv-layout-btn" (click)="moverEnDocumento(el.id, -1)" [disabled]="idx === 0" title="Subir">↑</button>
+                      <button type="button" class="pesv-layout-btn" (click)="moverEnDocumento(el.id, 1)" [disabled]="idx === layoutEncabezadoDocumento().length - 1" title="Bajar">↓</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'left'" (click)="setAlineacionDocumento(el.id, 'left')">Izq</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'center'" (click)="setAlineacionDocumento(el.id, 'center')">Centro</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'right'" (click)="setAlineacionDocumento(el.id, 'right')">Der</button>
+                    </div>
+                  </div>
+                }
+              </div>
+              <label class="inline-check">
+                <input type="checkbox" [ngModel]="dc.portada.activa" (ngModelChange)="patchDocPortada({ activa: $event })" />
+                Este documento lleva portada (primera hoja sin encabezado ni pie)
+              </label>
+              @if (dc.portada.activa) {
+                <div class="pesv-config-upload">
+                  <label class="btn-file">
+                    <input
+                      type="file"
+                      accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                      (change)="onPortadaDocumento($event)"
+                      [disabled]="uploading() === 'portada-' + docItemSeleccionado()"
+                      hidden
+                    />
+                    {{
+                      uploading() === 'portada-' + docItemSeleccionado()
+                        ? 'Subiendo…'
+                        : 'Adjuntar portada (PNG o JPG)'
+                    }}
+                  </label>
+                  @if (urlImagen(dc.portada.imagenRuta); as pu) {
+                    <img class="pesv-config-thumb pesv-config-thumb--portada" [src]="pu" alt="Portada" />
+                  } @else {
+                    <p class="hint">Sube la portada ya diseñada; ARGO la usará a tamaño de hoja.</p>
+                  }
+                </div>
+              }
+            }
+            <div class="pesv-toolbar">
+              <button type="button" (click)="guardarPdf()" [disabled]="savingPdf()">Guardar configuración PDF</button>
+            </div>
+          </section>
+        } @else {
+        <section class="pesv-config-block">
+          <h2>Página</h2>
+          <div class="pesv-config-grid">
+            <label>
+              Tamaño de hoja
+              <select [ngModel]="pdf()!.tamanoHoja" (ngModelChange)="patchPdf({ tamanoHoja: $event })">
+                <option value="letter">{{ etiquetaTamano('letter') }}</option>
+                <option value="legal">{{ etiquetaTamano('legal') }}</option>
+                <option value="a4">{{ etiquetaTamano('a4') }}</option>
+              </select>
+            </label>
+            <label>
+              Orientación
+              <select [ngModel]="pdf()!.orientacion" (ngModelChange)="patchPdf({ orientacion: $event })">
+                <option value="portrait">Vertical</option>
+                <option value="landscape">Horizontal</option>
+              </select>
+            </label>
+          </div>
+          <h3>Márgenes (mm)</h3>
+          <div class="pesv-config-grid pesv-config-grid--4">
+            <label>Superior <input type="number" min="5" max="60" [ngModel]="pdf()!.margenesMm.superior" (ngModelChange)="patchMargen('superior', +$event)" /></label>
+            <label>Inferior <input type="number" min="5" max="60" [ngModel]="pdf()!.margenesMm.inferior" (ngModelChange)="patchMargen('inferior', +$event)" /></label>
+            <label>Izquierdo <input type="number" min="5" max="50" [ngModel]="pdf()!.margenesMm.izquierdo" (ngModelChange)="patchMargen('izquierdo', +$event)" /></label>
+            <label>Derecho <input type="number" min="5" max="50" [ngModel]="pdf()!.margenesMm.derecho" (ngModelChange)="patchMargen('derecho', +$event)" /></label>
+          </div>
+        </section>
+
+        <section class="pesv-config-block">
+          <h2>Encabezado</h2>
+          <label class="inline-check">
+            <input type="checkbox" [ngModel]="pdf()!.encabezado.activo" (ngModelChange)="patchEncabezado({ activo: $event })" />
+            Mostrar encabezado en todos los PDF PESV
+          </label>
+          <label>
+            Altura del encabezado (mm)
+            <input type="number" min="10" max="80" [ngModel]="pdf()!.encabezado.alturaMm" (ngModelChange)="patchEncabezado({ alturaMm: +$event })" />
+          </label>
+          <label>
+            Modo
+            <select [ngModel]="pdf()!.encabezado.modo" (ngModelChange)="patchEncabezado({ modo: $event })">
+              <option value="datos">Solo datos de empresa</option>
+              <option value="imagen">Solo imagen (ancho completo del bloque)</option>
+              <option value="mixto">Imagen + datos</option>
+            </select>
+          </label>
+          @if (pdf()!.encabezado.modo === 'imagen' || pdf()!.encabezado.modo === 'mixto') {
+            <div class="pesv-config-upload">
+              <label class="btn-file">
+                <input type="file" accept="image/*" (change)="onImagen('encabezado', $event)" [disabled]="uploading() === 'encabezado'" hidden />
+                {{ uploading() === 'encabezado' ? 'Subiendo…' : 'Subir imagen encabezado' }}
+              </label>
+              @if (urlImagen(pdf()!.encabezado.imagenRuta); as u) {
+                <img class="pesv-config-thumb" [src]="u" alt="Encabezado" />
+              }
+            </div>
+          }
+          @if (pdf()!.encabezado.modo === 'datos' || pdf()!.encabezado.modo === 'mixto') {
+            <p class="hint">Datos a incluir (desde Empresa):</p>
+            <div class="pesv-config-campos">
+              @for (c of camposEmpresa(); track c.key) {
+                <label class="chk">
+                  <input type="checkbox" [checked]="campoActivoEn(pdf()!.encabezado.camposActivos, c.key)" (change)="toggleCampo('encabezado', c.key)" />
+                  {{ c.label }}
+                </label>
+              }
+            </div>
+            <label>
+              Texto adicional
+              <input type="text" [ngModel]="pdf()!.encabezado.textoLibre" (ngModelChange)="patchEncabezado({ textoLibre: $event })" placeholder="Opcional" />
+            </label>
+            <div class="pesv-subblock pesv-subblock--logo-header">
+              <h3>Logo en el encabezado (ancho y alto)</h3>
+              <p class="hint">
+                Distinto del logo en el <strong>body</strong> (marca de agua). Capa fija detrás de los textos del encabezado.
+                Marca «Logo institucional» arriba para mostrarlo en el PDF.
+              </p>
+              @if (!logoActivoEn('encabezado')) {
+                <p class="hint warn">Activa «Logo institucional» en la lista de datos para ver el logo en la vista previa.</p>
+              }
+              <div class="pesv-config-grid pesv-config-grid--4">
+                <label>
+                  Ancho logo encabezado (mm)
+                  <input type="number" min="4" max="40" [ngModel]="logoCapaBloque('encabezado').anchoMm" (ngModelChange)="patchLogoCapa('encabezado', { anchoMm: +$event })" />
+                </label>
+                <label>
+                  Alto logo encabezado (mm)
+                  <input type="number" min="4" max="35" [ngModel]="logoCapaBloque('encabezado').altoMm" (ngModelChange)="patchLogoCapa('encabezado', { altoMm: +$event })" />
+                </label>
+                <label>
+                  Posición horizontal
+                  <select [ngModel]="logoCapaBloque('encabezado').ancla" (ngModelChange)="patchLogoCapa('encabezado', { ancla: $event })">
+                    <option value="left">Izquierda</option>
+                    <option value="center">Centro</option>
+                    <option value="right">Derecha</option>
+                  </select>
+                </label>
+                <label>
+                  Opacidad
+                  <input type="number" min="0.15" max="1" step="0.05" [ngModel]="logoCapaBloque('encabezado').opacidad" (ngModelChange)="patchLogoCapa('encabezado', { opacidad: +$event })" />
+                </label>
+              </div>
+            </div>
+            <div class="pesv-subblock">
+              <h3>Tipografía del encabezado</h3>
+              <div class="pesv-config-grid">
+                <label>
+                  Fuente
+                  <select [ngModel]="pdf()!.encabezado.tipografia?.familia || 'helvetica'" (ngModelChange)="patchTipografiaBloque('encabezado', { familia: $event })">
+                    @for (f of fuentesPdf(); track f.id) {
+                      <option [value]="f.id">{{ f.label }}</option>
+                    }
+                  </select>
+                </label>
+                <label>Tamaño texto (pt) <input type="number" min="6" max="18" [ngModel]="pdf()!.encabezado.tipografia?.tamanoPt ?? 8" (ngModelChange)="patchTipografiaBloque('encabezado', { tamanoPt: +$event })" /></label>
+              </div>
+            </div>
+            @if (layoutBloque('encabezado').length) {
+              <div class="pesv-layout-editor">
+                <h3>Orden y alineación del encabezado</h3>
+                @for (el of layoutBloque('encabezado'); track el.id; let idx = $index) {
+                  <div class="pesv-layout-row">
+                    <span class="pesv-layout-label">{{ etiquetaLayoutId(el.id) }}</span>
+                    <div class="pesv-layout-actions">
+                      <button type="button" class="pesv-layout-btn" (click)="moverEnBloque('encabezado', el.id, -1)" [disabled]="idx === 0">↑</button>
+                      <button type="button" class="pesv-layout-btn" (click)="moverEnBloque('encabezado', el.id, 1)" [disabled]="idx === layoutBloque('encabezado').length - 1">↓</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'left'" (click)="setAlineacionBloque('encabezado', el.id, 'left')">Izq</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'center'" (click)="setAlineacionBloque('encabezado', el.id, 'center')">Centro</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'right'" (click)="setAlineacionBloque('encabezado', el.id, 'right')">Der</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </section>
+
+        <section class="pesv-config-block">
+          <h2>Pie de página</h2>
+          <label class="inline-check">
+            <input type="checkbox" [ngModel]="pdf()!.piePagina.activo" (ngModelChange)="patchPie({ activo: $event })" />
+            Mostrar pie de página
+          </label>
+          <label>
+            Altura del pie (mm)
+            <input type="number" min="8" max="50" [ngModel]="pdf()!.piePagina.alturaMm" (ngModelChange)="patchPie({ alturaMm: +$event })" />
+          </label>
+          <label>
+            Modo
+            <select [ngModel]="pdf()!.piePagina.modo" (ngModelChange)="patchPie({ modo: $event })">
+              <option value="datos">Solo datos de empresa</option>
+              <option value="imagen">Solo imagen</option>
+              <option value="mixto">Imagen + datos</option>
+            </select>
+          </label>
+          @if (pdf()!.piePagina.modo === 'imagen' || pdf()!.piePagina.modo === 'mixto') {
+            <div class="pesv-config-upload">
+              <label class="btn-file">
+                <input type="file" accept="image/*" (change)="onImagen('pie', $event)" [disabled]="uploading() === 'pie'" hidden />
+                {{ uploading() === 'pie' ? 'Subiendo…' : 'Subir imagen pie de página' }}
+              </label>
+              @if (urlImagen(pdf()!.piePagina.imagenRuta); as u) {
+                <img class="pesv-config-thumb pesv-config-thumb--wide" [src]="u" alt="Pie" />
+              }
+            </div>
+          }
+          @if (pdf()!.piePagina.modo === 'datos' || pdf()!.piePagina.modo === 'mixto') {
+            <div class="pesv-config-campos">
+              @for (c of camposEmpresa(); track c.key) {
+                <label class="chk">
+                  <input type="checkbox" [checked]="campoActivoEn(pdf()!.piePagina.camposActivos, c.key)" (change)="toggleCampo('piePagina', c.key)" />
+                  {{ c.label }}
+                </label>
+              }
+            </div>
+            <label>
+              Texto fijo del pie
+              <input type="text" [ngModel]="pdf()!.piePagina.textoLibre" (ngModelChange)="patchPie({ textoLibre: $event })" />
+            </label>
+            <label class="inline-check">
+              <input type="checkbox" [ngModel]="pdf()!.piePagina.mostrarNumeracion" (ngModelChange)="patchPie({ mostrarNumeracion: $event })" />
+              Numeración «Página X de Y»
+            </label>
+            @if (logoActivoEn('piePagina')) {
+              <div class="pesv-subblock">
+                <h3>Logo en pie (detrás del texto)</h3>
+                <div class="pesv-config-grid pesv-config-grid--4">
+                  <label>Ancho (mm) <input type="number" min="4" max="40" [ngModel]="pdf()!.piePagina.logoCapa?.anchoMm ?? 10" (ngModelChange)="patchLogoCapa('piePagina', { anchoMm: +$event })" /></label>
+                  <label>Alto (mm) <input type="number" min="4" max="35" [ngModel]="pdf()!.piePagina.logoCapa?.altoMm ?? 8" (ngModelChange)="patchLogoCapa('piePagina', { altoMm: +$event })" /></label>
+                  <label>
+                    Posición
+                    <select [ngModel]="pdf()!.piePagina.logoCapa?.ancla ?? 'left'" (ngModelChange)="patchLogoCapa('piePagina', { ancla: $event })">
+                      <option value="left">Izquierda</option>
+                      <option value="center">Centro</option>
+                      <option value="right">Derecha</option>
+                    </select>
+                  </label>
+                  <label>Opacidad <input type="number" min="0.15" max="1" step="0.05" [ngModel]="pdf()!.piePagina.logoCapa?.opacidad ?? 1" (ngModelChange)="patchLogoCapa('piePagina', { opacidad: +$event })" /></label>
+                </div>
+              </div>
+            }
+            <div class="pesv-subblock">
+              <h3>Tipografía del pie</h3>
+              <div class="pesv-config-grid">
+                <label>
+                  Fuente
+                  <select [ngModel]="pdf()!.piePagina.tipografia?.familia || 'helvetica'" (ngModelChange)="patchTipografiaBloque('piePagina', { familia: $event })">
+                    @for (f of fuentesPdf(); track f.id) {
+                      <option [value]="f.id">{{ f.label }}</option>
+                    }
+                  </select>
+                </label>
+                <label>Tamaño texto (pt) <input type="number" min="6" max="18" [ngModel]="pdf()!.piePagina.tipografia?.tamanoPt ?? 7" (ngModelChange)="patchTipografiaBloque('piePagina', { tamanoPt: +$event })" /></label>
+              </div>
+            </div>
+            @if (layoutBloque('piePagina').length) {
+              <div class="pesv-layout-editor">
+                <h3>Orden y alineación del pie</h3>
+                @for (el of layoutBloque('piePagina'); track el.id; let idx = $index) {
+                  <div class="pesv-layout-row">
+                    <span class="pesv-layout-label">{{ etiquetaLayoutId(el.id) }}</span>
+                    <div class="pesv-layout-actions">
+                      <button type="button" class="pesv-layout-btn" (click)="moverEnBloque('piePagina', el.id, -1)" [disabled]="idx === 0">↑</button>
+                      <button type="button" class="pesv-layout-btn" (click)="moverEnBloque('piePagina', el.id, 1)" [disabled]="idx === layoutBloque('piePagina').length - 1">↓</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'left'" (click)="setAlineacionBloque('piePagina', el.id, 'left')">Izq</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'center'" (click)="setAlineacionBloque('piePagina', el.id, 'center')">Centro</button>
+                      <button type="button" class="pesv-layout-btn" [class.active]="el.alineacion === 'right'" (click)="setAlineacionBloque('piePagina', el.id, 'right')">Der</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </section>
+
+        <section class="pesv-config-block">
+          <h2>Marca de agua — logo en el cuerpo (body)</h2>
+          <p class="hint">
+            Mismo logo institucional, pero <strong>otro uso</strong> que el del encabezado: aquí va semitransparente en el
+            <strong>cuerpo de cada hoja</strong> (sin texto). Ancho/alto del logo en el <strong>encabezado</strong> → sección Encabezado;
+            aquí solo el logo del <strong>body</strong> (marca de agua).
+          </p>
+          <label class="inline-check">
+            <input
+              type="checkbox"
+              [ngModel]="pdf()!.marcaAgua.activa"
+              (ngModelChange)="patchMarcaAgua({ activa: $event, usarLogoEmpresa: true })"
+            />
+            Activar marca de agua con logo institucional
+          </label>
+          @if (logoPreviewUrl(); as logoEmp) {
+            <p class="hint">Vista del logo en empresa:</p>
+            <img class="pesv-config-thumb" [src]="logoEmp" alt="Logo empresa" />
+          }
+          <label class="inline-check">
+            <input type="checkbox" [ngModel]="pdf()!.marcaAgua.usarLogoEmpresa !== false" (ngModelChange)="patchMarcaAgua({ usarLogoEmpresa: $event })" />
+            Usar logo de empresa (recomendado)
+          </label>
+          <div class="pesv-config-upload">
+            <label class="btn-file">
+              <input type="file" accept="image/*" (change)="onImagen('marcaAgua', $event)" [disabled]="uploading() === 'marcaAgua'" hidden />
+              {{ uploading() === 'marcaAgua' ? 'Subiendo…' : 'Logo alterno (opcional)' }}
+            </label>
+            @if (urlImagen(pdf()!.marcaAgua.imagenRuta); as u) {
+              <img class="pesv-config-thumb" [src]="u" alt="Marca de agua personalizada" />
+            }
+          </div>
+          <div class="pesv-config-grid">
+            <label>
+              Ancho logo en body (mm)
+              <input type="number" min="15" max="120" [ngModel]="pdf()!.marcaAgua.logoTamano?.anchoMm ?? 48" (ngModelChange)="patchMarcaAguaLogoTamano({ anchoMm: +$event })" />
+            </label>
+            <label>
+              Alto logo en body (mm)
+              <input type="number" min="15" max="100" [ngModel]="pdf()!.marcaAgua.logoTamano?.altoMm ?? 42" (ngModelChange)="patchMarcaAguaLogoTamano({ altoMm: +$event })" />
+            </label>
+          </div>
+          <label>
+            Opacidad ({{ pdf()!.marcaAgua.opacidad | number: '1.2-2' }})
+            <input type="range" min="0.03" max="0.5" step="0.01" [ngModel]="pdf()!.marcaAgua.opacidad" (ngModelChange)="patchMarcaAgua({ opacidad: +$event })" />
+          </label>
+          <label>
+            Rotación (grados)
+            <input type="number" min="-90" max="90" [ngModel]="pdf()!.marcaAgua.rotacionGrados" (ngModelChange)="patchMarcaAgua({ rotacionGrados: +$event })" />
+          </label>
+        </section>
+
+        <div class="pesv-toolbar">
+          <button type="button" (click)="guardarPdf()" [disabled]="savingPdf()">Guardar configuración PDF</button>
+        </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (msg()) {
+    <p class="msg">{{ msg() }}</p>
+  }
+</section>

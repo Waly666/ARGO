@@ -470,46 +470,50 @@ function rangoFechaEgresoQuery(desde, hasta) {
   return Object.keys(f).length ? { fechaEgreso: f } : null;
 }
 
+async function filtroListadoAdmin(req) {
+  const q = String(req.query.q || '').trim();
+  const docQ = String(req.query.numeroDocumento || req.query.numDoc || req.query.doc || '').trim();
+  const idSesionQ = req.query.idSesion;
+  const and = [];
+
+  const rango = rangoFechaEgresoQuery(req.query.desde, req.query.hasta);
+  if (rango) and.push(rango);
+
+  if (req.idSede) and.push({ idSede: req.idSede });
+
+  if (idSesionQ != null && idSesionQ !== '') {
+    const sid = Number(idSesionQ);
+    if (Number.isFinite(sid)) and.push({ idSesion: sid });
+  }
+
+  if (docQ) {
+    const qd = numeroDocumentoQuery(docQ);
+    and.push(qd || { numeroDocumento: docQ });
+  }
+
+  if (q.length >= 2) {
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    and.push({
+      $or: [
+        { concepto: re },
+        { pagueA: re },
+        { numRecibo: re },
+        { numTransferencia: re },
+        { formaPago: re },
+        { numeroDocumento: re },
+        { tipoEgreso: re },
+      ],
+    });
+  }
+
+  return and.length ? { $and: and } : {};
+}
+
 exports.listarTodos = async (req, res, next) => {
   try {
-    const q = String(req.query.q || '').trim();
-    const docQ = String(req.query.numeroDocumento || req.query.numDoc || req.query.doc || '').trim();
-    const idSesionQ = req.query.idSesion;
     const skip = Math.max(0, Number(req.query.skip) || 0);
     const limit = Math.min(2000, Math.max(1, Number(req.query.limit) || 500));
-    const and = [];
-
-    const rango = rangoFechaEgresoQuery(req.query.desde, req.query.hasta);
-    if (rango) and.push(rango);
-
-    if (req.idSede) and.push({ idSede: req.idSede });
-
-    if (idSesionQ != null && idSesionQ !== '') {
-      const sid = Number(idSesionQ);
-      if (Number.isFinite(sid)) and.push({ idSesion: sid });
-    }
-
-    if (docQ) {
-      const qd = numeroDocumentoQuery(docQ);
-      and.push(qd || { numeroDocumento: docQ });
-    }
-
-    if (q.length >= 2) {
-      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      and.push({
-        $or: [
-          { concepto: re },
-          { pagueA: re },
-          { numRecibo: re },
-          { numTransferencia: re },
-          { formaPago: re },
-          { numeroDocumento: re },
-          { tipoEgreso: re },
-        ],
-      });
-    }
-
-    const filter = and.length ? { $and: and } : {};
+    const filter = await filtroListadoAdmin(req);
     const [total, rows] = await Promise.all([
       Egreso.countDocuments(filter),
       Egreso.find(filter).sort({ fechaEgreso: -1, fechaAudi: -1 }).skip(skip).limit(limit).lean(),
@@ -518,6 +522,115 @@ exports.listarTodos = async (req, res, next) => {
     const totalValor = items.reduce((a, e) => a + num(e.valorEgreso), 0);
     res.json({ items, total, skip, limit, totalValor });
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.exportarExcel = async (req, res, next) => {
+  try {
+    const { MAX_FILAS, filtrarEtiquetas, fmtFecha, libro, enviar } = require('../services/informeMovimientosCajaExcel');
+    const filter = await filtroListadoAdmin(req);
+    const total = await Egreso.countDocuments(filter);
+    if (total > MAX_FILAS) {
+      return res.status(400).json({
+        message: `Hay ${total} egresos con el filtro actual. Acote el rango de fechas (máximo ${MAX_FILAS} filas).`,
+      });
+    }
+    const rows = await Egreso.find(filter).sort({ fechaEgreso: -1, fechaAudi: -1 }).limit(MAX_FILAS).lean();
+    const enriquecidos = await Promise.all(rows.map((r) => enriquecer(r)));
+    const items = filtrarEtiquetas(enriquecidos, req.query, {
+      tercero: (e) => (e.numeroDocumento != null ? String(e.numeroDocumento).trim() : ''),
+      tipo: (e) => e.tipoEgresoDescr || '',
+      concepto: (e) => e.concepto || '',
+    });
+    const vigentes = items.filter((e) => !e.anulado);
+    const buffer = libro({
+      titulo: 'Informe de egresos',
+      filtros: req.query,
+      headers: ['Fecha', 'Recibo', 'Sesión', 'Tercero', 'Documento', 'Tipo', 'Concepto', 'Placa', 'Pago', 'Valor', 'Estado'],
+      filas: items.map((e) => [
+        fmtFecha(e.fechaEgreso),
+        e.numRecibo || '',
+        e.idSesion != null ? e.idSesion : '',
+        e.pagueA || '',
+        e.numeroDocumento != null ? String(e.numeroDocumento) : '',
+        e.tipoEgresoDescr || '',
+        e.concepto || '',
+        e.placa || '',
+        e.formaPago || '',
+        num(e.valorEgreso),
+        e.anulado ? 'Anulado' : 'Vigente',
+      ]),
+      totalVigente: vigentes.reduce((a, e) => a + num(e.valorEgreso), 0),
+    });
+    const fecha = new Date().toISOString().slice(0, 10);
+    enviar(res, buffer, `informe-egresos-${fecha}.xlsx`);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.exportarZip = async (req, res, next) => {
+  try {
+    const { MAX_FILAS, filtrarEtiquetas, fmtFecha } = require('../services/informeMovimientosCajaExcel');
+    const { enviarPaquete } = require('../services/informeMovimientosCajaZip');
+    const filter = await filtroListadoAdmin(req);
+    const total = await Egreso.countDocuments(filter);
+    if (total > MAX_FILAS) {
+      return res.status(400).json({
+        message: `Hay ${total} egresos con el filtro actual. Acote el rango de fechas (máximo ${MAX_FILAS} filas).`,
+      });
+    }
+    const rows = await Egreso.find(filter).sort({ fechaEgreso: -1, fechaAudi: -1 }).limit(MAX_FILAS).lean();
+    const enriquecidos = await Promise.all(rows.map((r) => enriquecer(r)));
+    const items = filtrarEtiquetas(enriquecidos, req.query, {
+      tercero: (e) => (e.numeroDocumento != null ? String(e.numeroDocumento).trim() : ''),
+      tipo: (e) => e.tipoEgresoDescr || '',
+      concepto: (e) => e.concepto || '',
+    });
+    const vigentes = items.filter((e) => !e.anulado);
+    const fecha = new Date().toISOString().slice(0, 10);
+    await enviarPaquete(res, {
+      nombreBase: `informe-egresos-${fecha}`,
+      titulo: 'Informe de egresos',
+      filtros: req.query,
+      atPageKey: 'informe_egresos_caja',
+      idSede: req.idSede,
+      incluirPlaca: true,
+      headers: ['Fecha', 'Recibo', 'Sesión', 'Tercero', 'Documento', 'Tipo', 'Concepto', 'Placa', 'Pago', 'Valor', 'Estado'],
+      filasExcel: items.map((e) => [
+        fmtFecha(e.fechaEgreso),
+        e.numRecibo || '',
+        e.idSesion != null ? e.idSesion : '',
+        e.pagueA || '',
+        e.numeroDocumento != null ? String(e.numeroDocumento) : '',
+        e.tipoEgresoDescr || '',
+        e.concepto || '',
+        e.placa || '',
+        e.formaPago || '',
+        num(e.valorEgreso),
+        e.anulado ? 'Anulado' : 'Vigente',
+      ]),
+      filasPdf: items.map((e) => ({
+        fecha: fmtFecha(e.fechaEgreso),
+        recibo: e.numRecibo || '—',
+        sesion: e.idSesion != null ? `#${e.idSesion}` : '—',
+        tercero: e.pagueA || '—',
+        documento: e.numeroDocumento != null ? String(e.numeroDocumento) : '—',
+        tipo: e.tipoEgresoDescr || '—',
+        concepto: e.concepto || '—',
+        placa: e.placa || '—',
+        formaPago: e.formaPago || '—',
+        valor: num(e.valorEgreso),
+        anulado: !!e.anulado,
+      })),
+      soportes: items
+        .filter((e) => e.urlSoporte)
+        .map((e) => ({ numRecibo: e.numRecibo || String(e._id || e.idEgreso || '').slice(-8), url: e.urlSoporte })),
+      totalVigente: vigentes.reduce((a, e) => a + num(e.valorEgreso), 0),
+    });
+  } catch (e) {
+    if (res.headersSent) return;
     next(e);
   }
 };

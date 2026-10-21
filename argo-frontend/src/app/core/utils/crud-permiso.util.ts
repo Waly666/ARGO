@@ -12,6 +12,7 @@ export type ModuloCrud =
   | 'liquidaciones'
   | 'combos'
   | 'vehiculos'
+  | 'pesv'
   | 'egresos'
   | 'empleados'
   | 'clientes'
@@ -219,6 +220,18 @@ const MODULOS_CRUD: Record<
       crear: ['vehiculos', 'vehiculos.crear'],
       editar: ['vehiculos', 'vehiculos.editar'],
       eliminar: ['vehiculos', 'vehiculos.eliminar'],
+    },
+  },
+  pesv: {
+    label: 'PESV / Seguridad vial',
+    prefijo: 'pesv',
+    categoria: 'flota',
+    orden: 115,
+    legacyPorAccion: {
+      ver: ['pesv', 'pesv.ver', 'vehiculos', 'rrhh'],
+      crear: ['pesv', 'pesv.crear', 'vehiculos'],
+      editar: ['pesv', 'pesv.editar', 'vehiculos'],
+      eliminar: ['pesv', 'pesv.eliminar'],
     },
   },
   empleados: {

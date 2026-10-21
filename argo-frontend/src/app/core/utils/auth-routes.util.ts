@@ -19,6 +19,16 @@ export const PERMISOS_INSTRUCTORES_DIRECTORIO = [
   'jornadas.gestionar',
 ] as const;
 
+/** Menú y rutas del módulo PESV (incluye legacy hasta asignar pesv.* en roles). */
+export const PERMISOS_MENU_PESV = [
+  'pesv',
+  'pesv.ver',
+  'pesv.editar',
+  'pesv.crear',
+  'vehiculos',
+  'rrhh',
+] as const;
+
 const RUTAS_INICIO: { path: string; permiso: string | string[] }[] = [
   { path: '/app/dashboard', permiso: 'dashboard' },
   { path: '/app/jornadas/instructor', permiso: ['jornadas.operar', 'jornadas.gestionar'] },
@@ -36,6 +46,7 @@ const RUTAS_INICIO: { path: string; permiso: string | string[] }[] = [
   { path: '/app/contabilidad/inicio', permiso: 'contabilidad' },
   { path: '/app/rrhh/inicio', permiso: 'rrhh' },
   { path: '/app/vehiculos', permiso: 'vehiculos' },
+  { path: '/app/pesv', permiso: [...PERMISOS_MENU_PESV] },
 ];
 
 /** Prefijos URL → permiso requerido (más específico primero). */
@@ -106,6 +117,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/vehiculos/nuevo', permiso: 'vehiculos' },
   { prefix: '/app/vehiculos/', permiso: ['vehiculos', 'instructores.inspeccion'] },
   { prefix: '/app/vehiculos', permiso: 'vehiculos' },
+  { prefix: '/app/pesv', permiso: [...PERMISOS_MENU_PESV] },
   { prefix: '/app/configuracion/usuarios', permiso: ['config.usuarios.ver', 'config.usuarios'] },
   { prefix: '/app/configuracion/sedes', permiso: ['sedes.gestionar', 'config.sedes'] },
   { prefix: '/app/configuracion/roles', permiso: 'config.roles' },

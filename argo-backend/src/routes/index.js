@@ -23,6 +23,7 @@ const vehiculos = require('./vehiculos');
 const programacionCea = require('./programacionCea');
 const cohortesAcademicas = require('./cohortesAcademicas');
 const facturacion = require('./facturacion');
+const pesv = require('./pesv');
 const aulaVirtual = require('./aulaVirtual');
 
 const router = Router();
@@ -52,6 +53,7 @@ router.use('/programacion-cea', programacionCea);
 router.use('/cohortes-academicas', cohortesAcademicas);
 router.use('/instructor-portal', require('./instructorPortal'));
 router.use('/facturacion', facturacion);
+router.use('/pesv', pesv);
 router.use('/aula-virtual', aulaVirtual);
 router.use('/clientes', require('./clientes'));
 router.use('/terceros', require('./terceros'));

@@ -1,0 +1,37 @@
+.pesv-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border-radius: 12px;
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  background: linear-gradient(145deg, rgba(6, 24, 20, 0.75), rgba(4, 14, 28, 0.65));
+  margin-bottom: 0.25rem;
+
+  a {
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-soft);
+    border: 1px solid transparent;
+    transition:
+      color 0.15s,
+      background 0.15s,
+      border-color 0.15s;
+
+    &:hover {
+      color: #a7f3d0;
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    &.active {
+      color: #a7f3d0;
+      border-color: rgba(52, 211, 153, 0.55);
+      background: linear-gradient(145deg, rgba(8, 36, 30, 0.95), rgba(4, 14, 32, 0.92));
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+  }
+}

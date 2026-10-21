@@ -1,0 +1,17 @@
+<nav class="pesv-nav" aria-label="Navegación PESV">
+  <a
+    routerLink="/app/pesv"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    [class.active]="active() === 'inicio'"
+  >
+    Inicio
+  </a>
+  <a routerLink="/app/pesv/autodiagnostico" routerLinkActive="active" [class.active]="active() === 'autodiagnostico'">
+    Autodiagnóstico
+  </a>
+  <a routerLink="/app/pesv/fase1" routerLinkActive="active" [class.active]="active() === 'fase1'">Fase 1</a>
+  <a routerLink="/app/pesv/fase2" routerLinkActive="active" [class.active]="active() === 'fase2'">Fase 2</a>
+  <a routerLink="/app/pesv/tablero" routerLinkActive="active" [class.active]="active() === 'tablero'">Tablero</a>
+  <a routerLink="/app/pesv/config" routerLinkActive="active" [class.active]="active() === 'config'">Configuración</a>
+</nav>

@@ -211,6 +211,15 @@
   color: var(--text);
 }
 
+.submenu-pesv {
+  @extend .submenu-rrhh;
+  border-color: rgba(52, 211, 153, 0.28);
+}
+.menu-group-pesv .group-head.active {
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--text);
+}
+
 .submenu-talento {
   @extend .submenu-rrhh;
 }

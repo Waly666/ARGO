@@ -55,6 +55,8 @@ export interface ConfigRecibo {
   departamento?: string;
   telefono?: string;
   email?: string;
+  /** Representante legal (documentos PESV y similares). */
+  representanteLegal?: string;
   urlLogo?: string;
   prefijoFactura?: string;
   consecutivoFactura?: number;

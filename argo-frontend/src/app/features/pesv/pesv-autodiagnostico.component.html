@@ -1,0 +1,53 @@
+<section class="pesv-page card">
+  <header class="pesv-hero">
+    <div class="pesv-hero-icon">◎</div>
+    <div class="pesv-hero-text">
+      <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Autodiagnóstico</p>
+      <h1>Autodiagnóstico de nivel</h1>
+      <p class="pesv-lead">Res. 40595 — misionalidad, tamaño de flota y conductores → Básico, Estándar o Avanzado.</p>
+    </div>
+  </header>
+
+  <argo-pesv-nav active="autodiagnostico" />
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else {
+    <div class="pesv-panel">
+      <label>
+        Vigencia
+        <input type="number" [ngModel]="vigencia()" (ngModelChange)="vigencia.set($event)" min="2020" max="2100" />
+      </label>
+      <label>
+        Misionalidad
+        <select [ngModel]="misionalidad()" (ngModelChange)="misionalidad.set($event == 1 ? 1 : 2)">
+          <option [ngValue]="1">1 — Presta servicio de transporte</option>
+          <option [ngValue]="2">2 — No presta servicio de transporte</option>
+        </select>
+      </label>
+      <label>
+        Total vehículos
+        <input type="number" min="0" [ngModel]="totalVehiculos()" (ngModelChange)="totalVehiculos.set(+$event)" />
+      </label>
+      <label>
+        Total conductores
+        <input type="number" min="0" [ngModel]="totalConductores()" (ngModelChange)="totalConductores.set(+$event)" />
+      </label>
+      <label>
+        Observaciones
+        <textarea rows="3" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)"></textarea>
+      </label>
+
+      @if (nivelLabel()) {
+        <p class="nivel">Nivel calculado: <strong>{{ nivelLabel() }}</strong></p>
+      }
+
+      <div class="pesv-toolbar">
+        <button type="button" (click)="guardar()" [disabled]="saving()">Guardar autodiagnóstico</button>
+      </div>
+      @if (msg()) {
+        <p class="msg">{{ msg() }}</p>
+      }
+    </div>
+  }
+</section>

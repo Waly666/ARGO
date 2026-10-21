@@ -12,6 +12,7 @@ const CAMPOS = [
   'ciudad',
   'telefono',
   'email',
+  'representanteLegal',
   'urlLogo',
   'prefijoFactura',
   'consecutivoFactura',
@@ -91,7 +92,10 @@ exports.actualizarRecibo = async (req, res, next) => {
   try {
     const dto = {};
     for (const k of CAMPOS) {
-      if (req.body[k] !== undefined) dto[k] = req.body[k];
+      if (req.body[k] !== undefined) {
+        dto[k] =
+          k === 'representanteLegal' ? String(req.body[k] ?? '').trim() : req.body[k];
+      }
     }
     for (const k of [
       'consecutivoFactura',

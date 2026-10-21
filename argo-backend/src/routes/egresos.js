@@ -16,6 +16,8 @@ const admin = requirePermiso('caja.admin', 'contabilidad');
 const accEgr = accionesModulo('egresos');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);
+router.get('/admin/todos/excel', admin, ctrl.exportarExcel);
+router.get('/admin/todos/zip', admin, ctrl.exportarZip);
 router.get('/vehiculos-opciones', turno, ctrl.opcionesVehiculos);
 router.get('/verificar-placa/:placa', turno, ctrl.verificarPlacaVehiculo);
 router.get('/formas-pago', turno, ctrl.formasPago);

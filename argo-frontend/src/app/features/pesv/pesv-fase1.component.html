@@ -1,0 +1,459 @@
+<section class="pesv-page card pesv-fase1">
+
+  <header class="pesv-hero">
+
+    <div class="pesv-hero-icon">▤</div>
+
+    <div class="pesv-hero-text">
+
+      <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Fase 1</p>
+
+      <h1>Documentos de implementación</h1>
+
+      @if (data()) {
+
+        <p class="pesv-lead">
+
+          Aquí prepara cada evidencia del checklist SISI/CCPS (documentos de su empresa; el portal es solo donde usted los carga).
+
+          Vigencia <strong>{{ data()!.vigencia }}</strong> · Su nivel:
+
+          <strong>{{ data()!.nivelLabel }}</strong>.
+
+        </p>
+
+      }
+
+    </div>
+
+  </header>
+
+
+
+  <argo-pesv-nav active="fase1" />
+
+
+
+  <section class="pesv-fase1-guia" aria-label="Cómo usar esta pantalla">
+
+    <h2 class="pesv-fase1-guia-titulo">¿Cómo funciona? (3 pasos)</h2>
+
+    <ol class="pesv-fase1-guia-lista">
+
+      <li>
+
+        <span class="guia-num">1</span>
+
+        <div>
+
+          <strong>Llene el formulario en ARGO</strong>
+
+          <p>Capture la información de su empresa (fechas, responsables, contenidos).</p>
+
+        </div>
+
+      </li>
+
+      <li>
+
+        <span class="guia-num">2</span>
+
+        <div>
+
+          <strong>Genere el archivo</strong>
+
+          <p>ARGO arma el PDF o Excel con la plantilla oficial. Descárguelo cuando esté listo.</p>
+
+        </div>
+
+      </li>
+
+      <li>
+
+        <span class="guia-num">3</span>
+
+        <div>
+
+          <strong>Suba al portal SISI</strong>
+
+          <p>Indique abajo si el documento ya existe en su empresa y el motivo; eso ayuda al checklist del portal.</p>
+
+        </div>
+
+      </li>
+
+    </ol>
+
+  </section>
+
+
+
+  @if (!loading() && data()) {
+
+    <section class="pesv-fase1-overview" aria-label="Resumen de avance">
+
+      <div class="overview-card">
+
+        <span class="overview-val">{{ resumenAvance().aplicables }}</span>
+
+        <span class="overview-lbl">Documentos que le aplican</span>
+
+      </div>
+
+      <div class="overview-card">
+
+        <span class="overview-val">{{ resumenAvance().conFormulario }}</span>
+
+        <span class="overview-lbl">Con formulario iniciado</span>
+
+      </div>
+
+      <div class="overview-card overview-card--wide">
+
+        <div class="overview-progress-head">
+
+          <span class="overview-lbl">Avance general de formularios</span>
+
+          <span class="overview-pct">{{ resumenAvance().pctGlobal }}%</span>
+
+        </div>
+
+        <div class="overview-bar" role="progressbar" [attr.aria-valuenow]="resumenAvance().pctGlobal" aria-valuemin="0" aria-valuemax="100">
+
+          <span class="overview-bar-fill" [style.width.%]="resumenAvance().pctGlobal"></span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  }
+
+
+
+  <div class="pesv-toolbar pesv-fase1-toolbar">
+
+    <label>
+
+      Ver un bloque del plan
+
+      <select [ngModel]="filtroPasoStr()" (ngModelChange)="onFiltroPasoChange($event)">
+
+        <option value="">Todos los pasos (recomendado al empezar)</option>
+
+        @for (p of pasosUnicos(); track p) {
+
+          <option [value]="p">Paso {{ p }} — {{ tituloPaso(p) }}</option>
+
+        }
+
+      </select>
+
+    </label>
+
+    @if (filtroPaso(); as fp) {
+
+      <p class="pesv-fase1-toolbar-meta">
+
+        Viendo solo el <strong>Paso {{ fp }}</strong>: {{ tituloPaso(fp) }}.
+
+      </p>
+
+    } @else {
+
+      <p class="pesv-fase1-toolbar-meta">
+
+        Los documentos están agrupados por paso del plan (Resolución 40595 de 2022).
+
+      </p>
+
+    }
+
+    <button type="button" (click)="guardar()" [disabled]="saving()">Guardar todo</button>
+
+  </div>
+
+
+
+  @if (loading()) {
+
+    <p class="hint">Cargando listado…</p>
+
+  } @else {
+
+    <div class="table-wrap pesv-fase1-table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr class="thead-main">
+
+            <th class="col-item">Ítem</th>
+
+            <th class="col-paso">Paso</th>
+
+            <th class="col-doc">Qué documento es</th>
+
+            <th class="col-datos">En ARGO usted…</th>
+
+            <th class="col-portal">En el portal SISI</th>
+
+            <th class="col-accion">Archivo</th>
+
+          </tr>
+
+          <tr class="thead-hint">
+
+            <th colspan="6">
+
+              Cada fila es un requisito del checklist. No necesita memorizar siglas: siga el formulario y luego genere el archivo.
+
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          @for (grupo of gruposListado(); track grupo.paso ?? 'st') {
+
+            <tr class="fila-grupo-paso" [class.fila-grupo-paso--destacado]="grupo.destacado">
+
+              <td colspan="6">
+
+                <div class="grupo-paso-inner">
+
+                  @if (grupo.paso != null) {
+
+                    <span class="grupo-paso-badge">Paso {{ grupo.paso }}</span>
+
+                  } @else {
+
+                    <span class="grupo-paso-badge grupo-paso-badge--st">RL</span>
+
+                  }
+
+                  <div>
+
+                    <strong>{{ grupo.titulo }}</strong>
+
+                    <span class="grupo-paso-sub">{{ grupo.ayuda }}</span>
+
+                  </div>
+
+                  <span class="grupo-paso-count">{{ grupo.items.length }} documento(s)</span>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            @for (item of grupo.items; track item.itemNo) {
+
+              <tr
+
+                [class.no-aplica]="!item.aplica"
+
+                [class.fila-paso-activo]="pasoResaltado(item)"
+
+              >
+
+                <td class="col-item">
+
+                  <span class="item-num">{{ item.itemNo }}</span>
+
+                </td>
+
+                <td class="col-paso">
+
+                  @if (item.paso40595 != null) {
+
+                    <span class="paso-pill" [class.paso-pill--activo]="pasoResaltado(item)" [title]="tituloPaso(item.paso40595!)">
+
+                      {{ item.paso40595 }}
+
+                    </span>
+
+                  } @else {
+
+                    <span class="paso-pill paso-pill--na" title="Certificación representante legal">RL</span>
+
+                  }
+
+                </td>
+
+                <td class="col-doc">
+
+                  @if (estadoItem(item); as est) {
+
+                    <span class="estado-chip" [class]="est.clase">{{ est.etiqueta }}</span>
+
+                  }
+
+                  <strong class="doc-titulo">{{ item.documento?.tituloDocumento || 'Documento PESV' }}</strong>
+
+                  <details class="doc-requisito">
+
+                    <summary>¿Qué pregunta el portal?</summary>
+
+                    <p>{{ item.pregunta }}</p>
+
+                    @if (item.evidenciaHint) {
+
+                      <p class="hint">Evidencia esperada: {{ item.evidenciaHint }}</p>
+
+                    }
+
+                  </details>
+
+                  <span class="tag tag--modo">{{ etiquetaModoAmigable(item) }}</span>
+
+                  @if (!item.aplica) {
+
+                    <span class="tag">No aplica a su nivel ({{ data()?.nivelLabel }})</span>
+
+                  }
+
+                </td>
+
+                <td class="col-datos">
+
+                  @if (esCertRepresentanteLegal(item)) {
+
+                    <p class="celda-lead">
+                      Certificación firmada por el <strong>representante legal</strong> sobre cumplimiento del PESV
+                      (Res. {{ item.itemNo === 1 ? '1565/2014' : '40595/2022' }}). No es documento de Supertransporte.
+                    </p>
+
+                    <a class="btn-form" [routerLink]="['/app/pesv/fase1/item', item.itemNo]">Llenar formulario</a>
+
+                    <label class="file-mini">
+
+                      <span>Adjuntar PDF firmado</span>
+
+                      <input type="file" accept=".pdf" (change)="onFileExterno(item, $event)" />
+
+                    </label>
+
+                    @if (urlAdjExterno(item); as u) {
+
+                      <a class="link-descarga" [href]="u" target="_blank" rel="noopener">{{ item.respuesta.adjuntoNombre }}</a>
+
+                    }
+
+                  } @else if (item.documento?.modo === 'na') {
+
+                    <span class="hint">No requiere archivo en ARGO.</span>
+
+                  } @else if (item.aplica) {
+
+                    @if (pctCaptura(item.itemNo); as pct) {
+
+                      <div class="mini-bar-wrap">
+
+                        <div class="mini-bar" role="progressbar" [attr.aria-valuenow]="pct" aria-valuemin="0" aria-valuemax="100">
+
+                          <span [style.width.%]="pct"></span>
+
+                        </div>
+
+                        <span class="mini-bar-lbl">{{ pct }}% del formulario</span>
+
+                      </div>
+
+                    }
+
+                    <a class="btn-form" [routerLink]="['/app/pesv/fase1/item', item.itemNo]">Llenar formulario</a>
+
+                  } @else {
+
+                    <span class="hint">Omita esta fila.</span>
+
+                  }
+
+                </td>
+
+                <td class="col-portal">
+
+                  <label class="portal-field">
+
+                    <span>¿Ya tiene este documento?</span>
+
+                    <select [ngModel]="item.respuesta.existe ?? ''" (ngModelChange)="onExiste(item, $event)" [disabled]="!item.aplica">
+
+                      <option value="">Sin marcar</option>
+
+                      <option value="si">Sí, ya lo tenemos</option>
+
+                      <option value="no">No, aún no</option>
+
+                    </select>
+
+                  </label>
+
+                  <label class="portal-field">
+
+                    <span>Situación (motivo)</span>
+
+                    <select [(ngModel)]="item.respuesta.motivoCodigo" [disabled]="!item.aplica">
+
+                      <option value="">Elegir…</option>
+
+                      @for (m of motivos(); track m.codigo) {
+
+                        <option [value]="m.codigo">{{ m.label }}</option>
+
+                      }
+
+                    </select>
+
+                  </label>
+
+                </td>
+
+                <td class="acciones-gen col-accion">
+
+                  @if (esGenerable(item) && item.aplica) {
+
+                    <button type="button" (click)="generar(item)">Crear {{ item.documento?.salida || 'PDF' }}</button>
+
+                    <span class="accion-hint">Después descargue y súbalo a SISI.</span>
+
+                  }
+
+                  @if (urlGenerado(item); as g) {
+
+                    <a class="link-descarga" [href]="g" target="_blank" rel="noopener">Descargar archivo</a>
+
+                  }
+
+                </td>
+
+              </tr>
+
+            }
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  }
+
+
+
+  @if (msg()) {
+
+    <p class="msg">{{ msg() }}</p>
+
+  }
+
+</section>
+

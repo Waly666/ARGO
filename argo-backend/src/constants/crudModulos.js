@@ -194,6 +194,19 @@ const MODULOS_CRUD = {
       eliminar: ['vehiculos', 'vehiculos.eliminar'],
     },
   },
+  pesv: {
+    label: 'PESV / Seguridad vial',
+    prefijo: 'pesv',
+    entidad: 'pesv',
+    categoria: 'flota',
+    orden: 115,
+    legacyPorAccion: {
+      ver: ['pesv', 'pesv.ver', 'vehiculos', 'rrhh'],
+      crear: ['pesv', 'pesv.crear', 'vehiculos'],
+      editar: ['pesv', 'pesv.editar', 'vehiculos'],
+      eliminar: ['pesv', 'pesv.eliminar'],
+    },
+  },
   empleados: {
     label: 'Empleados (RRHH)',
     prefijo: 'empleados',

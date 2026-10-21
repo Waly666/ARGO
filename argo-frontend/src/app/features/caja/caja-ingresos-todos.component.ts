@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfigService } from '../../core/services/config.service';
+import { ConfigPaginasInformesService } from '../../core/services/config-paginas-informes.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import { ReciboService, idIngreso } from '../../core/services/recibo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
@@ -25,8 +26,14 @@ import {
 } from '../../core/utils/capsule.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
+import { esFormaPagoEfectivo } from '../../core/utils/referencia-pago.util';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
+import { descargarBlob, mensajeErrorBlob } from '../../core/utils/descargar-blob';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import {
+  abrirInformeMovimientosCaja,
+  buildInformeMovimientosCajaHtml,
+} from './caja-movimientos-informe-document';
 import { SoporteViewerModalComponent } from '../../shared/soporte-viewer-modal/soporte-viewer-modal.component';
 import { tieneSoporteAdjunto } from '../../core/utils/pago-soporte.helpers';
 import {
@@ -79,6 +86,7 @@ export class CajaIngresosTodosComponent implements OnInit {
   private ingSvc = inject(IngresoService);
   private reciboSvc = inject(ReciboService);
   private configSvc = inject(ConfigService);
+  private paginasSvc = inject(ConfigPaginasInformesService);
   private cajaSvc = inject(CajaSesionService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -95,6 +103,8 @@ export class CajaIngresosTodosComponent implements OnInit {
   total = signal(0);
   totalValor = signal(0);
   loading = signal(false);
+  exportando = signal(false);
+  private pendientePdf = false;
   msg = signal<string | null>(null);
   msgError = signal(false);
 
@@ -103,6 +113,8 @@ export class CajaIngresosTodosComponent implements OnInit {
   desde = signal('');
   hasta = signal('');
   idSesion = signal('');
+  tipoFiltro = signal('');
+  conceptoFiltro = signal('');
 
   sesionAbiertaId = signal<number | null>(null);
 
@@ -114,8 +126,21 @@ export class CajaIngresosTodosComponent implements OnInit {
   sortCol = signal<SortColIngreso>('fecha');
   sortDir = signal<SortDir>('desc');
 
+  opcionesTipo = computed(() =>
+    opcionesUnicas(this.items().map((i) => String(i.tipoIngresoDescr || i.tipoIngreso || ''))),
+  );
+  opcionesConcepto = computed(() => opcionesUnicas(this.items().map((i) => this.conceptoLabel(i))));
+
+  itemsFiltrados = computed(() =>
+    this.items().filter(
+      (i) =>
+        coincideOpcion(String(i.tipoIngresoDescr || i.tipoIngreso || ''), this.tipoFiltro()) &&
+        coincideOpcion(this.conceptoLabel(i), this.conceptoFiltro()),
+    ),
+  );
+
   itemsOrdenados = computed(() => {
-    const list = [...this.items()];
+    const list = [...this.itemsFiltrados()];
     const col = this.sortCol();
     const dir = this.sortDir();
     list.sort((a, b) => {
@@ -142,6 +167,12 @@ export class CajaIngresosTodosComponent implements OnInit {
     });
     return list;
   });
+
+  totalFiltrado = computed(() =>
+    this.itemsOrdenados()
+      .filter((i) => !this.esAnulado(i))
+      .reduce((a, i) => a + Number(i.valor || 0), 0),
+  );
 
   capFecha = capFecha;
   capRecibo = capRecibo;
@@ -254,9 +285,14 @@ export class CajaIngresosTodosComponent implements OnInit {
           this.total.set(total);
           this.totalValor.set(r.totalValor || merged.reduce((a, i) => a + Number(i.valor || 0), 0));
           this.loading.set(false);
+          if (this.pendientePdf) {
+            this.pendientePdf = false;
+            this.emitirInformePdf();
+          }
         },
         error: (e) => {
           this.loading.set(false);
+          this.pendientePdf = false;
           this.inform(e?.error?.message || 'Error cargando ingresos.');
         },
       });
@@ -268,6 +304,8 @@ export class CajaIngresosTodosComponent implements OnInit {
     this.desde.set('');
     this.hasta.set('');
     this.idSesion.set('');
+    this.tipoFiltro.set('');
+    this.conceptoFiltro.set('');
     this.router.navigate([], { relativeTo: this.route, queryParams: {} });
     this.cargar();
   }
@@ -278,8 +316,12 @@ export class CajaIngresosTodosComponent implements OnInit {
   }
 
   docLabel(i: any): string {
+    return this.documentoTercero(i) || '—';
+  }
+
+  documentoTercero(i: any): string {
     const d = i?.numDoc ?? i?.documentoTercero;
-    return d != null && String(d).trim() ? String(d).trim() : '—';
+    return d != null && String(d).trim() ? String(d).trim() : '';
   }
 
   conceptoLabel(i: any): string {
@@ -296,11 +338,154 @@ export class CajaIngresosTodosComponent implements OnInit {
     return resolverFormaPagoIngreso(i);
   }
 
+  informePdf(): void {
+    this.pendientePdf = true;
+    this.cargar();
+  }
+
+  informeExcel(): void {
+    if (this.exportando()) return;
+    this.exportando.set(true);
+    this.inform(null);
+    const sid = this.idSesion().trim();
+    this.ingSvc
+      .exportarTodosExcel({
+        q: this.q().trim() || undefined,
+        numDoc: this.numDoc().trim() || undefined,
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
+        idSesion: sid ? Number(sid) : undefined,
+        tipo: this.tipoFiltro() || undefined,
+        concepto: this.conceptoFiltro() || undefined,
+      })
+      .subscribe({
+        next: (blob) => {
+          this.exportando.set(false);
+          const fecha = new Date().toISOString().slice(0, 10);
+          void descargarBlob(blob, `informe-ingresos-${fecha}.xlsx`).catch((err: unknown) => {
+            this.inform(err instanceof Error ? err.message : 'No se pudo guardar el Excel.', true);
+          });
+        },
+        error: async (e) => {
+          this.exportando.set(false);
+          this.inform(await mensajeErrorBlob(e, 'No se pudo exportar el Excel.'), true);
+        },
+      });
+  }
+
+  informeZip(): void {
+    if (this.exportando()) return;
+    this.exportando.set(true);
+    this.inform(null);
+    const sid = this.idSesion().trim();
+    this.ingSvc
+      .exportarTodosZip({
+        q: this.q().trim() || undefined,
+        numDoc: this.numDoc().trim() || undefined,
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
+        idSesion: sid ? Number(sid) : undefined,
+        tipo: this.tipoFiltro() || undefined,
+        concepto: this.conceptoFiltro() || undefined,
+      })
+      .subscribe({
+        next: (blob) => {
+          this.exportando.set(false);
+          const fecha = new Date().toISOString().slice(0, 10);
+          void descargarBlob(blob, `informe-ingresos-${fecha}.zip`).catch((err: unknown) => {
+            this.inform(err instanceof Error ? err.message : 'No se pudo guardar el ZIP.', true);
+          });
+        },
+        error: async (e) => {
+          this.exportando.set(false);
+          this.inform(await mensajeErrorBlob(e, 'No se pudo generar el ZIP.'), true);
+        },
+      });
+  }
+
+  private emitirInformePdf(): void {
+    const filas = this.itemsOrdenados();
+    if (!filas.length) {
+      this.inform('No hay ingresos para el informe con los filtros elegidos.', true);
+      return;
+    }
+    const titulo = 'Informe de ingresos';
+    this.paginasSvc.ensureAndAtPageCss('informe_ingresos_caja').subscribe({
+      next: (atPageCss) => {
+        this.configSvc.obtenerReciboEncabezado().subscribe({
+          next: (empresa) => this.abrirInformeIngresos(titulo, filas, empresa, atPageCss),
+          error: () => this.abrirInformeIngresos(titulo, filas, null, atPageCss),
+        });
+      },
+      error: () => {
+        this.configSvc.obtenerReciboEncabezado().subscribe({
+          next: (empresa) => this.abrirInformeIngresos(titulo, filas, empresa),
+          error: () => this.abrirInformeIngresos(titulo, filas, null),
+        });
+      },
+    });
+  }
+
+  private abrirInformeIngresos(
+    titulo: string,
+    filas: any[],
+    empresa: Parameters<typeof buildInformeMovimientosCajaHtml>[0]['empresa'],
+    atPageCss?: string,
+  ): void {
+    const html = buildInformeMovimientosCajaHtml({
+      titulo,
+      columnaSoporte: true,
+      filtros: {
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
+        documento: this.numDoc().trim() || undefined,
+        tipo: this.tipoFiltro() || undefined,
+        concepto: this.conceptoFiltro() || undefined,
+      },
+      filas: filas.map((i) => ({
+        fecha: fechaInforme(i.fecha || i.createdAt),
+        recibo: String(i.numRecibo || '—'),
+        sesion: i.idSesion ? `#${i.idSesion}` : '—',
+        tercero: this.pagadorLabel(i),
+        documento: this.docLabel(i),
+        tipo: String(i.tipoIngresoDescr || i.tipoIngreso || '—'),
+        concepto: this.conceptoLabel(i),
+        formaPago: this.formaPagoLabel(i),
+        valor: Number(i.valor || 0),
+        anulado: this.esAnulado(i),
+        sinSoporte: this.faltaSoporte(i),
+      })),
+      empresa,
+      atPageCss,
+    });
+    if (!abrirInformeMovimientosCaja(html)) {
+      this.inform('Permita ventanas emergentes para ver e imprimir el PDF.', true);
+    }
+  }
+
   refComprobante(i: any): string {
     return String(i.numTransferencia || i.numComprobante || '').trim();
   }
 
   tieneSoporte = tieneSoporteAdjunto;
+
+  /** Misma regla que el cierre de caja: el efectivo no exige soporte. */
+  faltaSoporte(i: {
+    anulado?: boolean;
+    estado?: string;
+    idTipoPago?: string | null;
+    formaPago?: string | null;
+    tipoPagoDescr?: string | null;
+    urlSoporte?: string | null;
+  }): boolean {
+    if (this.esAnulado(i)) return false;
+    if (String(i.idTipoPago ?? '').trim() === '1') return false;
+    const candidatos = [this.formaPagoLabel(i), i.formaPago, i.tipoPagoDescr]
+      .map((v) => String(v ?? '').trim())
+      .filter((v) => v && v !== '—');
+    if (!candidatos.length || candidatos.every((c) => esFormaPagoEfectivo(c))) return false;
+    return !tieneSoporteAdjunto(i);
+  }
 
   urlSoporte(i: { urlSoporte?: string | null }): string | null {
     return this.ingSvc.urlArchivo(i.urlSoporte);
@@ -390,4 +575,27 @@ export class CajaIngresosTodosComponent implements OnInit {
     this.msgError.set(err);
   }
 
+}
+
+function coincideOpcion(valor: string, filtro: string): boolean {
+  const f = filtro.trim().toLocaleLowerCase('es');
+  if (!f) return true;
+  return valor.trim().toLocaleLowerCase('es') === f;
+}
+
+function opcionesUnicas(valores: string[]): string[] {
+  const set = new Set<string>();
+  for (const raw of valores) {
+    const v = String(raw || '').trim();
+    if (!v || v === '—') continue;
+    set.add(v);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+function fechaInforme(value: unknown): string {
+  if (!value) return '—';
+  const d = new Date(value as string);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
 }

@@ -1,0 +1,19 @@
+.pesv-tablero table {
+  font-size: 0.8rem;
+}
+
+.row-vacío td {
+  color: #64748b;
+}
+
+.row-borrador td {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.row-ok td {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.msg.err {
+  color: #b91c1c;
+}

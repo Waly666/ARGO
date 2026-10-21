@@ -8,7 +8,7 @@
     <div class="caja-badges head-actions">
       <span class="caja-chip caja-chip--amber">Administración</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
-      <span class="total-badge">{{ totalValor() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+      <span class="total-badge">{{ totalFiltrado() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
     </div>
   </header>
 
@@ -31,7 +31,7 @@
     <button type="button" class="linkish" (click)="irAlCierre(+idSesion())">Ir al cierre →</button>
   </p>
 
-  <div class="card filtros">
+  <div class="card filtros filtros-amplios">
     <label>
       Buscar
       <input type="search" placeholder="Nombre, concepto, servicio, recibo…" [ngModel]="q()" (ngModelChange)="q.set($event)" (keyup.enter)="cargar()" />
@@ -46,9 +46,26 @@
     </label>
     <argo-date-input label="Desde" [ngModel]="desde()" (ngModelChange)="desde.set($event)" ></argo-date-input>
     <argo-date-input label="Hasta" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" ></argo-date-input>
+    <label>
+      Tipo
+      <select [ngModel]="tipoFiltro()" (ngModelChange)="tipoFiltro.set($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let t of opcionesTipo()" [value]="t">{{ t }}</option>
+      </select>
+    </label>
+    <label>
+      Concepto
+      <select [ngModel]="conceptoFiltro()" (ngModelChange)="conceptoFiltro.set($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let c of opcionesConcepto()" [value]="c">{{ c }}</option>
+      </select>
+    </label>
     <div class="filtro-actions">
       <button type="button" class="primary sm" (click)="cargar()">Filtrar</button>
       <button type="button" class="ghost sm" (click)="limpiarFiltros()">Limpiar</button>
+      <button type="button" class="primary sm" (click)="informePdf()" [disabled]="loading() || exportando() || !itemsOrdenados().length">Informe PDF</button>
+      <button type="button" class="ghost sm" (click)="informeExcel()" [disabled]="loading() || exportando()">{{ exportando() ? 'Exportando…' : 'Excel' }}</button>
+      <button type="button" class="ghost sm" (click)="informeZip()" [disabled]="loading() || exportando()">{{ exportando() ? 'Generando…' : 'ZIP' }}</button>
       <div class="view-toggle" role="group">
         <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
         <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>

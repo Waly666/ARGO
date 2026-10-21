@@ -164,6 +164,22 @@
   }
 }
 
+.emp-field--representante {
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  background: rgba(16, 185, 129, 0.06);
+
+  .emp-label {
+    color: #a7f3d0;
+    font-weight: 650;
+  }
+
+  input {
+    font-size: 0.95rem;
+  }
+}
+
 .emp-field {
   display: grid;
   gap: 0.3rem;

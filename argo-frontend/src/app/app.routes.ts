@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { permisoGuard } from './core/guards/permiso.guard';
+import { PERMISOS_MENU_PESV } from './core/utils/auth-routes.util';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -688,6 +689,51 @@ export const routes: Routes = [
           { path: 'arl', redirectTo: 'catalogos/arl', pathMatch: 'full' },
           { path: 'cajas-compensacion', redirectTo: 'catalogos/cajas', pathMatch: 'full' },
         ],
+      },
+      {
+        path: 'pesv',
+        pathMatch: 'full',
+        canActivate: [permisoGuard],
+        data: { title: 'PESV', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () => import('./features/pesv/pesv-hub.component').then((m) => m.PesvHubComponent),
+      },
+      {
+        path: 'pesv/autodiagnostico',
+        canActivate: [permisoGuard],
+        data: { title: 'Autodiagnóstico PESV', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () =>
+          import('./features/pesv/pesv-autodiagnostico.component').then((m) => m.PesvAutodiagnosticoComponent),
+      },
+      {
+        path: 'pesv/fase1',
+        canActivate: [permisoGuard],
+        data: { title: 'PESV Fase 1', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () => import('./features/pesv/pesv-fase1.component').then((m) => m.PesvFase1Component),
+      },
+      {
+        path: 'pesv/fase1/item/:itemNo',
+        canActivate: [permisoGuard],
+        data: { title: 'Formulario Fase 1 PESV', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () =>
+          import('./features/pesv/pesv-captura-form.component').then((m) => m.PesvCapturaFormComponent),
+      },
+      {
+        path: 'pesv/fase2',
+        canActivate: [permisoGuard],
+        data: { title: 'PESV Fase 2', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () => import('./features/pesv/pesv-fase2.component').then((m) => m.PesvFase2Component),
+      },
+      {
+        path: 'pesv/tablero',
+        canActivate: [permisoGuard],
+        data: { title: 'Tablero PESV', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () => import('./features/pesv/pesv-tablero.component').then((m) => m.PesvTableroComponent),
+      },
+      {
+        path: 'pesv/config',
+        canActivate: [permisoGuard],
+        data: { title: 'Configuración PESV', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () => import('./features/pesv/pesv-config.component').then((m) => m.PesvConfigComponent),
       },
       {
         path: 'vehiculos',

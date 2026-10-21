@@ -1,0 +1,96 @@
+.pesv-captura-org-aviso {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: rgba(16, 185, 129, 0.08);
+
+  a {
+    color: #6ee7b7;
+    font-weight: 600;
+  }
+}
+
+.pesv-captura-seccion--org {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: rgba(6, 28, 24, 0.35);
+}
+
+.pesv-org-seccion-hint {
+  margin: 0 0 0.75rem;
+}
+
+.pesv-captura-meta {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.pesv-captura-form {
+  margin-top: 1rem;
+}
+
+.pesv-captura-seccion {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+
+  legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+  }
+}
+
+.pesv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+
+  .req {
+    color: #f59e0b;
+    font-style: normal;
+  }
+
+  input[type='text'],
+  input[type='date'],
+  input[type='number'],
+  select,
+  textarea {
+    width: 100%;
+    max-width: 42rem;
+  }
+}
+
+.pesv-tabla-block {
+  margin-bottom: 1.25rem;
+}
+
+.pesv-tabla-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.pesv-tabla-editable input {
+  width: 100%;
+  min-width: 6rem;
+}
+
+.pesv-captura-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-link {
+  color: inherit;
+  text-decoration: underline;
+}

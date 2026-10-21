@@ -14,6 +14,8 @@ const admin = requirePermiso('caja.admin', 'contabilidad');
 const soporte = upload.ingresos.single('soporte');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);
+router.get('/admin/todos/excel', admin, ctrl.exportarExcel);
+router.get('/admin/todos/zip', admin, ctrl.exportarZip);
 router.get('/alumno/:numDoc', accIng.ver, ctrl.listarPorAlumno);
 router.get('/liquidacion/:idLiquidacion', accIng.ver, ctrl.listarPorLiquidacion);
 router.get('/:id/recibo', accIng.ver, recibo.datos);

@@ -801,56 +801,60 @@ function rangoFechaQuery(desde, hasta, campo = 'fecha') {
   return Object.keys(f).length ? { [campo]: f } : null;
 }
 
+async function filtroListadoAdmin(req) {
+  const q = String(req.query.q || '').trim();
+  const docRaw = String(req.query.numDoc || req.query.doc || '').trim();
+  const idSesionQ = req.query.idSesion;
+  const and = [];
+
+  const rango = rangoFechaQuery(req.query.desde, req.query.hasta, 'fecha');
+  if (rango) and.push(rango);
+
+  if (req.idSede) and.push({ idSede: req.idSede });
+
+  if (idSesionQ != null && idSesionQ !== '') {
+    const sid = Number(idSesionQ);
+    if (Number.isFinite(sid)) and.push({ idSesion: sid });
+  }
+
+  const ndDoc = docRaw ? parseNumDoc(docRaw) : null;
+  if (ndDoc != null) {
+    and.push(numDocQuery(ndDoc));
+  } else if (q) {
+    const ndQ = parseNumDoc(q);
+    if (ndQ != null && /^\d+$/.test(q.replace(/\D/g, ''))) {
+      and.push(numDocQuery(ndQ));
+    } else if (q.length >= 2) {
+      const numDocs = await buscarNumDocsAlumno(DatosAlumno, q);
+      const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(esc, 'i');
+      const liqs = await Liquidacion.find({ descripcion: re }).select('_id').limit(300).lean();
+      const liqIds = liqs.map((l) => l._id);
+      const or = [
+        { numRecibo: re },
+        { concepto: re },
+        { recibiDe: re },
+        { recibidoDe: re },
+        { observaciones: re },
+        { tipoIngreso: re },
+        { documentoTercero: re },
+        { numTransferencia: re },
+        { numComprobante: re },
+      ];
+      if (numDocs.length) or.push({ numDoc: { $in: numDocs } });
+      if (liqIds.length) or.push({ idLiquidacion: { $in: liqIds } });
+      and.push({ $or: or });
+    }
+  }
+
+  return and.length ? { $and: and } : {};
+}
+
 exports.listarTodos = async (req, res, next) => {
   try {
-    const q = String(req.query.q || '').trim();
-    const docRaw = String(req.query.numDoc || req.query.doc || '').trim();
-    const idSesionQ = req.query.idSesion;
     const skip = Math.max(0, Number(req.query.skip) || 0);
     const limit = Math.min(2000, Math.max(1, Number(req.query.limit) || 500));
-    const and = [];
-
-    const rango = rangoFechaQuery(req.query.desde, req.query.hasta, 'fecha');
-    if (rango) and.push(rango);
-
-    if (req.idSede) and.push({ idSede: req.idSede });
-
-    if (idSesionQ != null && idSesionQ !== '') {
-      const sid = Number(idSesionQ);
-      if (Number.isFinite(sid)) and.push({ idSesion: sid });
-    }
-
-    const ndDoc = docRaw ? parseNumDoc(docRaw) : null;
-    if (ndDoc != null) {
-      and.push(numDocQuery(ndDoc));
-    } else if (q) {
-      const ndQ = parseNumDoc(q);
-      if (ndQ != null && /^\d+$/.test(q.replace(/\D/g, ''))) {
-        and.push(numDocQuery(ndQ));
-      } else if (q.length >= 2) {
-        const numDocs = await buscarNumDocsAlumno(DatosAlumno, q);
-        const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re = new RegExp(esc, 'i');
-        const liqs = await Liquidacion.find({ descripcion: re }).select('_id').limit(300).lean();
-        const liqIds = liqs.map((l) => l._id);
-        const or = [
-          { numRecibo: re },
-          { concepto: re },
-          { recibiDe: re },
-          { recibidoDe: re },
-          { observaciones: re },
-          { tipoIngreso: re },
-          { documentoTercero: re },
-          { numTransferencia: re },
-          { numComprobante: re },
-        ];
-        if (numDocs.length) or.push({ numDoc: { $in: numDocs } });
-        if (liqIds.length) or.push({ idLiquidacion: { $in: liqIds } });
-        and.push({ $or: or });
-      }
-    }
-
-    const filter = and.length ? { $and: and } : {};
+    const filter = await filtroListadoAdmin(req);
     const [total, rows] = await Promise.all([
       Ingreso.countDocuments(filter),
       Ingreso.find(filter).sort({ fecha: -1, createdAt: -1 }).skip(skip).limit(limit).lean(),
@@ -859,6 +863,126 @@ exports.listarTodos = async (req, res, next) => {
     const totalValor = items.reduce((a, i) => a + num(i.valor), 0);
     res.json({ items, total, skip, limit, totalValor });
   } catch (e) {
+    next(e);
+  }
+};
+
+function etiquetaTerceroIngreso(i) {
+  if (i.esIngresoCaja) return i.pagadorDescr || i.recibidoDe || 'Tercero';
+  return i.alumnoNombre || i.pagadorDescr || (i.numDoc != null ? String(i.numDoc) : '');
+}
+
+exports.exportarExcel = async (req, res, next) => {
+  try {
+    const { MAX_FILAS, filtrarEtiquetas, fmtFecha, libro, enviar, ingresoFaltaSoporte } = require('../services/informeMovimientosCajaExcel');
+    const filter = await filtroListadoAdmin(req);
+    const total = await Ingreso.countDocuments(filter);
+    if (total > MAX_FILAS) {
+      return res.status(400).json({
+        message: `Hay ${total} ingresos con el filtro actual. Acote el rango de fechas (máximo ${MAX_FILAS} filas).`,
+      });
+    }
+    const rows = await Ingreso.find(filter).sort({ fecha: -1, createdAt: -1 }).limit(MAX_FILAS).lean();
+    const enriquecidos = await listarIngresosEnriquecidos(rows);
+    const items = filtrarEtiquetas(enriquecidos, req.query, {
+      tercero: (i) => {
+        const d = i.numDoc ?? i.documentoTercero;
+        return d != null ? String(d).trim() : '';
+      },
+      tipo: (i) => i.tipoIngresoDescr || i.tipoIngreso || '',
+      concepto: (i) => i.conceptoLabel || i.liquidacionDescr || i.concepto || '',
+    });
+    const vigentes = items.filter((i) => !i.anulado);
+    const buffer = libro({
+      titulo: 'Informe de ingresos',
+      filtros: req.query,
+      headers: ['Fecha', 'Recibo', 'Sesión', 'Tercero', 'Documento', 'Tipo', 'Concepto', 'Pago', 'Valor', 'Estado', 'Soporte'],
+      filas: items.map((i) => [
+        fmtFecha(i.fecha || i.createdAt),
+        i.numRecibo || '',
+        i.idSesion != null ? i.idSesion : '',
+        etiquetaTerceroIngreso(i),
+        i.numDoc != null ? String(i.numDoc) : i.documentoTercero || '',
+        i.tipoIngresoDescr || i.tipoIngreso || '',
+        i.conceptoLabel || i.liquidacionDescr || i.concepto || '',
+        i.tipoPagoDescr || i.formaPago || '',
+        num(i.valor),
+        i.anulado ? 'Anulado' : 'Vigente',
+        ingresoFaltaSoporte(i) ? 'Falta soporte' : '',
+      ]),
+      totalVigente: vigentes.reduce((a, i) => a + num(i.valor), 0),
+    });
+    const fecha = new Date().toISOString().slice(0, 10);
+    enviar(res, buffer, `informe-ingresos-${fecha}.xlsx`);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.exportarZip = async (req, res, next) => {
+  try {
+    const { MAX_FILAS, filtrarEtiquetas, fmtFecha, ingresoFaltaSoporte } = require('../services/informeMovimientosCajaExcel');
+    const { enviarPaquete } = require('../services/informeMovimientosCajaZip');
+    const filter = await filtroListadoAdmin(req);
+    const total = await Ingreso.countDocuments(filter);
+    if (total > MAX_FILAS) {
+      return res.status(400).json({
+        message: `Hay ${total} ingresos con el filtro actual. Acote el rango de fechas (máximo ${MAX_FILAS} filas).`,
+      });
+    }
+    const rows = await Ingreso.find(filter).sort({ fecha: -1, createdAt: -1 }).limit(MAX_FILAS).lean();
+    const enriquecidos = await listarIngresosEnriquecidos(rows);
+    const items = filtrarEtiquetas(enriquecidos, req.query, {
+      tercero: (i) => {
+        const d = i.numDoc ?? i.documentoTercero;
+        return d != null ? String(d).trim() : '';
+      },
+      tipo: (i) => i.tipoIngresoDescr || i.tipoIngreso || '',
+      concepto: (i) => i.conceptoLabel || i.liquidacionDescr || i.concepto || '',
+    });
+    const vigentes = items.filter((i) => !i.anulado);
+    const fecha = new Date().toISOString().slice(0, 10);
+    await enviarPaquete(res, {
+      nombreBase: `informe-ingresos-${fecha}`,
+      titulo: 'Informe de ingresos',
+      filtros: req.query,
+      atPageKey: 'informe_ingresos_caja',
+      idSede: req.idSede,
+      columnaSoporte: true,
+      headers: ['Fecha', 'Recibo', 'Sesión', 'Tercero', 'Documento', 'Tipo', 'Concepto', 'Pago', 'Valor', 'Estado', 'Soporte'],
+      filasExcel: items.map((i) => [
+        fmtFecha(i.fecha || i.createdAt),
+        i.numRecibo || '',
+        i.idSesion != null ? i.idSesion : '',
+        etiquetaTerceroIngreso(i),
+        i.numDoc != null ? String(i.numDoc) : i.documentoTercero || '',
+        i.tipoIngresoDescr || i.tipoIngreso || '',
+        i.conceptoLabel || i.liquidacionDescr || i.concepto || '',
+        i.tipoPagoDescr || i.formaPago || '',
+        num(i.valor),
+        i.anulado ? 'Anulado' : 'Vigente',
+        ingresoFaltaSoporte(i) ? 'Falta soporte' : '',
+      ]),
+      filasPdf: items.map((i) => ({
+        fecha: fmtFecha(i.fecha || i.createdAt),
+        recibo: i.numRecibo || '—',
+        sesion: i.idSesion != null ? `#${i.idSesion}` : '—',
+        tercero: etiquetaTerceroIngreso(i),
+        documento: i.numDoc != null ? String(i.numDoc) : i.documentoTercero || '—',
+        tipo: i.tipoIngresoDescr || i.tipoIngreso || '—',
+        concepto: i.conceptoLabel || i.liquidacionDescr || i.concepto || '—',
+        formaPago: i.tipoPagoDescr || i.formaPago || '—',
+        valor: num(i.valor),
+        anulado: !!i.anulado,
+        sinSoporte: ingresoFaltaSoporte(i),
+      })),
+      soportes: items
+        .filter((i) => i.urlSoporte)
+        .map((i) => ({ numRecibo: i.numRecibo || String(i._id || '').slice(-8), url: i.urlSoporte })),
+      totalVigente: vigentes.reduce((a, i) => a + num(i.valor), 0),
+    });
+  } catch (e) {
+    if (res.headersSent) return;
     next(e);
   }
 };

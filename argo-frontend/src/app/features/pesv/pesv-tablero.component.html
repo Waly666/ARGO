@@ -1,0 +1,56 @@
+<section class="pesv-page card pesv-tablero">
+  <header class="pesv-hero">
+    <div class="pesv-hero-icon">◫</div>
+    <div class="pesv-hero-text">
+      <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Tablero</p>
+      <h1>Tablero de indicadores</h1>
+      <p class="pesv-lead">Variables mínimas mensuales 6.x, 8.x y 9.x — vigencia {{ vigencia() }}.</p>
+    </div>
+  </header>
+
+  <argo-pesv-nav active="tablero" />
+
+  <div class="pesv-toolbar">
+    <label>
+      Vigencia
+      <input type="number" [value]="vigencia()" (change)="vigencia.set(+$any($event.target).value); cargar()" />
+    </label>
+  </div>
+
+  @if (loading()) {
+    <p class="hint">Cargando tablero…</p>
+  } @else if (tablero()) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Mes</th>
+            @for (c of cols; track c) {
+              <th>{{ c }}</th>
+            }
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of tablero()!.meses; track row.mes) {
+            <tr [class]="'row-' + semaforo(row)">
+              <td>{{ labelMes(row.mes) }}</td>
+              @for (c of cols; track c) {
+                <td>{{ celda(row, c) }}</td>
+              }
+              <td>{{ row.estado || '—' }}</td>
+              <td>
+                <a [routerLink]="['/app/pesv/fase2']" [queryParams]="{ mes: row.mes }">Editar</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (msg()) {
+    <p class="msg err">{{ msg() }}</p>
+  }
+</section>

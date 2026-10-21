@@ -102,6 +102,22 @@ const GRUPOS = [
         defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
       },
       {
+        key: 'informe_ingresos_caja',
+        label: 'Informe de ingresos',
+        size: 'letter',
+        orientation: 'landscape',
+        defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
+        hint: 'Listado PDF de todos los ingresos. Tamaño inicial carta horizontal; aquí se cambia tamaño y orientación.',
+      },
+      {
+        key: 'informe_egresos_caja',
+        label: 'Informe de egresos',
+        size: 'letter',
+        orientation: 'landscape',
+        defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
+        hint: 'Listado PDF de todos los egresos. Tamaño inicial carta horizontal; aquí se cambia tamaño y orientación.',
+      },
+      {
         key: 'informe_academico',
         label: 'Informes académicos (tablas)',
         size: 'letter',
