@@ -68,7 +68,31 @@ const FUENTES_CERTIFICADO = [
     googleFamily: 'Dancing Script',
     googleWeights: '400;700',
   },
+  {
+    label: 'Luxurious Script',
+    value: '"Luxurious Script", cursive',
+    googleFamily: 'Luxurious Script',
+    nombreTituloPalabras: true,
+  },
 ];
+
+function esFuenteTituloCadaPalabra(fontFamily) {
+  const s = String(fontFamily ?? '').trim();
+  if (!s) return false;
+  return FUENTES_CERTIFICADO.some(
+    (f) => f.nombreTituloPalabras && s.includes(f.googleFamily || f.label),
+  );
+}
+
+/** Primera letra de cada palabra en mayúscula (nombres con fuente script). */
+function textoTituloCadaPalabra(texto) {
+  return String(texto ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toLocaleUpperCase('es') + w.slice(1).toLocaleLowerCase('es'))
+    .join(' ');
+}
 
 function buildGoogleFontsHref() {
   const parts = FUENTES_CERTIFICADO.filter((f) => f.googleFamily).map((f) => {
@@ -102,4 +126,6 @@ module.exports = {
   buildGoogleFontsHref,
   googleFontsHeadHtml,
   cssFontFamily,
+  esFuenteTituloCadaPalabra,
+  textoTituloCadaPalabra,
 };

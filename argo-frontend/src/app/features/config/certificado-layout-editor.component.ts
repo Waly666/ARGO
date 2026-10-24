@@ -22,6 +22,8 @@ import {
   EditorSeleccion,
   FUENTES_CERTIFICADO,
   FUENTE_CERTIFICADO_DEFAULT,
+  esFuenteTituloCadaPalabra,
+  textoTituloCadaPalabra,
   ensureCertificadoGoogleFonts,
   TAMANO_FUENTE_MAX_PT,
   TAMANO_FUENTE_MIN_PT,
@@ -977,6 +979,9 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       st['overflow'] = 'visible';
       st['maxHeight'] = 'none';
     }
+    if (id === 'nombre' && esFuenteTituloCadaPalabra(this.fuenteActual(id))) {
+      st['textTransform'] = 'none';
+    }
     return st;
   }
 
@@ -1045,7 +1050,11 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       obs: 'Sin observaciones',
       certId: 'CERT-000001',
     };
-    return map[id];
+    const raw = map[id];
+    if (id === 'nombre' && esFuenteTituloCadaPalabra(this.fuenteActual(id))) {
+      return textoTituloCadaPalabra(raw);
+    }
+    return raw;
   }
 
   /** Formatos con medidas guardadas (excluye el actual). */

@@ -363,6 +363,32 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
+                label="Identidad de género"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(identidadesGenero(), form().identidadGenero)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesIdentidadesGenero()"
+                (seleccionado)="onCatalogoPick('identidadGenero', $event)"
+                (limpiado)="onCatalogoLimpiar('identidadGenero')"
+              />
+            </div>
+            <div class="col-3">
+              <argo-catalogo-enum-buscar
+                label="Orientación sexual"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(orientacionesSexuales(), form().orientacionSexual)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesOrientacionesSexuales()"
+                (seleccionado)="onCatalogoPick('orientacionSexual', $event)"
+                (limpiado)="onCatalogoLimpiar('orientacionSexual')"
+              />
+            </div>
+            <div class="col-3">
+              <argo-catalogo-enum-buscar
                 [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoSangre')"
                 label="Tipo de sangre *"
                 placeholder="Seleccione o escriba…"
@@ -375,6 +401,8 @@
                 (limpiado)="onCatalogoLimpiar('tipoSangre')"
               />
             </div>
+          </div>
+          <div class="row">
             <div class="col-3">
               <argo-catalogo-enum-buscar
                 [class.campo-obligatorio-error]="campoObligatorioInvalido('jornada')"

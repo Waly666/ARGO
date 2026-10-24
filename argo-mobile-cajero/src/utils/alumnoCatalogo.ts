@@ -20,6 +20,19 @@ export const GENEROS_DEF: CatalogoItem[] = [
   { idGenero: 'F', descripcion: 'F' },
 ];
 
+export const IDENTIDAD_GENERO_DEF: CatalogoItem[] = [
+  { idIdentidadGenero: 'CISGENERO', descripcion: 'CISGÉNERO' },
+  { idIdentidadGenero: 'TRANSGENERO', descripcion: 'TRANSGÉNERO' },
+  { idIdentidadGenero: 'NO_BINARIO', descripcion: 'NO BINARIO' },
+];
+
+export const ORIENTACION_SEXUAL_DEF: CatalogoItem[] = [
+  { idOrientacionSexual: 'HETEROSEXUAL', descripcion: 'HETEROSEXUAL' },
+  { idOrientacionSexual: 'HOMOSEXUAL', descripcion: 'HOMOSEXUAL' },
+  { idOrientacionSexual: 'BISEXUAL', descripcion: 'BISEXUAL' },
+  { idOrientacionSexual: 'OTRO', descripcion: 'OTRO' },
+];
+
 export const TIPO_SANGRE_DEF: CatalogoItem[] = [
   { id: 'A+', descripcion: 'A+' },
   { id: 'A-', descripcion: 'A-' },
@@ -129,6 +142,8 @@ export function catValor(item: CatalogoItem): string {
     r.idDiscapacidad ??
     r.idEstadoCivil ??
     r.idGenero ??
+    r.idIdentidadGenero ??
+    r.idOrientacionSexual ??
     r.id ??
     r.codigo ??
     r._id;

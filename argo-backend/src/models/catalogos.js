@@ -29,6 +29,8 @@ const CATALOGOS = {
   discapacidad: 'discapacidad',
   estadoCivil: 'estadoCivil',
   genero: 'genero',
+  identidadGenero: 'identidadGenero',
+  orientacionSexual: 'orientacionSexual',
   tipoSangre: 'tipoSangre',
   multiCulturalidad: 'multiCulturalidad',
   claseVehiculo: 'claseVehiculo',

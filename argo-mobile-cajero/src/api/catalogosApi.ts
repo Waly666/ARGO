@@ -6,6 +6,8 @@ import {
   ESTADOS_CIVIL_DEF,
   ESTRATOS_DEF,
   GENEROS_DEF,
+  IDENTIDAD_GENERO_DEF,
+  ORIENTACION_SEXUAL_DEF,
   JORNADAS_DEF,
   MULTICULTURALIDAD_DEF,
   NIVEL_FORMACION_DEF,
@@ -48,6 +50,8 @@ export async function fetchRegimenesSalud(): Promise<CatalogoItem[]> {
 export async function fetchCatalogosAlumno(): Promise<{
   tiposDoc: CatalogoItem[];
   generos: CatalogoItem[];
+  identidadesGenero: CatalogoItem[];
+  orientacionesSexuales: CatalogoItem[];
   tiposSangre: CatalogoItem[];
   jornadas: CatalogoItem[];
   estadosCivil: CatalogoItem[];
@@ -63,6 +67,8 @@ export async function fetchCatalogosAlumno(): Promise<{
   const [
     tiposDoc,
     generos,
+    identidadesGenero,
+    orientacionesSexuales,
     tiposSangre,
     jornadas,
     estadosCivil,
@@ -76,6 +82,8 @@ export async function fetchCatalogosAlumno(): Promise<{
   ] = await Promise.all([
     catalogo('catTipoDoc', TIPOS_DOC_DEF),
     catalogo('genero', GENEROS_DEF),
+    catalogo('identidadGenero', IDENTIDAD_GENERO_DEF),
+    catalogo('orientacionSexual', ORIENTACION_SEXUAL_DEF),
     catalogo('tipoSangre', TIPO_SANGRE_DEF),
     catalogo('jornada', JORNADAS_DEF),
     catalogo('estadoCivil', ESTADOS_CIVIL_DEF),
@@ -90,6 +98,8 @@ export async function fetchCatalogosAlumno(): Promise<{
   return {
     tiposDoc,
     generos,
+    identidadesGenero,
+    orientacionesSexuales,
     tiposSangre,
     jornadas,
     estadosCivil,

@@ -64,6 +64,8 @@ export interface AlumnoDto {
   grupoEdad?: string | null;
   observaciones?: string;
   genero?: string;
+  identidadGenero?: string;
+  orientacionSexual?: string;
   tipoSangre?: string;
   jornada?: string;
   estadoCivil?: string;
@@ -156,6 +158,8 @@ export interface AlumnoListItem {
   edad?: number | null;
   grupoEdad?: string | null;
   genero?: string;
+  identidadGenero?: string;
+  orientacionSexual?: string;
   tipoSangre?: string;
   jornada?: string;
   jornadaLabel?: string;

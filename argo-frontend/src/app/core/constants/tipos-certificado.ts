@@ -5,7 +5,8 @@ export type TipoCertificadoId =
   | 'diplomado'
   | 'licencia'
   | 'mercancias_peligrosas'
-  | 'jornada_capacitacion';
+  | 'jornada_capacitacion'
+  | 'reentrenamiento_seguridad_vial';
 
 export type OrientacionCertificado = 'vertical' | 'horizontal';
 
@@ -21,6 +22,7 @@ export const TIPOS_CERTIFICADO: { id: TipoCertificadoId; label: string }[] = [
   { id: 'diplomado', label: 'Diplomados' },
   { id: 'licencia', label: 'Certificación licencia' },
   { id: 'jornada_capacitacion', label: 'Jornada Capacitacion' },
+  { id: 'reentrenamiento_seguridad_vial', label: 'Reentrenamiento en seguridad vial' },
   { id: 'mercancias_peligrosas', label: 'Mercancías peligrosas' },
 ];
 
@@ -44,6 +46,7 @@ export function certAlertToneClass(tipo?: string | null): string {
     .toLowerCase()
     .replace(/-/g, '_');
   if (t === 'jornada_capacitacion') return 'cert-tone-jornada';
+  if (t === 'reentrenamiento_seguridad_vial') return 'cert-tone-reentrenamiento';
   if (t === 'tecnico') return 'cert-tone-tecnico';
   if (t === 'competencias') return 'cert-tone-competencias';
   if (t === 'diplomado') return 'cert-tone-diplomado';
@@ -68,6 +71,7 @@ export function capTipoFormatoCert(tipo?: string | null): string {
     licencia: 'cap cap-teal cap-sm cap-text',
     mercancias_peligrosas: 'cap cap-red cap-sm cap-text',
     jornada_capacitacion: 'cap cap-emerald cap-sm cap-text',
+    reentrenamiento_seguridad_vial: 'cap cap-cyan cap-sm cap-text',
   };
   return map[t] || 'cap cap-indigo cap-sm cap-text';
 }

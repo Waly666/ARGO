@@ -33,7 +33,7 @@
               [class.active]="idsTipCapCoinciden(tipCapPickerId(), t.id)"
               [attr.aria-selected]="idsTipCapCoinciden(tipCapPickerId(), t.id)"
               (click)="elegirTipCapPicker(t.id)">
-              <span class="tipcap-picker-pref">{{ prefijoCodigoTipCap(t.label) }}</span>
+              <span class="tipcap-picker-pref">{{ prefijoParaTipoCap(t) }}</span>
               <span class="tipcap-picker-sep" aria-hidden="true"></span>
               <span class="tipcap-picker-label">{{ t.label }}</span>
             </button>

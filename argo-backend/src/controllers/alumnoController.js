@@ -234,6 +234,8 @@ function mapListaItem(doc) {
     apellidos: extra.apellidos,
     nombreCompleto: extra.nombreCompleto,
     genero: doc.genero,
+    identidadGenero: doc.identidadGenero,
+    orientacionSexual: doc.orientacionSexual,
     fechaNac: doc.fechaNac,
     edad,
     grupoEdad: edad == null ? null : rangoEdadLabel(edad),
@@ -709,7 +711,7 @@ const { aplicarReferidorGestorUsuario } = require('../services/gestorUsuarioRefe
 
 const CAMPOS_ALUMNO = [
   'tipoAlumno', 'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
-  'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
+  'fechaNac', 'observaciones', 'genero', 'identidadGenero', 'orientacionSexual', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'actorVial', 'discapacidad', 'munOrigen', 'codMunicipio',
   'codDepartamento', 'nombreDepartamento', 'nombreMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',

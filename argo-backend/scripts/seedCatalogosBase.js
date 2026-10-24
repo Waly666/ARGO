@@ -82,6 +82,17 @@ const CATALOGOS = {
     { idGenero: 'M', descripcion: 'M' },
     { idGenero: 'F', descripcion: 'F' },
   ],
+  identidadGenero: [
+    { idIdentidadGenero: 'CISGENERO', descripcion: 'CISGÉNERO' },
+    { idIdentidadGenero: 'TRANSGENERO', descripcion: 'TRANSGÉNERO' },
+    { idIdentidadGenero: 'NO_BINARIO', descripcion: 'NO BINARIO' },
+  ],
+  orientacionSexual: [
+    { idOrientacionSexual: 'HETEROSEXUAL', descripcion: 'HETEROSEXUAL' },
+    { idOrientacionSexual: 'HOMOSEXUAL', descripcion: 'HOMOSEXUAL' },
+    { idOrientacionSexual: 'BISEXUAL', descripcion: 'BISEXUAL' },
+    { idOrientacionSexual: 'OTRO', descripcion: 'OTRO' },
+  ],
   tipoSangre: [
     { id: 'A+', descripcion: 'A+' },
     { id: 'A-', descripcion: 'A-' },

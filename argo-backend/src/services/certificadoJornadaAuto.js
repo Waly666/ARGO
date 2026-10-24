@@ -438,6 +438,11 @@ async function crearCertificadoJornadaBase({
   const prog = progParam || (progId ? await buscarPrograma(progId) : null);
   const fechaVe = calcularFechaVencimientoDesdePrograma(fechaEm, prog);
   const { empresaId, empresaNombre } = await resolverEmpresaAlumno(numDoc);
+  const { resolverCiudadExpedicion } = require('./certificadoCiudadExpedicion');
+  const ciudadExpedicion = await resolverCiudadExpedicion({
+    idJornada,
+    configCertificado: cfg,
+  });
 
   const cert = await Certificado.create({
     numDoc,
@@ -459,6 +464,7 @@ async function crearCertificadoJornadaBase({
     fechaVencimiento: fechaVe,
     empresaId,
     empresaNombre,
+    ciudadExpedicion: ciudadExpedicion || undefined,
   });
 
   const { programarEnvioCertificadoPorCorreo } = require('./certificadoEmail');

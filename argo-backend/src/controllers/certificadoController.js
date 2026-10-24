@@ -221,6 +221,11 @@ exports.crear = async (req, res, next) => {
     const codigoCert = await siguienteCodigoCertificado();
     const encabezado = encabezadoCurso(prog);
     const referidorSnap = await referidorCertificadoDesdeLiquidacion(liq);
+    const { resolverCiudadExpedicion } = require('../services/certificadoCiudadExpedicion');
+    const ciudadExpedicion = await resolverCiudadExpedicion({
+      idSede: liq?.idSede,
+      configCertificado: cfg,
+    });
 
     // Empresa del alumno al momento de emitir
     let empresaId   = null;
@@ -251,6 +256,7 @@ exports.crear = async (req, res, next) => {
       fechaVencimiento: fechaVe,
       empresaId,
       empresaNombre,
+      ciudadExpedicion: ciudadExpedicion || undefined,
       ...referidorSnap,
     });
     const { programarEnvioCertificadoPorCorreo } = require('../services/certificadoEmail');
@@ -1062,6 +1068,7 @@ const CAMPOS_EDITABLES = [
   'numRunt',
   'observaciones',
   'encabezado',
+  'ciudadExpedicion',
   'codVerificacion',
   'horasCert',
   'fechaEmision',
@@ -1078,6 +1085,9 @@ function pickCertificadoEdit(body) {
   if (dto.numRunt !== undefined) dto.numRunt = String(dto.numRunt || '').trim();
   if (dto.observaciones !== undefined) dto.observaciones = String(dto.observaciones || '').trim();
   if (dto.encabezado !== undefined) dto.encabezado = String(dto.encabezado || '').trim();
+  if (dto.ciudadExpedicion !== undefined) {
+    dto.ciudadExpedicion = String(dto.ciudadExpedicion || '').trim();
+  }
   if (dto.horasCert !== undefined) dto.horasCert = String(dto.horasCert || '').trim();
   if (dto.codVerificacion !== undefined) {
     dto.codVerificacion = String(dto.codVerificacion || '').trim() || null;

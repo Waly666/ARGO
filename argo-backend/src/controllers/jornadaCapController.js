@@ -3466,6 +3466,8 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
         const g = upper(body.genero);
         return g === 'M' || g === 'F' ? g : undefined;
       })(),
+      identidadGenero: String(body.identidadGenero || '').trim() || undefined,
+      orientacionSexual: String(body.orientacionSexual || '').trim() || undefined,
       tipoSangre: (() => {
         const t = upper(body.tipoSangre).replace(/\s+/g, '');
         return /^(AB|A|B|O)[+-]$/.test(t) ? t : undefined;

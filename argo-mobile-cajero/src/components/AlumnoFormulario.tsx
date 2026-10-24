@@ -74,6 +74,8 @@ function emptyForm(): AlumnoCrearDto {
     fechaNac: '',
     observaciones: '',
     genero: '',
+    identidadGenero: '',
+    orientacionSexual: '',
     tipoSangre: '',
     jornada: '',
     estadoCivil: '',
@@ -210,6 +212,8 @@ export function AlumnoFormulario({
     return {
       tiposDoc: mapCatalogoOpciones(catalogos.tiposDoc),
       generos: mapCatalogoOpciones(catalogos.generos),
+      identidadesGenero: mapCatalogoOpciones(catalogos.identidadesGenero),
+      orientacionesSexuales: mapCatalogoOpciones(catalogos.orientacionesSexuales),
       tiposSangre: mapCatalogoOpciones(catalogos.tiposSangre),
       jornadas: mapCatalogoOpciones(catalogos.jornadas),
       estadosCivil: mapCatalogoOpciones(catalogos.estadosCivil),
@@ -459,6 +463,18 @@ export function AlumnoFormulario({
           Primera infancia 0–5, infancia / niñez 6–13, juventud 14–28 (Ley 1622), adultez 29–59, personas mayores 60+.
         </ScaledText>
         <CatalogoSelectField label="Género" value={form.genero || ''} options={opts.generos} onChange={(v) => patch('genero', v)} />
+        <CatalogoSelectField
+          label="Identidad de género"
+          value={form.identidadGenero || ''}
+          options={opts.identidadesGenero}
+          onChange={(v) => patch('identidadGenero', v)}
+        />
+        <CatalogoSelectField
+          label="Orientación sexual"
+          value={form.orientacionSexual || ''}
+          options={opts.orientacionesSexuales}
+          onChange={(v) => patch('orientacionSexual', v)}
+        />
         <CatalogoSelectField label="Tipo de sangre" value={form.tipoSangre || ''} options={opts.tiposSangre} onChange={(v) => patch('tipoSangre', v)} />
         <CatalogoSelectField label="Jornada" value={form.jornada || ''} options={opts.jornadas} onChange={(v) => patch('jornada', v)} />
         <CatalogoSelectField label="Estado civil" value={form.estadoCivil || ''} options={opts.estadosCivil} onChange={(v) => patch('estadoCivil', v)} />

@@ -14,6 +14,7 @@ const PlantillaCertificadoSchema = new mongoose.Schema(
         'licencia',
         'mercancias_peligrosas',
         'jornada_capacitacion',
+        'reentrenamiento_seguridad_vial',
       ],
       default: 'curso',
       index: true,

@@ -12,6 +12,8 @@ export function catValor(item: Record<string, unknown>): string {
     item['idDiscapacidad'] ??
     item['idEstadoCivil'] ??
     item['idGenero'] ??
+    item['idIdentidadGenero'] ??
+    item['idOrientacionSexual'] ??
     item['id'] ??
     item['codigo'] ??
     item['_id'];
@@ -298,6 +300,19 @@ export const TIPOS_DOC_DEF = [
 export const GENEROS_DEF = [
   { idGenero: 'M', descripcion: 'M' },
   { idGenero: 'F', descripcion: 'F' },
+];
+
+export const IDENTIDAD_GENERO_DEF = [
+  { idIdentidadGenero: 'CISGENERO', descripcion: 'CISGÉNERO' },
+  { idIdentidadGenero: 'TRANSGENERO', descripcion: 'TRANSGÉNERO' },
+  { idIdentidadGenero: 'NO_BINARIO', descripcion: 'NO BINARIO' },
+];
+
+export const ORIENTACION_SEXUAL_DEF = [
+  { idOrientacionSexual: 'HETEROSEXUAL', descripcion: 'HETEROSEXUAL' },
+  { idOrientacionSexual: 'HOMOSEXUAL', descripcion: 'HOMOSEXUAL' },
+  { idOrientacionSexual: 'BISEXUAL', descripcion: 'BISEXUAL' },
+  { idOrientacionSexual: 'OTRO', descripcion: 'OTRO' },
 ];
 
 export const TIPO_SANGRE_DEF = [

@@ -74,6 +74,8 @@ export interface AlumnoDetalleItem extends AlumnoListItem {
   fechaNac?: string;
   observaciones?: string;
   genero?: string;
+  identidadGenero?: string;
+  orientacionSexual?: string;
   tipoSangre?: string;
   jornada?: string;
   estadoCivil?: string;
@@ -118,6 +120,8 @@ export interface AlumnoCrearDto {
   fechaNac?: string;
   observaciones?: string;
   genero?: string;
+  identidadGenero?: string;
+  orientacionSexual?: string;
   tipoSangre?: string;
   jornada?: string;
   estadoCivil?: string;

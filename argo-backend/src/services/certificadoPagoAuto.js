@@ -129,6 +129,11 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
   const codigoCert = await siguienteCodigoCertificado();
   const encabezado = encabezadoCurso(prog);
   const referidorSnap = await referidorCertificadoDesdeLiquidacion(liq);
+  const { resolverCiudadExpedicion } = require('./certificadoCiudadExpedicion');
+  const ciudadExpedicion = await resolverCiudadExpedicion({
+    idSede: liq?.idSede,
+    configCertificado: cfg,
+  });
 
   const cert = await Certificado.create({
     numDoc,
@@ -146,6 +151,7 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
     fechaVencimiento: fechaVe,
     empresaId,
     empresaNombre,
+    ciudadExpedicion: ciudadExpedicion || undefined,
     ...referidorSnap,
   });
 

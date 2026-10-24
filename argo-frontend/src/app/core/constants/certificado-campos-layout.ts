@@ -67,7 +67,7 @@ export const CAMPOS_CERTIFICADO_LAYOUT: { id: CampoCertificadoId; label: string 
   { id: 'doc', label: 'Número de documento' },
   { id: 'expedida', label: 'Documento expedido en' },
   { id: 'curso', label: 'Nombre del curso / encabezado' },
-  { id: 'ciudad', label: 'Ciudad (constancia)' },
+  { id: 'ciudad', label: 'Ciudad de expedición' },
   { id: 'horas', label: 'Intensidad horaria' },
   { id: 'fecha', label: 'Fecha de emisión' },
   { id: 'vence', label: 'Válido hasta' },
@@ -78,9 +78,9 @@ export const CAMPOS_CERTIFICADO_LAYOUT: { id: CampoCertificadoId; label: string 
   { id: 'certId', label: 'Código del certificado' },
 ];
 
-/** Tamaño de letra en puntos (pt) en el editor y al imprimir */
+/** Tamaño de letra en puntos (pt) en el editor y al imprimir (máx. alineado con certificadoLayout.js) */
 export const TAMANO_FUENTE_MIN_PT = 4;
-export const TAMANO_FUENTE_MAX_PT = 48;
+export const TAMANO_FUENTE_MAX_PT = 72;
 
 export interface FuenteCertificadoOption {
   label: string;
@@ -88,6 +88,8 @@ export interface FuenteCertificadoOption {
   value: string;
   googleFamily?: string;
   googleWeights?: string;
+  /** Nombre del alumno: primera letra de cada palabra en mayúscula (script). */
+  nombreTituloPalabras?: boolean;
 }
 
 /** Mantener alineado con argo-backend/src/constants/certificadoFuentes.js */
@@ -157,9 +159,33 @@ export const FUENTES_CERTIFICADO: FuenteCertificadoOption[] = [
     googleFamily: 'Dancing Script',
     googleWeights: '400;700',
   },
+  {
+    label: 'Luxurious Script',
+    value: '"Luxurious Script", cursive',
+    googleFamily: 'Luxurious Script',
+    nombreTituloPalabras: true,
+  },
 ];
 
 export const FUENTE_CERTIFICADO_DEFAULT = FUENTES_CERTIFICADO[0].value;
+
+/** Fuente script para nombres: título por palabra (no MAYÚSCULAS sostenidas). */
+export function esFuenteTituloCadaPalabra(fontFamily?: string | null): boolean {
+  const s = String(fontFamily ?? '').trim();
+  if (!s) return false;
+  return FUENTES_CERTIFICADO.some(
+    (f) => f.nombreTituloPalabras && s.includes(f.googleFamily || f.label),
+  );
+}
+
+export function textoTituloCadaPalabra(texto: string): string {
+  return String(texto ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toLocaleUpperCase('es') + w.slice(1).toLocaleLowerCase('es'))
+    .join(' ');
+}
 
 export function buildGoogleFontsHref(): string {
   const parts = FUENTES_CERTIFICADO.filter((f) => f.googleFamily).map((f) => {

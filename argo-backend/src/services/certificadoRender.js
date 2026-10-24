@@ -4,7 +4,12 @@ const { numDocToString } = require('../utils/numDoc');
 const { resolverLayout, resolverQr, CAMPOS_IDS } = require('./certificadoLayout');
 const { fsToPrintSizes } = require('../utils/certificadoTipografia');
 const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
-const { cssFontFamily, googleFontsHeadHtml } = require('../constants/certificadoFuentes');
+const {
+  cssFontFamily,
+  googleFontsHeadHtml,
+  esFuenteTituloCadaPalabra,
+  textoTituloCadaPalabra,
+} = require('../constants/certificadoFuentes');
 const {
   bloqueComprobanteAnulado,
   bloqueMarcaAguaCopia,
@@ -16,6 +21,7 @@ const { certificadoVerificacionMobileCss } = require('./certificadoVerificacionM
 const { informePrintToolbar } = require('./informePrintToolbar');
 const { resolverBasePortal, buildActivacionUrl } = require('../utils/portalPublicUrl');
 const { emitCertificadoQrToken, codigoVerificacionCert } = require('./certificadoQrToken');
+const { ciudadExpedicionParaRender } = require('./certificadoCiudadExpedicion');
 
 function esc(s) {
   return String(s ?? '')
@@ -146,6 +152,9 @@ function reglasTipografia(L, orientacion) {
     const decl = [...declFontSize(pos, orientacion)];
     if (pos.fw) decl.push(`font-weight:${pos.fw} !important`);
     decl.push(`font-family:${fontFamilyCampo(pos, id)} !important`);
+    if (id === 'nombre' && esFuenteTituloCadaPalabra(pos.fontFamily)) {
+      decl.push('text-transform:none !important');
+    }
     if (pos.ls) decl.push(`letter-spacing:${pos.ls}`);
     if (pos.color) decl.push(`color:${pos.color} !important`);
     const sel = id === 'certId' ? '.cert-id.dato' : `.dato.${id}`;
@@ -262,7 +271,10 @@ async function generarHtmlCertificado(data, options = {}) {
   const fondo = resolverFondoCertificado(plantilla?.urlFondo, publicOrigin, options);
   const color = L.color;
 
-  const nombre = nombreCompleto(alumno);
+  let nombre = nombreCompleto(alumno);
+  if (esFuenteTituloCadaPalabra(L?.nombre?.fontFamily)) {
+    nombre = textoTituloCadaPalabra(nombre);
+  }
   const numDoc = numDocToString(alumno?.numDoc);
   const tipoDoc = String(data.tipoDocCod || '').trim().toUpperCase();
   const curso = encabezadoCurso(programa, certificado);
@@ -278,7 +290,7 @@ async function generarHtmlCertificado(data, options = {}) {
   const numRunt = (certificado.numRunt || '').trim();
   const observaciones = (certificado.observaciones || '').trim();
   const codigo = (certificado.codigoCert || String(certificado._id)).trim();
-  const ciudadTxt = (config?.ciudad || '').trim();
+  const ciudadTxt = ciudadExpedicionParaRender(certificado, config);
   const expedidaTxt = String(alumno?.expedida || '').trim();
 
   const valores = {

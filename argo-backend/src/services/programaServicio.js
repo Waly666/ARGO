@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const Liquidacion = require('../models/Liquidacion');
 const { TARIFA_VIRTUAL, TARIFA_GESTOR, TARIFA_EMPRESA } = require('../constants/tarifa');
 const { actualizarSaldosLiquidacionesPorServicio } = require('./liquidacionMatricula');
-const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
+const {
+  cargarIndiceTipCap,
+  resolverIdTipCapCanonico,
+  prefijoCodigoPorEtiquetaTipCap,
+  resolverPrefijoCodigoProg,
+} = require('./tipoCapacitacionMatch');
 
 function num(v) {
   if (v == null || v === '') return 0;
@@ -82,43 +87,6 @@ function etiquetaSemestre(tipoServ) {
   return 'CURSO';
 }
 
-/**
- * Prefijo de codigoProg según tipo de capacitación (matriz de negocio).
- * CUR / LIC / NCL / TEC (diplomados) / DIP (jornadas) / JOR (técnico laboral).
- */
-function prefijoCodigoPorEtiquetaTipCap(labelOrId) {
-  const t = normalizarTextoCapLocal(labelOrId);
-  if (!t) return 'CUR';
-  if (
-    /jornadas? de capacitacion/.test(t) ||
-    /jornada capacitacion/.test(t) ||
-    (t.includes('jornada') && t.includes('capacitacion'))
-  ) {
-    return 'DIP';
-  }
-  if (t.includes('licencia') && t.includes('conduccion')) return 'LIC';
-  // Normas competencias laborales (antes que técnico, que también menciona «competenc»).
-  if (
-    (/norma/.test(t) && /competenc/.test(t)) ||
-    /competencias laborales/.test(t)
-  ) {
-    if (!t.includes('tecnico')) return 'NCL';
-  }
-  if (t.includes('diplomado')) return 'TEC';
-  if (t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'))) return 'JOR';
-  if (/curso|no formal/.test(t)) return 'CUR';
-  return 'CUR';
-}
-
-function normalizarTextoCapLocal(s) {
-  return String(s ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
 async function etiquetaTipCap(idTipCap) {
   const raw = String(idTipCap ?? '').trim();
   if (!raw) return '';
@@ -137,8 +105,7 @@ async function etiquetaTipCap(idTipCap) {
 }
 
 async function generarCodigoProg(idTipCap) {
-  const label = await etiquetaTipCap(idTipCap);
-  const pref = prefijoCodigoPorEtiquetaTipCap(label || idTipCap);
+  const pref = await resolverPrefijoCodigoProg(idTipCap);
   const rows = await cat.programas
     .find({ codigoProg: new RegExp(`^${pref}\\d`, 'i') })
     .select('codigoProg')
@@ -663,6 +630,7 @@ module.exports = {
   inferirTipoServ,
   etiquetaSemestre,
   prefijoCodigoPorEtiquetaTipCap,
+  resolverPrefijoCodigoProg,
   generarCodigoProg,
   buscarPrograma,
   idProgDePrograma,

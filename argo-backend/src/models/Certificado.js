@@ -45,6 +45,8 @@ const CertificadoSchema = new mongoose.Schema(
     },
     /** Nombre del curso / capacitación impreso en el certificado */
     encabezado: { type: String, trim: true, default: '' },
+    /** Ciudad de expedición (casilla «ciudad» / constancia). Jornada: municipio; normal: sede/empresa. */
+    ciudadExpedicion: { type: String, trim: true, default: '' },
     idUsuario:     { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null },
     /** Matrícula comercial que originó el certificado (tarifa gestor/empresa). */
     idMatricula: { type: mongoose.Schema.Types.ObjectId, ref: 'Matricula', default: null, index: true },

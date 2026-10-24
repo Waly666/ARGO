@@ -39,6 +39,8 @@ const DatosAlumnoSchema = new mongoose.Schema(
     fechaNac: { type: Date },
     observaciones: { type: String, trim: true },
     genero: { type: String, trim: true },
+    identidadGenero: { type: String, trim: true },
+    orientacionSexual: { type: String, trim: true },
     tipoSangre: { type: String, trim: true },
     jornada: { type: String, trim: true },
     estadoCivil: { type: String, trim: true },

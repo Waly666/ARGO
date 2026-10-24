@@ -7,6 +7,7 @@ const TIPOS = {
   LICENCIA: 'licencia',
   MERCANCIAS: 'mercancias_peligrosas',
   JORNADA_CAPACITACION: 'jornada_capacitacion',
+  REENTRENAMIENTO_SEGURIDAD_VIAL: 'reentrenamiento_seguridad_vial',
 };
 
 const TIPOS_VALIDOS = Object.values(TIPOS);
@@ -19,6 +20,7 @@ const TIPOS_LABEL = {
   [TIPOS.LICENCIA]: 'Certificación licencia',
   [TIPOS.MERCANCIAS]: 'Mercancías peligrosas',
   [TIPOS.JORNADA_CAPACITACION]: 'Jornada Capacitacion',
+  [TIPOS.REENTRENAMIENTO_SEGURIDAD_VIAL]: 'Reentrenamiento en seguridad vial',
 };
 
 const ORIENTACIONES = ['vertical', 'horizontal'];
@@ -35,6 +37,14 @@ function esCapJornadaCapacitacion(text) {
   return RE_JORNADA_CAP.test(t) || (t.includes('jornada') && t.includes('capacitacion'));
 }
 
+function esReentrenamientoSeguridadVial(text) {
+  const t = norm(text);
+  if (!t) return false;
+  if (t.includes('reentrenamiento') && t.includes('seguridad') && t.includes('vial')) return true;
+  if (t.includes('reentrenamiento') && t.includes('seguridad vial')) return true;
+  return false;
+}
+
 function norm(s) {
   return String(s ?? '')
     .toLowerCase()
@@ -49,6 +59,7 @@ function normalizarTipoCertificado(v) {
   if (TIPOS_VALIDOS.includes(s)) return s;
   const n = norm(s.replace(/_/g, ' '));
   if (esCapJornadaCapacitacion(n)) return TIPOS.JORNADA_CAPACITACION;
+  if (esReentrenamientoSeguridadVial(n)) return TIPOS.REENTRENAMIENTO_SEGURIDAD_VIAL;
   if (n.includes('competenc')) return TIPOS.COMPETENCIAS;
   if (n.includes('diplomado')) return TIPOS.DIPLOMADO;
   if (n.includes('tecnico')) return TIPOS.TECNICO;
@@ -172,6 +183,7 @@ module.exports = {
   TIPOS_LABEL,
   ORIENTACIONES,
   esCapJornadaCapacitacion,
+  esReentrenamientoSeguridadVial,
   clasificarPrograma,
   clasificarProgramaAsync,
   normalizarTipoCertificado,

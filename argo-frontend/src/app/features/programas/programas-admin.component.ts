@@ -146,19 +146,34 @@ function canonTipCapId(raw: unknown): string {
   return m ? m[1] : s;
 }
 
+function normalizarPrefijoCodigoCatalogo(raw: unknown): string {
+  const s = String(raw ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  return /^[A-Z]{3}$/.test(s) ? s : '';
+}
+
 function normalizarTiposCapCatalogo(
-  rows: { idTipCap?: string | number; id?: string | number; tipoCap?: string; descripcion?: string }[],
-): { id: string; label: string }[] {
-  const porCanon = new Map<string, { id: string; label: string }>();
+  rows: {
+    idTipCap?: string | number;
+    id?: string | number;
+    tipoCap?: string;
+    descripcion?: string;
+    prefijoCodigo?: string;
+  }[],
+): { id: string; label: string; prefijoCodigo: string }[] {
+  const porCanon = new Map<string, { id: string; label: string; prefijoCodigo: string }>();
   for (const t of rows || []) {
     const idRaw = t.idTipCap ?? t.id;
     const label = String(t.tipoCap ?? t.descripcion ?? idRaw ?? '').trim();
     if (idRaw == null || idRaw === '') continue;
     const canon = canonTipCapId(idRaw) || String(idRaw).trim();
     if (!canon) continue;
-    const row = { id: canon, label: label || canon };
+    const prefijoCodigo = normalizarPrefijoCodigoCatalogo(t.prefijoCodigo);
+    const row = { id: canon, label: label || canon, prefijoCodigo };
     const prev = porCanon.get(canon);
-    if (!prev || label.length > prev.label.length) {
+    if (!prev || label.length > prev.label.length || (!prev.prefijoCodigo && prefijoCodigo)) {
       porCanon.set(canon, row);
     }
   }
@@ -288,7 +303,7 @@ export class ProgramasAdminComponent implements OnInit {
     return rows;
   });
 
-  tiposCap = signal<{ id: string | number; label: string }[]>([]);
+  tiposCap = signal<{ id: string; label: string; prefijoCodigo: string }[]>([]);
 
   tiposServ = signal<{ id: number; code: string; label: string }[]>([]);
 
@@ -1548,7 +1563,6 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   inferirTipoCert(idTipCap: string | number | undefined, nombreProg?: string): TipoCertificadoId | null {
-
     const blob = [nombreProg, this.labelTipo(idTipCap)].join(' ').toLowerCase();
 
     if (/mercanc[ií]as\s*peligrosas|peligrosas\s*clase|transporte\s*de\s*mercanc/.test(blob)) {
@@ -1643,7 +1657,7 @@ export class ProgramasAdminComponent implements OnInit {
 
   private codigoAutoSeq = 0;
 
-  /** Al crear: pide el siguiente consecutivo CUR/LIC/NCL/TEC/DIP/JOR al backend. */
+  /** Al crear: pide el siguiente consecutivo (LIC/NCL/CUR/DIP/JOR/TEC) al backend. */
   private refrescarCodigoProgAuto(idTipCap?: string | number | null): void {
     if (this.editando()) return;
     const id = idTipCap ?? this.form().idTipCap;
@@ -1664,7 +1678,14 @@ export class ProgramasAdminComponent implements OnInit {
     });
   }
 
-  /** Prefijos de negocio (alineados con backend). */
+  /** Prefijo del catálogo catTipoCapacitacion.prefijoCodigo; fallback por etiqueta. */
+  prefijoParaTipoCap(t: { id: string; label: string; prefijoCodigo?: string }): string {
+    const deCatalogo = normalizarPrefijoCodigoCatalogo(t.prefijoCodigo);
+    if (deCatalogo) return deCatalogo;
+    return this.prefijoCodigoTipCap(t.label);
+  }
+
+  /** Fallback si el catálogo no trae prefijoCodigo. LIC · NCL · CUR · DIP · JOR · TEC. */
   prefijoCodigoTipCap(label: string): string {
     const t = this.normTipoCap(label);
     if (!t) return 'CUR';
@@ -1673,20 +1694,33 @@ export class ProgramasAdminComponent implements OnInit {
       /jornada capacitacion/.test(t) ||
       (t.includes('jornada') && t.includes('capacitacion'))
     ) {
-      return 'DIP';
+      return 'JOR';
     }
     if (t.includes('licencia') && t.includes('conduccion')) return 'LIC';
     if ((/norma/.test(t) && /competenc/.test(t)) || /competencias laborales/.test(t)) {
       if (!t.includes('tecnico')) return 'NCL';
     }
-    if (t.includes('diplomado')) return 'TEC';
-    if (t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'))) return 'JOR';
+    if (
+      t.includes('reentrenamiento') &&
+      t.includes('seguridad') &&
+      (t.includes('vial') || t.includes('seguridad vial'))
+    ) {
+      return 'RSV';
+    }
+    if (t.includes('diplomado')) return 'DIP';
+    if (t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'))) return 'TEC';
     if (/curso|no formal/.test(t)) return 'CUR';
     return 'CUR';
   }
 
   private siguienteCodigoLocal(idTipCap: string | number): string {
-    const pref = this.prefijoCodigoTipCap(this.labelTipo(idTipCap));
+    const canon = canonTipCapId(idTipCap) || String(idTipCap);
+    const hit = this.tiposCap().find((t) => t.id === canon);
+    const pref = this.prefijoParaTipoCap({
+      id: canon,
+      label: hit?.label || this.labelTipo(idTipCap),
+      prefijoCodigo: hit?.prefijoCodigo,
+    });
     let max = 0;
     const re = new RegExp(`^${pref}(\\d+)$`, 'i');
     for (const p of this.programas()) {

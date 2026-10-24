@@ -68,6 +68,10 @@ import {
 
   GENEROS_DEF,
 
+  IDENTIDAD_GENERO_DEF,
+
+  ORIENTACION_SEXUAL_DEF,
+
   JORNADAS_DEF,
 
   MULTICULTURALIDAD_DEF,
@@ -213,6 +217,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   generos = signal<Record<string, unknown>[]>(GENEROS_DEF);
 
+  identidadesGenero = signal<Record<string, unknown>[]>(IDENTIDAD_GENERO_DEF);
+
+  orientacionesSexuales = signal<Record<string, unknown>[]>(ORIENTACION_SEXUAL_DEF);
+
   tiposSangre = signal<Record<string, unknown>[]>(TIPO_SANGRE_DEF);
 
   jornadas = signal<Record<string, unknown>[]>(JORNADAS_DEF);
@@ -238,6 +246,12 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   );
   opcionesTiposDoc = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.tiposDoc()));
   opcionesGeneros = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.generos()));
+  opcionesIdentidadesGenero = computed<EnumBuscarOption[]>(() =>
+    this.mapOpcionesCatalogo(this.identidadesGenero()),
+  );
+  opcionesOrientacionesSexuales = computed<EnumBuscarOption[]>(() =>
+    this.mapOpcionesCatalogo(this.orientacionesSexuales()),
+  );
   opcionesTiposSangre = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.tiposSangre()));
   opcionesJornadas = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.jornadas()));
   opcionesEstadosCivil = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.estadosCiviles()));
@@ -762,6 +776,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
     this.cargarCatalogo('catTipoDoc', this.tiposDoc, TIPOS_DOC_DEF);
     this.cargarCatalogo('genero', this.generos, GENEROS_DEF);
+    this.cargarCatalogo('identidadGenero', this.identidadesGenero, IDENTIDAD_GENERO_DEF);
+    this.cargarCatalogo('orientacionSexual', this.orientacionesSexuales, ORIENTACION_SEXUAL_DEF);
     this.cargarCatalogo('tipoSangre', this.tiposSangre, TIPO_SANGRE_DEF);
     this.cargarCatalogo('jornada', this.jornadas, JORNADAS_DEF);
     this.cargarCatalogo('estadoCivil', this.estadosCiviles, ESTADOS_CIVIL_DEF);
@@ -1900,6 +1916,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       genero: f.genero,
 
+      identidadGenero: f.identidadGenero,
+
+      orientacionSexual: f.orientacionSexual,
+
       tipoSangre: f.tipoSangre,
 
       jornada: f.jornada,
@@ -2101,6 +2121,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       genero: String(raw.genero || '').toUpperCase(),
 
+      identidadGenero: normalizarEnum(String(raw.identidadGenero || '')),
+
+      orientacionSexual: normalizarEnum(String(raw.orientacionSexual || '')),
+
       tipoSangre: String(raw.tipoSangre || '').toUpperCase(),
 
       jornada: normalizarEnum(String(raw.jornada || '')),
@@ -2257,6 +2281,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       observaciones: '',
 
       genero: '',
+
+      identidadGenero: '',
+
+      orientacionSexual: '',
 
       tipoSangre: '',
 

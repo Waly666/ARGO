@@ -60,7 +60,7 @@ function resolverUrlConsultaCertificados(opts = {}) {
   });
   if (base) return urlConsultaCertificados(base);
   if (process.env.NODE_ENV !== 'production') {
-    return urlConsultaCertificados('http://localhost:4200');
+    return urlConsultaCertificados('http://localhost:4202');
   }
   console.warn(
     '[certificadoEmail] Sin URL de portal (configure PORTAL_SITE_URL o AULA_VIRTUAL_PUBLIC_URL)',

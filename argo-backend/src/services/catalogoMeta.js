@@ -31,6 +31,8 @@ const ETIQUETAS = {
   discapacidad: 'Discapacidades',
   estadoCivil: 'Estado civil',
   genero: 'Género',
+  identidadGenero: 'Identidad de género',
+  orientacionSexual: 'Orientación sexual',
   tipoSangre: 'Tipo de sangre',
   multiCulturalidad: 'Multiculturalidad',
   claseVehiculo: 'Clases de vehículo',
@@ -74,6 +76,8 @@ const ID_FIELDS_HINT = {
   discapacidad: ['idDiscapacidad'],
   estadoCivil: ['idEstadoCivil'],
   genero: ['idGenero'],
+  identidadGenero: ['idIdentidadGenero'],
+  orientacionSexual: ['idOrientacionSexual'],
   tipoSangre: ['idTipoSangre'],
   multiCulturalidad: ['idMulti'],
   claseVehiculo: ['idClase'],
@@ -153,6 +157,13 @@ const CAMPOS_ESQUEMA = {
   categoriasVirtual: ['idCategoria', 'nombre', 'orden', 'activo'],
   modalidades: ['idModalidad', 'codigo', 'descripcion', 'activo'],
   actorVial: ['idActorVial', 'descripcion'],
+  catTipoCapacitacion: [
+    'idTipCap',
+    'tipoCap',
+    'descripcion',
+    'nombre',
+    'prefijoCodigo',
+  ],
 };
 
 function validarClaseServCatalogo(doc) {

@@ -41,6 +41,8 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       fechaNac: fechaAString(a.fechaNac),
       observaciones: aMayusculas(a.observaciones || ''),
       genero: a.genero || '',
+      identidadGenero: a.identidadGenero || '',
+      orientacionSexual: a.orientacionSexual || '',
       tipoSangre: a.tipoSangre || '',
       jornada: a.jornada || '',
       estadoCivil: a.estadoCivil || '',

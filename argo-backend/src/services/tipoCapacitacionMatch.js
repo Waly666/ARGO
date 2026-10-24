@@ -1,5 +1,13 @@
 const { models: cat } = require('../models/catalogos');
 
+function esReentrenamientoSeguridadVialTexto(text) {
+  const t = normalizarTextoCap(text);
+  if (!t) return false;
+  if (t.includes('reentrenamiento') && t.includes('seguridad') && t.includes('vial')) return true;
+  if (t.includes('reentrenamiento') && t.includes('seguridad vial')) return true;
+  return false;
+}
+
 let indiceCache = null;
 let indiceCargadoEn = 0;
 const TTL_MS = 60_000;
@@ -145,6 +153,61 @@ function findRequisitoPorCap(config, idTipCap, indice) {
   return (config.requisitosPorCap || []).find((r) => matchIdTipCap(r.idTipCap, canon, indice));
 }
 
+function normalizarPrefijoCodigo(v) {
+  const s = String(v ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  return /^[A-Z]{3}$/.test(s) ? s : '';
+}
+
+/**
+ * Prefijo codigoProg (fallback si el catálogo no trae prefijoCodigo).
+ * LIC · NCL · CUR · DIP · JOR · TEC.
+ */
+function prefijoCodigoPorEtiquetaTipCap(labelOrId) {
+  const t = normalizarTextoCap(labelOrId);
+  if (!t) return 'CUR';
+  if (
+    /jornadas? de capacitacion/.test(t) ||
+    /jornada capacitacion/.test(t) ||
+    (t.includes('jornada') && t.includes('capacitacion'))
+  ) {
+    return 'JOR';
+  }
+  if (t.includes('licencia') && t.includes('conduccion')) return 'LIC';
+  if (
+    (/norma/.test(t) && /competenc/.test(t)) ||
+    /competencias laborales/.test(t)
+  ) {
+    if (!t.includes('tecnico')) return 'NCL';
+  }
+  if (esReentrenamientoSeguridadVialTexto(t)) return 'RSV';
+  if (t.includes('diplomado')) return 'DIP';
+  if (t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'))) return 'TEC';
+  if (/curso|no formal/.test(t)) return 'CUR';
+  return 'CUR';
+}
+
+function etiquetaFilaTipCap(fila) {
+  return String(fila?.tipoCap || fila?.descripcion || fila?.nombre || '').trim();
+}
+
+/** Prefijo desde catTipoCapacitacion.prefijoCodigo; si falta, deduce por etiqueta. */
+async function resolverPrefijoCodigoProg(idTipCap) {
+  const indice = await cargarIndiceTipCap();
+  const fila =
+    filaCatalogoPorIdTipCap(idTipCap, indice) || filaCatalogoPorValorTipCap(idTipCap, indice);
+  if (fila) {
+    const pref = normalizarPrefijoCodigo(fila.prefijoCodigo);
+    if (pref) return pref;
+    const label = etiquetaFilaTipCap(fila);
+    if (label) return prefijoCodigoPorEtiquetaTipCap(label);
+  }
+  const raw = String(idTipCap ?? '').trim();
+  return prefijoCodigoPorEtiquetaTipCap(raw);
+}
+
 function invalidarCacheTipCap() {
   indiceCache = null;
   indiceCargadoEn = 0;
@@ -160,5 +223,8 @@ module.exports = {
   programaCoincideIdTipCap,
   findRequisitoPorCap,
   normalizarTextoCap,
+  normalizarPrefijoCodigo,
+  prefijoCodigoPorEtiquetaTipCap,
+  resolverPrefijoCodigoProg,
   invalidarCacheTipCap,
 };

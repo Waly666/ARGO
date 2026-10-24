@@ -267,9 +267,17 @@ button.danger.mini {
   box-shadow: var(--shadow-sm);
 }
 
-/* Combobox formulario: menú absolute sobre cards/tablas siguientes */
+/* Combobox / calendario: menú absolute sobre cards/tablas siguientes */
 .card:has(argo-catalogo-enum-buscar.dropdown-open),
-.card:has(argo-municipio-buscar.dropdown-open) {
+.card:has(argo-municipio-buscar.dropdown-open),
+.card:has(argo-date-input.dropdown-open) {
+  overflow: visible;
+  position: relative;
+  z-index: 5000;
+}
+
+.prog-form-panel:has(argo-catalogo-enum-buscar.dropdown-open),
+.prog-form-body:has(argo-catalogo-enum-buscar.dropdown-open) {
   overflow: visible;
   position: relative;
   z-index: 5000;

@@ -3,6 +3,11 @@ const { models } = require('../models/catalogos');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema, CATALOGOS_INSPECCION, CATALOGOS_DOCUMENTOS, validarClaseServCatalogo } = require('./catalogoMeta');
 const { syncControlaVencimientoDesdeCatalogo: syncVehiDesdeCatalogo, invalidarCacheClases } = require('./configRequisitosDocumentosVehiculos');
+const {
+  normalizarPrefijoCodigo,
+  prefijoCodigoPorEtiquetaTipCap,
+  invalidarCacheTipCap,
+} = require('./tipoCapacitacionMatch');
 const { syncControlaVencimientoDesdeCatalogo: syncEmpDesdeCatalogo } = require('./configRequisitosDocumentosEmpleados');
 const { coerceDocument, num: numCoerce } = require('../utils/coerceTypes');
 
@@ -88,6 +93,27 @@ async function listar(nombre, opts = {}) {
   return { meta, total, skip, limit, campos, idFields, rows };
 }
 
+function aplicarPrefijoCodigoTipCap(doc) {
+  if (!doc || typeof doc !== 'object') return;
+  const raw = doc.prefijoCodigo;
+  if (raw == null || String(raw).trim() === '') return;
+  const pref = normalizarPrefijoCodigo(raw);
+  if (!pref) {
+    const err = new Error('prefijoCodigo debe ser exactamente 3 letras (ej. LIC, CUR, JOR).');
+    err.status = 400;
+    throw err;
+  }
+  doc.prefijoCodigo = pref;
+}
+
+function rellenarPrefijoCodigoTipCapSiFalta(doc) {
+  if (!doc || typeof doc !== 'object') return;
+  if (normalizarPrefijoCodigo(doc.prefijoCodigo)) return;
+  const label = String(doc.tipoCap || doc.descripcion || doc.nombre || '').trim();
+  if (!label) return;
+  doc.prefijoCodigo = prefijoCodigoPorEtiquetaTipCap(label);
+}
+
 async function validarCategoriaVirtual(doc, excludeId = null) {
   const nombre = String(doc?.nombre || '').trim();
   if (!nombre) {
@@ -112,6 +138,10 @@ async function crear(nombre, body) {
   const doc = limpiarBodyCatalogo(nombre, body);
   if (nombre === 'categoriasVirtual') await validarCategoriaVirtual(doc);
   if (nombre === 'catTipServicio') validarClaseServCatalogo(doc);
+  if (nombre === 'catTipoCapacitacion') {
+    aplicarPrefijoCodigoTipCap(doc);
+    rellenarPrefijoCodigoTipCapSiFalta(doc);
+  }
   const meta = metaCatalogo(nombre);
   const idField = meta.idFields[0];
   if (idField && (doc[idField] == null || doc[idField] === '')) {
@@ -124,6 +154,7 @@ async function crear(nombre, body) {
     await sincronizarVencimientoConfig(nombre, saved);
   }
   if (nombre === 'claseVehiculo') invalidarCacheClases();
+  if (nombre === 'catTipoCapacitacion') invalidarCacheTipCap();
   return saved;
 }
 
@@ -146,6 +177,9 @@ async function actualizar(nombre, mongoId, body) {
     await validarCategoriaVirtual({ ...existing, ...doc }, existing.idCategoria);
   }
   if (nombre === 'catTipServicio') validarClaseServCatalogo(doc);
+  if (nombre === 'catTipoCapacitacion') {
+    aplicarPrefijoCodigoTipCap(doc);
+  }
   const update = { $set: doc };
   if (CATALOGOS_INSPECCION.has(nombre)) {
     update.$unset = { claseVehiculo: '' };
@@ -156,6 +190,7 @@ async function actualizar(nombre, mongoId, body) {
     await sincronizarVencimientoConfig(nombre, saved);
   }
   if (nombre === 'claseVehiculo') invalidarCacheClases();
+  if (nombre === 'catTipoCapacitacion') invalidarCacheTipCap();
   return saved;
 }
 
@@ -192,6 +227,7 @@ async function eliminar(nombre, mongoId) {
     err.status = 404;
     throw err;
   }
+  if (nombre === 'catTipoCapacitacion') invalidarCacheTipCap();
   return { ok: true };
 }
 

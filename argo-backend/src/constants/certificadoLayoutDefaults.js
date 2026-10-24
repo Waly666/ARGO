@@ -22,7 +22,7 @@ const CAMPOS_LABEL = {
   doc: 'Número de documento',
   expedida: 'Documento expedido en',
   curso: 'Nombre del curso / encabezado',
-  ciudad: 'Ciudad (constancia)',
+  ciudad: 'Ciudad de expedición',
   horas: 'Intensidad horaria',
   fecha: 'Fecha de emisión',
   vence: 'Válido hasta',

@@ -175,6 +175,15 @@ h3.sec {
 
   &:has(argo-catalogo-enum-buscar.dropdown-open) {
     z-index: 5000;
+    overflow: visible;
+  }
+
+  &:has(argo-catalogo-enum-buscar.dropdown-open) .modalidades-programa,
+  &:has(argo-catalogo-enum-buscar.dropdown-open) .hint-inline--block,
+  &:has(argo-catalogo-enum-buscar.dropdown-open) .row-compact:not(:has(argo-catalogo-enum-buscar.dropdown-open)),
+  &:has(argo-catalogo-enum-buscar.dropdown-open) .row:not(:has(argo-catalogo-enum-buscar.dropdown-open)) {
+    position: relative;
+    z-index: 1;
   }
 
   /* 1 — Datos del programa (violeta) */
