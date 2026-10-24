@@ -157,6 +157,8 @@ const CAMPOS_ESQUEMA = {
   categoriasVirtual: ['idCategoria', 'nombre', 'orden', 'activo'],
   modalidades: ['idModalidad', 'codigo', 'descripcion', 'activo'],
   actorVial: ['idActorVial', 'descripcion'],
+  discapacidad: ['idDiscapacidad', 'descripcion'],
+  multiCulturalidad: ['idMulti', 'id', 'descripcion', 'nombre'],
   catTipoCapacitacion: [
     'idTipCap',
     'tipoCap',

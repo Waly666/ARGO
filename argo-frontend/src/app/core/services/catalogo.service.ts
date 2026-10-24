@@ -13,7 +13,7 @@ export class CatalogoService {
     if (opts?.refresh) this.cache.delete(name);
     if (!this.cache.has(name)) {
       const obs = this.http.get<T[]>(`${environment.apiUrl}/catalogos/${name}`).pipe(
-        shareReplay({ bufferSize: 1, refCount: false }),
+        shareReplay({ bufferSize: 1, refCount: true }),
       );
       this.cache.set(name, obs);
     }

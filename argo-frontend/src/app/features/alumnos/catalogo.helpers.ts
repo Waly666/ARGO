@@ -14,10 +14,25 @@ export function catValor(item: Record<string, unknown>): string {
     item['idGenero'] ??
     item['idIdentidadGenero'] ??
     item['idOrientacionSexual'] ??
+    item['idTipoSangre'] ??
+    item['idMulti'] ??
     item['id'] ??
     item['codigo'] ??
     item['_id'];
   return v != null ? String(v) : '';
+}
+
+function etiquetarItemCatalogo(
+  item: Record<string, unknown>,
+  fallback: Record<string, unknown>[],
+): Record<string, unknown> {
+  const valor = catValor(item);
+  const rawDesc = item['descripcion'] ?? item['nombre'] ?? item['tipo'] ?? item['tipoCap'];
+  if (rawDesc != null && String(rawDesc).trim()) {
+    return { ...item, descripcion: catEtiqueta(item) };
+  }
+  const fb = fallback.find((f) => catValor(f) === valor);
+  return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
 }
 
 /** Texto visible en select — formato esquema: "1) CEDULA DE CIUDADANÍA" */
@@ -33,22 +48,31 @@ export function catEtiqueta(item: Record<string, unknown>): string {
   return v;
 }
 
-/** Aplica etiquetas a ítems del API; si no hay datos, usa el fallback embebido. */
+/** API + fallback embebido (BD manda; ítems nuevos del catálogo siempre visibles). */
 export function catalogoConEtiquetas(
   items: Record<string, unknown>[],
   fallback: Record<string, unknown>[],
 ): Record<string, unknown>[] {
-  if (!items?.length) return fallback;
-  return items.map((item) => {
-    const valor = catValor(item);
-    const rawDesc = item['descripcion'] ?? item['nombre'] ?? item['tipo'] ?? item['tipoCap'];
-    // Preferir descripción del catálogo en BD (incluye ítems nuevos o editados).
-    if (rawDesc != null && String(rawDesc).trim()) {
-      return { ...item, descripcion: catEtiqueta(item) };
+  const api = Array.isArray(items) ? items : [];
+  const porValor = new Map<string, Record<string, unknown>>();
+
+  for (const fb of fallback || []) {
+    const v = catValor(fb);
+    if (v) porValor.set(v, etiquetarItemCatalogo(fb, fallback));
+  }
+
+  for (const raw of api) {
+    const v = catValor(raw);
+    const row = etiquetarItemCatalogo(raw, fallback);
+    if (v) porValor.set(v, row);
+    else {
+      const sid = String(raw['_id'] ?? '').trim();
+      porValor.set(sid ? `_id:${sid}` : `_n:${porValor.size}`, row);
     }
-    const fb = fallback.find((f) => catValor(f) === valor);
-    return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
-  });
+  }
+
+  if (!porValor.size) return fallback || [];
+  return [...porValor.values()];
 }
 
 /** Mapa código → etiqueta visible para listados */

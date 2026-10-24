@@ -1227,8 +1227,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   ) {
 
-    this.catSvc.list(nombre, { refresh: true }).subscribe((d) => {
-      target.set(catalogoConEtiquetas(d || [], fallback));
+    this.catSvc.list(nombre, { refresh: true }).subscribe({
+      next: (d) => target.set(catalogoConEtiquetas(d || [], fallback)),
+      error: () => target.set(catalogoConEtiquetas([], fallback)),
     });
 
   }

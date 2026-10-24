@@ -144,6 +144,8 @@ export function catValor(item: CatalogoItem): string {
     r.idGenero ??
     r.idIdentidadGenero ??
     r.idOrientacionSexual ??
+    r.idTipoSangre ??
+    r.idMulti ??
     r.id ??
     r.codigo ??
     r._id;
@@ -207,16 +209,33 @@ export function normalizarTipoAlumno(val?: string | null): string {
   return TIPO_ALUMNO_DEFAULT;
 }
 
+function etiquetarItemCatalogo(item: CatalogoItem, fallback: CatalogoItem[]): CatalogoItem {
+  const valor = catValor(item);
+  const rawDesc = item.descripcion ?? item.nombre;
+  if (rawDesc != null && String(rawDesc).trim()) {
+    return { ...item, descripcion: catEtiqueta(item) };
+  }
+  const fb = fallback.find((f) => catValor(f) === valor);
+  return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
+}
+
 /** Une respuesta API + fallback local. Prefiere descripción de BD (ítems nuevos o editados). */
 export function catalogoConFallback(api: CatalogoItem[], fallback: CatalogoItem[]): CatalogoItem[] {
-  if (!api?.length) return fallback;
-  return api.map((item) => {
-    const valor = catValor(item);
-    const rawDesc = item.descripcion ?? item.nombre;
-    if (rawDesc != null && String(rawDesc).trim()) {
-      return { ...item, descripcion: catEtiqueta(item) };
+  const rows = Array.isArray(api) ? api : [];
+  const porValor = new Map<string, CatalogoItem>();
+  for (const fb of fallback || []) {
+    const v = catValor(fb);
+    if (v) porValor.set(v, etiquetarItemCatalogo(fb, fallback));
+  }
+  for (const raw of rows) {
+    const v = catValor(raw);
+    const row = etiquetarItemCatalogo(raw, fallback);
+    if (v) porValor.set(v, row);
+    else {
+      const sid = String((raw as Record<string, unknown>)['_id'] ?? '').trim();
+      porValor.set(sid ? `_id:${sid}` : `_n:${porValor.size}`, row);
     }
-    const fb = fallback.find((f) => catValor(f) === valor);
-    return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
-  });
+  }
+  if (!porValor.size) return fallback;
+  return [...porValor.values()];
 }
