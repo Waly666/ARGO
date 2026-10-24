@@ -219,23 +219,22 @@ function etiquetarItemCatalogo(item: CatalogoItem, fallback: CatalogoItem[]): Ca
   return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
 }
 
-/** Une respuesta API + fallback local. Prefiere descripción de BD (ítems nuevos o editados). */
+function ordenarFilasCatalogo(rows: CatalogoItem[]): CatalogoItem[] {
+  return [...rows].sort((a, b) => {
+    const va = catValor(a);
+    const vb = catValor(b);
+    const na = Number(va);
+    const nb = Number(vb);
+    if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+    return va.localeCompare(vb, 'es', { sensitivity: 'base' });
+  });
+}
+
+/** API primero; fallback solo si la API no trae filas (evita duplicados id vs idMulti). */
 export function catalogoConFallback(api: CatalogoItem[], fallback: CatalogoItem[]): CatalogoItem[] {
   const rows = Array.isArray(api) ? api : [];
-  const porValor = new Map<string, CatalogoItem>();
-  for (const fb of fallback || []) {
-    const v = catValor(fb);
-    if (v) porValor.set(v, etiquetarItemCatalogo(fb, fallback));
+  if (!rows.length) {
+    return ordenarFilasCatalogo(fallback.map((fb) => etiquetarItemCatalogo(fb, fallback)));
   }
-  for (const raw of rows) {
-    const v = catValor(raw);
-    const row = etiquetarItemCatalogo(raw, fallback);
-    if (v) porValor.set(v, row);
-    else {
-      const sid = String((raw as Record<string, unknown>)['_id'] ?? '').trim();
-      porValor.set(sid ? `_id:${sid}` : `_n:${porValor.size}`, row);
-    }
-  }
-  if (!porValor.size) return fallback;
-  return [...porValor.values()];
+  return ordenarFilasCatalogo(rows.map((raw) => etiquetarItemCatalogo(raw, fallback)));
 }

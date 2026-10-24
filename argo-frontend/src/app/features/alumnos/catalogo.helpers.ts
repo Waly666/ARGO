@@ -48,31 +48,30 @@ export function catEtiqueta(item: Record<string, unknown>): string {
   return v;
 }
 
-/** API + fallback embebido (BD manda; ítems nuevos del catálogo siempre visibles). */
+function ordenarFilasCatalogo(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  return [...rows].sort((a, b) => {
+    const va = catValor(a);
+    const vb = catValor(b);
+    const na = Number(va);
+    const nb = Number(vb);
+    if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+    return va.localeCompare(vb, 'es', { sensitivity: 'base' });
+  });
+}
+
+/**
+ * Catálogo para comboboxes: si la API trae filas, solo esas (evita duplicar fallback con otros IDs).
+ * Si la API está vacía, usa el fallback embebido (offline / sin seed).
+ */
 export function catalogoConEtiquetas(
   items: Record<string, unknown>[],
   fallback: Record<string, unknown>[],
 ): Record<string, unknown>[] {
   const api = Array.isArray(items) ? items : [];
-  const porValor = new Map<string, Record<string, unknown>>();
-
-  for (const fb of fallback || []) {
-    const v = catValor(fb);
-    if (v) porValor.set(v, etiquetarItemCatalogo(fb, fallback));
+  if (!api.length) {
+    return ordenarFilasCatalogo((fallback || []).map((fb) => etiquetarItemCatalogo(fb, fallback)));
   }
-
-  for (const raw of api) {
-    const v = catValor(raw);
-    const row = etiquetarItemCatalogo(raw, fallback);
-    if (v) porValor.set(v, row);
-    else {
-      const sid = String(raw['_id'] ?? '').trim();
-      porValor.set(sid ? `_id:${sid}` : `_n:${porValor.size}`, row);
-    }
-  }
-
-  if (!porValor.size) return fallback || [];
-  return [...porValor.values()];
+  return ordenarFilasCatalogo(api.map((raw) => etiquetarItemCatalogo(raw, fallback)));
 }
 
 /** Mapa código → etiqueta visible para listados */
