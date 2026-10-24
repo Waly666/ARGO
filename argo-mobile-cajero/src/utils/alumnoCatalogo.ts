@@ -129,6 +129,16 @@ export const MULTICULTURALIDAD_DEF: CatalogoItem[] = [
 
 export type CatalogoOption = { value: string; label: string };
 
+export const DEFAULT_IDENTIDAD_GENERO = 'CISGENERO';
+export const DEFAULT_ORIENTACION_SEXUAL = 'HETEROSEXUAL';
+export const DEFAULT_DISCAPACIDAD = '9';
+export const DEFAULT_MULTICULTURALIDAD = 'NO_APLICA';
+
+export function valorCatalogoNoAplica(items: CatalogoItem[], fallback: string): string {
+  const hit = (items || []).find((r) => /NO\s*APLICA/i.test(catEtiqueta(r)));
+  return hit ? catValor(hit) : fallback;
+}
+
 export function catValor(item: CatalogoItem): string {
   const r = item as Record<string, unknown>;
   const v =

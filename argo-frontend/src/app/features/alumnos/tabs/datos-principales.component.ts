@@ -61,6 +61,11 @@ import {
 import {
 
   DISCAPACIDADES_DEF,
+  ALUMNO_DEFAULT_IDENTIDAD_GENERO,
+  ALUMNO_DEFAULT_ORIENTACION_SEXUAL,
+  ALUMNO_DEFAULT_DISCAPACIDAD,
+  ALUMNO_DEFAULT_MULTICULTURALIDAD,
+  valorCatalogoNoAplica,
 
   ESTADOS_CIVIL_DEF,
 
@@ -786,8 +791,13 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.cargarCatalogo('nivelFormacion', this.nivelesFormacion, NIVEL_FORMACION_DEF);
     this.cargarCatalogo('ocupacion', this.ocupaciones, OCUPACIONES_DEF);
     this.cargarCatalogo('actorVial', this.actoresViales, ACTOR_VIAL_DEF);
-    this.cargarCatalogo('discapacidad', this.discapacidades, DISCAPACIDADES_DEF);
-    this.cargarCatalogo('multiCulturalidad', this.multiCulturalidades, MULTICULTURALIDAD_DEF);
+    this.cargarCatalogo('discapacidad', this.discapacidades, DISCAPACIDADES_DEF, (rows) =>
+      this.aplicarDefaultCatalogoAlta('discapacidad', rows, ALUMNO_DEFAULT_DISCAPACIDAD),
+    );
+    this.cargarCatalogo('multiCulturalidad', this.multiCulturalidades, MULTICULTURALIDAD_DEF, (rows) =>
+      this.aplicarDefaultCatalogoAlta('multiCulturalidad', rows, ALUMNO_DEFAULT_MULTICULTURALIDAD),
+    );
+    this.aplicarDefaultsDiversidadAlta();
 
     this.catSvc.departamentos().subscribe({
       next: (rows) => {
@@ -1225,13 +1235,48 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
     fallback: Record<string, unknown>[],
 
+    onLoaded?: (rows: Record<string, unknown>[]) => void,
+
   ) {
 
     this.catSvc.list(nombre, { refresh: true }).subscribe({
-      next: (d) => target.set(catalogoConEtiquetas(d || [], fallback)),
-      error: () => target.set(catalogoConEtiquetas([], fallback)),
+      next: (d) => {
+        const rows = catalogoConEtiquetas(d || [], fallback);
+        target.set(rows);
+        onLoaded?.(rows);
+      },
+      error: () => {
+        const rows = catalogoConEtiquetas([], fallback);
+        target.set(rows);
+        onLoaded?.(rows);
+      },
     });
 
+  }
+
+  /** Alta: cisgénero, heterosexual, no aplica (IDs del catálogo). */
+  private aplicarDefaultsDiversidadAlta(): void {
+    if (this.isEdit()) return;
+    this.form.update((f) => ({
+      ...f,
+      identidadGenero: f.identidadGenero || ALUMNO_DEFAULT_IDENTIDAD_GENERO,
+      orientacionSexual: f.orientacionSexual || ALUMNO_DEFAULT_ORIENTACION_SEXUAL,
+      discapacidad: f.discapacidad || ALUMNO_DEFAULT_DISCAPACIDAD,
+      multiCulturalidad: f.multiCulturalidad || ALUMNO_DEFAULT_MULTICULTURALIDAD,
+    }));
+  }
+
+  private aplicarDefaultCatalogoAlta(
+    campo: 'discapacidad' | 'multiCulturalidad',
+    rows: Record<string, unknown>[],
+    fallback: string,
+  ): void {
+    if (this.isEdit()) return;
+    const def = valorCatalogoNoAplica(rows, fallback);
+    const cur = String(this.form()[campo] ?? '').trim();
+    if (!cur || cur === fallback || cur === ALUMNO_DEFAULT_DISCAPACIDAD || cur === 'NO_APLICA') {
+      this.patch(campo, def as AlumnoDto[typeof campo]);
+    }
   }
 
 
@@ -1538,7 +1583,6 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     );
     falta(vacio(f.expedida), 'expedida', 'lugar de expedición', identificacion);
     falta(vacio(f.apellido1), 'apellido1', 'primer apellido', identificacion);
-    falta(vacio(f.apellido2), 'apellido2', 'segundo apellido', identificacion);
     falta(vacio(f.nombre1), 'nombre1', 'primer nombre', identificacion);
     falta(
       calcularEdad(f.fechaNac) == null,
@@ -2122,9 +2166,13 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       genero: String(raw.genero || '').toUpperCase(),
 
-      identidadGenero: normalizarEnum(String(raw.identidadGenero || '')),
+      identidadGenero: normalizarEnum(
+        String(raw.identidadGenero || ALUMNO_DEFAULT_IDENTIDAD_GENERO),
+      ),
 
-      orientacionSexual: normalizarEnum(String(raw.orientacionSexual || '')),
+      orientacionSexual: normalizarEnum(
+        String(raw.orientacionSexual || ALUMNO_DEFAULT_ORIENTACION_SEXUAL),
+      ),
 
       tipoSangre: String(raw.tipoSangre || '').toUpperCase(),
 
@@ -2283,9 +2331,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       genero: '',
 
-      identidadGenero: '',
+      identidadGenero: ALUMNO_DEFAULT_IDENTIDAD_GENERO,
 
-      orientacionSexual: '',
+      orientacionSexual: ALUMNO_DEFAULT_ORIENTACION_SEXUAL,
 
       tipoSangre: '',
 
@@ -2303,7 +2351,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       actorVial: '',
 
-      discapacidad: '',
+      discapacidad: ALUMNO_DEFAULT_DISCAPACIDAD,
       munOrigen: '',
       codMunicipio: '',
       codDepartamento: '',
@@ -2312,7 +2360,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       correo: '',
       direccion: '',
       celular: '',
-      multiCulturalidad: '',
+      multiCulturalidad: ALUMNO_DEFAULT_MULTICULTURALIDAD,
 
       urlFoto: '',
 

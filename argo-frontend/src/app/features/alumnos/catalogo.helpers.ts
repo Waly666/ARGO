@@ -325,6 +325,21 @@ export const GENEROS_DEF = [
   { idGenero: 'F', descripcion: 'F' },
 ];
 
+/** Valores por defecto en ficha alumno (alta); deben coincidir con catálogo. */
+export const ALUMNO_DEFAULT_IDENTIDAD_GENERO = 'CISGENERO';
+export const ALUMNO_DEFAULT_ORIENTACION_SEXUAL = 'HETEROSEXUAL';
+export const ALUMNO_DEFAULT_DISCAPACIDAD = '9';
+export const ALUMNO_DEFAULT_MULTICULTURALIDAD = 'NO_APLICA';
+
+/** idDiscapacidad / idMulti del ítem «No aplica» en catálogo. */
+export function valorCatalogoNoAplica(
+  rows: Record<string, unknown>[],
+  fallback: string,
+): string {
+  const hit = (rows || []).find((r) => /NO\s*APLICA/i.test(catEtiqueta(r)));
+  return hit ? catValor(hit) : fallback;
+}
+
 export const IDENTIDAD_GENERO_DEF = [
   { idIdentidadGenero: 'CISGENERO', descripcion: 'CISGÉNERO' },
   { idIdentidadGenero: 'TRANSGENERO', descripcion: 'TRANSGÉNERO' },

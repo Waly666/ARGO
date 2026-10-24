@@ -788,9 +788,12 @@ function pickAlumno(body) {
   for (const k of CAMPOS_ALUMNO) {
     if (body[k] !== undefined && body[k] !== '') dto[k] = body[k];
   }
-  // Segundo nombre es opcional: hay que poder dejarlo vacío (no se rellena con punto).
+  // Segundo nombre/apellido opcionales: hay que poder dejarlos vacíos (no se rellena con punto).
   if (body.nombre2 !== undefined) {
     dto.nombre2 = String(body.nombre2 || '').trim();
+  }
+  if (body.apellido2 !== undefined) {
+    dto.apellido2 = String(body.apellido2 || '').trim();
   }
   for (const k of ['apellido1', 'apellido2', 'nombre1', 'nombre2']) {
     if (dto[k]) dto[k] = nombreMayusculas(dto[k]);

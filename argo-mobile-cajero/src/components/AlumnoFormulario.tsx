@@ -36,6 +36,11 @@ import {
   TIPOS_ALUMNO_CAJERO,
   TIPO_ALUMNO_DEFAULT,
   TIPO_JORNADAS_CAPACITACION,
+  DEFAULT_IDENTIDAD_GENERO,
+  DEFAULT_ORIENTACION_SEXUAL,
+  DEFAULT_DISCAPACIDAD,
+  DEFAULT_MULTICULTURALIDAD,
+  valorCatalogoNoAplica,
   mapCatalogoOpciones,
   normalizarGenero,
   normalizarTipoAlumno,
@@ -74,8 +79,8 @@ function emptyForm(): AlumnoCrearDto {
     fechaNac: '',
     observaciones: '',
     genero: '',
-    identidadGenero: '',
-    orientacionSexual: '',
+    identidadGenero: DEFAULT_IDENTIDAD_GENERO,
+    orientacionSexual: DEFAULT_ORIENTACION_SEXUAL,
     tipoSangre: '',
     jornada: '',
     estadoCivil: '',
@@ -84,7 +89,7 @@ function emptyForm(): AlumnoCrearDto {
     nivelFormacion: '',
     ocupacion: '',
     actorVial: '',
-    discapacidad: '9',
+    discapacidad: DEFAULT_DISCAPACIDAD,
     munOrigen: '',
     codMunicipio: '',
     codDepartamento: '',
@@ -93,7 +98,7 @@ function emptyForm(): AlumnoCrearDto {
     correo: '',
     direccion: '',
     celular: '',
-    multiCulturalidad: 'NO_APLICA',
+    multiCulturalidad: DEFAULT_MULTICULTURALIDAD,
     empresaId: null,
     manejoGestorEmpresa: false,
     tipoReferidorComercial: null,
@@ -165,6 +170,30 @@ export function AlumnoFormulario({
       .then((cfg) => setGestoresActivo(cfg.activo === true))
       .catch(() => setGestoresActivo(false));
   }, []);
+
+  useEffect(() => {
+    if (!catalogos || isEdit) return;
+    const naDisc = valorCatalogoNoAplica(catalogos.discapacidades, DEFAULT_DISCAPACIDAD);
+    const naMulti = valorCatalogoNoAplica(
+      catalogos.multiCulturalidades,
+      DEFAULT_MULTICULTURALIDAD,
+    );
+    setForm((f) => {
+      const disc = String(f.discapacidad ?? '').trim();
+      const multi = String(f.multiCulturalidad ?? '').trim();
+      return {
+        ...f,
+        identidadGenero: f.identidadGenero || DEFAULT_IDENTIDAD_GENERO,
+        orientacionSexual: f.orientacionSexual || DEFAULT_ORIENTACION_SEXUAL,
+        discapacidad:
+          !disc || disc === DEFAULT_DISCAPACIDAD || disc === '9' ? naDisc : f.discapacidad,
+        multiCulturalidad:
+          !multi || multi === DEFAULT_MULTICULTURALIDAD || multi === 'NO_APLICA'
+            ? naMulti
+            : f.multiCulturalidad,
+      };
+    });
+  }, [catalogos, isEdit]);
 
   const patch = useCallback(<K extends keyof AlumnoCrearDto>(k: K, v: AlumnoCrearDto[K]) => {
     let valor = v;
@@ -561,8 +590,8 @@ export function AlumnoFormulario({
       </FormSection>
 
       <FormSection title="Origen y diversidad" subtitle="Discapacidad, multiculturalidad y observaciones" icon="earth-outline" tone="neutral">
-        <CatalogoSelectField label="Discapacidad" value={form.discapacidad || '9'} options={opts.discapacidades} onChange={(v) => patch('discapacidad', v || '9')} />
-        <CatalogoSelectField label="Multiculturalidad" value={form.multiCulturalidad || 'NO_APLICA'} options={opts.multi} onChange={(v) => patch('multiCulturalidad', v || 'NO_APLICA')} />
+        <CatalogoSelectField label="Discapacidad" value={form.discapacidad || DEFAULT_DISCAPACIDAD} options={opts.discapacidades} onChange={(v) => patch('discapacidad', v || DEFAULT_DISCAPACIDAD)} />
+        <CatalogoSelectField label="Multiculturalidad" value={form.multiCulturalidad || DEFAULT_MULTICULTURALIDAD} options={opts.multi} onChange={(v) => patch('multiCulturalidad', v || DEFAULT_MULTICULTURALIDAD)} />
         <IconInput label="Observaciones" icon="document-text-outline" value={form.observaciones || ''} onChangeText={(t) => patch('observaciones', t)} multiline style={{ minHeight: 100, textAlignVertical: 'top', paddingTop: 12 }} />
       </FormSection>
 
