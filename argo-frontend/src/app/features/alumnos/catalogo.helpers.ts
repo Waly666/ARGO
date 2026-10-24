@@ -330,6 +330,9 @@ export const ALUMNO_DEFAULT_IDENTIDAD_GENERO = 'CISGENERO';
 export const ALUMNO_DEFAULT_ORIENTACION_SEXUAL = 'HETEROSEXUAL';
 export const ALUMNO_DEFAULT_DISCAPACIDAD = '9';
 export const ALUMNO_DEFAULT_MULTICULTURALIDAD = 'NO_APLICA';
+export const ALUMNO_DEFAULT_JORNADA = '1';
+export const ALUMNO_DEFAULT_ESTADO_CIVIL = '7';
+export const ALUMNO_DEFAULT_ESTRATO = '99';
 
 /** idDiscapacidad / idMulti del ítem «No aplica» en catálogo. */
 export function valorCatalogoNoAplica(
@@ -387,7 +390,7 @@ export const ESTRATOS_DEF = [
   { idEstrato: '4', descripcion: '4) 4' },
   { idEstrato: '5', descripcion: '5) 5' },
   { idEstrato: '6', descripcion: '6) 6' },
-  { idEstrato: '99', descripcion: '7) 99' },
+  { idEstrato: '99', descripcion: '99) SIN INFORMACIÓN' },
 ];
 
 export const REGIMEN_SALUD_DEF = [

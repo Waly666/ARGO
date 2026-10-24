@@ -65,6 +65,9 @@ import {
   ALUMNO_DEFAULT_ORIENTACION_SEXUAL,
   ALUMNO_DEFAULT_DISCAPACIDAD,
   ALUMNO_DEFAULT_MULTICULTURALIDAD,
+  ALUMNO_DEFAULT_JORNADA,
+  ALUMNO_DEFAULT_ESTADO_CIVIL,
+  ALUMNO_DEFAULT_ESTRATO,
   valorCatalogoNoAplica,
 
   ESTADOS_CIVIL_DEF,
@@ -1254,13 +1257,16 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   }
 
-  /** Alta: cisgénero, heterosexual, no aplica (IDs del catálogo). */
+  /** Alta: valores por defecto alineados con catálogo (IDs). */
   private aplicarDefaultsDiversidadAlta(): void {
     if (this.isEdit()) return;
     this.form.update((f) => ({
       ...f,
       identidadGenero: f.identidadGenero || ALUMNO_DEFAULT_IDENTIDAD_GENERO,
       orientacionSexual: f.orientacionSexual || ALUMNO_DEFAULT_ORIENTACION_SEXUAL,
+      jornada: f.jornada || ALUMNO_DEFAULT_JORNADA,
+      estadoCivil: f.estadoCivil || ALUMNO_DEFAULT_ESTADO_CIVIL,
+      estrato: f.estrato || ALUMNO_DEFAULT_ESTRATO,
       discapacidad: f.discapacidad || ALUMNO_DEFAULT_DISCAPACIDAD,
       multiCulturalidad: f.multiCulturalidad || ALUMNO_DEFAULT_MULTICULTURALIDAD,
     }));
@@ -2176,11 +2182,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       tipoSangre: String(raw.tipoSangre || '').toUpperCase(),
 
-      jornada: normalizarEnum(String(raw.jornada || '')),
+      jornada: normalizarEnum(String(raw.jornada || ALUMNO_DEFAULT_JORNADA)),
 
-      estadoCivil: normalizarEnum(String(raw.estadoCivil || '')),
+      estadoCivil: normalizarEnum(String(raw.estadoCivil || ALUMNO_DEFAULT_ESTADO_CIVIL)),
 
-      estrato: normalizarEnum(String(raw.estrato || '')),
+      estrato: normalizarEnum(String(raw.estrato || ALUMNO_DEFAULT_ESTRATO)),
 
       regimenSalud: normalizarEnum(String(raw.regimenSalud || '')),
 
@@ -2337,11 +2343,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       tipoSangre: '',
 
-      jornada: '',
+      jornada: ALUMNO_DEFAULT_JORNADA,
 
-      estadoCivil: '',
+      estadoCivil: ALUMNO_DEFAULT_ESTADO_CIVIL,
 
-      estrato: '',
+      estrato: ALUMNO_DEFAULT_ESTRATO,
 
       regimenSalud: '',
 

@@ -67,7 +67,7 @@ export const ESTRATOS_DEF: CatalogoItem[] = [
   { idEstrato: '4', descripcion: '4) 4' },
   { idEstrato: '5', descripcion: '5) 5' },
   { idEstrato: '6', descripcion: '6) 6' },
-  { idEstrato: '99', descripcion: '7) 99' },
+  { idEstrato: '99', descripcion: '99) SIN INFORMACIÓN' },
 ];
 
 export const REGIMEN_SALUD_DEF: CatalogoItem[] = [
@@ -133,6 +133,9 @@ export const DEFAULT_IDENTIDAD_GENERO = 'CISGENERO';
 export const DEFAULT_ORIENTACION_SEXUAL = 'HETEROSEXUAL';
 export const DEFAULT_DISCAPACIDAD = '9';
 export const DEFAULT_MULTICULTURALIDAD = 'NO_APLICA';
+export const DEFAULT_JORNADA = '1';
+export const DEFAULT_ESTADO_CIVIL = '7';
+export const DEFAULT_ESTRATO = '99';
 
 export function valorCatalogoNoAplica(items: CatalogoItem[], fallback: string): string {
   const hit = (items || []).find((r) => /NO\s*APLICA/i.test(catEtiqueta(r)));
