@@ -286,6 +286,7 @@
 
 .consulta-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 14px;
   border: 1px solid #c7d2fe;
   box-shadow: 0 8px 24px rgba(99, 102, 241, 0.08);
@@ -376,6 +377,50 @@
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
 }
 
+.consulta-col-narrow {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.consulta-col-fechas {
+  width: 1%;
+  min-width: 7.25rem;
+  white-space: nowrap;
+}
+
+.consulta-col-dl {
+  width: 1%;
+  min-width: 7.5rem;
+  white-space: nowrap;
+}
+
+.consulta-fechas-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  line-height: 1.35;
+  font-size: 0.84rem;
+}
+
+.consulta-fechas-line {
+  display: block;
+}
+
+.consulta-fechas-line--vencida .consulta-fechas-k {
+  color: #b91c1c;
+}
+
+.consulta-fechas-k {
+  display: inline-block;
+  min-width: 2.85rem;
+  margin-right: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
 .consulta-fecha-vencida {
   font-weight: 800;
   color: #b91c1c;
@@ -432,14 +477,18 @@
 }
 
 .consulta-dl-btn {
-  padding: 0.45rem 0.85rem;
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.45rem 0.75rem;
   border: none;
   border-radius: 10px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #fff;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
   background: var(--av-btn-gradient);
   box-shadow: 0 4px 14px rgba(29, 78, 216, 0.25);
   transition: opacity 0.15s, transform 0.15s;

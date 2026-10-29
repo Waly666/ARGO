@@ -79,15 +79,12 @@
               <thead>
                 <tr>
                   <th>Cód. verificación</th>
-                  <th>Nombre y apellidos</th>
-                  <th>Cédula</th>
                   <th>Curso</th>
-                  <th>Horas</th>
-                  <th>Fecha cert.</th>
-                  <th>Fecha vence</th>
-                  <th>Estado</th>
+                  <th class="consulta-col-narrow">Horas</th>
+                  <th class="consulta-col-fechas">Certificación / vencimiento</th>
+                  <th class="consulta-col-narrow">Estado</th>
                   @if (mostrarBotonDescargar()) {
-                    <th>Certificado</th>
+                    <th class="consulta-col-dl">PDF</th>
                   }
                 </tr>
               </thead>
@@ -97,29 +94,33 @@
                     <td data-label="Cód. verificación">
                       <span class="consulta-id">{{ row.codVerificacion || row.idCertificado || '—' }}</span>
                     </td>
-                    <td data-label="Nombre y apellidos">{{ row.nombreApellidos || '—' }}</td>
-                    <td data-label="Cédula">{{ row.cedula }}</td>
                     <td data-label="Curso">{{ row.encabezado || '—' }}</td>
-                    <td data-label="Horas">
+                    <td class="consulta-col-narrow" data-label="Horas">
                       @if (row.horas) {
                         <span class="consulta-horas">{{ row.horas }}</span>
                       } @else {
                         —
                       }
                     </td>
-                    <td data-label="Fecha cert.">
-                      {{ row.fechaCert ? (row.fechaCert | date: 'dd/MM/yyyy') : '—' }}
-                    </td>
-                    <td data-label="Fecha vence">
-                      @if (esVencido(row)) {
-                        <span class="consulta-fecha-vencida">
-                          {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                    <td class="consulta-col-fechas" data-label="Certificación / vencimiento">
+                      <div class="consulta-fechas-cell">
+                        <span class="consulta-fechas-line">
+                          <span class="consulta-fechas-k">Cert.</span>
+                          {{ row.fechaCert ? (row.fechaCert | date: 'dd/MM/yyyy') : '—' }}
                         </span>
-                      } @else {
-                        {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
-                      }
+                        <span class="consulta-fechas-line" [class.consulta-fechas-line--vencida]="esVencido(row)">
+                          <span class="consulta-fechas-k">Vence</span>
+                          @if (esVencido(row)) {
+                            <span class="consulta-fecha-vencida">
+                              {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                            </span>
+                          } @else {
+                            {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                          }
+                        </span>
+                      </div>
                     </td>
-                    <td data-label="Estado">
+                    <td class="consulta-col-narrow" data-label="Estado">
                       @if (esVencido(row)) {
                         <span class="consulta-badge consulta-badge--vencido">Vencido</span>
                       } @else {
@@ -127,7 +128,7 @@
                       }
                     </td>
                     @if (mostrarBotonDescargar()) {
-                      <td data-label="Certificado">
+                      <td class="consulta-col-dl" data-label="PDF">
                         @if (esVencido(row)) {
                           <span class="consulta-dl-bloqueado" title="Certificado vencido — descarga no disponible">
                             No disponible
