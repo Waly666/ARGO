@@ -50,11 +50,23 @@
           <div class="consulta-empty">
             <av-portal-icon icon="magnifying-glass" class="consulta-empty__icon" size="2rem" color="currentColor" />
             <p>
-              No se encontraron certificados vigentes para la cédula
+              No se encontraron certificados para la cédula
               <strong>{{ res.cedula }}</strong>.
             </p>
           </div>
         } @else {
+          @if (cantidadVencidos() > 0) {
+            <div class="consulta-alerta-vencidos" role="alert">
+              <av-portal-icon icon="exclamation" size="1.35rem" color="currentColor" />
+              <div>
+                <strong>Hay {{ cantidadVencidos() }} certificado(s) vencido(s)</strong>
+                <p>
+                  Los registros en rojo ya no están vigentes. No es posible descargar el PDF; contacte a la
+                  institución para revalidación.
+                </p>
+              </div>
+            </div>
+          }
           @if (res.nombreApellidos) {
             <div class="consulta-alumno">
               <span class="consulta-alumno__badge">Titular</span>
@@ -73,6 +85,7 @@
                   <th>Horas</th>
                   <th>Fecha cert.</th>
                   <th>Fecha vence</th>
+                  <th>Estado</th>
                   @if (mostrarBotonDescargar()) {
                     <th>Certificado</th>
                   }
@@ -80,7 +93,7 @@
               </thead>
               <tbody>
                 @for (row of filas(); track row._id || row.idCertificado) {
-                  <tr>
+                  <tr [class.consulta-row--vencido]="esVencido(row)">
                     <td data-label="Cód. verificación">
                       <span class="consulta-id">{{ row.codVerificacion || row.idCertificado || '—' }}</span>
                     </td>
@@ -98,22 +111,41 @@
                       {{ row.fechaCert ? (row.fechaCert | date: 'dd/MM/yyyy') : '—' }}
                     </td>
                     <td data-label="Fecha vence">
-                      {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                      @if (esVencido(row)) {
+                        <span class="consulta-fecha-vencida">
+                          {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                        </span>
+                      } @else {
+                        {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                      }
+                    </td>
+                    <td data-label="Estado">
+                      @if (esVencido(row)) {
+                        <span class="consulta-badge consulta-badge--vencido">Vencido</span>
+                      } @else {
+                        <span class="consulta-badge consulta-badge--vigente">Vigente</span>
+                      }
                     </td>
                     @if (mostrarBotonDescargar()) {
                       <td data-label="Certificado">
-                        <button
-                          type="button"
-                          class="consulta-dl-btn"
-                          [disabled]="descargandoId() === row._id"
-                          (click)="descargarCertificado(row)"
-                        >
-                          {{
-                            descargandoId() === row._id
-                              ? 'Generando…'
-                              : textoBotonDescargar()
-                          }}
-                        </button>
+                        @if (esVencido(row)) {
+                          <span class="consulta-dl-bloqueado" title="Certificado vencido — descarga no disponible">
+                            No disponible
+                          </span>
+                        } @else {
+                          <button
+                            type="button"
+                            class="consulta-dl-btn"
+                            [disabled]="descargandoId() === row._id"
+                            (click)="descargarCertificado(row)"
+                          >
+                            {{
+                              descargandoId() === row._id
+                                ? 'Generando…'
+                                : textoBotonDescargar()
+                            }}
+                          </button>
+                        }
                       </td>
                     }
                   </tr>
@@ -124,6 +156,9 @@
           <p class="consulta-total">
             <span class="consulta-total__pill">{{ res.total }}</span>
             certificado(s) encontrado(s)
+            @if (cantidadVencidos() > 0) {
+              <span class="consulta-total__vencidos">· {{ cantidadVencidos() }} vencido(s)</span>
+            }
           </p>
         }
       }

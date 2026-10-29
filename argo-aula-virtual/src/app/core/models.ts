@@ -446,12 +446,15 @@ export interface CertificadoConsultaItem {
   horas: string;
   fechaCert: string | null;
   fechaVence: string | null;
+  vencido?: boolean;
+  estadoVigencia?: 'vigente' | 'vencido' | 'anulado';
 }
 
 export interface CertificadoConsultaRes {
   cedula: number;
   nombreApellidos: string;
   total: number;
+  totalVigentes?: number;
   items: CertificadoConsultaItem[];
   /** Token de corta duración para descargar PDF tras consulta (Turnstile ya validado). */
   descargaToken?: string;

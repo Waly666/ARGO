@@ -12,6 +12,7 @@ import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 import { PortalThemeService } from '../../core/portal-theme.service';
+import { certificadoConsultaVencido } from '../../core/certificado-vigencia.util';
 
 @Component({
   selector: 'av-consulta-certificados',
@@ -110,7 +111,21 @@ export class ConsultaCertificadosComponent implements OnInit {
     return this.resultado()?.items || [];
   }
 
+  esVencido(row: CertificadoConsultaItem): boolean {
+    return certificadoConsultaVencido(row);
+  }
+
+  cantidadVencidos(): number {
+    return this.filas().filter((r) => this.esVencido(r)).length;
+  }
+
   descargarCertificado(row: CertificadoConsultaItem) {
+    if (this.esVencido(row)) {
+      this.descargaError.set(
+        'Este certificado está vencido. La descarga no está disponible; contacte a la institución para revalidación.',
+      );
+      return;
+    }
     const certId = row._id?.trim();
     if (!certId) return;
     const doc = this.numDoc.trim();

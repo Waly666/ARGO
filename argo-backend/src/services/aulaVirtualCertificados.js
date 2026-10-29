@@ -15,6 +15,7 @@ const { obtenerConfigPortalPublica } = require('./aulaVirtualPortal');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const { reciboResumenPorLiquidacion } = require('./aulaVirtualRecibos');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
+const { certificadoEstaVencido, estadoVigenciaCertificado } = require('../utils/certificadoVigencia');
 
 function nombreCompletoAlumno(da) {
   if (!da) return '';
@@ -114,25 +115,33 @@ async function consultarCertificadosPublico(numDocRaw) {
   const nombreAlumno = nombreCompletoAlumno(alumno);
   const nombreTitularCert = (c) => String(c.nombreTitular || '').trim();
 
-  const items = certs.map((c) => ({
-    _id: String(c._id),
-    idCertificado: String(c.codVerificacion || c.codigoCert || c._id || '').trim(),
-    codVerificacion: String(c.codVerificacion || '').trim(),
-    nombreApellidos: nombreAlumno || nombreTitularCert(c),
-    cedula: c.numDoc,
-    encabezado: String(c.encabezado || '').trim(),
-    horas: String(c.horasCert || '').trim(),
-    fechaCert: c.fechaEmision || c.createdAt || null,
-    fechaVence: c.fechaVencimiento || null,
-  }));
+  const items = certs.map((c) => {
+    const vencido = certificadoEstaVencido(c);
+    return {
+      _id: String(c._id),
+      idCertificado: String(c.codVerificacion || c.codigoCert || c._id || '').trim(),
+      codVerificacion: String(c.codVerificacion || '').trim(),
+      nombreApellidos: nombreAlumno || nombreTitularCert(c),
+      cedula: c.numDoc,
+      encabezado: String(c.encabezado || '').trim(),
+      horas: String(c.horasCert || '').trim(),
+      fechaCert: c.fechaEmision || c.createdAt || null,
+      fechaVence: c.fechaVencimiento || null,
+      vencido,
+      estadoVigencia: estadoVigenciaCertificado(c),
+    };
+  });
 
   const nombreApellidos =
     nombreAlumno || items.map((i) => i.nombreApellidos).find(Boolean) || '';
+
+  const totalVigentes = items.filter((i) => !i.vencido).length;
 
   return {
     cedula: nd,
     nombreApellidos,
     total: items.length,
+    totalVigentes,
     items,
   };
 }
@@ -194,6 +203,13 @@ async function htmlCertificadoVerificacionQr(codigoRaw, tokenRaw, publicOrigin) 
 
 async function pdfCertificadoConsultaPublico(numDoc, certId, publicOrigin, { marcaAguaCopia = false } = {}) {
   const cert = await verificarCertificadoAlumno(numDoc, certId);
+  if (certificadoEstaVencido(cert)) {
+    const err = new Error(
+      'Este certificado está vencido. La descarga no está disponible; contacte a la institución para revalidación.',
+    );
+    err.status = 403;
+    throw err;
+  }
   const data = await armarDatosCertificado(certId);
   if (!data) {
     const err = new Error('Certificado no encontrado');
