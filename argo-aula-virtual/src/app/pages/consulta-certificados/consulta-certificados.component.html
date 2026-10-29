@@ -81,7 +81,8 @@
                   <th>Cód. verificación</th>
                   <th>Curso</th>
                   <th class="consulta-col-narrow">Horas</th>
-                  <th class="consulta-col-fechas">Certificación / vencimiento</th>
+                  <th class="consulta-col-fechas">Fecha cert.</th>
+                  <th class="consulta-col-fechas">Fecha vence</th>
                   <th class="consulta-col-narrow">Estado</th>
                   @if (mostrarBotonDescargar()) {
                     <th class="consulta-col-dl">PDF</th>
@@ -102,23 +103,17 @@
                         —
                       }
                     </td>
-                    <td class="consulta-col-fechas" data-label="Certificación / vencimiento">
-                      <div class="consulta-fechas-cell">
-                        <span class="consulta-fechas-line">
-                          <span class="consulta-fechas-k">Cert.</span>
-                          {{ row.fechaCert ? (row.fechaCert | date: 'dd/MM/yyyy') : '—' }}
+                    <td class="consulta-col-fechas" data-label="Fecha cert.">
+                      {{ row.fechaCert ? (row.fechaCert | date: 'dd/MM/yyyy') : '—' }}
+                    </td>
+                    <td class="consulta-col-fechas" data-label="Fecha vence">
+                      @if (esVencido(row)) {
+                        <span class="consulta-fecha-vencida">
+                          {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
                         </span>
-                        <span class="consulta-fechas-line" [class.consulta-fechas-line--vencida]="esVencido(row)">
-                          <span class="consulta-fechas-k">Vence</span>
-                          @if (esVencido(row)) {
-                            <span class="consulta-fecha-vencida">
-                              {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
-                            </span>
-                          } @else {
-                            {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
-                          }
-                        </span>
-                      </div>
+                      } @else {
+                        {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
+                      }
                     </td>
                     <td class="consulta-col-narrow" data-label="Estado">
                       @if (esVencido(row)) {
