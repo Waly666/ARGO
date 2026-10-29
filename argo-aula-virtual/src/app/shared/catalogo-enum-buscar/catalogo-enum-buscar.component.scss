@@ -24,11 +24,12 @@
 
 label {
   display: block;
-  font-size: 0.78rem;
-  color: var(--j-muted, #64748b);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--av-primary-dark, #1d4ed8) 75%, #334155);
+  margin-bottom: 0.3rem;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .input-wrap {
@@ -36,30 +37,53 @@ label {
 
   input {
     width: 100%;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: var(--j-ink, #0f172a);
+    padding: 0.62rem 0.85rem;
+    font: inherit;
     text-transform: uppercase;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--av-primary, #3b82f6);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--av-primary, #3b82f6) 18%, transparent);
+      background: #fff;
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      background: #f1f5f9;
+    }
   }
 
   &.combo input {
-    padding-right: 2.1rem;
+    padding-right: 2.35rem;
   }
 
   .combo-toggle {
     position: absolute;
-    right: 2px;
-    top: 2px;
-    bottom: 2px;
-    width: 1.75rem;
+    right: 3px;
+    top: 3px;
+    bottom: 3px;
+    width: 1.85rem;
     border: none;
-    border-radius: 0 8px 8px 0;
-    background: rgba(59, 130, 246, 0.08);
-    color: var(--j-muted, #64748b);
+    border-radius: 0 9px 9px 0;
+    background: color-mix(in srgb, var(--av-primary, #3b82f6) 10%, #f8fafc);
+    color: var(--av-primary-dark, #1d4ed8);
     cursor: pointer;
     font-size: 0.95rem;
     line-height: 1;
 
     &:hover:not(:disabled) {
-      background: rgba(59, 130, 246, 0.18);
-      color: var(--j-ink, #0f172a);
+      background: color-mix(in srgb, var(--av-primary, #3b82f6) 18%, #f8fafc);
     }
 
     &:disabled {
@@ -95,8 +119,8 @@ label {
   max-height: min(280px, 50vh);
   overflow-y: auto;
   background: #fff;
-  border: 1px solid var(--j-border, #e2e8f0);
-  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 
   li {

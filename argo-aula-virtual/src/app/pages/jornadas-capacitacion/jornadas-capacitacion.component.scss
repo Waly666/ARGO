@@ -865,6 +865,15 @@
   margin-top: 0.35rem;
 }
 
+/* Combobox origen jornada = mismos inputs que .field del formulario */
+.grid-section--origen {
+  .origen-jornada-campos .field label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--av-primary-dark, #1d4ed8) 75%, #334155);
+  }
+}
+
 .origen-jornada-hint {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
