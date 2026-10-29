@@ -1051,6 +1051,7 @@ export class JornadaCapService {
       horaInicio?: string | null;
       horaFin?: string | null;
       horarioManual?: boolean;
+      origenOperacion?: string | null;
     },
   ) {
     return this.http.patch<ClaseJornadaDto>(`${this.base}/clases/${id}`, dto);

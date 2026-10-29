@@ -2194,8 +2194,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.modalHorarioManual.set(false);
     this.modalFechaClase.set('');
     this.modalCrearJornadaId.set(this.jornadaSel() || '');
-    const origenes = this.origenesActivosContrato();
-    this.origenFiltroAlumno.set(origenes[0]?.key || 'operativo');
+    this.ajustarOrigenFiltroAlContrato();
     this.cargarJornadasParaCrear();
     this.cargarProgramasJornada();
     this.sincronizarFechaClaseDesdeJornada(this.modalCrearJornadaId());
@@ -2236,8 +2235,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     ) {
       this.origenFiltroAlumno.set(origenClase);
     } else {
-      const origenes = this.origenesActivosContrato();
-      this.origenFiltroAlumno.set(origenes[0]?.key || 'operativo');
+      this.ajustarOrigenFiltroAlContrato();
     }
     if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
     this.sincronizarProgramaModal(progClase);
@@ -3288,9 +3286,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       horaInicio?: string | null;
       horaFin?: string | null;
       horarioManual?: boolean;
+      origenOperacion?: string;
     } = {
       ubicacion: this.nuevaClaseUbic(),
     };
+    const origenSel = this.origenFiltroAlumno();
+    const origenGuardado = String(this.claseActiva()?.origenOperacion || '')
+      .trim()
+      .toLowerCase();
+    if (origenSel && origenSel !== origenGuardado && this.origenHabilitadoEnContrato(origenSel)) {
+      dto.origenOperacion = origenSel;
+    }
     if (this.nuevaClaseProg()) dto.idPrograma = this.nuevaClaseProg();
     if (this.puedeAsignarInstructor()) {
       const insId = this.modalClaseInstructorId();
@@ -3613,19 +3619,42 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.alumnoBusqueda$.next((value ?? '').trim());
   }
 
+  /** Misma regla que el backend (operativo activo salvo `false` explícito). */
+  origenHabilitadoEnContrato(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    origenes = this.contratoActivo()?.origenesAlumnos || this.formContrato().origenesAlumnos,
+  ): boolean {
+    const o = origenes || {};
+    if (key === 'operativo') return (o as { operativo?: boolean }).operativo !== false;
+    return !!(o as Record<string, boolean | undefined>)[key];
+  }
+
   origenesActivosContrato(): Array<{ key: 'colegio' | 'estamento' | 'empresa' | 'operativo'; label: string }> {
-    const o = this.contratoActivo()?.origenesAlumnos || this.formContrato().origenesAlumnos || {};
-    const all: Array<{ key: 'colegio' | 'estamento' | 'empresa' | 'operativo'; label: string }> = [
-      { key: 'colegio', label: 'Institución educativa' },
-      { key: 'estamento', label: 'Estamento' },
-      { key: 'empresa', label: 'Empresa' },
-      { key: 'operativo', label: 'Operativo' },
-    ];
-    const act = all.filter((x) => !!(o as any)?.[x.key]);
-    return act.length ? act : [{ key: 'operativo', label: 'Operativo' }];
+    const act = this.origenesContratoUi.filter((x) => this.origenHabilitadoEnContrato(x.key));
+    return act.length ? act : [{ key: 'operativo', label: 'Operativo / calle' }];
+  }
+
+  /** Los cuatro orígenes en el modal de clase; deshabilitados si el contrato no los permite. */
+  origenesSelectorClase(): Array<{
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo';
+    label: string;
+    habilitado: boolean;
+  }> {
+    return this.origenesContratoUi.map((o) => ({
+      ...o,
+      habilitado: this.origenHabilitadoEnContrato(o.key),
+    }));
+  }
+
+  private ajustarOrigenFiltroAlContrato() {
+    const act = this.origenesActivosContrato();
+    const cur = this.origenFiltroAlumno();
+    if (act.some((x) => x.key === cur)) return;
+    this.origenFiltroAlumno.set(act[0]?.key || 'operativo');
   }
 
   setOrigenFiltroAlumno(key: 'colegio' | 'estamento' | 'empresa' | 'operativo') {
+    if (!this.origenHabilitadoEnContrato(key)) return;
     this.origenFiltroAlumno.set(key);
     this.alumnoBusqueda$.next(this.alumnoBusqueda().trim());
     if (this.modalModoClase() === 'nuevo') {

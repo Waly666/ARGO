@@ -1237,6 +1237,14 @@
       border-color: transparent;
       color: #fff;
     }
+
+    &.origen-chip-clase--off,
+    &.origen-chip-clase--off:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+      filter: grayscale(0.35);
+      box-shadow: none;
+    }
   }
 }
 

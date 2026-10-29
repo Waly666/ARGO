@@ -2619,30 +2619,46 @@
                     </div>
                   </div>
 
-                  @if (origenesActivosContrato().length) {
-                    <div class="cm-origen-filtro">
-                      <span class="cm-origen-label">{{
-                        modalModoClase() === 'nuevo' ? 'Origen de la clase' : 'Origen del alumno'
-                      }}</span>
-                      <div class="origen-filtro-chips">
-                        @for (o of origenesActivosContrato(); track o.key) {
-                          <button
-                            type="button"
-                            class="mini"
-                            [class.primary]="origenFiltroAlumno() === o.key"
-                            (click)="setOrigenFiltroAlumno(o.key)"
-                          >
-                            {{ o.label }}
-                          </button>
-                        }
-                      </div>
-                      @if (modalModoClase() === 'nuevo') {
-                        <p class="hint block-hint">
-                          Si el instructor tiene programas en el contrato, el combo solo muestra los que él dicta.
-                        </p>
+                  <div class="cm-origen-filtro">
+                    <span class="cm-origen-label">Origen de la clase *</span>
+                    <div class="origen-filtro-chips origen-filtro-chips--clase">
+                      @for (o of origenesSelectorClase(); track o.key) {
+                        <button
+                          type="button"
+                          class="mini origen-chip-clase"
+                          [class.primary]="origenFiltroAlumno() === o.key"
+                          [class.origen-chip-clase--off]="!o.habilitado"
+                          [disabled]="!o.habilitado"
+                          [title]="
+                            o.habilitado
+                              ? 'Usar origen ' + o.label
+                              : 'Active «' + o.label + '» en Contratación → Orígenes de alumnos'
+                          "
+                          (click)="setOrigenFiltroAlumno(o.key)"
+                        >
+                          {{ o.label }}
+                        </button>
                       }
                     </div>
-                  }
+                    @if (origenesActivosContrato().length < 4) {
+                      <p class="hint block-hint">
+                        Solo están activos en el contrato:
+                        @for (o of origenesActivosContrato(); track o.key; let last = $last) {
+                          <strong>{{ o.label }}</strong>@if (!last) {, }
+                        }.
+                        Para habilitar más, edite el contrato en <strong>Orígenes de alumnos</strong>.
+                      </p>
+                    }
+                    @if (modalModoClase() === 'nuevo') {
+                      <p class="hint block-hint">
+                        El origen define qué programas puede elegir y qué alumnos puede inscribir en esta clase.
+                      </p>
+                    } @else {
+                      <p class="hint block-hint">
+                        Al cambiar el origen y guardar la clase, se actualiza la operación (si aún no hay asistencias).
+                      </p>
+                    }
+                  </div>
                 </div>
 
                 <div class="cm-panel cm-instructor-programa">

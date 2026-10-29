@@ -1787,6 +1787,9 @@ exports.actualizarClase = async (req, res, next) => {
       horaFin,
       horarioManual,
       reabrir,
+      origenOperacion,
+      origenJornadaCap,
+      origen,
     } = req.body || {};
     const dto = { userChangeRecord: auditoriaUsuario(req) };
     const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
@@ -1820,6 +1823,38 @@ exports.actualizarClase = async (req, res, next) => {
 
     if (ubicacion != null) {
       dto.ubicacion = UBICACIONES_CLASE.includes(ubicacion) ? ubicacion : clase.ubicacion;
+    }
+
+    const origenRawPatch = origenOperacion ?? origenJornadaCap ?? origen;
+    if (origenRawPatch !== undefined && origenRawPatch !== null && String(origenRawPatch).trim() !== '') {
+      const {
+        normalizarOrigenJornadaCap,
+        normalizarOrigenesContrato,
+        ORIGEN_JORNADA_LABELS,
+      } = require('../constants/origenJornadaCap');
+      const origenNuevo = normalizarOrigenJornadaCap(origenRawPatch);
+      const origenActual = normalizarOrigenJornadaCap(clase.origenOperacion);
+      if (origenNuevo && origenNuevo !== origenActual) {
+        const nAsisOrigen = await AsisClasJorCap.countDocuments({ idclaseJornada: clase._id });
+        if (nAsisOrigen > 0) {
+          return res.status(400).json({
+            message: 'No puede cambiar el origen: la clase ya tiene asistencias registradas.',
+          });
+        }
+        const jornadaOrigen = await JornadaCap.findById(clase.idJornada).select('idContrato').lean();
+        if (jornadaOrigen?.idContrato) {
+          const contratoOrigen = await Contratacion.findById(jornadaOrigen.idContrato)
+            .select('origenesAlumnos')
+            .lean();
+          const permitidos = normalizarOrigenesContrato(contratoOrigen?.origenesAlumnos);
+          if (!permitidos[origenNuevo]) {
+            return res.status(400).json({
+              message: `El origen «${ORIGEN_JORNADA_LABELS[origenNuevo] || origenNuevo}» no está habilitado en este contrato.`,
+            });
+          }
+        }
+        dto.origenOperacion = origenNuevo;
+      }
     }
 
     if (idEmpleadoInstructor !== undefined && esAdminJornadas) {

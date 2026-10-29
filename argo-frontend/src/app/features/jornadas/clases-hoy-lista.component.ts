@@ -96,7 +96,10 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
       { key: 'empresa', label: 'Empresa' },
       { key: 'operativo', label: 'Operativo' },
     ];
-    const act = all.filter((x) => !!(o as Record<string, boolean | undefined>)[x.key]);
+    const act = all.filter((x) => {
+      if (x.key === 'operativo') return (o as { operativo?: boolean }).operativo !== false;
+      return !!(o as Record<string, boolean | undefined>)[x.key];
+    });
     return act.length ? act : [{ key: 'operativo' as const, label: 'Operativo' }];
   });
 
