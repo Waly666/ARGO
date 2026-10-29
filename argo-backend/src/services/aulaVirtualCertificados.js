@@ -16,6 +16,43 @@ const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const { reciboResumenPorLiquidacion } = require('./aulaVirtualRecibos');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
 const { certificadoEstaVencido, estadoVigenciaCertificado } = require('../utils/certificadoVigencia');
+const ClaseJornadaCap = require('../models/ClaseJornadaCap');
+
+/** Misma lógica que certificadoRender: horasCert → programa.horas → clase jornada. */
+function horasDesdePrograma(prog) {
+  const hProg = prog?.horas != null ? Number(prog.horas) : NaN;
+  if (Number.isFinite(hProg) && hProg > 0) return String(hProg);
+  return '';
+}
+
+async function resolverHorasConsultaPublica(cert, programaCache, claseCache) {
+  const direct = String(cert.horasCert || '').trim();
+  if (direct) return direct;
+
+  const idProg = String(cert.idProg || '').trim();
+  if (idProg) {
+    if (!programaCache.has(idProg)) {
+      programaCache.set(idProg, await buscarPrograma(cert.idProg));
+    }
+    const desdeProg = horasDesdePrograma(programaCache.get(idProg));
+    if (desdeProg) return desdeProg;
+  }
+
+  const idClase = cert.idClaseJornada;
+  if (idClase) {
+    const ck = String(idClase);
+    if (!claseCache.has(ck)) {
+      claseCache.set(
+        ck,
+        await ClaseJornadaCap.findById(idClase).select('horasCertificadas').lean(),
+      );
+    }
+    const hClase = Number(claseCache.get(ck)?.horasCertificadas);
+    if (Number.isFinite(hClase) && hClase > 0) return String(hClase);
+  }
+
+  return '';
+}
 
 function nombreCompletoAlumno(da) {
   if (!da) return '';
@@ -115,22 +152,26 @@ async function consultarCertificadosPublico(numDocRaw) {
   const nombreAlumno = nombreCompletoAlumno(alumno);
   const nombreTitularCert = (c) => String(c.nombreTitular || '').trim();
 
-  const items = certs.map((c) => {
+  const programaCache = new Map();
+  const claseCache = new Map();
+  const items = [];
+  for (const c of certs) {
     const vencido = certificadoEstaVencido(c);
-    return {
+    const horas = await resolverHorasConsultaPublica(c, programaCache, claseCache);
+    items.push({
       _id: String(c._id),
       idCertificado: String(c.codVerificacion || c.codigoCert || c._id || '').trim(),
       codVerificacion: String(c.codVerificacion || '').trim(),
       nombreApellidos: nombreAlumno || nombreTitularCert(c),
       cedula: c.numDoc,
       encabezado: String(c.encabezado || '').trim(),
-      horas: String(c.horasCert || '').trim(),
+      horas,
       fechaCert: c.fechaEmision || c.createdAt || null,
       fechaVence: c.fechaVencimiento || null,
       vencido,
       estadoVigencia: estadoVigenciaCertificado(c),
-    };
-  });
+    });
+  }
 
   const nombreApellidos =
     nombreAlumno || items.map((i) => i.nombreApellidos).find(Boolean) || '';
