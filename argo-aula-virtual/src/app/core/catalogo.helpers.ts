@@ -27,6 +27,7 @@ export function etiquetaGenero(item: Record<string, unknown>): string {
   const v = catValor(item).toUpperCase();
   if (v === 'M') return 'Masculino (M)';
   if (v === 'F') return 'Femenino (F)';
+  if (v === 'I') return 'Intersexual (I)';
   return catEtiqueta(item);
 }
 

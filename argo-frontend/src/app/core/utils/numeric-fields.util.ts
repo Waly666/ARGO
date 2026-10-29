@@ -5,7 +5,13 @@ const MONEY_KEY =
 const MONEY_TOTAL_KEY = /^total(Devengos|Deducciones|Neto|Patronal|Provisiones|CostoEmpresa)$/i;
 
 /** Códigos alfanuméricos que no deben ser input type=number. */
-const STRING_ID_KEYS = new Set(['idSede']);
+const STRING_ID_KEYS = new Set([
+  'idSede',
+  'idGenero',
+  'idIdentidadGenero',
+  'idOrientacionSexual',
+  'idTipoSangre',
+]);
 
 /** Enteros: horas, cantidades, IDs, porcentaje IVA, etc. */
 const INT_KEY =

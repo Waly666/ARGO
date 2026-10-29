@@ -331,8 +331,9 @@ export class CatalogosAdminComponent implements OnInit {
 
   camposTabla(): string[] {
     const L = this.listado();
-    if (!L?.campos?.length) return [];
-    let campos = L.campos.filter((c) => c !== '_id');
+    let campos = (L?.campos?.length ? L.campos : []).filter((c) => c !== '_id');
+    if (!campos.length) campos = this.camposFallbackCatalogo().filter((c) => c !== '_id');
+    if (!campos.length) campos = this.camposDesdeMetaCatalogo().filter((c) => c !== '_id');
     if (this.esCatalogoInspeccion()) {
       if (this.esCatalogoItemsInspeccion()) {
         campos = campos.filter((c) => c !== 'idClases' && c !== 'tiposVehiculo' && c !== 'claseVehiculo');
@@ -682,6 +683,10 @@ export class CatalogosAdminComponent implements OnInit {
       descTipoServ: 'Descripción',
       idTipoServ: 'ID',
       claseServ: 'Clase de servicio',
+      idGenero: 'ID género',
+      idIdentidadGenero: 'ID identidad de género',
+      idOrientacionSexual: 'Código orientación sexual',
+      descripcion: 'Descripción',
     };
     return map[campo] || campo;
   }
@@ -702,11 +707,23 @@ export class CatalogosAdminComponent implements OnInit {
     return String(row['_id'] ?? '');
   }
 
+  /** Columnas de alta/edición cuando la colección está vacía o el API no envía esquema. */
+  private camposDesdeMetaCatalogo(): string[] {
+    const L = this.listado();
+    const idFields = L?.idFields?.length ? L.idFields : this.catalogos().find((c) => c.nombre === this.seleccionado())?.idFields;
+    if (!idFields?.length) return [];
+    const out = [...idFields];
+    if (!out.includes('descripcion')) out.push('descripcion');
+    return out;
+  }
+
   private camposFormBase(): string[] {
     const skip = new Set(['_id', '__v', 'idClases', 'controlaVencimiento', 'tiposVehiculo', 'claseVehiculo']);
-    const fromList = this.listado()?.campos?.filter((c) => !skip.has(c)) || [];
-    const campos = fromList.length ? fromList : this.camposFallbackCatalogo();
-    return campos.filter((c) => c !== '_id');
+    const fromList = this.listado()?.campos?.filter((c) => !skip.has(c) && c !== '_id') || [];
+    if (fromList.length) return fromList;
+    const fb = this.camposFallbackCatalogo();
+    if (fb.length) return fb;
+    return this.camposDesdeMetaCatalogo();
   }
 
   private camposFallbackCatalogo(): string[] {
@@ -714,6 +731,10 @@ export class CatalogosAdminComponent implements OnInit {
     const map: Record<string, string[]> = {
       aulas: ['idAula', 'nombre', 'estado', 'idSede'],
       talleres: ['idTaller', 'nombre', 'ubicacion', 'activo', 'idSede'],
+      genero: ['idGenero', 'descripcion'],
+      identidadGenero: ['idIdentidadGenero', 'descripcion'],
+      orientacionSexual: ['idOrientacionSexual', 'descripcion'],
+      tipoSangre: ['id', 'descripcion'],
     };
     return map[n || ''] || [];
   }
@@ -999,8 +1020,6 @@ export class CatalogosAdminComponent implements OnInit {
   }
 
   camposForm(): string[] {
-    const L = this.listado();
-    const keys = new Set(Object.keys(this.formDoc()));
     const omit = new Set([
       '__v',
       'idClases',
@@ -1008,13 +1027,7 @@ export class CatalogosAdminComponent implements OnInit {
       'claseVehiculo',
       ...CATEGORIAS_LICENCIA_VEHICULO,
     ]);
-    const fromList = L?.campos?.length
-      ? L.campos.filter((c) => !omit.has(c) && keys.has(c))
-      : [];
-    if (fromList.length) return fromList;
-    const fallback = this.camposFallbackCatalogo().filter((c) => keys.has(c));
-    if (fallback.length) return fallback;
-    return [...keys].filter((k) => k !== '_id' && !omit.has(k));
+    return this.camposFormBase().filter((c) => !omit.has(c));
   }
 
   usarCapsula(campo: string): boolean {

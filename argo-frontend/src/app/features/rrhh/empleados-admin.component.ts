@@ -72,6 +72,7 @@ function sexoDesdeGenero(genero?: string | null): string {
   const g = normalizarGenero(genero || '');
   if (g === 'M') return 'Masculino';
   if (g === 'F') return 'Femenino';
+  if (g === 'I') return 'Intersexual';
   return '';
 }
 

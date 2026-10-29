@@ -194,7 +194,8 @@ export function normalizarGenero(val?: string): string {
   const t = String(val || '').toUpperCase().trim();
   if (t === 'M' || t.startsWith('MASC')) return 'M';
   if (t === 'F' || t.startsWith('FEM')) return 'F';
-  return t === 'M' || t === 'F' ? t : '';
+  if (t === 'I' || t.startsWith('INTER')) return 'I';
+  return t === 'M' || t === 'F' || t === 'I' ? t : '';
 }
 
 /** OCR / texto libre → A+, O-, etc. */

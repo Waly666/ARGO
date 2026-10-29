@@ -158,6 +158,11 @@ const CAMPOS_ESQUEMA = {
   modalidades: ['idModalidad', 'codigo', 'descripcion', 'activo'],
   actorVial: ['idActorVial', 'descripcion'],
   discapacidad: ['idDiscapacidad', 'descripcion'],
+  estadoCivil: ['idEstadoCivil', 'descripcion'],
+  genero: ['idGenero', 'descripcion'],
+  identidadGenero: ['idIdentidadGenero', 'descripcion'],
+  orientacionSexual: ['idOrientacionSexual', 'descripcion'],
+  tipoSangre: ['id', 'descripcion'],
   multiCulturalidad: ['idMulti', 'id', 'descripcion', 'nombre'],
   catTipoCapacitacion: [
     'idTipCap',

@@ -57,13 +57,14 @@ const {
   esPerfilGestor,
 } = require('../services/alcanceGestorUsuario');
 
-const GENEROS_VALIDOS = new Set(['M', 'F']);
+const GENEROS_VALIDOS = new Set(['M', 'F', 'I']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
 
 function normalizarGenero(v) {
   const t = String(v || '').toUpperCase().trim();
   if (t === 'M' || t.startsWith('MASC')) return 'M';
   if (t === 'F' || t.startsWith('FEM')) return 'F';
+  if (t === 'I' || t.startsWith('INTER')) return 'I';
   return GENEROS_VALIDOS.has(t) ? t : '';
 }
 

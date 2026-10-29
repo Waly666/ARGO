@@ -11,6 +11,15 @@ const {
 const { syncControlaVencimientoDesdeCatalogo: syncEmpDesdeCatalogo } = require('./configRequisitosDocumentosEmpleados');
 const { coerceDocument, num: numCoerce } = require('../utils/coerceTypes');
 
+/** No asignar id numérico automático (códigos M, CISGENERO, etc.). */
+const CATALOGOS_ID_ALFANUMERICO = new Set([
+  'genero',
+  'identidadGenero',
+  'orientacionSexual',
+  'tipoSangre',
+  'multiCulturalidad',
+]);
+
 function num(v) {
   if (v == null || v === '') return null;
   const n = numCoerce(v);
@@ -144,9 +153,18 @@ async function crear(nombre, body) {
   }
   const meta = metaCatalogo(nombre);
   const idField = meta.idFields[0];
-  if (idField && (doc[idField] == null || doc[idField] === '')) {
+  if (
+    idField &&
+    !CATALOGOS_ID_ALFANUMERICO.has(nombre) &&
+    (doc[idField] == null || doc[idField] === '')
+  ) {
     const next = await maxIdEnCampo(models[nombre], idField);
     doc[idField] = next;
+  }
+  if (CATALOGOS_ID_ALFANUMERICO.has(nombre) && idField && (doc[idField] == null || doc[idField] === '')) {
+    const err = new Error(`El campo ${idField} es obligatorio (código alfanumérico, ej. CISGENERO o I).`);
+    err.status = 400;
+    throw err;
   }
   const res = await models[nombre].collection.insertOne(doc);
   const saved = { ...doc, _id: res.insertedId };

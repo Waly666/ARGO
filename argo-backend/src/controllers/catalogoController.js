@@ -3,6 +3,7 @@ const { listarMeta, nombreValido } = require('../services/catalogoMeta');
 const catalogoAdmin = require('../services/catalogoAdmin');
 const { recargarDesdeExcel } = require('../services/catalogoCarga');
 const { ensureActorVialCatalogo } = require('../services/actorVialCatalogo');
+const { ensureCatalogosDemograficos } = require('../services/ensureCatalogosDemograficos');
 
 /** Regex que tolera tildes (medellin → MEDELLÍN) */
 function regexSinTildes(q) {
@@ -39,6 +40,9 @@ exports.listar = async (req, res, next) => {
 
     if (nombre === 'actorVial') {
       await ensureActorVialCatalogo();
+    }
+    if (nombre === 'genero' || nombre === 'identidadGenero' || nombre === 'orientacionSexual') {
+      await ensureCatalogosDemograficos(nombre);
     }
 
     const admin = req.query.admin === 'true' && nombreValido(nombre);

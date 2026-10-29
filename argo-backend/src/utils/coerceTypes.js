@@ -37,10 +37,20 @@ function isMoneyField(key) {
   return false;
 }
 
+/** IDs alfanuméricos (catálogos demográficos, sedes, etc.). */
+const STRING_ID_KEYS = new Set([
+  'idSede',
+  'idGenero',
+  'idIdentidadGenero',
+  'idOrientacionSexual',
+  'idTipoSangre',
+]);
+
 /** Cantidades, porcentajes, horas, IDs numéricos. */
 function isIntegerField(key) {
   const k = String(key || '');
   if (isMoneyField(k)) return false;
+  if (STRING_ID_KEYS.has(k)) return false;
   if (/^id[A-Z_]/i.test(k) || /^idServ$|^idProg$|^idPrograma$/i.test(k)) return true;
   if (/^(cantidad|semestres|horas|horasTeoria|horasPractica|horasTaller|diasVencimiento|nivelRiesgo|horasSemanales|diasNovedad|numSemestre|iva|consecutivo)/i.test(k)) {
     return true;

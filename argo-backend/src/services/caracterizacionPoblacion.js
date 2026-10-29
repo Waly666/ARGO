@@ -32,12 +32,13 @@ function etiquetaGenero(raw) {
   if (!t) return 'Sin dato';
   if (t === 'M' || t.startsWith('MASC')) return 'Masculino';
   if (t === 'F' || t.startsWith('FEM')) return 'Femenino';
+  if (t === 'I' || t.startsWith('INTER')) return 'Intersexual';
   return String(raw).trim();
 }
 
 function sexoInforme(raw) {
   const g = etiquetaGenero(raw);
-  if (g === 'Masculino' || g === 'Femenino' || g === 'Sin dato') return g;
+  if (g === 'Masculino' || g === 'Femenino' || g === 'Intersexual' || g === 'Sin dato') return g;
   return 'Otro';
 }
 
