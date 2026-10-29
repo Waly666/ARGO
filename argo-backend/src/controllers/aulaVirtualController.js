@@ -70,6 +70,7 @@ function consentimientoDesdeBody(body, canal) {
 const { logAuthIntento } = require('../services/authSecurityLog');
 const path = require('path');
 const { models } = require('../models/catalogos');
+const { ensureCatalogosDemograficos } = require('../services/ensureCatalogosDemograficos');
 const catalogoController = require('./catalogoController');
 const { ensureActorVialCatalogo } = require('../services/actorVialCatalogo');
 
@@ -767,7 +768,46 @@ exports.catalogosTiposDoc = async (_req, res, next) => {
 
 exports.catalogosGeneros = async (_req, res, next) => {
   try {
+    await ensureCatalogosDemograficos('genero');
     const data = await models.genero.find().sort({ idGenero: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosIdentidadesGenero = async (_req, res, next) => {
+  try {
+    await ensureCatalogosDemograficos('identidadGenero');
+    const data = await models.identidadGenero.find().sort({ idIdentidadGenero: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosOrientacionesSexuales = async (_req, res, next) => {
+  try {
+    await ensureCatalogosDemograficos('orientacionSexual');
+    const data = await models.orientacionSexual.find().sort({ idOrientacionSexual: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosDiscapacidades = async (_req, res, next) => {
+  try {
+    const data = await models.discapacidad.find().sort({ idDiscapacidad: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosMulticulturalidad = async (_req, res, next) => {
+  try {
+    const data = await models.multiCulturalidad.find().sort({ id: 1 }).lean();
     res.json(data);
   } catch (e) {
     next(e);

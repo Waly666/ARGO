@@ -3,6 +3,10 @@ export function catValor(item: Record<string, unknown>): string {
   const v =
     item['idTipoDoc'] ??
     item['idGenero'] ??
+    item['idIdentidadGenero'] ??
+    item['idOrientacionSexual'] ??
+    item['idDiscapacidad'] ??
+    item['idMulti'] ??
     item['idActorVial'] ??
     item['id'] ??
     item['codigo'] ??
@@ -43,6 +47,58 @@ export const TIPOS_DOC_FALLBACK: Record<string, unknown>[] = [
 export const GENEROS_FALLBACK: Record<string, unknown>[] = [
   { idGenero: 'M', descripcion: 'M' },
   { idGenero: 'F', descripcion: 'F' },
+];
+
+export const IDENTIDAD_GENERO_FALLBACK: Record<string, unknown>[] = [
+  { idIdentidadGenero: 'CISGENERO', descripcion: 'CISGÉNERO' },
+  { idIdentidadGenero: 'TRANSGENERO', descripcion: 'TRANSGÉNERO' },
+  { idIdentidadGenero: 'NO_BINARIO', descripcion: 'NO BINARIO' },
+];
+
+export const ORIENTACION_SEXUAL_FALLBACK: Record<string, unknown>[] = [
+  { idOrientacionSexual: 'HETEROSEXUAL', descripcion: 'HETEROSEXUAL' },
+  { idOrientacionSexual: 'HOMOSEXUAL', descripcion: 'HOMOSEXUAL' },
+  { idOrientacionSexual: 'BISEXUAL', descripcion: 'BISEXUAL' },
+  { idOrientacionSexual: 'OTRO', descripcion: 'OTRO' },
+];
+
+export const DISCAPACIDAD_FALLBACK: Record<string, unknown>[] = [
+  { idDiscapacidad: '1', descripcion: '1) SORDERA PROFUNDA' },
+  { idDiscapacidad: '2', descripcion: '2) HIPOACUSIA A BAJA AUDICION' },
+  { idDiscapacidad: '3', descripcion: '3) BAJA VISION DIAGNOSTICA' },
+  { idDiscapacidad: '4', descripcion: '4) CEGUERA' },
+  { idDiscapacidad: '5', descripcion: '5) PARALISIS CEREBRAL' },
+  { idDiscapacidad: '6', descripcion: '6) LESION NEUROMUSCULAR' },
+  { idDiscapacidad: '7', descripcion: '7) DEFICIENCIA COGNITIVA(RETARDO EN EL DESARROLLO)' },
+  { idDiscapacidad: '8', descripcion: '8) MULTIPLE' },
+  { idDiscapacidad: '9', descripcion: '9) NO APLICA' },
+];
+
+export const MULTICULTURALIDAD_FALLBACK: Record<string, unknown>[] = [
+  { id: 'INDIGENA', descripcion: 'INDIGENA' },
+  { id: 'AFRODESCENDIENTE', descripcion: 'AFRODESCENDIENTE' },
+  { id: 'DESPLAZADO', descripcion: 'DESPLAZADO' },
+  { id: 'POBLACION_FRONTERA', descripcion: 'POBLACIÓN DE FRONTERA' },
+  { id: 'CABEZA_FAMILIA', descripcion: 'CABEZA DE FAMILIA' },
+  { id: 'REINSERTADO', descripcion: 'REINSERTADO' },
+  { id: 'POBLACION_ROM', descripcion: 'POBLACIÓN ROM' },
+  { id: 'NO_APLICA', descripcion: 'NO APLICA' },
+];
+
+/** Predeterminados ficha alumno ERP (jornadas). */
+export const PORTAL_ALUMNO_DEFAULTS = {
+  identidadGenero: 'CISGENERO',
+  orientacionSexual: 'HETEROSEXUAL',
+  discapacidad: '9',
+  multiCulturalidad: 'NO_APLICA',
+  origenJornadaCap: 'operativo',
+} as const;
+
+export const ORIGENES_JORNADA_UI: Array<{ key: string; label: string }> = [
+  { key: 'colegio', label: 'Institución educativa' },
+  { key: 'estamento', label: 'Estamento público' },
+  { key: 'empresa', label: 'Empresa' },
+  { key: 'operativo', label: 'Operativo / calle' },
 ];
 
 export const ACTOR_VIAL_FALLBACK: Record<string, unknown>[] = [

@@ -186,6 +186,46 @@
             </select>
           </div>
           <div class="field">
+            <label>Identidad de género</label>
+            <select [(ngModel)]="form.identidadGenero">
+              @for (g of identidadesGenero(); track catValor(g)) {
+                <option [value]="catValor(g)">{{ catEtiqueta(g) }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Orientación sexual</label>
+            <select [(ngModel)]="form.orientacionSexual">
+              @for (g of orientacionesSexuales(); track catValor(g)) {
+                <option [value]="catValor(g)">{{ catEtiqueta(g) }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Discapacidad</label>
+            <select [(ngModel)]="form.discapacidad">
+              @for (g of discapacidades(); track catValor(g)) {
+                <option [value]="catValor(g)">{{ catEtiqueta(g) }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Multiculturalidad</label>
+            <select [(ngModel)]="form.multiCulturalidad">
+              @for (g of multiculturalidades(); track catValor(g)) {
+                <option [value]="catValor(g)">{{ catEtiqueta(g) }}</option>
+              }
+            </select>
+          </div>
+          <div class="field field--wide">
+            <label>Origen del alumno en jornada *</label>
+            <select [(ngModel)]="form.origenJornadaCap" required>
+              @for (o of origenesJornada; track o.key) {
+                <option [value]="o.key">{{ o.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
             <label>Actor vial @if (!alumnoEnArgo()) { * }</label>
             <select [(ngModel)]="form.actorVial">
               <option value="">Seleccione…</option>

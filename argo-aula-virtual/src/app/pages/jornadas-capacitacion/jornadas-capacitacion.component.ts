@@ -18,8 +18,14 @@ import {
   ACTOR_VIAL_FALLBACK,
   catEtiqueta,
   catValor,
+  DISCAPACIDAD_FALLBACK,
   etiquetaGenero,
   GENEROS_FALLBACK,
+  IDENTIDAD_GENERO_FALLBACK,
+  MULTICULTURALIDAD_FALLBACK,
+  ORIENTACION_SEXUAL_FALLBACK,
+  ORIGENES_JORNADA_UI,
+  PORTAL_ALUMNO_DEFAULTS,
   TIPOS_DOC_FALLBACK,
 } from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
@@ -62,7 +68,12 @@ export class JornadasCapacitacionComponent implements OnInit {
 
   tiposDoc = signal<Record<string, unknown>[]>([]);
   generos = signal<Record<string, unknown>[]>([]);
+  identidadesGenero = signal<Record<string, unknown>[]>([]);
+  orientacionesSexuales = signal<Record<string, unknown>[]>([]);
+  discapacidades = signal<Record<string, unknown>[]>([]);
+  multiculturalidades = signal<Record<string, unknown>[]>([]);
   actoresViales = signal<Record<string, unknown>[]>([]);
+  readonly origenesJornada = ORIGENES_JORNADA_UI;
   departamentos = signal<{ codDepto: string; nombreDepto: string }[]>([]);
   municipiosExp = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
   municipiosOrigen = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
@@ -84,6 +95,11 @@ export class JornadasCapacitacionComponent implements OnInit {
     celular: '',
     direccion: '',
     genero: '',
+    identidadGenero: PORTAL_ALUMNO_DEFAULTS.identidadGenero,
+    orientacionSexual: PORTAL_ALUMNO_DEFAULTS.orientacionSexual,
+    discapacidad: PORTAL_ALUMNO_DEFAULTS.discapacidad,
+    multiCulturalidad: PORTAL_ALUMNO_DEFAULTS.multiCulturalidad,
+    origenJornadaCap: PORTAL_ALUMNO_DEFAULTS.origenJornadaCap,
     actorVial: '',
     fechaNac: '',
     codMunicipio: '',
@@ -128,6 +144,22 @@ export class JornadasCapacitacionComponent implements OnInit {
     this.catalogs.generos().subscribe({
       next: (rows) => this.generos.set(rows?.length ? rows : GENEROS_FALLBACK),
       error: () => this.generos.set(GENEROS_FALLBACK),
+    });
+    this.catalogs.identidadesGenero().subscribe({
+      next: (rows) => this.identidadesGenero.set(rows?.length ? rows : IDENTIDAD_GENERO_FALLBACK),
+      error: () => this.identidadesGenero.set(IDENTIDAD_GENERO_FALLBACK),
+    });
+    this.catalogs.orientacionesSexuales().subscribe({
+      next: (rows) => this.orientacionesSexuales.set(rows?.length ? rows : ORIENTACION_SEXUAL_FALLBACK),
+      error: () => this.orientacionesSexuales.set(ORIENTACION_SEXUAL_FALLBACK),
+    });
+    this.catalogs.discapacidades().subscribe({
+      next: (rows) => this.discapacidades.set(rows?.length ? rows : DISCAPACIDAD_FALLBACK),
+      error: () => this.discapacidades.set(DISCAPACIDAD_FALLBACK),
+    });
+    this.catalogs.multiculturalidad().subscribe({
+      next: (rows) => this.multiculturalidades.set(rows?.length ? rows : MULTICULTURALIDAD_FALLBACK),
+      error: () => this.multiculturalidades.set(MULTICULTURALIDAD_FALLBACK),
     });
     this.catalogs.actoresViales().subscribe({
       next: (rows) => this.actoresViales.set(rows?.length ? rows : ACTOR_VIAL_FALLBACK),
@@ -311,6 +343,11 @@ export class JornadasCapacitacionComponent implements OnInit {
           this.form.nombre1 = String(a['nombre1'] || '');
           this.form.nombre2 = String(a['nombre2'] || '');
           this.form.genero = String(a['genero'] || '').toUpperCase();
+          if (a['identidadGenero']) this.form.identidadGenero = String(a['identidadGenero']);
+          if (a['orientacionSexual']) this.form.orientacionSexual = String(a['orientacionSexual']);
+          if (a['discapacidad']) this.form.discapacidad = String(a['discapacidad']);
+          if (a['multiCulturalidad']) this.form.multiCulturalidad = String(a['multiCulturalidad']);
+          if (a['origenJornadaCap']) this.form.origenJornadaCap = String(a['origenJornadaCap']);
           this.form.actorVial = String(a['actorVial'] || '').trim();
           this.form.fechaNac = String(a['fechaNac'] || '');
           this.form.codMunicipio = String(a['codMunicipio'] || a['munOrigen'] || '');
@@ -384,6 +421,10 @@ export class JornadasCapacitacionComponent implements OnInit {
     }
     if (!this.alumnoEnArgo() && !String(this.form.actorVial || '').trim()) {
       this.error.set('Seleccione el actor vial.');
+      return;
+    }
+    if (!String(this.form.origenJornadaCap || '').trim()) {
+      this.error.set('Seleccione el origen del alumno en jornada.');
       return;
     }
     this.loading.set(true);

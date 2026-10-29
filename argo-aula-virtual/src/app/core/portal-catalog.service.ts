@@ -30,6 +30,22 @@ export class PortalCatalogService {
     return this.http.get<Record<string, unknown>[]>(`${this.base}/generos`);
   }
 
+  identidadesGenero(): Observable<Record<string, unknown>[]> {
+    return this.http.get<Record<string, unknown>[]>(`${this.base}/identidades-genero`);
+  }
+
+  orientacionesSexuales(): Observable<Record<string, unknown>[]> {
+    return this.http.get<Record<string, unknown>[]>(`${this.base}/orientaciones-sexuales`);
+  }
+
+  discapacidades(): Observable<Record<string, unknown>[]> {
+    return this.http.get<Record<string, unknown>[]>(`${this.base}/discapacidades`);
+  }
+
+  multiculturalidad(): Observable<Record<string, unknown>[]> {
+    return this.http.get<Record<string, unknown>[]>(`${this.base}/multiculturalidad`);
+  }
+
   actoresViales(): Observable<Record<string, unknown>[]> {
     return this.http.get<Record<string, unknown>[]>(`${this.base}/actores-viales`);
   }
