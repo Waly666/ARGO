@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AutorizacionDatosComponent } from '../../shared/autorizacion-datos/autorizacion-datos.component';
@@ -31,11 +32,38 @@ import {
 import { PortalCatalogService } from '../../core/portal-catalog.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import {
+  PERFILES_INSTITUCION_UI,
+  esNivelBasicaMedia,
+  esNivelSuperior,
+  labelCursoGrado,
+  labelInstitucionBuscar,
+  normalizarNivelInstitucion,
+  opcionesAreaImparte,
+  opcionesGradoColegio,
+  opcionesSemestreInstitucion,
+  opcionesTipoInstitucion,
+  validarOrigenJornadaForm,
+  type OrigenJornadaKey,
+} from '../../core/origen-jornada.helpers';
 
 @Component({
   selector: 'av-jornadas-capacitacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent, PortalIconComponent, PortalPromoBannerHeroComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    TurnstileComponent,
+    AutorizacionDatosComponent,
+    PortalIconComponent,
+    PortalPromoBannerHeroComponent,
+    CatalogoEnumBuscarComponent,
+  ],
   templateUrl: './jornadas-capacitacion.component.html',
   styleUrl: './jornadas-capacitacion.component.scss',
 })
@@ -74,6 +102,9 @@ export class JornadasCapacitacionComponent implements OnInit {
   multiculturalidades = signal<Record<string, unknown>[]>([]);
   actoresViales = signal<Record<string, unknown>[]>([]);
   readonly origenesJornada = ORIGENES_JORNADA_UI;
+  readonly perfilesInstitucion = PERFILES_INSTITUCION_UI;
+  readonly opcionesTipoInstitucion = opcionesTipoInstitucion;
+  readonly opcionesAreaImparte = opcionesAreaImparte;
   departamentos = signal<{ codDepto: string; nombreDepto: string }[]>([]);
   municipiosExp = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
   municipiosOrigen = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
@@ -95,11 +126,24 @@ export class JornadasCapacitacionComponent implements OnInit {
     celular: '',
     direccion: '',
     genero: '',
-    identidadGenero: PORTAL_ALUMNO_DEFAULTS.identidadGenero,
-    orientacionSexual: PORTAL_ALUMNO_DEFAULTS.orientacionSexual,
-    discapacidad: PORTAL_ALUMNO_DEFAULTS.discapacidad,
-    multiCulturalidad: PORTAL_ALUMNO_DEFAULTS.multiCulturalidad,
-    origenJornadaCap: PORTAL_ALUMNO_DEFAULTS.origenJornadaCap,
+    identidadGenero: PORTAL_ALUMNO_DEFAULTS.identidadGenero as string,
+    orientacionSexual: PORTAL_ALUMNO_DEFAULTS.orientacionSexual as string,
+    discapacidad: PORTAL_ALUMNO_DEFAULTS.discapacidad as string,
+    multiCulturalidad: PORTAL_ALUMNO_DEFAULTS.multiCulturalidad as string,
+    origenJornadaCap: PORTAL_ALUMNO_DEFAULTS.origenJornadaCap as OrigenJornadaKey,
+    tipoInstitucionEducativa: 'secundaria',
+    perfilInstitucionEducativa: 'estudiante',
+    colegioCodigo: '',
+    colegioNombre: '',
+    gradoColegio: null as number | null,
+    semestreInstitucion: null as number | null,
+    titulacionCodigo: '',
+    programaInstitucion: '',
+    areaImparteColegio: '',
+    estamentoId: '',
+    estamentoNombre: '',
+    cargoEstamento: '',
+    dependenciaEstamento: '',
     actorVial: '',
     fechaNac: '',
     codMunicipio: '',
@@ -135,6 +179,104 @@ export class JornadasCapacitacionComponent implements OnInit {
   nombreExito = signal('');
   nombreEmpresa = signal('');
   correoEmpresa = signal('');
+
+  nivelInstitucionUi = computed(() => normalizarNivelInstitucion(this.form.tipoInstitucionEducativa));
+  esProfesorInstitucion = computed(
+    () =>
+      this.form.origenJornadaCap === 'colegio' &&
+      this.form.perfilInstitucionEducativa === 'profesor',
+  );
+  esNivelBasicaMediaUi = computed(() => esNivelBasicaMedia(this.form.tipoInstitucionEducativa));
+  esNivelSuperiorUi = computed(() => esNivelSuperior(this.form.tipoInstitucionEducativa));
+  claveBusquedaInstitucion = computed(
+    () => `${this.nivelInstitucionUi()}|${this.form.codMunicipio || this.form.munOrigen || ''}`,
+  );
+  labelInstitucion = computed(() => labelInstitucionBuscar(this.form.tipoInstitucionEducativa));
+  labelGradoCurso = computed(() => labelCursoGrado(this.form.tipoInstitucionEducativa));
+
+  textoTipoInstitucion = computed(() => {
+    const k = this.nivelInstitucionUi();
+    return opcionesTipoInstitucion().find((o) => o.value === k)?.label || '';
+  });
+  textoGradoColegio = computed(() => {
+    const g = this.form.gradoColegio;
+    if (g == null || !Number.isFinite(Number(g))) return '';
+    return this.nivelInstitucionUi() === 'primaria' ? `Curso ${g}` : `Grado ${g}`;
+  });
+  textoSemestreInstitucion = computed(() => {
+    const s = this.form.semestreInstitucion;
+    if (s == null || !Number.isFinite(Number(s))) return '';
+    return `Semestre ${s}`;
+  });
+  textoAreaImparte = computed(() => {
+    const k = String(this.form.areaImparteColegio || '').trim();
+    return opcionesAreaImparte().find((o) => o.value === k)?.label || '';
+  });
+
+  opcionesGradoColegioLocal = computed(() => opcionesGradoColegio(this.form.tipoInstitucionEducativa));
+  opcionesSemestreLocal = opcionesSemestreInstitucion;
+
+  buscarColegiosRemoto = (q: string) => {
+    const cod = String(this.form.codMunicipio || this.form.munOrigen || '').trim();
+    const nivel = this.nivelInstitucionUi();
+    const superior = ['tecnica', 'tecnologica', 'universidad'].includes(nivel);
+    const limit = superior ? 500 : 60;
+    return this.catalogs.buscarColegios(cod, q, limit, nivel).pipe(
+      map((rows) =>
+        rows.map((r) => {
+          const nombre = String(r.nombreEstablecimiento || r.label || '').trim();
+          const muni = String(r.nombreMunicipio || '').trim();
+          const depto = String(r.nombreDepartamento || '').trim();
+          const ubi = r.hint || [muni, depto].filter(Boolean).join(' · ');
+          return {
+            value: r.codigoEstablecimiento,
+            label: nombre,
+            hint: ubi || undefined,
+          };
+        }),
+      ),
+      catchError(() => of([] as EnumBuscarOption[])),
+    );
+  };
+
+  buscarTitulacionesRemoto = (q: string) => {
+    const nivel = this.nivelInstitucionUi();
+    return this.catalogs.buscarTitulaciones(nivel, q, 80).pipe(
+      map((rows) =>
+        rows.map((r) => ({
+          value: r.codigo,
+          label: r.nombre || r.label || '',
+          hint: r.hint,
+        })),
+      ),
+      catchError(() => of([] as EnumBuscarOption[])),
+    );
+  };
+
+  buscarEstamentosRemoto = (q: string) => {
+    const cod = String(this.form.codMunicipio || this.form.munOrigen || '').trim();
+    return this.catalogs.buscarEstamentosPublicos(cod, q, 40).pipe(
+      map((rows) =>
+        rows.map((r) => ({
+          value: r.idEstamento,
+          label: r.label || r.nombre || '',
+        })),
+      ),
+      catchError(() => of([] as EnumBuscarOption[])),
+    );
+  };
+
+  buscarEmpresasOrigenRemoto = (q: string) =>
+    this.api.buscarEmpresasPublico(q.trim()).pipe(
+      map((rows) =>
+        rows.map((e) => ({
+          value: e._id,
+          label: e.nombre,
+          hint: e.identificacion,
+        })),
+      ),
+      catchError(() => of([] as EnumBuscarOption[])),
+    );
 
   ngOnInit() {
     this.catalogs.tiposDoc().subscribe({
@@ -314,6 +456,157 @@ export class JornadasCapacitacionComponent implements OnInit {
     this.empresaDropReg.set(false);
   }
 
+  setOrigenJornadaCap(key: 'colegio' | 'estamento' | 'empresa' | 'operativo') {
+    this.form.origenJornadaCap = key;
+    if (key !== 'colegio') {
+      this.form.tipoInstitucionEducativa = '';
+      this.form.perfilInstitucionEducativa = 'estudiante';
+      this.form.colegioCodigo = '';
+      this.form.colegioNombre = '';
+      this.form.gradoColegio = null;
+      this.form.semestreInstitucion = null;
+      this.form.titulacionCodigo = '';
+      this.form.programaInstitucion = '';
+      this.form.areaImparteColegio = '';
+    } else {
+      if (!this.form.tipoInstitucionEducativa) this.form.tipoInstitucionEducativa = 'secundaria';
+      if (!this.form.perfilInstitucionEducativa) this.form.perfilInstitucionEducativa = 'estudiante';
+    }
+    if (key !== 'estamento') {
+      this.form.estamentoId = '';
+      this.form.estamentoNombre = '';
+      this.form.cargoEstamento = '';
+      this.form.dependenciaEstamento = '';
+    }
+    if (key !== 'empresa') {
+      // empresaId opcional (transporte) se conserva
+    } else {
+      this.form.empresaId = null;
+      this.form.empresaNombre = null;
+      this.empresaBusqReg.set('');
+    }
+  }
+
+  setPerfilInstitucion(perfil: 'estudiante' | 'profesor') {
+    this.form.perfilInstitucionEducativa = perfil;
+    if (perfil === 'profesor') {
+      this.form.gradoColegio = null;
+      this.form.semestreInstitucion = null;
+      this.form.titulacionCodigo = '';
+      this.form.programaInstitucion = '';
+    } else {
+      this.form.areaImparteColegio = '';
+    }
+  }
+
+  onTipoInstitucionPick(opt: EnumBuscarOption) {
+    this.form.tipoInstitucionEducativa = String(opt.value);
+    this.form.colegioCodigo = '';
+    this.form.colegioNombre = '';
+    this.form.gradoColegio = null;
+    this.form.semestreInstitucion = null;
+    this.form.titulacionCodigo = '';
+    this.form.programaInstitucion = '';
+  }
+
+  onTipoInstitucionLimpiar() {
+    this.form.tipoInstitucionEducativa = '';
+  }
+
+  onColegioPick(opt: EnumBuscarOption) {
+    this.form.colegioCodigo = String(opt.value || '').trim();
+    this.form.colegioNombre = String(opt.label || '').trim();
+  }
+
+  onColegioLimpiar() {
+    this.form.colegioCodigo = '';
+    this.form.colegioNombre = '';
+  }
+
+  onGradoColegioPick(opt: EnumBuscarOption) {
+    this.form.gradoColegio = parseInt(String(opt.value), 10);
+  }
+
+  onGradoColegioLimpiar() {
+    this.form.gradoColegio = null;
+  }
+
+  onSemestreInstitucionPick(opt: EnumBuscarOption) {
+    this.form.semestreInstitucion = parseInt(String(opt.value), 10);
+  }
+
+  onSemestreInstitucionLimpiar() {
+    this.form.semestreInstitucion = null;
+  }
+
+  onAreaImpartePick(opt: EnumBuscarOption) {
+    this.form.areaImparteColegio = String(opt.value);
+  }
+
+  onAreaImparteLimpiar() {
+    this.form.areaImparteColegio = '';
+  }
+
+  onTitulacionPick(opt: EnumBuscarOption) {
+    this.form.titulacionCodigo = String(opt.value || '').trim();
+    this.form.programaInstitucion = String(opt.label || '').trim();
+  }
+
+  onTitulacionLimpiar() {
+    this.form.titulacionCodigo = '';
+    this.form.programaInstitucion = '';
+  }
+
+  onEstamentoPick(opt: EnumBuscarOption) {
+    this.form.estamentoId = String(opt.value || '').trim();
+    this.form.estamentoNombre = String(opt.label || '').trim();
+  }
+
+  onEstamentoLimpiar() {
+    this.form.estamentoId = '';
+    this.form.estamentoNombre = '';
+  }
+
+  onEmpresaOrigenPick(opt: EnumBuscarOption) {
+    this.form.empresaId = String(opt.value);
+    this.form.empresaNombre = String(opt.label);
+  }
+
+  onEmpresaOrigenLimpiar() {
+    this.form.empresaId = null;
+    this.form.empresaNombre = null;
+  }
+
+  private aplicarOrigenDesdeAlumno(a: Record<string, string | number | boolean>) {
+    if (a['tipoInstitucionEducativa']) {
+      this.form.tipoInstitucionEducativa = String(a['tipoInstitucionEducativa']);
+    }
+    if (a['perfilInstitucionEducativa']) {
+      this.form.perfilInstitucionEducativa = String(a['perfilInstitucionEducativa']);
+    }
+    if (a['colegioCodigo']) this.form.colegioCodigo = String(a['colegioCodigo']);
+    if (a['colegioNombre']) this.form.colegioNombre = String(a['colegioNombre']);
+    if (a['gradoColegio'] !== '' && a['gradoColegio'] != null) {
+      this.form.gradoColegio = Number(a['gradoColegio']);
+    }
+    if (a['semestreInstitucion'] !== '' && a['semestreInstitucion'] != null) {
+      this.form.semestreInstitucion = Number(a['semestreInstitucion']);
+    }
+    if (a['titulacionCodigo']) this.form.titulacionCodigo = String(a['titulacionCodigo']);
+    if (a['programaInstitucion']) this.form.programaInstitucion = String(a['programaInstitucion']);
+    if (a['areaImparteColegio']) this.form.areaImparteColegio = String(a['areaImparteColegio']);
+    if (a['estamentoId']) this.form.estamentoId = String(a['estamentoId']);
+    if (a['estamentoNombre']) this.form.estamentoNombre = String(a['estamentoNombre']);
+    if (a['cargoEstamento']) this.form.cargoEstamento = String(a['cargoEstamento']);
+    if (a['dependenciaEstamento']) this.form.dependenciaEstamento = String(a['dependenciaEstamento']);
+    if (a['empresaId']) {
+      this.form.empresaId = String(a['empresaId']);
+      if (this.form.origenJornadaCap === 'empresa') {
+        this.form.empresaNombre = this.form.empresaNombre || null;
+      }
+    }
+  }
+
   private captchaToken(): string {
     return this.turnstileToken() || this.turnstile()?.getToken() || '';
   }
@@ -347,7 +640,10 @@ export class JornadasCapacitacionComponent implements OnInit {
           if (a['orientacionSexual']) this.form.orientacionSexual = String(a['orientacionSexual']);
           if (a['discapacidad']) this.form.discapacidad = String(a['discapacidad']);
           if (a['multiCulturalidad']) this.form.multiCulturalidad = String(a['multiCulturalidad']);
-          if (a['origenJornadaCap']) this.form.origenJornadaCap = String(a['origenJornadaCap']);
+          if (a['origenJornadaCap']) {
+            this.form.origenJornadaCap = String(a['origenJornadaCap']) as OrigenJornadaKey;
+          }
+          this.aplicarOrigenDesdeAlumno(a);
           this.form.actorVial = String(a['actorVial'] || '').trim();
           this.form.fechaNac = String(a['fechaNac'] || '');
           this.form.codMunicipio = String(a['codMunicipio'] || a['munOrigen'] || '');
@@ -423,8 +719,9 @@ export class JornadasCapacitacionComponent implements OnInit {
       this.error.set('Seleccione el actor vial.');
       return;
     }
-    if (!String(this.form.origenJornadaCap || '').trim()) {
-      this.error.set('Seleccione el origen del alumno en jornada.');
+    const errOrigen = validarOrigenJornadaForm(this.form);
+    if (errOrigen) {
+      this.error.set(errOrigen);
       return;
     }
     this.loading.set(true);

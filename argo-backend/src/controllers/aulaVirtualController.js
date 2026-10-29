@@ -828,6 +828,9 @@ exports.catalogosDepartamentos = catalogoController.departamentos;
 exports.catalogosMunicipios = catalogoController.municipios;
 exports.catalogosBuscarMunicipios = catalogoController.buscarMunicipios;
 exports.catalogosMunicipio = catalogoController.municipioPorCodigo;
+exports.catalogosBuscarColegios = catalogoController.buscarColegios;
+exports.catalogosBuscarTitulaciones = catalogoController.buscarTitulaciones;
+exports.catalogosBuscarEstamentos = catalogoController.buscarEstamentos;
 
 exports.enviarContacto = async (req, res, next) => {
   try {

@@ -21,6 +21,13 @@ const {
 } = require('./autorizacionTratamientoDatos');
 const { PORTAL_ALUMNO_DEFAULTS } = require('../constants/portalAlumnoDefaults');
 const { normalizarOrigenJornadaCap } = require('../constants/origenJornadaCap');
+const {
+  CAMPOS_ORIGEN_JORNADA,
+  aplicarOrigenJornadaCapEnDto,
+  validarOrigenJornadaCapAlumno,
+  copiarCamposOrigenDesdeEntrada,
+  limpiarCamposOrigenEnDocumento,
+} = require('./origenJornadaCapAlumno');
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_INTENTOS = 5;
@@ -66,7 +73,7 @@ function demograficosDesdeEntrada(alumno) {
 }
 
 function buildAlumnoPayload(alumno, numDoc) {
-  return {
+  const dto = {
     numDoc,
     tipoDoc: alumno?.tipoDoc || '1',
     expedida: alumno?.expedida || '',
@@ -84,6 +91,29 @@ function buildAlumnoPayload(alumno, numDoc) {
     codMunicipio: alumno?.codMunicipio || '',
     ...demograficosDesdeEntrada(alumno),
   };
+  copiarCamposOrigenDesdeEntrada(alumno, dto);
+  for (const k of [
+    'colegioNombre',
+    'programaInstitucion',
+    'estamentoNombre',
+    'cargoEstamento',
+    'dependenciaEstamento',
+  ]) {
+    if (dto[k]) dto[k] = nombreMayusculas(dto[k]);
+  }
+  aplicarOrigenJornadaCapEnDto(dto, alumno);
+  return dto;
+}
+
+function mergeOrigenDesdeFicha(alumno, da) {
+  if (!da) return alumno;
+  const out = { ...alumno };
+  for (const k of CAMPOS_ORIGEN_JORNADA) {
+    if (out[k] !== undefined && out[k] !== '') continue;
+    if (da[k] != null && da[k] !== '') out[k] = da[k];
+  }
+  if (!out.origenJornadaCap && da.origenJornadaCap) out.origenJornadaCap = da.origenJornadaCap;
+  return out;
 }
 
 async function mailFromHeader(nombreCea) {
@@ -122,15 +152,11 @@ async function validarDatosRegistroJornada({ email, alumno }) {
       err.status = 400;
       throw err;
     }
-    if (!normalizarOrigenJornadaCap(payload.origenJornadaCap)) {
-      const err = new Error('Seleccione el origen del alumno en jornada');
-      err.status = 400;
-      throw err;
-    }
+    validarOrigenJornadaCapAlumno(alumno);
     return { mail, numDoc, alumnoPayload: payload, alumnoExistente: false };
   }
 
-  const alumnoPayload = buildAlumnoPayload(
+  const merged = mergeOrigenDesdeFicha(
     {
       ...alumno,
       tipoDoc: alumno?.tipoDoc || da.tipoDoc,
@@ -151,15 +177,12 @@ async function validarDatosRegistroJornada({ email, alumno }) {
       direccion: alumno?.direccion || da.direccion,
       munOrigen: alumno?.munOrigen || da.munOrigen,
       codMunicipio: alumno?.codMunicipio || da.codMunicipio,
-      empresaId: alumno?.empresaId || da.empresaId,
+      empresaId: alumno?.empresaId ?? da.empresaId,
     },
-    numDoc,
+    da,
   );
-  if (!normalizarOrigenJornadaCap(alumnoPayload.origenJornadaCap)) {
-    const err = new Error('Seleccione el origen del alumno en jornada');
-    err.status = 400;
-    throw err;
-  }
+  validarOrigenJornadaCapAlumno(merged);
+  const alumnoPayload = buildAlumnoPayload(merged, numDoc);
   return { mail, numDoc, alumnoPayload, alumnoExistente: true };
 }
 
@@ -184,60 +207,65 @@ async function crearOActualizarAlumnoJornada({ email, alumno, consentimiento }) 
     ? camposConsentimientoAlumno(consentimiento.canal || CANAL_CONSENTIMIENTO.JORNADAS)
     : {};
 
-  const demo = demograficosDesdeEntrada(alumno);
-  if (!normalizarOrigenJornadaCap(demo.origenJornadaCap)) {
-    const err = new Error('Seleccione el origen del alumno en jornada');
-    err.status = 400;
-    throw err;
-  }
+  validarOrigenJornadaCapAlumno(alumno);
+  const payload = buildAlumnoPayload(alumno, numDoc);
+  const origenJ = payload.origenJornadaCap;
+  const empresaOrigen =
+    origenJ === 'empresa' && empresaIdValido ? empresaIdValido : empresaIdValido;
 
   if (!da) {
     da = await DatosAlumno.create({
       tipoAlumno: TIPO_JORNADAS_CAPACITACION,
       origen: ORIGEN_WEB,
-      tipoDoc: alumno.tipoDoc || '1',
+      tipoDoc: payload.tipoDoc || '1',
       numDoc,
-      expedida: alumno.expedida || '',
-      apellido1: nombreMayusculas(alumno.apellido1),
-      apellido2: nombreMayusculas(alumno.apellido2),
-      nombre1: nombreMayusculas(alumno.nombre1),
-      nombre2: nombreMayusculas(alumno.nombre2),
-      fechaNac: alumno.fechaNac ? new Date(alumno.fechaNac) : null,
-      genero: strCampo(alumno.genero).toUpperCase(),
-      identidadGenero: demo.identidadGenero,
-      orientacionSexual: demo.orientacionSexual,
-      discapacidad: demo.discapacidad,
-      multiCulturalidad: demo.multiCulturalidad,
-      origenJornadaCap: demo.origenJornadaCap,
-      actorVial: alumno.actorVial || '',
+      expedida: payload.expedida || '',
+      apellido1: payload.apellido1,
+      apellido2: payload.apellido2,
+      nombre1: payload.nombre1,
+      nombre2: payload.nombre2,
+      fechaNac: payload.fechaNac ? new Date(payload.fechaNac) : null,
+      genero: payload.genero,
+      identidadGenero: payload.identidadGenero,
+      orientacionSexual: payload.orientacionSexual,
+      discapacidad: payload.discapacidad,
+      multiCulturalidad: payload.multiCulturalidad,
+      origenJornadaCap: payload.origenJornadaCap,
+      actorVial: payload.actorVial || '',
       correo: mail,
-      celular: alumno.celular || '',
-      direccion: alumno.direccion || '',
-      munOrigen: alumno.munOrigen || '',
-      codMunicipio: alumno.codMunicipio || '',
-      empresaId: empresaIdValido,
+      celular: payload.celular || '',
+      direccion: payload.direccion || '',
+      munOrigen: payload.munOrigen || '',
+      codMunicipio: payload.codMunicipio || '',
+      empresaId: empresaOrigen,
       userAddReg: 'portal-jornadas',
       ...consentFields,
+      ...Object.fromEntries(
+        CAMPOS_ORIGEN_JORNADA.filter((k) => payload[k] !== undefined).map((k) => [k, payload[k]]),
+      ),
     });
   } else {
     da.tipoAlumno = TIPO_JORNADAS_CAPACITACION;
     da.origen = ORIGEN_WEB;
     if (mail) da.correo = mail;
-    if (alumno.celular) da.celular = String(alumno.celular).trim();
-    if (alumno.direccion) da.direccion = String(alumno.direccion).trim();
-    if (!da.actorVial && alumno.actorVial) da.actorVial = String(alumno.actorVial).trim();
-    if (alumno.expedida) da.expedida = String(alumno.expedida).trim();
-    if (empresaIdValido) da.empresaId = empresaIdValido;
-    if (alumno.codMunicipio || alumno.munOrigen) {
-      da.codMunicipio = alumno.codMunicipio || alumno.munOrigen;
-      da.munOrigen = alumno.munOrigen || alumno.codMunicipio;
+    if (payload.celular) da.celular = String(payload.celular).trim();
+    if (payload.direccion) da.direccion = String(payload.direccion).trim();
+    if (!da.actorVial && payload.actorVial) da.actorVial = String(payload.actorVial).trim();
+    if (payload.expedida) da.expedida = String(payload.expedida).trim();
+    if (empresaOrigen) da.empresaId = empresaOrigen;
+    if (payload.codMunicipio || payload.munOrigen) {
+      da.codMunicipio = payload.codMunicipio || payload.munOrigen;
+      da.munOrigen = payload.munOrigen || payload.codMunicipio;
     }
-    if (alumno.genero) da.genero = strCampo(alumno.genero).toUpperCase();
-    if (alumno.identidadGenero || !da.identidadGenero) da.identidadGenero = demo.identidadGenero;
-    if (alumno.orientacionSexual || !da.orientacionSexual) da.orientacionSexual = demo.orientacionSexual;
-    if (alumno.discapacidad || !da.discapacidad) da.discapacidad = demo.discapacidad;
-    if (alumno.multiCulturalidad || !da.multiCulturalidad) da.multiCulturalidad = demo.multiCulturalidad;
-    da.origenJornadaCap = demo.origenJornadaCap;
+    if (payload.genero) da.genero = strCampo(payload.genero).toUpperCase();
+    if (payload.identidadGenero || !da.identidadGenero) da.identidadGenero = payload.identidadGenero;
+    if (payload.orientacionSexual || !da.orientacionSexual) da.orientacionSexual = payload.orientacionSexual;
+    if (payload.discapacidad || !da.discapacidad) da.discapacidad = payload.discapacidad;
+    if (payload.multiCulturalidad || !da.multiCulturalidad) {
+      da.multiCulturalidad = payload.multiCulturalidad;
+    }
+    da.origenJornadaCap = payload.origenJornadaCap;
+    limpiarCamposOrigenEnDocumento(da, payload);
     if (Object.keys(consentFields).length) {
       Object.assign(da, consentFields);
     }

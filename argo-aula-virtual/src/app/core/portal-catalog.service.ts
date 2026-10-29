@@ -70,4 +70,62 @@ export class PortalCatalogService {
       `${this.base}/municipio/${encodeURIComponent(codMunicipio)}`,
     );
   }
+
+  buscarColegios(
+    codMunicipio: string,
+    q = '',
+    limit = 60,
+    nivel = '',
+  ): Observable<
+    {
+      codigoEstablecimiento: string;
+      nombreEstablecimiento?: string;
+      nombreMunicipio?: string;
+      nombreDepartamento?: string;
+      label?: string;
+      hint?: string;
+    }[]
+  > {
+    const params = new URLSearchParams({ limit: String(limit) });
+    const mun = String(codMunicipio || '').trim();
+    if (mun) params.set('codMunicipio', mun);
+    if (q.trim()) params.set('q', q.trim());
+    if (nivel.trim()) params.set('nivel', nivel.trim());
+    return this.http.get<
+      {
+        codigoEstablecimiento: string;
+        nombreEstablecimiento?: string;
+        nombreMunicipio?: string;
+        nombreDepartamento?: string;
+        label?: string;
+        hint?: string;
+      }[]
+    >(`${this.base}/colegios/buscar?${params}`);
+  }
+
+  buscarTitulaciones(
+    nivel = '',
+    q = '',
+    limit = 80,
+  ): Observable<{ codigo: string; nombre?: string; label?: string; hint?: string }[]> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (nivel.trim()) params.set('nivel', nivel.trim());
+    if (q.trim()) params.set('q', q.trim());
+    return this.http.get<
+      { codigo: string; nombre?: string; label?: string; hint?: string }[]
+    >(`${this.base}/titulaciones/buscar?${params}`);
+  }
+
+  buscarEstamentosPublicos(
+    codMunicipio = '',
+    q = '',
+    limit = 40,
+  ): Observable<{ idEstamento: string; nombre?: string; label?: string }[]> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (codMunicipio.trim()) params.set('codMunicipio', codMunicipio.trim());
+    if (q.trim()) params.set('q', q.trim());
+    return this.http.get<{ idEstamento: string; nombre?: string; label?: string }[]>(
+      `${this.base}/estamentos-publicos/buscar?${params}`,
+    );
+  }
 }

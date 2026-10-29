@@ -217,13 +217,167 @@
               }
             </select>
           </div>
-          <div class="field field--wide">
-            <label>Origen del alumno en jornada *</label>
-            <select [(ngModel)]="form.origenJornadaCap" required>
+          <div class="grid-section grid-section--origen field--wide">
+            <p class="grid-section__title">Origen del alumno en jornada *</p>
+            <p class="origen-jornada-lead">
+              Institución educativa, estamento, empresa u operativo/calle (como en recepción ARGO).
+            </p>
+            <div class="origen-jornada-chips" role="group" aria-label="Origen en jornada">
               @for (o of origenesJornada; track o.key) {
-                <option [value]="o.key">{{ o.label }}</option>
+                <button
+                  type="button"
+                  class="origen-jornada-chip"
+                  [class.active]="form.origenJornadaCap === o.key"
+                  (click)="setOrigenJornadaCap($any(o.key))">
+                  {{ o.label }}
+                </button>
               }
-            </select>
+            </div>
+
+            @if (form.origenJornadaCap === 'colegio') {
+              <div class="origen-jornada-chips perfil-institucion-chips" role="group" aria-label="Perfil">
+                @for (p of perfilesInstitucion; track p.key) {
+                  <button
+                    type="button"
+                    class="origen-jornada-chip"
+                    [class.active]="form.perfilInstitucionEducativa === p.key"
+                    (click)="setPerfilInstitucion(p.key)">
+                    {{ p.label }}
+                  </button>
+                }
+              </div>
+              <div class="origen-jornada-campos">
+                <av-catalogo-enum-buscar
+                  class="origen-campo origen-campo--nivel"
+                  label="Nivel *"
+                  placeholder="Primaria, secundaria…"
+                  [textoInicial]="textoTipoInstitucion()"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesTipoInstitucion()"
+                  (seleccionado)="onTipoInstitucionPick($event)"
+                  (limpiado)="onTipoInstitucionLimpiar()"
+                />
+                <av-catalogo-enum-buscar
+                  class="origen-campo origen-campo--inst"
+                  [label]="labelInstitucion()"
+                  placeholder="Seleccione o escriba…"
+                  [textoInicial]="form.colegioNombre || ''"
+                  [modoCombo]="true"
+                  [minLength]="1"
+                  [recargarClave]="claveBusquedaInstitucion()"
+                  [buscarRemoto]="buscarColegiosRemoto"
+                  (seleccionado)="onColegioPick($event)"
+                  (limpiado)="onColegioLimpiar()"
+                />
+                @if (esProfesorInstitucion()) {
+                  <av-catalogo-enum-buscar
+                    class="origen-campo origen-campo--extra"
+                    label="Área que imparte *"
+                    placeholder="Seleccione área…"
+                    [textoInicial]="textoAreaImparte()"
+                    [modoCombo]="true"
+                    [remoto]="false"
+                    [minLength]="1"
+                    [opcionesLocales]="opcionesAreaImparte()"
+                    (seleccionado)="onAreaImpartePick($event)"
+                    (limpiado)="onAreaImparteLimpiar()"
+                  />
+                } @else if (esNivelBasicaMediaUi()) {
+                  <av-catalogo-enum-buscar
+                    class="origen-campo origen-campo--extra"
+                    [label]="labelGradoCurso()"
+                    placeholder="Seleccione…"
+                    [textoInicial]="textoGradoColegio()"
+                    [modoCombo]="true"
+                    [remoto]="false"
+                    [minLength]="1"
+                    [opcionesLocales]="opcionesGradoColegioLocal()"
+                    (seleccionado)="onGradoColegioPick($event)"
+                    (limpiado)="onGradoColegioLimpiar()"
+                  />
+                } @else if (esNivelSuperiorUi()) {
+                  <av-catalogo-enum-buscar
+                    class="origen-campo origen-campo--extra"
+                    label="Semestre *"
+                    placeholder="1–12…"
+                    [textoInicial]="textoSemestreInstitucion()"
+                    [modoCombo]="true"
+                    [remoto]="false"
+                    [minLength]="1"
+                    [opcionesLocales]="opcionesSemestreLocal()"
+                    (seleccionado)="onSemestreInstitucionPick($event)"
+                    (limpiado)="onSemestreInstitucionLimpiar()"
+                  />
+                }
+              </div>
+              <p class="origen-jornada-hint">
+                @if (esNivelSuperiorUi()) {
+                  Lista IES del nivel: primero su municipio, luego departamento y resto del país.
+                } @else if (form.codMunicipio || form.munOrigen) {
+                  Filtra por municipio de residencia; escriba para refinar.
+                } @else {
+                  Escriba al menos 2 letras del nombre de la institución.
+                }
+              </p>
+              @if (!esProfesorInstitucion() && esNivelSuperiorUi()) {
+                <av-catalogo-enum-buscar
+                  class="origen-campo origen-campo--full"
+                  label="Titulación / programa *"
+                  placeholder="Seleccione titulación…"
+                  [textoInicial]="form.programaInstitucion || ''"
+                  [modoCombo]="true"
+                  [minLength]="1"
+                  [recargarClave]="nivelInstitucionUi()"
+                  [buscarRemoto]="buscarTitulacionesRemoto"
+                  (seleccionado)="onTitulacionPick($event)"
+                  (limpiado)="onTitulacionLimpiar()"
+                />
+              }
+            }
+
+            @if (form.origenJornadaCap === 'estamento') {
+              <div class="origen-jornada-campos origen-jornada-campos--estamento">
+                <av-catalogo-enum-buscar
+                  class="origen-campo origen-campo--est"
+                  label="Estamento público *"
+                  placeholder="Seleccione o escriba…"
+                  [textoInicial]="form.estamentoNombre || ''"
+                  [modoCombo]="true"
+                  [minLength]="1"
+                  [buscarRemoto]="buscarEstamentosRemoto"
+                  (seleccionado)="onEstamentoPick($event)"
+                  (limpiado)="onEstamentoLimpiar()"
+                />
+                <div class="field">
+                  <label>Cargo *</label>
+                  <input type="text" [(ngModel)]="form.cargoEstamento" />
+                </div>
+                <div class="field">
+                  <label>Dependencia *</label>
+                  <input type="text" [(ngModel)]="form.dependenciaEstamento" />
+                </div>
+              </div>
+            }
+
+            @if (form.origenJornadaCap === 'empresa') {
+              <av-catalogo-enum-buscar
+                class="origen-campo origen-campo--full"
+                label="Empresa del alumno *"
+                placeholder="Buscar en catálogo de clientes…"
+                [textoInicial]="form.empresaNombre || ''"
+                [modoCombo]="true"
+                [minLength]="2"
+                [buscarRemoto]="buscarEmpresasOrigenRemoto"
+                (seleccionado)="onEmpresaOrigenPick($event)"
+                (limpiado)="onEmpresaOrigenLimpiar()"
+              />
+            }
+
+            @if (form.origenJornadaCap === 'operativo') {
+              <p class="origen-jornada-hint">Operativo / calle: no requiere institución, estamento ni empresa.</p>
+            }
           </div>
           <div class="field">
             <label>Actor vial @if (!alumnoEnArgo()) { * }</label>
@@ -275,6 +429,7 @@
             </div>
           </div>
 
+          @if (form.origenJornadaCap !== 'empresa') {
           <div class="grid-section grid-section--empresa">
             <p class="grid-section__title">Empresa (opcional)</p>
             <p class="empresa-reg-hint">Si pertenece a una empresa de transporte, puede vincularla aquí.</p>
@@ -310,6 +465,7 @@
               }
             </div>
           </div>
+          }
         </div>
 
         @if (info()) {
