@@ -13,7 +13,14 @@
     <div class="cc-pub__frame">
       <div class="cc-pub__track" [style.--cc-pub-index]="index()">
         @for (slide of slides(); track slide.src; let i = $index) {
-          <figure class="cc-pub__slide" [class.cc-pub__slide--active]="i === index()">
+          <figure
+            class="cc-pub__slide"
+            [class.cc-pub__slide--active]="i === index()"
+            [id]="'cc-pub-slide-' + i"
+            role="tabpanel"
+            [attr.aria-hidden]="i === index() ? null : 'true'"
+            [attr.aria-labelledby]="'cc-pub-tab-' + i"
+          >
             @if (slide.enlace) {
               <a [href]="slide.enlace" target="_blank" rel="noopener noreferrer" class="cc-pub__link">
                 <img [src]="slide.src" [alt]="slide.alt" loading="lazy" />
@@ -36,11 +43,15 @@
           @for (slide of slides(); track slide.src; let i = $index) {
             <button
               type="button"
+              role="tab"
               class="cc-pub__dot"
               [class.cc-pub__dot--active]="i === index()"
+              [id]="'cc-pub-tab-' + i"
               (click)="goTo(i)"
               [attr.aria-label]="'Ir a imagen ' + (i + 1)"
               [attr.aria-selected]="i === index()"
+              [attr.aria-controls]="'cc-pub-slide-' + i"
+              [attr.tabindex]="i === index() ? 0 : -1"
             ></button>
           }
         </div>
