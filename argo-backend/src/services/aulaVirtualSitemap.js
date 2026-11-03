@@ -115,7 +115,10 @@ function generarRobotsTxt(req) {
     'Disallow: /registro',
     '',
   ];
-  if (base) lines.push(`Sitemap: ${base}/sitemap.xml`, '');
+  if (base) {
+    lines.push(`Sitemap: ${base}/sitemap.xml`, '');
+    lines.push(`Agentmap: ${base}/.well-known/ard.json`, '');
+  }
   return lines.join('\n');
 }
 

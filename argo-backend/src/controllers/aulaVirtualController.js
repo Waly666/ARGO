@@ -53,7 +53,8 @@ const {
 } = require('../services/aulaVirtualCohorte');
 const { enviarContactoPortal } = require('../services/aulaVirtualContacto');
 const { enviarPqrPortal } = require('../services/aulaVirtualPqr');
-const { generarSitemapXml, generarRobotsTxt } = require('../services/aulaVirtualSitemap');
+const { generarSitemapXml, generarRobotsTxt, siteBaseUrl } = require('../services/aulaVirtualSitemap');
+const { generarLlmsTxt, generarArdJson } = require('../services/aulaVirtualAgentDiscovery');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
 const { CANAL_CONSENTIMIENTO } = require('../constants/autorizacionTratamientoDatos');
@@ -868,6 +869,32 @@ exports.robotsTxt = async (req, res, next) => {
     const body = generarRobotsTxt(req);
     res.set('Content-Type', 'text/plain; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=3600');
+    res.send(body);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.llmsTxt = async (req, res, next) => {
+  try {
+    const body = await generarLlmsTxt(req);
+    res.set('Content-Type', 'text/markdown; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(body);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.ardJson = async (req, res, next) => {
+  try {
+    const body = await generarArdJson(req);
+    const base = siteBaseUrl(req);
+    res.set('Content-Type', 'application/json; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    if (base) {
+      res.set('Link', `<${base}/.well-known/ard.json>; rel="ard"`);
+    }
     res.send(body);
   } catch (e) {
     next(e);
