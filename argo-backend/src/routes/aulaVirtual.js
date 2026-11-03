@@ -58,6 +58,7 @@ const router = Router();
 
 /** Público — portal estudiante */
 router.get('/sitemap.xml', ctrl.sitemapXml);
+router.get('/robots.txt', ctrl.robotsTxt);
 router.get('/google-search-console/:filename', ctrl.googleSearchConsoleHtml);
 router.get('/config', ctrl.configPublica);
 router.get('/legal/autorizacion-datos', ctrl.autorizacionDatosLegal);

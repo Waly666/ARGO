@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-
-Disallow: /aula
-Disallow: /login
-Disallow: /registro
-
-Sitemap: /sitemap.xml

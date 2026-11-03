@@ -53,7 +53,7 @@ const {
 } = require('../services/aulaVirtualCohorte');
 const { enviarContactoPortal } = require('../services/aulaVirtualContacto');
 const { enviarPqrPortal } = require('../services/aulaVirtualPqr');
-const { generarSitemapXml } = require('../services/aulaVirtualSitemap');
+const { generarSitemapXml, generarRobotsTxt } = require('../services/aulaVirtualSitemap');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
 const { CANAL_CONSENTIMIENTO } = require('../constants/autorizacionTratamientoDatos');
@@ -858,6 +858,17 @@ exports.sitemapXml = async (req, res, next) => {
     res.set('Content-Type', 'application/xml; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=3600');
     res.send(xml);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.robotsTxt = async (req, res, next) => {
+  try {
+    const body = generarRobotsTxt(req);
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(body);
   } catch (e) {
     next(e);
   }

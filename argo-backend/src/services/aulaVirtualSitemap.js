@@ -103,7 +103,24 @@ async function generarSitemapXml(req) {
   ].join('\n');
 }
 
+/** robots.txt — Sitemap debe ser URL absoluta (Google / Lighthouse). */
+function generarRobotsTxt(req) {
+  const base = siteBaseUrl(req);
+  const lines = [
+    'User-agent: *',
+    'Allow: /',
+    '',
+    'Disallow: /aula',
+    'Disallow: /login',
+    'Disallow: /registro',
+    '',
+  ];
+  if (base) lines.push(`Sitemap: ${base}/sitemap.xml`, '');
+  return lines.join('\n');
+}
+
 module.exports = {
   generarSitemapXml,
+  generarRobotsTxt,
   siteBaseUrl,
 };
