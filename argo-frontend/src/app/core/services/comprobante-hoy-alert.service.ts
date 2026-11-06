@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 
+import { AlarmaService } from './alarma.service';
 import { AlertasRuntimeService } from './alertas-runtime.service';
 
 export type ComprobanteHoyTipo = 'ingreso' | 'egreso' | 'factura';
@@ -26,6 +27,7 @@ export interface ComprobanteHoyAlerta {
 @Injectable({ providedIn: 'root' })
 export class ComprobanteHoyAlertService {
   private runtime = inject(AlertasRuntimeService);
+  private alarmas = inject(AlarmaService);
   private vistos = new Set<string>();
   private readonly _alertas = signal<ComprobanteHoyAlerta[]>([]);
 
@@ -60,7 +62,8 @@ export class ComprobanteHoyAlertService {
   }
 
   private puedeMostrarTipo(tipo: ComprobanteHoyTipo): boolean {
-    return this.runtime.activa(this.claveAlarma(tipo));
+    const clave = this.claveAlarma(tipo);
+    return this.alarmas.tiene(clave) && this.runtime.activa(clave);
   }
 
   private purgarExpiradas(): void {

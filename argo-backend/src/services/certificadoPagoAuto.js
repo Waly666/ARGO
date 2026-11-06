@@ -158,6 +158,18 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
   const { programarEnvioCertificadoPorCorreo } = require('./certificadoEmail');
   programarEnvioCertificadoPorCorreo(cert._id);
 
+  if (esCapacitacionVirtualServicio(serv)) {
+    try {
+      const ProgresoVirtualCurso = require('../models/ProgresoVirtualCurso');
+      await ProgresoVirtualCurso.updateOne(
+        { ...numDocQuery(numDoc), idPrograma: String(liq.idProg) },
+        { $set: { certificadoEmitido: true } },
+      );
+    } catch (_) {
+      /* noop */
+    }
+  }
+
   return {
     creado: true,
     certificado: {

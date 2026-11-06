@@ -1,0 +1,153 @@
+@let c = curso();
+@let st = consignacion();
+<div class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
+  <div class="checkout-modal__backdrop" (click)="cerrar()"></div>
+  <div class="checkout-modal__panel" (click)="$event.stopPropagation()">
+    <header class="checkout-modal__hero">
+      <div class="checkout-modal__hero-top">
+        <div class="checkout-modal__badge">Pago seguro</div>
+        <button type="button" class="checkout-modal__close" (click)="cerrar()" aria-label="Cerrar">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+      <p class="checkout-modal__eyebrow">Checkout · Consignación</p>
+      <h2 id="checkout-modal-title" class="checkout-modal__title">{{ c.nombreProg }}</h2>
+      <div class="checkout-modal__price">
+        <span class="checkout-modal__price-label">Total a pagar</span>
+        <strong class="checkout-modal__price-value">{{ fmtPrecio(totalPagar()) }}</strong>
+      </div>
+    </header>
+
+    <div class="checkout-modal__steps" aria-label="Pasos del pago">
+      <div
+        class="checkout-modal__step"
+        [class.checkout-modal__step--active]="pasoConsignacion() === 1"
+        [class.checkout-modal__step--done]="pasoConsignacion() === 2">
+        <span class="checkout-modal__step-num">1</span>
+        <span class="checkout-modal__step-text">Elegir cuenta</span>
+      </div>
+      <div class="checkout-modal__step-line" [class.checkout-modal__step-line--done]="pasoConsignacion() === 2"></div>
+      <div class="checkout-modal__step" [class.checkout-modal__step--active]="pasoConsignacion() === 2">
+        <span class="checkout-modal__step-num">2</span>
+        <span class="checkout-modal__step-text">Pagar y confirmar</span>
+      </div>
+    </div>
+
+    <div class="checkout-modal__body">
+      @if (msg()) {
+        <p class="checkout-modal__alert">{{ msg() }}</p>
+      }
+
+      @if (!medioConsignacion()) {
+        <section class="checkout-section">
+          <h3 class="checkout-section__title">
+            {{ textoConsignacion('tituloElegirMedio', '¿Dónde va a consignar?') }}
+          </h3>
+          <p class="checkout-section__lead">
+            {{
+              textoConsignacion(
+                'instruccionesPago',
+                'Elija la cuenta, realice la transferencia por el valor del curso y registre su comprobante.'
+              )
+            }}
+          </p>
+          <div class="checkout-medios">
+            @for (medio of st.medios; track medio.id) {
+              <button type="button" class="checkout-medio" (click)="elegirMedioConsignacion(medio)">
+                <span class="checkout-medio__icon" aria-hidden="true">{{ iconoMedioConsignacion(medio.etiqueta) }}</span>
+                <span class="checkout-medio__info">
+                  <span class="checkout-medio__name">{{ medio.etiqueta }}</span>
+                  @if (medio.bancoNombre) {
+                    <span class="checkout-medio__meta">{{ medio.bancoNombre }}</span>
+                  }
+                  @if (medio.cuentaDescr) {
+                    <span class="checkout-medio__meta">{{ medio.cuentaDescr }}</span>
+                  }
+                </span>
+                <span class="checkout-medio__arrow" aria-hidden="true">›</span>
+              </button>
+            }
+          </div>
+        </section>
+      } @else {
+        @if (medioConsignacion(); as medio) {
+          <button type="button" class="checkout-back" (click)="volverMediosConsignacion()">← Cambiar cuenta de pago</button>
+
+          <div class="checkout-selected">
+            <span class="checkout-selected__icon" aria-hidden="true">{{ iconoMedioConsignacion(medio.etiqueta) }}</span>
+            <div>
+              <p class="checkout-selected__label">Cuenta seleccionada</p>
+              <p class="checkout-selected__name">
+                {{ medio.etiqueta }}
+                @if (medio.bancoNombre) {
+                  <span> · {{ medio.bancoNombre }}</span>
+                }
+              </p>
+            </div>
+          </div>
+
+          <div class="checkout-grid">
+            @if (qrConsignacionUrl(medio.urlQr); as qr) {
+              <section class="checkout-qr-card">
+                <h3 class="checkout-qr-card__title">Escanee para pagar</h3>
+                <figure class="checkout-qr-card__frame">
+                  <img [src]="qr" [alt]="'QR ' + medio.etiqueta" width="480" height="480" />
+                </figure>
+                <p class="checkout-qr-card__hint">Abra la cámara de su celular y apunte al código QR</p>
+              </section>
+            }
+
+            <section class="checkout-form-card">
+              <h3 class="checkout-form-card__title">Registrar comprobante</h3>
+              @if (medio.instruccionesExtra) {
+                <p class="checkout-form-card__note">{{ medio.instruccionesExtra }}</p>
+              }
+              <p class="checkout-form-card__note">
+                {{
+                  textoConsignacion(
+                    'textoReferenciaSugerida',
+                    'En el concepto incluya su documento y el nombre del curso.'
+                  )
+                }}
+              </p>
+
+              <label class="checkout-field">
+                <span class="checkout-field__label">Referencia bancaria</span>
+                <input
+                  type="text"
+                  class="checkout-field__input"
+                  [value]="referenciaConsignacion()"
+                  (input)="referenciaConsignacion.set($any($event.target).value)"
+                  placeholder="Número de aprobación o referencia"
+                  maxlength="120" />
+              </label>
+
+              <label class="checkout-field checkout-field--file">
+                <span class="checkout-field__label">Foto del comprobante</span>
+                <span class="checkout-file">
+                  <span class="checkout-file__btn">Seleccionar imagen</span>
+                  <span class="checkout-file__name">
+                    {{ archivoConsignacion()?.name || 'JPG o PNG desde su galería' }}
+                  </span>
+                  <input type="file" accept="image/*" (change)="onComprobanteConsignacion($event)" />
+                </span>
+              </label>
+
+              <button
+                type="button"
+                class="checkout-submit"
+                [disabled]="enviandoConsignacion()"
+                (click)="enviarSolicitudConsignacion()">
+                {{ enviandoConsignacion() ? 'Enviando comprobante…' : 'Confirmar y enviar comprobante' }}
+              </button>
+            </section>
+          </div>
+        }
+      }
+    </div>
+
+    <footer class="checkout-modal__foot">
+      <span>🔒 Pago verificado manualmente por el equipo administrativo</span>
+    </footer>
+  </div>
+</div>

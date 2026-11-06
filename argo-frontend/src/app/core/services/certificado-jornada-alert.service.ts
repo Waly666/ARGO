@@ -1,4 +1,12 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+
+import {
+  configActivaCertificadoEmitido,
+  idCertificadoAlerta,
+  tieneRolAlertaCertificadoEmitido,
+} from '../constants/certificado-emitido-alerta';
+import { AlarmaService } from './alarma.service';
+import { AlertasRuntimeService } from './alertas-runtime.service';
 import type { TipoCertificadoId } from '../constants/tipos-certificado';
 
 export type OrigenCertificado = 'jornada' | 'aula' | 'normal';
@@ -41,18 +49,27 @@ export interface CertificadoJornadaAlerta {
 
 @Injectable({ providedIn: 'root' })
 export class CertificadoJornadaAlertService {
+  private alarmas = inject(AlarmaService);
+  private runtime = inject(AlertasRuntimeService);
   private vistos = new Set<string>();
   private readonly _alertas = signal<CertificadoJornadaAlerta[]>([]);
 
   readonly alertas = this._alertas.asReadonly();
 
+  private puedeMostrar(): boolean {
+    return (
+      tieneRolAlertaCertificadoEmitido((k) => this.alarmas.tiene(k)) &&
+      configActivaCertificadoEmitido((k) => this.alarmas.tiene(k), (k) => this.runtime.activa(k))
+    );
+  }
+
   notificarDesdeRespuesta(
     cert: Record<string, unknown> | null | undefined,
     nombreAlumno?: string,
-    opts?: { silencioso?: boolean },
+    opts?: { silencioso?: boolean; inmediato?: boolean },
   ) {
-    if (!cert) return;
-    const id = String(cert['_id'] || cert['id'] || '');
+    if (!cert || !this.puedeMostrar()) return;
+    const id = idCertificadoAlerta(cert);
     if (!id) return;
     const origen = resolverOrigenCertificado(cert);
     this.notificar(
@@ -76,19 +93,28 @@ export class CertificadoJornadaAlertService {
 
   notificarVariosDesdeRespuesta(
     items: Array<{ certificado?: Record<string, unknown> | null; nombreAlumno?: string }> | null | undefined,
+    opts?: { inmediato?: boolean },
   ) {
     let agregados = 0;
     for (const item of items || []) {
       const before = this._alertas().length;
-      this.notificarDesdeRespuesta(item?.certificado, item?.nombreAlumno, { silencioso: true });
+      this.notificarDesdeRespuesta(item?.certificado, item?.nombreAlumno, {
+        silencioso: true,
+        inmediato: opts?.inmediato,
+      });
       if (this._alertas().length > before) agregados += 1;
     }
     if (agregados > 0) this.reproducirAlarma();
   }
 
-  notificar(alerta: CertificadoJornadaAlerta, opts?: { silencioso?: boolean }) {
+  notificar(alerta: CertificadoJornadaAlerta, opts?: { silencioso?: boolean; inmediato?: boolean }) {
+    if (!this.puedeMostrar()) return;
     const id = String(alerta.id || '');
-    if (!id || this.vistos.has(id)) return;
+    if (!id) return;
+    if (opts?.inmediato) {
+      this.vistos.delete(id);
+      this._alertas.update((list) => list.filter((a) => a.id !== id));
+    } else if (this.vistos.has(id)) return;
     if (this._alertas().some((a) => a.id === id)) return;
     this._alertas.update((list) => [alerta, ...list].slice(0, 12));
     if (!opts?.silencioso) this.reproducirAlarma();

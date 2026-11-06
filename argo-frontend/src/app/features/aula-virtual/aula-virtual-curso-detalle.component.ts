@@ -14,13 +14,23 @@ import {
 } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
 import { AulaVirtualProgresoAlumnosComponent } from './aula-virtual-progreso-alumnos.component';
+import {
+  AulaVirtualCursoPreviewComponent,
+  CursoVirtualPreviewTarget,
+} from './aula-virtual-curso-preview.component';
 
 type TabCurso = 'portal' | 'reglas' | 'contenido' | 'alumnos';
 
 @Component({
   selector: 'argo-aula-virtual-curso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AulaVirtualProgresoAlumnosComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    AulaVirtualProgresoAlumnosComponent,
+    AulaVirtualCursoPreviewComponent,
+  ],
   templateUrl: './aula-virtual-curso-detalle.component.html',
   styleUrls: ['./aula-virtual-curso-detalle.component.scss'],
 })
@@ -39,6 +49,7 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
   err = signal(false);
 
   curso = signal<CursoVirtualAdmin | null>(null);
+  previewCurso = signal<CursoVirtualPreviewTarget | null>(null);
   config = signal<VirtualConfig | null>(null);
   categorias = signal<CategoriaVirtual[]>([]);
 
@@ -338,6 +349,27 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
         if (found) this.aplicarCurso(found);
       },
     });
+  }
+
+  puedeVistaPrevia(): boolean {
+    const c = this.curso();
+    return !!c?.tienePaquete && !!c.playerUrl;
+  }
+
+  abrirVistaPrevia(): void {
+    const c = this.curso();
+    if (!c || !this.puedeVistaPrevia()) return;
+    const cfg = this.config();
+    this.previewCurso.set({
+      idPrograma: String(c.idPrograma),
+      nombreProg: c.nombreProg,
+      playerUrl: c.playerUrl,
+      storagePrefix: c.storagePrefix ?? cfg?.storagePrefix ?? null,
+    });
+  }
+
+  cerrarVistaPrevia(): void {
+    this.previewCurso.set(null);
   }
 
   private absolutaPortada(abs?: string | null, rel?: string | null) {

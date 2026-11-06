@@ -73,6 +73,39 @@ async function esProgramaVirtual(idProg) {
   return !!(cfg && cfg.rutaPaquete);
 }
 
+/**
+ * Certificado vigente del alumno para un curso virtual (idProg, liquidación o código programa).
+ */
+async function buscarCertificadoVinculadoCurso(
+  numDoc,
+  { idPrograma, idLiquidacion, codigoProg } = {},
+) {
+  const nd = parseNumDoc(numDoc);
+  if (nd == null) return null;
+
+  const base = { ...numDocQuery(nd), estado: { $ne: 'anulado' } };
+  const idProg = String(idPrograma || '').trim();
+  const codigo = String(codigoProg || '').trim();
+
+  if (idProg) {
+    const porProg = await Certificado.findOne({ ...base, idProg })
+      .sort({ fechaEmision: -1 })
+      .lean();
+    if (porProg) return porProg;
+  }
+  if (codigo && codigo !== idProg) {
+    const porCodigo = await Certificado.findOne({ ...base, idProg: codigo })
+      .sort({ fechaEmision: -1 })
+      .lean();
+    if (porCodigo) return porCodigo;
+  }
+  if (idLiquidacion) {
+    const porLiq = await Certificado.findOne({ ...base, idLiquidacion }).lean();
+    if (porLiq) return porLiq;
+  }
+  return null;
+}
+
 async function listarMisCertificados(numDoc) {
   const nd = parseNumDoc(numDoc);
   if (nd == null) return [];
@@ -93,6 +126,7 @@ async function listarMisCertificados(numDoc) {
     out.push({
       _id: c._id,
       idProg: c.idProg,
+      idLiquidacion: c.idLiquidacion ? String(c.idLiquidacion) : null,
       codigoCert: c.codigoCert || null,
       encabezado: c.encabezado || null,
       programaDescr: await descrPrograma(c.idProg, c.encabezado),
@@ -274,6 +308,7 @@ async function pdfCertificadoConsultaPublico(numDoc, certId, publicOrigin, { mar
 
 module.exports = {
   listarMisCertificados,
+  buscarCertificadoVinculadoCurso,
   consultarCertificadosPublico,
   verificarCertificadoAlumno,
   htmlCertificadoPortal,

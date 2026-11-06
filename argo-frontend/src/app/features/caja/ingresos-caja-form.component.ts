@@ -8,6 +8,7 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { Empleado, EmpleadoService } from '../../core/services/empleado.service';
+import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import { Tercero, TerceroService } from '../../core/services/tercero.service';
 import { requiereReferenciaPago, requiereSoportePago } from '../../core/utils/referencia-pago.util';
@@ -56,6 +57,7 @@ export class IngresosCajaFormComponent implements OnInit {
   private cajaSvc = inject(CajaSesionService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private ingSvc = inject(IngresoService);
+  private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
   private empSvc = inject(EmpleadoService);
   private terSvc = inject(TerceroService);
   private router = inject(Router);
@@ -513,6 +515,16 @@ export class IngresosCajaFormComponent implements OnInit {
           this.saving.set(false);
           const ref = res?.numRecibo ? ` Comprobante ${res.numRecibo}.` : '';
           this.inform(`Ingreso registrado.${ref}`);
+          const id = res?._id || res?.id;
+          if (id) {
+            this.comprobanteAlertSvc.notificarDesdeIngreso(
+              { ...res, _id: id, ingresoCaja: true },
+              {
+                numDoc: res?.numDoc ?? res?.documentoTercero,
+                nombreCompleto: this.recibidoDe().trim() || undefined,
+              },
+            );
+          }
           setTimeout(() => void this.router.navigate(['/app/caja/ingresos']), 600);
         },
         error: (e) => {

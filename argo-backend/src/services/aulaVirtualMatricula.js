@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const DatosAlumno = require('../models/DatosAlumno');
 const Liquidacion = require('../models/Liquidacion');
@@ -19,6 +20,7 @@ const {
   buscarPrograma,
   num,
   esCapacitacionVirtualServicio,
+  valorTarifaServicio,
 } = require('./programaServicio');
 const { servicioMatriculaPrograma } = require('./aulaVirtualCatalogo');
 
@@ -55,7 +57,52 @@ async function resolverIdSedeVirtual() {
   return sede?.idSede || 'PRINCIPAL';
 }
 
-async function buscarLiquidacionVirtual(numDoc, idPrograma) {
+function toDecLiquidacion(n) {
+  return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
+}
+
+async function crearLiquidacionVirtualDesdeMatricula(numDoc, idPrograma, mat) {
+  const idProg = String(idPrograma);
+  const prog = await buscarPrograma(idProg);
+  if (!prog || !mat) return null;
+
+  const serv = await servicioMatriculaPrograma(prog);
+  let valor = num(mat.valorMat);
+  if (valor <= 0) {
+    const curso = await obtenerCursoVirtual(idProg, { requierePublicado: false });
+    valor = num(curso?.tarifaVirtual);
+  }
+  if (valor <= 0 && serv) {
+    valor = valorTarifaServicio(serv, TARIFA_VIRTUAL, prog);
+  }
+  if (valor <= 0) {
+    console.warn(
+      `[AulaVirtual] Sin valor para liquidación virtual (programa ${idProg}, alumno ${numDoc})`,
+    );
+    return null;
+  }
+
+  const idSede = mat.idSede || (await resolverIdSedeVirtual());
+  const desc =
+    prog.nombreProg || prog.descripcion || prog.nomCert || 'Matrícula virtual — portal aula';
+  const creada = await Liquidacion.create({
+    numDoc,
+    idSede,
+    idMat: mat._id,
+    idMatricula: mat._id,
+    idProg,
+    idServ: serv ? String(serv.idServ) : null,
+    descripcion: desc,
+    valor: toDecLiquidacion(valor),
+    abonado: toDecLiquidacion(0),
+    saldo: toDecLiquidacion(valor),
+    estado: 'pendiente',
+    fechaCreacion: mat.fechaMat || new Date(),
+  });
+  return creada.toObject();
+}
+
+async function buscarLiquidacionVirtual(numDoc, idPrograma, { asegurar = false } = {}) {
   const idProg = String(idPrograma);
   const mats = await Matricula.find({
     ...numDocQuery(numDoc),
@@ -66,16 +113,35 @@ async function buscarLiquidacionVirtual(numDoc, idPrograma) {
     .lean();
 
   for (const m of mats) {
-    const liq = await Liquidacion.findOne({ idMat: m._id, idProg }).sort({ fechaCreacion: -1 }).lean();
+    let liq = await Liquidacion.findOne({ idMat: m._id, idProg })
+      .sort({ fechaCreacion: -1 })
+      .lean();
+    if (!liq) {
+      liq = await Liquidacion.findOne({ idMat: m._id }).sort({ fechaCreacion: -1 }).lean();
+    }
     if (liq) return liq;
   }
-  return Liquidacion.findOne({ ...numDocQuery(numDoc), idProg })
+
+  let liq = await Liquidacion.findOne({ ...numDocQuery(numDoc), idProg })
     .sort({ fechaCreacion: -1 })
     .lean();
+
+  if (!liq && asegurar) {
+    const mat = mats[0] || (await buscarMatriculaVirtual(numDoc, idPrograma));
+    if (mat) {
+      try {
+        liq = await crearLiquidacionVirtualDesdeMatricula(numDoc, idPrograma, mat);
+      } catch (e) {
+        console.warn('[AulaVirtual] crear liquidación virtual:', e.message);
+      }
+    }
+  }
+
+  return liq;
 }
 
 async function estadoPagoVirtual(numDoc, idPrograma) {
-  const liq = await buscarLiquidacionVirtual(numDoc, idPrograma);
+  const liq = await buscarLiquidacionVirtual(numDoc, idPrograma, { asegurar: true });
   if (!liq) {
     return {
       tieneLiquidacion: false,

@@ -215,6 +215,12 @@ router.post(
   gestionar,
   admin.reiniciarProgresoAlumnoCurso,
 );
+router.patch(
+  '/admin/alumnos/:numDoc/cursos/:idPrograma/progreso',
+  requireAuth,
+  gestionar,
+  admin.actualizarProgresoAlumnoCurso,
+);
 router.post(
   '/admin/alumnos/:numDoc/cursos/:idPrograma/anular-matricula',
   requireAuth,

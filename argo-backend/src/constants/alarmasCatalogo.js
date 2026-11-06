@@ -145,7 +145,7 @@ const GRUPOS = [
       },
       {
         key: 'alarmas.alumnos.comprobante_ingreso',
-        label: 'Comprobante de ingreso hoy (lista, ficha y banner superior)',
+        label: 'Comprobante de ingreso / pago registrado (caja, ficha alumno y banner superior)',
       },
       {
         key: 'alarmas.alumnos.comprobante_egreso',
@@ -154,6 +154,10 @@ const GRUPOS = [
       {
         key: 'alarmas.alumnos.factura',
         label: 'Factura electrónica emitida hoy (lista, ficha y banner superior)',
+      },
+      {
+        key: 'alarmas.alumnos.certificado_emitido',
+        label: 'Certificado emitido (manual, pago automático, jornada, aula y banner superior)',
       },
     ],
   },
@@ -178,6 +182,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_ingreso',
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
+    'alarmas.alumnos.certificado_emitido',
     'alarmas.aula_virtual.foro_mensaje',
     'alarmas.aula_virtual.registro_nuevo',
     'alarmas.aula_virtual.matricula_nueva',
@@ -198,6 +203,8 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_ingreso',
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
+    'alarmas.alumnos.certificado_emitido',
+    'alarmas.jornadas.certificado_nuevo',
     'alarmas.config.autorizacion_pendiente',
     'alarmas.config.autorizacion_resuelta',
     'alarmas.aula_virtual.consignacion_pendiente',
@@ -232,6 +239,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_ingreso',
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
+    'alarmas.alumnos.certificado_emitido',
     'alarmas.caja.alerta_pago',
     'alarmas.certificados.vencimiento',
     'alarmas.certificados.vencidos',
@@ -294,6 +302,7 @@ const MOVIL_CAJERO_KEYS = new Set([
   'alarmas.alumnos.comprobante_ingreso',
   'alarmas.alumnos.comprobante_egreso',
   'alarmas.alumnos.factura',
+  'alarmas.alumnos.certificado_emitido',
   'alarmas.aula_virtual.foro_mensaje',
   'alarmas.aula_virtual.registro_nuevo',
   'alarmas.aula_virtual.matricula_nueva',

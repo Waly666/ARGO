@@ -521,7 +521,7 @@ exports.iniciarPagoEnLinea = async (req, res, next) => {
     }
 
     const numDoc = req.portalUser.numDoc;
-    const liq = await buscarLiquidacionVirtual(numDoc, req.params.id);
+    const liq = await buscarLiquidacionVirtual(numDoc, req.params.id, { asegurar: true });
     if (!liq) {
       return res.status(404).json({ message: 'No hay matrícula con pago pendiente para este curso.' });
     }

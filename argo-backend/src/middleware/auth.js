@@ -154,6 +154,7 @@ function requirePermiso(...claves) {
     try {
       const permisos = req.permisos || (await permisosParaRol(req.user.rol));
       req.permisos = permisos;
+      if (permisos.includes('*') || esAdmin(req.user.rol)) return next();
       if (tieneAlguno(permisos, claves)) return next();
       return res.status(403).json({
         message: 'Sin permisos para esta acción',

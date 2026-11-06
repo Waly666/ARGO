@@ -257,13 +257,32 @@
                           <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
                         </div>
                         @if (c.tienePaquete) {
-                          @if (puedeCursar(c)) {
-                            <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
-                              {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
-                            </button>
-                          } @else {
-                            <p class="dash-course-blocked">Pago pendiente. Acérquese al CEA para habilitar el acceso.</p>
-                          }
+                          <div class="dash-course-actions">
+                            @if (puedePagarEnLinea(c)) {
+                              <button
+                                type="button"
+                                class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay"
+                                [disabled]="pagandoCurso(c)"
+                                (click)="pagarCurso(c)">
+                                {{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}
+                              </button>
+                            }
+                            @if (puedePagarConsignacion(c)) {
+                              <button
+                                type="button"
+                                class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay-qr"
+                                (click)="abrirPagoConsignacion(c)">
+                                Pagar (QR)
+                              </button>
+                            }
+                            @if (puedeCursar(c)) {
+                              <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
+                                {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
+                              </button>
+                            } @else if (!tieneOpcionesPago(c)) {
+                              <p class="dash-course-blocked">Pago pendiente. Acérquese al CEA para habilitar el acceso.</p>
+                            }
+                          </div>
                         }
                       </div>
                     </article>
@@ -286,6 +305,10 @@
                 <p class="dash-welcome">Todos sus cursos matriculados</p>
               </div>
             </header>
+
+            @if (pagarLineaError()) {
+              <p class="dash-error">{{ pagarLineaError() }}</p>
+            }
 
             <div class="dash-course-list dash-course-list-full">
               @for (c of cursos(); track c.idPrograma) {
@@ -331,19 +354,18 @@
                         }
                       </div>
                     }
-                    @if (c.progreso?.certificadoEmitido && certificadoDeCurso(c.idPrograma); as cert) {
+                    @if (idReciboCurso(c) || certificadoDeCurso(c)) {
                       <div class="dash-inline-actions">
-                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="verCertificado(cert)">Ver certificado</button>
                         @if (idReciboCurso(c); as idRecibo) {
-                          <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirRecibo(idRecibo)">Imprimir recibo</button>
+                          <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirRecibo(idRecibo)">
+                            Imprimir recibo@if (reciboDeCurso(c)?.numRecibo; as numRec) { ({{ numRec }})}
+                          </button>
                         }
-                      </div>
-                    }
-                    @if (!c.progreso?.certificadoEmitido && reciboDeCurso(c); as reciboCurso) {
-                      <div class="dash-inline-actions">
-                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirRecibo(reciboCurso.idIngreso)">
-                          Imprimir recibo@if (reciboCurso.numRecibo) { ({{ reciboCurso.numRecibo }})}
-                        </button>
+                        @if (certificadoDeCurso(c); as cert) {
+                          <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirCertificado(cert)">
+                            Imprimir certificado
+                          </button>
+                        }
                       </div>
                     }
                   </div>
@@ -353,11 +375,30 @@
                       <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
                     </div>
                     @if (c.tienePaquete) {
-                      @if (puedeCursar(c)) {
-                        <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">Entrar</button>
-                      } @else {
-                        <span class="dash-muted">Pago pendiente — acérquese al CEA</span>
-                      }
+                      <div class="dash-course-actions">
+                        @if (puedePagarEnLinea(c)) {
+                          <button
+                            type="button"
+                            class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay"
+                            [disabled]="pagandoCurso(c)"
+                            (click)="pagarCurso(c)">
+                            {{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}
+                          </button>
+                        }
+                        @if (puedePagarConsignacion(c)) {
+                          <button
+                            type="button"
+                            class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay-qr"
+                            (click)="abrirPagoConsignacion(c)">
+                            Pagar (QR)
+                          </button>
+                        }
+                        @if (puedeCursar(c)) {
+                          <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">Entrar</button>
+                        } @else if (!tieneOpcionesPago(c)) {
+                          <span class="dash-muted">Pago pendiente — acérquese al CEA</span>
+                        }
+                      </div>
                     } @else {
                       <span class="dash-muted">Contenido en preparación</span>
                     }
@@ -1070,6 +1111,17 @@
         [skipStorageKey]="entrarCursoModalSkipKey()"
         (closed)="cerrarEntrarCursoModal()"
       />
+    }
+
+    @if (consignacionModalCurso(); as mc) {
+      @if (consignacionModalEstado(); as stCons) {
+        <av-curso-pago-consignacion-modal
+          [curso]="mc"
+          [consignacion]="stCons"
+          (closed)="cerrarConsignacionModal()"
+          (actualizado)="onConsignacionActualizada(mc)"
+        />
+      }
     }
 
     <av-aula-guia-tour

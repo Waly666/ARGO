@@ -23,6 +23,7 @@ import {
   ClaseProgresoVirtual,
   CohorteAlumno,
   CursoVirtual,
+  EstadoConsignacionCurso,
   EvaluacionCohorteAlumno,
   IntentoEvalCohorte,
   IntentoEvalVirtual,
@@ -42,6 +43,7 @@ import {
   AulaEntrarCursoModalComponent,
   AULA_ENTRAR_CURSO_MODAL_SKIP_PREFIX,
 } from './aula-entrar-curso-modal.component';
+import { CursoPagoConsignacionModalComponent } from '../../components/curso-pago-consignacion-modal/curso-pago-consignacion-modal.component';
 
 export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'foro';
 
@@ -55,6 +57,7 @@ export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'ce
     ForoChatComponent,
     AulaGuiaTourComponent,
     AulaEntrarCursoModalComponent,
+    CursoPagoConsignacionModalComponent,
   ],
   templateUrl: './aula.component.html',
   styleUrl: './aula.component.scss',
@@ -94,6 +97,11 @@ export class AulaComponent implements OnInit, OnDestroy {
   playerForoNombre = signal('');
   cursoActivo = signal<CursoVirtual | null>(null);
   avisoPlayer = signal('');
+  pasarelaActiva = signal(false);
+  pagandoCursoId = signal<string | number | null>(null);
+  pagarLineaError = signal('');
+  consignacionPorCurso = signal<Record<string, EstadoConsignacionCurso>>({});
+  consignacionModalCurso = signal<CursoVirtual | null>(null);
 
   playerFrame = viewChild<ElementRef<HTMLIFrameElement>>('playerFrame');
 
@@ -179,6 +187,10 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.cargarCursos();
     this.cargarCertificados();
     this.cargarCohortes();
+    this.api.pasarelaPublica().subscribe({
+      next: (p) => this.pasarelaActiva.set(p.activo === true),
+      error: () => this.pasarelaActiva.set(false),
+    });
     window.addEventListener('message', this.onMessage);
     document.addEventListener('visibilitychange', this.onVisibility);
 
@@ -448,8 +460,32 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   cargarCursos() {
     this.api.misCursos().subscribe({
-      next: (rows) => this.cursos.set(Array.isArray(rows) ? rows : []),
+      next: (rows) => {
+        const list = Array.isArray(rows) ? rows : [];
+        this.cursos.set(list);
+        this.prefetchConsignacionCursos(list);
+      },
       error: () => this.cursos.set([]),
+    });
+  }
+
+  private prefetchConsignacionCursos(list: CursoVirtual[]) {
+    for (const c of list) {
+      if (!this.pagoPendiente(c)) continue;
+      const id = String(c.idPrograma);
+      this.api.estadoConsignacionCurso(c.idPrograma).subscribe({
+        next: (st) => {
+          this.consignacionPorCurso.update((m) => ({ ...m, [id]: st }));
+        },
+      });
+    }
+  }
+
+  private recargarConsignacionCurso(c: CursoVirtual) {
+    this.api.estadoConsignacionCurso(c.idPrograma).subscribe({
+      next: (st) => {
+        this.consignacionPorCurso.update((m) => ({ ...m, [String(c.idPrograma)]: st }));
+      },
     });
   }
 
@@ -578,8 +614,45 @@ export class AulaComponent implements OnInit, OnDestroy {
     });
   }
 
-  certificadoDeCurso(idPrograma: string | number): CertificadoPortal | undefined {
-    return this.certificados().find((c) => String(c.idProg) === String(idPrograma));
+  certificadoDeCurso(c: CursoVirtual | string | number): CertificadoPortal | undefined {
+    const curso =
+      typeof c === 'object' && c != null && 'idPrograma' in c
+        ? c
+        : null;
+    const idPrograma = curso ? curso.idPrograma : c;
+    const id = String(idPrograma);
+
+    const fromApi = curso?.certificadoPortal?._id;
+    if (fromApi) {
+      const hit = this.certificados().find((x) => String(x._id) === String(fromApi));
+      if (hit) return hit;
+      return {
+        _id: String(fromApi),
+        idProg: curso!.certificadoPortal?.idProg || id,
+        codigoCert: curso!.certificadoPortal?.codigoCert ?? null,
+        encabezado: null,
+        programaDescr: curso!.nombreProg || '',
+        nomCert: null,
+        estado: 'vigente',
+      };
+    }
+
+    const list = this.certificados();
+    let cert = list.find((x) => String(x.idProg) === id);
+    if (cert) return cert;
+
+    if (curso?.codigoProg) {
+      cert = list.find((x) => String(x.idProg) === String(curso.codigoProg));
+      if (cert) return cert;
+    }
+
+    const idLiq = curso?.pago?.idLiquidacion;
+    if (idLiq) {
+      cert = list.find((x) => x.idLiquidacion && String(x.idLiquidacion) === String(idLiq));
+      if (cert) return cert;
+    }
+
+    return undefined;
   }
 
   verCertificado(cert: CertificadoPortal) {
@@ -609,7 +682,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   }
 
   idReciboCurso(c: CursoVirtual): string | null {
-    const cert = this.certificadoDeCurso(c.idPrograma);
+    const cert = this.certificadoDeCurso(c);
     return cert?.recibo?.idIngreso || this.reciboDeCurso(c)?.idIngreso || null;
   }
 
@@ -629,6 +702,83 @@ export class AulaComponent implements OnInit, OnDestroy {
     if (c.accesoBloqueadoPago) return false;
     if (c.requierePagoParaCursar && c.pago && !c.pago.pagado) return false;
     return !!c.tienePaquete;
+  }
+
+  pagoPendiente(c: CursoVirtual): boolean {
+    if (c.pago) return !c.pago.pagado;
+    const mp = String(c.matricula?.pagada || '')
+      .trim()
+      .toLowerCase();
+    return mp === 'no pago' || mp === 'pago parcial';
+  }
+
+  puedePagarEnLinea(c: CursoVirtual): boolean {
+    if (!this.pasarelaActiva() || !this.pagoPendiente(c)) return false;
+    if (c.pago?.pagado) return false;
+    if (c.pago && c.pago.tieneLiquidacion === false) return false;
+    return true;
+  }
+
+  puedePagarConsignacion(c: CursoVirtual): boolean {
+    if (!this.pagoPendiente(c)) return false;
+    const st = this.consignacionPorCurso()[String(c.idPrograma)];
+    return !!(st?.consignacionActiva && st.puedeEnviarSolicitud);
+  }
+
+  tieneOpcionesPago(c: CursoVirtual): boolean {
+    return this.puedePagarEnLinea(c) || this.puedePagarConsignacion(c);
+  }
+
+  abrirPagoConsignacion(c: CursoVirtual): void {
+    if (!this.puedePagarConsignacion(c)) return;
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.style.overflow = 'hidden';
+    }
+    this.consignacionModalCurso.set(c);
+  }
+
+  cerrarConsignacionModal(): void {
+    this.consignacionModalCurso.set(null);
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  onConsignacionActualizada(c: CursoVirtual): void {
+    this.recargarConsignacionCurso(c);
+    this.cargarCursos();
+  }
+
+  consignacionModalEstado(): EstadoConsignacionCurso | null {
+    const c = this.consignacionModalCurso();
+    if (!c) return null;
+    return this.consignacionPorCurso()[String(c.idPrograma)] ?? null;
+  }
+
+  pagandoCurso(c: CursoVirtual): boolean {
+    return this.pagandoCursoId() === c.idPrograma;
+  }
+
+  pagarCurso(c: CursoVirtual): void {
+    if (!this.puedePagarEnLinea(c) || this.pagandoCurso(c)) return;
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.pagarLineaError.set('');
+    this.pagandoCursoId.set(c.idPrograma);
+    const redirectUrl = `${window.location.origin}/aula`;
+    this.api.iniciarPagoEnLinea(c.idPrograma, redirectUrl).subscribe({
+      next: (res) => {
+        this.pagandoCursoId.set(null);
+        if (res.checkoutUrl) {
+          window.location.href = res.checkoutUrl;
+        } else {
+          this.pagarLineaError.set('No se pudo iniciar el pago en línea.');
+        }
+      },
+      error: (e) => {
+        this.pagandoCursoId.set(null);
+        this.pagarLineaError.set(e?.error?.message || 'No se pudo iniciar el pago en línea.');
+      },
+    });
   }
 
   abrir(curso: CursoVirtual) {

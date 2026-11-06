@@ -641,6 +641,7 @@ export class PagosComponent {
               this.certAlertSvc.notificarDesdeRespuesta(
                 cert as Record<string, unknown>,
                 this.store.nombreCompleto() ?? undefined,
+                { inmediato: true },
               );
             }
             void this.flujoPostPago(ing, certs);

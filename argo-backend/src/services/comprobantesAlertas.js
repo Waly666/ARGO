@@ -11,12 +11,6 @@ function inicioDia(d = new Date()) {
   return x;
 }
 
-function finDia(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
-
 function numValor(v) {
   if (v == null) return 0;
   if (typeof v === 'number') return v;
@@ -90,15 +84,14 @@ function detalleTextoIngreso(ing, descrMap = {}) {
 /** Comprobantes y facturas recientes (alertas globales en cabecera). */
 async function listarComprobantesRecientes(desde) {
   const hoy = inicioDia();
-  const fin = finDia();
   const min = desde && !Number.isNaN(desde.getTime()) ? desde : hoy;
 
-  const rango = { $gte: min, $lte: fin };
+  // Solo límite inferior: «recientes» desde `min` (incluye ingresos de caja y ficha alumno).
+  const rangoDesde = { $gte: min };
 
   const [ingresos, facturas, egresos] = await Promise.all([
     Ingreso.find({
-      ingresoCaja: { $ne: true },
-      $or: [{ createdAt: rango }, { fecha: rango }],
+      $or: [{ createdAt: rangoDesde }, { fecha: rangoDesde }],
     })
       .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso idTipoPago formaPago numTransferencia numComprobante')
       .sort({ createdAt: -1 })
@@ -106,14 +99,14 @@ async function listarComprobantesRecientes(desde) {
       .lean(),
     FacturaElectronica.find({
       estado: { $nin: ['borrador', 'anulada'] },
-      $or: [{ createdAt: rango }, { emitidaAt: rango }],
+      $or: [{ createdAt: rangoDesde }, { emitidaAt: rangoDesde }],
     })
       .select('_id numDoc numeroFactura valorTotal estado createdAt emitidaAt idContrato origenFactura adquirente')
       .sort({ createdAt: -1 })
       .limit(80)
       .lean(),
     Egreso.find({
-      $or: [{ fechaEgreso: rango }, { fechaAudi: rango }],
+      $or: [{ fechaEgreso: rangoDesde }, { fechaAudi: rangoDesde }],
     })
       .select('_id numeroDocumento numDoc numRecibo valorEgreso pagueA concepto fechaEgreso fechaAudi formaPago numTransferencia')
       .sort({ fechaEgreso: -1, fechaAudi: -1 })
@@ -159,6 +152,7 @@ async function listarComprobantesRecientes(desde) {
   for (const ing of ingresos) {
     const k = claveNumDoc(ing.numDoc);
     const al = k != null ? alByDoc.get(k) : null;
+    const recibidoDe = String(ing.recibidoDe || ing.recibiDe || '').trim();
     out.push({
       tipo: 'ingreso',
       id: String(ing._id),
@@ -169,7 +163,10 @@ async function listarComprobantesRecientes(desde) {
       tipoPago: ing.formaPago || ing.idTipoPago || null,
       numComprobante: referenciaPagoTexto(ing.numTransferencia, ing.numComprobante),
       numDoc: ing.numDoc,
-      nombreCompleto: nombreCompleto(al) || (ing.numDoc != null ? `Doc ${ing.numDoc}` : ''),
+      nombreCompleto:
+        nombreCompleto(al) ||
+        recibidoDe ||
+        (ing.numDoc != null ? `Doc ${ing.numDoc}` : ing.ingresoCaja ? 'Ingreso caja' : ''),
       alumnoId: al?._id ? String(al._id) : null,
       fecha: fechaMovimiento(ing, ['fecha', 'createdAt']),
     });

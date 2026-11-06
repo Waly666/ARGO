@@ -37,16 +37,40 @@
     return null;
   }
 
+  function clearStorageForPrefix(prefix) {
+    if (!prefix) return;
+    var stores = [localStorage, sessionStorage];
+    var si;
+    var store;
+    var i;
+    var key;
+    for (si = 0; si < stores.length; si++) {
+      store = stores[si];
+      try {
+        for (i = store.length - 1; i >= 0; i--) {
+          key = store.key(i);
+          if (key && key.indexOf(prefix) === 0) store.removeItem(key);
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+  }
+
   function setConfig(data) {
-    if (!data || !data.apiUrl || !data.token || !data.idPrograma) return;
+    if (!data || !data.apiUrl || !data.idPrograma) return;
     var idPrograma = String(data.idPrograma);
     var fromInit = data.storagePrefix && String(data.storagePrefix).trim();
     var metaPrefix = metaStoragePrefix();
     var lockedPrefix = fromInit || metaPrefix || null;
+    var sandbox = data.sandbox === true;
+    if (!sandbox && !data.token) return;
+    if (sandbox && lockedPrefix) clearStorageForPrefix(lockedPrefix);
     window.__argoCourseConfig = {
       apiUrl: String(data.apiUrl).replace(/\/+$/, ''),
-      token: String(data.token),
+      token: sandbox ? '' : String(data.token),
       idPrograma: idPrograma,
+      sandbox: sandbox,
       defaultPrefix: lockedPrefix,
       resolvedPrefix: lockedPrefix,
     };
@@ -95,6 +119,16 @@
     if (!config) {
       return Promise.resolve({ ok: false, motivo: 'sin_config' });
     }
+    if (config.sandbox) {
+      return Promise.resolve({
+        ok: true,
+        sandbox: true,
+        progreso: body || {},
+        reglas: null,
+        certificado: null,
+        aviso: 'Modo vista previa: el progreso no se guarda en el servidor.',
+      });
+    }
     var url =
       config.apiUrl +
       '/cursos/' +
@@ -124,7 +158,8 @@
 
   window.ARGO = {
     ready: function () {
-      return !!window.__argoCourseConfig;
+      var c = window.__argoCourseConfig;
+      return !!(c && (c.sandbox || c.token));
     },
     reportProgress: reportProgress,
     reportCompletitud: function (pct) {

@@ -220,9 +220,16 @@ async function fusionarAlarmasSistema(codigo, defAlarmas) {
 
   const esperadas = clavesAlarmasValidas(defAlarmas);
   const faltantes = esperadas.filter((k) => !actuales.includes(k));
-  if (!faltantes.length) return;
+  let merged = [...actuales, ...faltantes];
+  if (
+    merged.includes('alarmas.alumnos.comprobante_ingreso') &&
+    !merged.includes('alarmas.alumnos.certificado_emitido')
+  ) {
+    merged.push('alarmas.alumnos.certificado_emitido');
+  }
+  if (merged.length === actuales.length && faltantes.length === 0) return;
 
-  await RolApp.updateOne({ codigo }, { $set: { alarmas: [...actuales, ...faltantes] } });
+  await RolApp.updateOne({ codigo }, { $set: { alarmas: merged } });
 }
 
 /** Incorpora permisos nuevos del rol sistema (p. ej. Contador) a roles ya insertados. */

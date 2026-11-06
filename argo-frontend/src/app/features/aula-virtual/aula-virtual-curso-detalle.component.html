@@ -36,6 +36,9 @@
           </div>
         </div>
         <div class="av-curso-head-actions">
+          @if (puedeVistaPrevia()) {
+            <button type="button" class="av-btn av-btn--secondary" (click)="abrirVistaPrevia()">Vista previa del curso</button>
+          }
           <label class="av-check av-check--publish">
             <input type="checkbox" [(ngModel)]="cfg.publicadoPortal" />
             Publicar en portal
@@ -192,6 +195,14 @@
       }
 
       @if (tab() === 'contenido') {
+        @if (puedeVistaPrevia()) {
+          <p class="av-preview-callout">
+            <button type="button" class="av-btn av-btn--secondary av-btn--inline" (click)="abrirVistaPrevia()">
+              Abrir vista previa (sandbox)
+            </button>
+            Recorra clases y evaluaciones sin matricularse ni guardar datos en el sistema.
+          </p>
+        }
         <div class="av-curso-grid av-curso-grid--3">
           <section class="av-curso-panel card">
             <header class="av-panel-intro">
@@ -252,5 +263,9 @@
         </section>
       }
     }
+  }
+
+  @if (previewCurso(); as prev) {
+    <argo-aula-virtual-curso-preview [curso]="prev" (closed)="cerrarVistaPrevia()" />
   }
 </section>

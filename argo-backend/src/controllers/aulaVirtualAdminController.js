@@ -48,6 +48,7 @@ const { listarProgresoAlumnosAdmin, listarProgresoAlumnoAdmin } = require('../se
 const {
   anularMatriculaVirtualAdmin,
   reiniciarProgresoVirtualAdmin,
+  actualizarProgresoVirtualAdmin,
 } = require('../services/aulaVirtualGestionMatricula');
 
 async function persistirStoragePrefix(idPrograma, abs, indexRel, user) {
@@ -820,9 +821,25 @@ exports.listarProgresoAlumno = async (req, res, next) => {
 
 exports.reiniciarProgresoAlumnoCurso = async (req, res, next) => {
   try {
+    const body = req.body || {};
     const r = await reiniciarProgresoVirtualAdmin({
       numDoc: req.params.numDoc,
       idPrograma: req.params.idPrograma,
+      alcance: body.alcance,
+    });
+    res.json(r);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.actualizarProgresoAlumnoCurso = async (req, res, next) => {
+  try {
+    const r = await actualizarProgresoVirtualAdmin({
+      numDoc: req.params.numDoc,
+      idPrograma: req.params.idPrograma,
+      body: req.body || {},
     });
     res.json(r);
   } catch (e) {

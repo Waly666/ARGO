@@ -9,7 +9,7 @@ const routes = require('./routes');
 const { notFound, errorHandler } = require('./middleware/error');
 const { auditoriaHttpMiddleware } = require('./middleware/auditoriaHttp');
 const { actividadHttpMiddleware } = require('./middleware/actividadHttp');
-const { createHelmetMiddleware } = require('./middleware/security');
+const { createHelmetMiddleware, uploadsEmbedHeaders } = require('./middleware/security');
 
 const app = express();
 
@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 const uploadsDir = path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads');
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', uploadsEmbedHeaders, express.static(uploadsDir));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'argo-api' }));
 

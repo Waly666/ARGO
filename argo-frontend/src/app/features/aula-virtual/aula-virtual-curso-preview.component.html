@@ -1,0 +1,25 @@
+<div class="av-preview-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="'Vista previa: ' + curso().nombreProg">
+  <div class="av-preview-shell">
+    <header class="av-preview-head">
+      <div class="av-preview-head-text">
+        <p class="av-preview-eyebrow">Vista previa · sandbox</p>
+        <h2>{{ curso().nombreProg }}</h2>
+        <p class="av-preview-hint">
+          No se guarda progreso, pagos ni certificados. Solo revisión del contenido del paquete.
+        </p>
+      </div>
+      <button type="button" class="av-preview-close" (click)="cerrar()">Cerrar</button>
+    </header>
+    @if (safeUrl(); as url) {
+      <iframe
+        #previewFrame
+        class="av-preview-frame"
+        [src]="url"
+        title="Vista previa del curso virtual"
+        (load)="onIframeLoad()"
+      ></iframe>
+    } @else {
+      <p class="av-preview-empty">No hay URL de contenido para este curso.</p>
+    }
+  </div>
+</div>

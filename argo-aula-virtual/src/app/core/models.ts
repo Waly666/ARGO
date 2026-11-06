@@ -269,6 +269,7 @@ export interface CursoVirtual {
   reglas?: ReglasVirtual;
   matricula?: { fechaMat?: string; pagada?: string; tarifa?: number } | null;
   pago?: EstadoPagoVirtual;
+  certificadoPortal?: { _id: string; codigoCert?: string | null; idProg?: string } | null;
 }
 
 export interface ReciboPortal {
@@ -463,6 +464,7 @@ export interface CertificadoConsultaRes {
 export interface CertificadoPortal {
   _id: string;
   idProg: string | number;
+  idLiquidacion?: string | null;
   codigoCert: string | null;
   encabezado: string | null;
   programaDescr: string;

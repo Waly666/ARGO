@@ -4,8 +4,11 @@
       @if (modoAlumno) {
         <h3><span class="av-prog-head__icon" aria-hidden="true">🎓</span> Progreso en aula virtual</h3>
         <p class="av-muted">
-          Un panel por curso matriculado, con el mismo detalle que el seguimiento del curso. Pulse una fila para expandir estadísticas.
+          Un panel por curso matriculado. Pulse el curso o <strong>Editar avance y puntajes</strong> para modificar lecciones y pruebas manualmente; luego <strong>Guardar cambios</strong>.
         </p>
+        @if (puedeGestionar()) {
+          <p class="av-prog-build-ok" role="status">Edición manual activa (ERP actualizado)</p>
+        }
       } @else {
         <h3><span class="av-prog-head__icon" aria-hidden="true">👥</span> Seguimiento de alumnos</h3>
         <p class="av-muted">
@@ -108,6 +111,14 @@
             </div>
 
             <div class="av-alum-row-side">
+              @if (puedeGestionar()) {
+                <button
+                  type="button"
+                  class="av-btn av-btn--secondary av-btn--sm av-alum-gestionar-btn"
+                  (click)="abrirGestion(row, $event)">
+                  {{ estaExpandido(row) ? 'Editando…' : 'Editar avance y puntajes' }}
+                </button>
+              }
               <div class="av-alum-row-side__pct">
                 <span class="av-alum-pct-val">{{ pct(row) | number:'1.0-0' }}%</span>
                 <span class="av-alum-pct-track">
@@ -126,6 +137,58 @@
 
           @if (estaExpandido(row)) {
             <div class="av-alum-detail av-dash">
+              @if (puedeGestionar()) {
+                <div class="av-dash-admin-actions av-dash-admin-actions--top" (click)="$event.stopPropagation()">
+                  <p class="av-dash-admin-actions__hint">
+                    <strong>Modo edición manual.</strong> Cambie los números en cada lección y en cada prueba, ajuste el avance global o agregue un intento.
+                    Al terminar pulse <strong>Guardar cambios</strong>. «Reiniciar» y «Anular matrícula» son acciones aparte (borran datos).
+                  </p>
+                  @if (estaEditando(row)) {
+                    <div class="av-dash-admin-actions__row">
+                      <label class="av-prog-edit-pct">
+                        Avance global %
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          [ngModel]="borradorPctCurso()"
+                          (ngModelChange)="borradorPctCurso.set(+$event || 0)" />
+                      </label>
+                      <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="recalcBorradorPctDesdeClases(row)">
+                        Recalcular desde lecciones
+                      </button>
+                      <label class="av-prog-edit-check">
+                        <input type="checkbox" [ngModel]="borradorAprobado()" (ngModelChange)="borradorAprobado.set(!!$event)" />
+                        Marcar curso aprobado
+                      </label>
+                      <button type="button" class="av-btn av-btn--secondary av-btn--sm" (click)="guardarEdicion(row, $event)">
+                        {{ estaAccionando(row) ? 'Guardando…' : 'Guardar cambios' }}
+                      </button>
+                      <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="cancelarEdicion($event)">Salir edición</button>
+                    </div>
+                    <div class="av-dash-admin-actions__row av-dash-admin-actions__row--muted">
+                      <button type="button" class="av-btn av-btn--ghost av-btn--sm" [disabled]="estaAccionando(row)" (click)="borrarEvaluaciones(row, $event)">
+                        Borrar solo pruebas
+                      </button>
+                      <button type="button" class="av-btn av-btn--ghost av-btn--sm" [disabled]="estaAccionando(row)" (click)="borrarLecciones(row, $event)">
+                        Borrar solo lecciones
+                      </button>
+                      <button type="button" class="av-btn av-btn--ghost av-btn--sm" [disabled]="estaAccionando(row)" (click)="reiniciarProgreso(row, $event)">
+                        Reiniciar todo el curso
+                      </button>
+                      <button type="button" class="av-btn av-btn--danger av-btn--sm" [disabled]="estaAccionando(row)" (click)="anularMatricula(row, $event)">
+                        Anular matrícula
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="av-dash-admin-actions__row">
+                      <button type="button" class="av-btn av-btn--secondary av-btn--sm" [disabled]="estaAccionando(row)" (click)="iniciarEdicion(row, $event)">
+                        Editar avance y puntajes
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
               @if (row.progreso.aprobado || row.progreso.certificadoEmitido || row.pago.pagado || row.pago.saldo > 0) {
                 <div class="av-dash__chips">
                   @if (row.progreso.aprobado) {
@@ -328,24 +391,6 @@
                   @if (cursoLink(row); as clink) {
                     <a [routerLink]="clink" [queryParams]="cursoQuery(row)" class="av-dash-link" (click)="$event.stopPropagation()">Ver curso en aula virtual →</a>
                   }
-                  @if (puedeGestionar()) {
-                    <div class="av-dash-admin-actions" (click)="$event.stopPropagation()">
-                      <button
-                        type="button"
-                        class="av-btn av-btn--ghost av-btn--sm"
-                        [disabled]="estaAccionando(row)"
-                        (click)="reiniciarProgreso(row, $event)">
-                        {{ estaAccionando(row) ? 'Procesando…' : 'Reiniciar progreso' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="av-btn av-btn--danger av-btn--sm"
-                        [disabled]="estaAccionando(row)"
-                        (click)="anularMatricula(row, $event)">
-                        Anular matrícula
-                      </button>
-                    </div>
-                  }
                 </section>
               </div>
 
@@ -355,6 +400,9 @@
                     <span class="av-dash__title-icon" aria-hidden="true">📚</span>
                     Detalle por lección
                   </h5>
+                  @if (estaEditando(row)) {
+                    <span class="av-dash-tag av-dash-tag--blue">Escriba el % de cada lección (0–100)</span>
+                  }
                 </div>
                 <div class="av-dash-table-wrap av-dash-table-wrap--warm">
                   <table class="av-dash-table av-dash-table--lessons av-dash-table--warm">
@@ -367,11 +415,19 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (cl of clasesDetalle(row); track cl.numero) {
-                        <tr [class.av-dash-table__muted]="cl.pct <= 0">
+                      @for (cl of clasesEnEdicion(row); track cl.numero) {
+                        <tr [class.av-dash-table__muted]="cl.pct <= 0 && !estaEditando(row)">
                           <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">Lección {{ cl.numero }}</span></td>
                           <td>
-                            @if (cl.pct > 0) {
+                            @if (estaEditando(row)) {
+                              <input
+                                class="av-prog-score-input"
+                                type="number"
+                                min="0"
+                                max="100"
+                                [value]="cl.pct"
+                                (change)="actualizarPctClase(row, cl.numero, $any($event.target).value)" />
+                            } @else if (cl.pct > 0) {
                               <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-chip--mid]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-chip--low]="claseNotaTone(cl.pct) === 'low'">{{ cl.pct | number:'1.0-0' }}%</span>
                             } @else {
                               <span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">—</span>
@@ -415,13 +471,18 @@
                 </div>
               </section>
 
-              @if (intentosDe(row).length) {
+              @if (intentosEnEdicion(row).length || estaEditando(row)) {
                 <section class="av-dash-panel av-dash-panel--lessons-warm">
-                  <div class="av-dash-panel__head">
+                  <div class="av-dash-panel__head av-dash-panel__head--split">
                     <h5 class="av-dash__title av-dash__title--lessons">
                       <span class="av-dash__title-icon" aria-hidden="true">🏁</span>
                       Evaluación final — historial
                     </h5>
+                    @if (estaEditando(row)) {
+                      <button type="button" class="av-btn av-btn--secondary av-btn--sm" (click)="agregarIntentoEval(row, $event)">
+                        + Añadir intento / prueba
+                      </button>
+                    }
                   </div>
                   <div class="av-dash-table-wrap av-dash-table-wrap--warm">
                     <table class="av-dash-table av-dash-table--eval av-dash-table--warm">
@@ -432,17 +493,38 @@
                           <th>Avance al intento</th>
                           <th>Resultado</th>
                           <th>Fecha</th>
+                          @if (estaEditando(row)) {
+                            <th></th>
+                          }
                         </tr>
                       </thead>
                       <tbody>
-                        @for (it of intentosDe(row); track it.numero) {
+                        @for (it of intentosEnEdicion(row); track it.numero) {
                           <tr>
                             <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">#{{ it.numero }}</span></td>
                             <td>
-                              <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="notaTone(it.nota, notaMinima(row)) === 'ok'" [class.av-dash-chip--mid]="notaTone(it.nota, notaMinima(row)) === 'mid'" [class.av-dash-chip--low]="notaTone(it.nota, notaMinima(row)) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
+                              @if (estaEditando(row)) {
+                                <input
+                                  class="av-prog-score-input"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  [value]="it.nota"
+                                  (change)="actualizarNotaIntento(row, it.numero, $any($event.target).value)" />
+                              } @else {
+                                <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="notaTone(it.nota, notaMinima(row)) === 'ok'" [class.av-dash-chip--mid]="notaTone(it.nota, notaMinima(row)) === 'mid'" [class.av-dash-chip--low]="notaTone(it.nota, notaMinima(row)) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
+                              }
                             </td>
                             <td>
-                              @if (it.pctCompletitud != null) {
+                              @if (estaEditando(row)) {
+                                <input
+                                  class="av-prog-score-input"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  [value]="it.pctCompletitud ?? borradorPctCurso()"
+                                  (change)="actualizarAvanceIntento(row, it.numero, $any($event.target).value)" />
+                              } @else if (it.pctCompletitud != null) {
                                 <span class="av-dash-chip av-dash-chip--cyan av-dash-chip--sm">{{ it.pctCompletitud | number:'1.0-0' }}%</span>
                               } @else {
                                 <span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">—</span>
@@ -456,12 +538,25 @@
                               }
                             </td>
                             <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">{{ fmtFecha(it.fecha) }}</span></td>
+                            @if (estaEditando(row)) {
+                              <td>
+                                <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="quitarIntentoBorrador(row, it.numero, $event)">Quitar</button>
+                              </td>
+                            }
                           </tr>
+                        } @empty {
+                          @if (estaEditando(row)) {
+                            <tr>
+                              <td [attr.colspan]="6" class="av-dash-empty-cell">
+                                Sin intentos. Use «+ Añadir intento / prueba» para registrar una nota manualmente.
+                              </td>
+                            </tr>
+                          }
                         }
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td colspan="5">
+                          <td [attr.colspan]="estaEditando(row) ? 6 : 5">
                             <span class="av-dash-chip av-dash-chip--violet av-dash-chip--inline">Mejor {{ (mejorNota(row) ?? 0) | number:'1.0-0' }}%</span>
                             <span class="av-dash-chip av-dash-chip--amber av-dash-chip--inline">Última {{ (ultimaNotaEval(row) ?? 0) | number:'1.0-0' }}%</span>
                             <span class="av-dash-chip av-dash-chip--cyan av-dash-chip--inline">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval(row) }} intentos</span>

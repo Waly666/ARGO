@@ -97,6 +97,9 @@
                   </td>
                   <td class="actions-cell">
                     <a [routerLink]="fichaCursoLink(c)" class="av-link">Abrir ficha</a>
+                    @if (puedeVistaPrevia(c)) {
+                      <button type="button" class="av-link av-link-btn" (click)="abrirVistaPrevia(c)">Vista previa</button>
+                    }
                     <a [routerLink]="fichaCursoLink(c)" [queryParams]="{ tab: 'alumnos' }" class="av-link">Alumnos</a>
                   </td>
                 </tr>
@@ -164,6 +167,9 @@
                 <span class="card-hint">Curso virtual</span>
                 <div class="card-actions">
                   <a [routerLink]="fichaCursoLink(c)" class="act open linkish">Ficha</a>
+                  @if (puedeVistaPrevia(c)) {
+                    <button type="button" class="act open av-link-btn" (click)="abrirVistaPrevia(c)">Vista previa</button>
+                  }
                   <a [routerLink]="fichaCursoLink(c)" [queryParams]="{ tab: 'contenido' }" class="act doc linkish">Contenido</a>
                 </div>
               </footer>
@@ -500,5 +506,9 @@
         Guardar textos del portal
       </button>
     </section>
+  }
+
+  @if (previewCurso(); as prev) {
+    <argo-aula-virtual-curso-preview [curso]="prev" (closed)="cerrarVistaPrevia()" />
   }
 </section>

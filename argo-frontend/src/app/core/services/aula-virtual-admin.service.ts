@@ -23,6 +23,7 @@ export interface VirtualConfig {
   intentosMaxEval: number;
   indexHtml?: string;
   rutaPaquete?: string | null;
+  storagePrefix?: string | null;
   idCategorias?: number[];
   nivel?: NivelVirtual | null;
   materiales?: MaterialVirtual[];
@@ -68,6 +69,7 @@ export interface CursoVirtualAdmin {
   publicadoPortal?: boolean;
   tienePaquete?: boolean;
   playerUrl?: string | null;
+  storagePrefix?: string | null;
   config?: VirtualConfig;
 }
 
@@ -895,10 +897,30 @@ export class AulaVirtualAdminService {
   reiniciarProgresoAlumnoCurso(
     numDoc: string | number,
     idPrograma: string | number,
+    body?: { alcance?: 'completo' | 'evaluaciones' | 'lecciones' },
   ): Observable<GestionMatriculaVirtualRes> {
     return this.http.post<GestionMatriculaVirtualRes>(
       `${this.base}/alumnos/${encodeURIComponent(String(numDoc))}/cursos/${encodeURIComponent(String(idPrograma))}/reiniciar-progreso`,
-      {},
+      body || {},
+    );
+  }
+
+  actualizarProgresoAlumnoCurso(
+    numDoc: string | number,
+    idPrograma: string | number,
+    body: {
+      clases?: { numero: number; pct: number; aprobada?: boolean }[];
+      intentos?: { nota: number; pctCompletitud?: number; aprobado?: boolean; fecha?: string }[];
+      pctCompletitud?: number;
+      aprobado?: boolean;
+      certificadoEmitido?: boolean;
+      quitarIntento?: number | string;
+      quitarTodosIntentos?: boolean;
+    },
+  ): Observable<{ ok: boolean; message: string; item?: ProgresoAlumnoVirtualItem }> {
+    return this.http.patch<{ ok: boolean; message: string; item?: ProgresoAlumnoVirtualItem }>(
+      `${this.base}/alumnos/${encodeURIComponent(String(numDoc))}/cursos/${encodeURIComponent(String(idPrograma))}/progreso`,
+      body,
     );
   }
 

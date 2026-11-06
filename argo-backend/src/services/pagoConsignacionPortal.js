@@ -133,7 +133,7 @@ async function crearSolicitudConsignacion({
     throw err;
   }
 
-  const liq = await buscarLiquidacionVirtual(numDoc, idPrograma);
+  const liq = await buscarLiquidacionVirtual(numDoc, idPrograma, { asegurar: true });
   if (!liq) {
     const err = new Error('No hay matrícula con pago pendiente para este curso.');
     err.status = 404;

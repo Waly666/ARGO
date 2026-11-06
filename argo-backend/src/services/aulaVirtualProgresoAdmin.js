@@ -341,4 +341,9 @@ async function listarProgresoAlumnoAdmin(numDocRaw, query = {}, ctx = {}) {
   };
 }
 
-module.exports = { listarProgresoAlumnosAdmin, listarProgresoAlumnoAdmin, estadoConexion };
+module.exports = {
+  listarProgresoAlumnosAdmin,
+  listarProgresoAlumnoAdmin,
+  estadoConexion,
+  construirFilaProgresoAlumno,
+};

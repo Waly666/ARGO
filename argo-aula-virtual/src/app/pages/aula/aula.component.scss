@@ -511,6 +511,35 @@
   text-align: right;
 }
 
+.dash-course-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 0.45rem;
+  min-width: min(100%, 11rem);
+}
+
+.dash-course-actions .dash-btn-block {
+  width: auto;
+  flex: 1 1 5.25rem;
+  white-space: nowrap;
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+
+.dash-btn-pay-qr {
+  border-color: #67e8f9;
+  color: #0e7490;
+  background: #ecfeff;
+
+  &:hover {
+    border-color: #0e7490;
+    background: #cffafe;
+  }
+}
+
 .dash-pct {
   display: block;
   font-size: 0.82rem;

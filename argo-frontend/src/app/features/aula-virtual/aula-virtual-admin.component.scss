@@ -308,9 +308,25 @@
   .actions-cell {
     white-space: nowrap;
 
-    .av-link + .av-link {
+    .av-link + .av-link,
+    .av-link + .av-link-btn,
+    .av-link-btn + .av-link {
       margin-left: 0.65rem;
     }
+  }
+}
+
+.av-link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  color: var(--accent-2);
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--text);
   }
 }
 

@@ -11,6 +11,11 @@ import { PERMISOS_MENU_PESV, rutaAccesible } from '../../core/utils/auth-routes.
 import { SedeService, SedeDto } from '../../core/services/sede.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
+import {
+  clavePollCertificadoEmitido,
+  configActivaCertificadoEmitido,
+  idCertificadoAlerta,
+} from '../../core/constants/certificado-emitido-alerta';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
 import { CertificadoVencimientoAlertService } from '../../core/services/certificado-vencimiento-alert.service';
 import { CertificadoVencidoAlertService } from '../../core/services/certificado-vencido-alert.service';
@@ -279,8 +284,8 @@ export class ShellComponent {
       this.alarmaHabilitada('alarmas.caja.sin_abrir'),
   );
 
-  /** Usuarios que emiten o gestionan certificados: aviso parpadeante al generarse uno nuevo. */
-  mostrarAlertaCertificado = computed(() => this.alarmaHabilitada('alarmas.jornadas.certificado_nuevo'));
+  /** Certificados emitidos (manual, pago, jornada, aula): mismo criterio que pagos + jornadas. */
+  mostrarAlertaCertificado = computed(() => this.alertaCertificadoEmitidoHabilitada());
 
   mostrarAlertaCertificadoVencimiento = computed(() =>
     this.alarmaHabilitada('alarmas.certificados.vencimiento'),
@@ -1708,7 +1713,10 @@ export class ShellComponent {
       this.alertasRuntime.reglasMap();
       this.alarmas.alarmas();
       if (!this.auth.isAuth()) return;
-      untracked(() => this.sincronizarAlertasConConfig());
+      untracked(() => {
+        this.sincronizarAlertasConConfig();
+        this.iniciarAlertasPollsOnce();
+      });
     });
 
     this.auth.refreshMe().subscribe({
@@ -1724,10 +1732,14 @@ export class ShellComponent {
       next: () => {
         this.sincronizarAlertasConConfig();
         void this.revisarCajaPostLogin();
+        this.iniciarAlertasPollsOnce();
       },
-      error: () => this.sincronizarAlertasConConfig(),
+      error: () => {
+        this.alertasRuntime.aplicar([]);
+        this.sincronizarAlertasConConfig();
+        this.iniciarAlertasPollsOnce();
+      },
     });
-    this.iniciarAlertasPollsOnce();
     this.autorizPendientesAlert.iniciarPolling();
     this.programacionCeaProximaAlert.refresh
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1861,6 +1873,15 @@ export class ShellComponent {
     return this.alarmas.tiene(key) && this.alertasRuntime.activa(key);
   }
 
+  /** Pagos y certificados comparten audiencia: quien recibe ingresos también certificados nuevos. */
+  private alertaCertificadoEmitidoHabilitada(): boolean {
+    void this.alertasRuntime.reglasMap();
+    return configActivaCertificadoEmitido(
+      (k) => this.alarmas.tiene(k),
+      (k) => this.alertasRuntime.activa(k),
+    );
+  }
+
   /** Limpia datos en memoria cuando la config global desactiva un tipo de alerta. */
   private sincronizarAlertasConConfig(): void {
     if (!this.alarmaHabilitada('alarmas.programacion_cea.pendiente')) {
@@ -1875,7 +1896,7 @@ export class ShellComponent {
     if (!this.alarmaHabilitada('alarmas.jornadas.en_proceso')) {
       this.jornadaProcesoAlert.actualizarDesdeListado([]);
     }
-    if (!this.alarmaHabilitada('alarmas.jornadas.certificado_nuevo')) {
+    if (!this.alertaCertificadoEmitidoHabilitada()) {
       this.certAlertSvc.descartarTodas();
     }
     if (
@@ -2262,6 +2283,11 @@ export class ShellComponent {
 
   /** Detecta certificados emitidos recientemente (jornada, curso de pago y demás). */
   private iniciarPollCertificados(): void {
+    const clave = () =>
+      clavePollCertificadoEmitido(
+        (k) => this.alarmas.tiene(k),
+        (k) => this.alertasRuntime.activa(k),
+      );
     const poll = (minutosAtras: number, alertarNuevos: boolean) => {
       if (!this.mostrarAlertaCertificado()) return;
       const desde = new Date(Date.now() - minutosAtras * 60 * 1000).toISOString();
@@ -2271,16 +2297,27 @@ export class ShellComponent {
             if (alertarNuevos) {
               this.certAlertSvc.notificarDesdeRespuesta(c, c.nombreCompleto);
             } else {
-              this.certAlertSvc.marcarConocidos([String(c._id)]);
+              this.certAlertSvc.marcarConocidos([idCertificadoAlerta(c as Record<string, unknown>)]);
             }
           }
         },
       });
     };
-    const pollMs = this.pollIntervalMs('alarmas.jornadas.certificado_nuevo');
-    // Ventana ≥ intervalo: createdAt de jornadas a veces cae fuera de 3 min si el poll es más largo.
+    const pollMs = this.pollIntervalMs(clave());
     const minutosVentana = Math.max(5, Math.ceil(pollMs / 60_000) * 2);
-    poll(60, false);
+    if (this.alertasRuntime.ventanaInicio(clave()) === 'desde_inicio_dia') {
+      const inicioHoy = new Date();
+      inicioHoy.setHours(0, 0, 0, 0);
+      this.certSvc.listarRecientes(inicioHoy.toISOString()).subscribe({
+        next: (rows) => {
+          for (const c of rows || []) {
+            this.certAlertSvc.notificarDesdeRespuesta(c, c.nombreCompleto);
+          }
+        },
+      });
+    } else {
+      poll(60, false);
+    }
     interval(pollMs)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => poll(minutosVentana, true));

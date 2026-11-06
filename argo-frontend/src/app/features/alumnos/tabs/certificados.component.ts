@@ -201,7 +201,11 @@ export class CertificadosComponent {
           this.observaciones.set('');
           this.fechaEmision.set('');
           this.recargar(nd);
-          this.certAlertSvc.notificarDesdeRespuesta(cert, this.store.nombreCompleto() || cert?.nombreCompleto);
+          this.certAlertSvc.notificarDesdeRespuesta(
+            cert,
+            this.store.nombreCompleto() || cert?.nombreCompleto,
+            { inmediato: true },
+          );
           this.setMsg('Certificado emitido.', false);
         },
         error: (e) => this.setMsg(e?.error?.message || 'Error emitiendo certificado.', true),

@@ -10,6 +10,7 @@ import {
   ProgresoAlumnoVirtualItem,
 } from '../../core/services/aula-virtual-admin.service';
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
+import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
@@ -29,6 +30,7 @@ type ReglasCurso = {
 })
 export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   private svc = inject(AulaVirtualAdminService);
+  private auth = inject(AuthService);
   private permisos = inject(PermisoService);
   private confirm = inject(ConfirmDialogService);
 
@@ -54,9 +56,23 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   accionando = signal<string | null>(null);
   msgAccion = signal<string | null>(null);
   msgAccionError = signal(false);
+  editandoKey = signal<string | null>(null);
+  borradorClases = signal<ProgresoAlumnoVirtualClase[]>([]);
+  borradorPctCurso = signal<number>(0);
+  borradorIntentos = signal<ProgresoAlumnoVirtualIntento[]>([]);
+  borradorAprobado = signal<boolean | null>(null);
 
   puedeGestionar(): boolean {
-    return this.permisos.tiene('aula_virtual.gestionar');
+    if (this.auth.isAdmin()) return true;
+    if (this.permisos.tiene('*')) return true;
+    return this.permisos.tiene(['aula_virtual.gestionar', 'alumnos.gestionar']);
+  }
+
+  abrirGestion(row: ProgresoAlumnoVirtualItem, ev?: Event): void {
+    ev?.stopPropagation();
+    const key = this.trackRow(row);
+    this.expandido.set(key);
+    this.iniciarEdicion(row);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -217,7 +233,13 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
 
   toggleExpand(row: ProgresoAlumnoVirtualItem): void {
     const key = this.trackRow(row);
-    this.expandido.update((v) => (v === key ? null : key));
+    if (this.expandido() === key) {
+      this.expandido.set(null);
+      this.editandoKey.set(null);
+      return;
+    }
+    this.expandido.set(key);
+    if (this.puedeGestionar()) this.iniciarEdicion(row);
   }
 
   estaExpandido(row: ProgresoAlumnoVirtualItem): boolean {
@@ -393,42 +415,226 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
     return ` Este alumno ya tiene certificado emitido${cod}; el documento en archivo no se borra automáticamente.`;
   }
 
-  async reiniciarProgreso(row: ProgresoAlumnoVirtualItem, ev?: Event): Promise<void> {
-    ev?.stopPropagation();
-    if (!this.puedeGestionar() || this.estaAccionando(row)) return;
+  estaEditando(row: ProgresoAlumnoVirtualItem): boolean {
+    return this.editandoKey() === this.trackRow(row);
+  }
 
+  iniciarEdicion(row: ProgresoAlumnoVirtualItem, ev?: Event): void {
+    ev?.stopPropagation();
+    if (!this.puedeGestionar()) return;
+    const key = this.trackRow(row);
+    this.editandoKey.set(key);
+    this.borradorClases.set(this.clasesDetalle(row).map((c) => ({ ...c })));
+    this.borradorPctCurso.set(this.pct(row));
+    this.borradorIntentos.set(this.intentosDe(row).map((i) => ({ ...i })));
+    this.borradorAprobado.set(row.progreso?.aprobado ? true : false);
+  }
+
+  cancelarEdicion(ev?: Event): void {
+    ev?.stopPropagation();
+    this.editandoKey.set(null);
+  }
+
+  clasesEnEdicion(row: ProgresoAlumnoVirtualItem): ProgresoAlumnoVirtualClase[] {
+    return this.estaEditando(row) ? this.borradorClases() : this.clasesDetalle(row);
+  }
+
+  intentosEnEdicion(row: ProgresoAlumnoVirtualItem): ProgresoAlumnoVirtualIntento[] {
+    return this.estaEditando(row) ? this.borradorIntentos() : this.intentosDe(row);
+  }
+
+  actualizarPctClase(row: ProgresoAlumnoVirtualItem, numero: number, raw: string): void {
+    if (!this.estaEditando(row)) return;
+    const n = Math.min(100, Math.max(0, Number(raw) || 0));
+    this.borradorClases.update((list) =>
+      list.map((c) =>
+        c.numero === numero ? { ...c, pct: n, aprobada: n >= this.notaClaseAprobada() } : c,
+      ),
+    );
+    this.recalcBorradorPctDesdeClases(row);
+  }
+
+  /** Calcula avance global como promedio de todas las lecciones del curso. */
+  recalcBorradorPctDesdeClases(row: ProgresoAlumnoVirtualItem): void {
+    const clases = this.borradorClases();
+    const total = Math.max(
+      row.progreso?.totalClases ?? 0,
+      ...clases.map((c) => c.numero),
+      clases.length ? 0 : 7,
+    );
+    let suma = 0;
+    for (let i = 1; i <= total; i++) {
+      suma += clases.find((c) => c.numero === i)?.pct ?? 0;
+    }
+    this.borradorPctCurso.set(Math.round(suma / total));
+  }
+
+  actualizarNotaIntento(row: ProgresoAlumnoVirtualItem, numero: number, raw: string): void {
+    if (!this.estaEditando(row)) return;
+    const n = Math.min(100, Math.max(0, Number(raw) || 0));
+    this.borradorIntentos.update((list) =>
+      list.map((it) => (it.numero === numero ? { ...it, nota: n } : it)),
+    );
+  }
+
+  actualizarAvanceIntento(row: ProgresoAlumnoVirtualItem, numero: number, raw: string): void {
+    if (!this.estaEditando(row)) return;
+    const n = Math.min(100, Math.max(0, Number(raw) || 0));
+    this.borradorIntentos.update((list) =>
+      list.map((it) => (it.numero === numero ? { ...it, pctCompletitud: n } : it)),
+    );
+  }
+
+  agregarIntentoEval(row: ProgresoAlumnoVirtualItem, ev?: Event): void {
+    ev?.stopPropagation();
+    if (!this.estaEditando(row)) return;
+    const list = this.borradorIntentos();
+    const max = this.intentosMaxEval(row);
+    if (list.length >= max) {
+      this.msgAccionError.set(true);
+      this.msgAccion.set(
+        `El curso permite ${max} intento(s). Puede quitar uno o aumentar el límite en la config del curso.`,
+      );
+      return;
+    }
+    const numero = list.length + 1;
+    this.borradorIntentos.update((l) => [
+      ...l,
+      {
+        numero,
+        nota: 0,
+        pctCompletitud: this.borradorPctCurso(),
+        aprobado: false,
+        fecha: new Date().toISOString(),
+      },
+    ]);
+    this.msgAccion.set(null);
+  }
+
+  quitarIntentoBorrador(row: ProgresoAlumnoVirtualItem, numero: number, ev?: Event): void {
+    ev?.stopPropagation();
+    if (!this.estaEditando(row)) return;
+    this.borradorIntentos.update((list) =>
+      list.filter((it) => it.numero !== numero).map((it, idx) => ({ ...it, numero: idx + 1 })),
+    );
+  }
+
+  async guardarEdicion(row: ProgresoAlumnoVirtualItem, ev?: Event): Promise<void> {
+    ev?.stopPropagation();
+    if (!this.puedeGestionar() || !this.estaEditando(row) || this.estaAccionando(row)) return;
     const nd = this.docFila(row);
     const idProg = this.idCursoFila(row);
     if (!nd || !idProg) return;
 
-    const ok = await this.confirm.open({
-      title: 'Reiniciar progreso',
-      message:
-        `Se borrará el avance, notas e intentos de «${this.nombreCursoFila(row)}» para el documento ${this.fmtDoc(nd)}. ` +
-        'La matrícula y el saldo (si existe) se conservan.' +
-        this.avisoCertificado(row) +
-        ' ¿Continuar?',
-      variant: 'danger',
-      confirmLabel: 'Sí, reiniciar progreso',
-    });
-    if (!ok) return;
-
     const key = this.trackRow(row);
     this.accionando.set(key);
     this.msgAccion.set(null);
-    this.svc.reiniciarProgresoAlumnoCurso(nd, idProg).subscribe({
-      next: (r) => {
-        this.accionando.set(null);
-        this.msgAccionError.set(false);
-        this.msgAccion.set(r.message || 'Progreso reiniciado.');
-        this.cargar();
-      },
-      error: (e) => {
-        this.accionando.set(null);
-        this.msgAccionError.set(true);
-        this.msgAccion.set(e?.error?.message || 'No se pudo reiniciar el progreso.');
-      },
-    });
+
+    const clases = this.borradorClases().map((c) => ({
+      numero: c.numero,
+      pct: c.pct,
+      aprobada: c.aprobada,
+    }));
+    const intentos = this.borradorIntentos().map((it) => ({
+      nota: it.nota,
+      pctCompletitud: it.pctCompletitud ?? undefined,
+      aprobado: it.aprobado,
+      fecha: it.fecha ?? undefined,
+    }));
+
+    this.svc
+      .actualizarProgresoAlumnoCurso(nd, idProg, {
+        clases,
+        intentos,
+        pctCompletitud: this.borradorPctCurso(),
+        aprobado: this.borradorAprobado() ?? undefined,
+      })
+      .subscribe({
+        next: (r) => {
+          this.accionando.set(null);
+          this.editandoKey.set(null);
+          this.msgAccionError.set(false);
+          this.msgAccion.set(r.message || 'Progreso guardado.');
+          this.cargar();
+        },
+        error: (e) => {
+          this.accionando.set(null);
+          this.msgAccionError.set(true);
+          this.msgAccion.set(e?.error?.message || 'No se pudo guardar el progreso.');
+        },
+      });
+  }
+
+  private reiniciarConAlcance(
+    row: ProgresoAlumnoVirtualItem,
+    alcance: 'completo' | 'evaluaciones' | 'lecciones',
+    titulo: string,
+    mensaje: string,
+    ev?: Event,
+  ): void {
+    ev?.stopPropagation();
+    if (!this.puedeGestionar() || this.estaAccionando(row)) return;
+    const nd = this.docFila(row);
+    const idProg = this.idCursoFila(row);
+    if (!nd || !idProg) return;
+
+    void this.confirm
+      .open({
+        title: titulo,
+        message: mensaje + this.avisoCertificado(row) + ' ¿Continuar?',
+        variant: 'danger',
+        confirmLabel: 'Sí, continuar',
+      })
+      .then((ok) => {
+        if (!ok) return;
+        const key = this.trackRow(row);
+        this.accionando.set(key);
+        this.msgAccion.set(null);
+        this.editandoKey.set(null);
+        this.svc.reiniciarProgresoAlumnoCurso(nd, idProg, { alcance }).subscribe({
+          next: (r) => {
+            this.accionando.set(null);
+            this.msgAccionError.set(false);
+            this.msgAccion.set(r.message || 'Listo.');
+            this.cargar();
+          },
+          error: (e) => {
+            this.accionando.set(null);
+            this.msgAccionError.set(true);
+            this.msgAccion.set(e?.error?.message || 'No se pudo completar la acción.');
+          },
+        });
+      });
+  }
+
+  reiniciarProgreso(row: ProgresoAlumnoVirtualItem, ev?: Event): void {
+    this.reiniciarConAlcance(
+      row,
+      'completo',
+      'Reiniciar todo el curso',
+      `Se borrará por completo el avance, lecciones e intentos de «${this.nombreCursoFila(row)}» para ${this.fmtDoc(this.docFila(row))}. La matrícula y el saldo se conservan.`,
+      ev,
+    );
+  }
+
+  borrarEvaluaciones(row: ProgresoAlumnoVirtualItem, ev?: Event): void {
+    this.reiniciarConAlcance(
+      row,
+      'evaluaciones',
+      'Borrar evaluaciones / pruebas',
+      `Se eliminarán todos los intentos de la evaluación final de «${this.nombreCursoFila(row)}». El avance por lección se mantiene.`,
+      ev,
+    );
+  }
+
+  borrarLecciones(row: ProgresoAlumnoVirtualItem, ev?: Event): void {
+    this.reiniciarConAlcance(
+      row,
+      'lecciones',
+      'Borrar avance de lecciones',
+      `Se pondrá en cero el avance por lección de «${this.nombreCursoFila(row)}». Los intentos de evaluación se conservan.`,
+      ev,
+    );
   }
 
   async anularMatricula(row: ProgresoAlumnoVirtualItem, ev?: Event): Promise<void> {

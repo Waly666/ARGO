@@ -15,13 +15,23 @@ import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vis
 import { environment } from '../../../environments/environment';
 import { resolvePortalPublicUrl } from '../../core/utils/portal-public-url.util';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
+import {
+  AulaVirtualCursoPreviewComponent,
+  CursoVirtualPreviewTarget,
+} from './aula-virtual-curso-preview.component';
 
 type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
 
 @Component({
   selector: 'argo-aula-virtual-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PortalLandingEditorComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    PortalLandingEditorComponent,
+    AulaVirtualCursoPreviewComponent,
+  ],
   templateUrl: './aula-virtual-admin.component.html',
   styleUrls: ['./aula-virtual-admin.component.scss'],
 })
@@ -78,6 +88,8 @@ export class AulaVirtualAdminComponent implements OnInit {
     emailPqr: '',
     landing: mergePortalLanding(PORTAL_LANDING_DEFAULTS),
   };
+
+  previewCurso = signal<CursoVirtualPreviewTarget | null>(null);
 
   loading = signal(true);
   loadingUsuarios = signal(false);
@@ -344,6 +356,24 @@ export class AulaVirtualAdminComponent implements OnInit {
     } catch {
       return '—';
     }
+  }
+
+  puedeVistaPrevia(c: CursoVirtualAdmin): boolean {
+    return !!c.tienePaquete && !!c.playerUrl;
+  }
+
+  abrirVistaPrevia(c: CursoVirtualAdmin): void {
+    if (!this.puedeVistaPrevia(c)) return;
+    this.previewCurso.set({
+      idPrograma: String(c.idPrograma),
+      nombreProg: c.nombreProg,
+      playerUrl: c.playerUrl,
+      storagePrefix: c.storagePrefix ?? c.config?.storagePrefix ?? null,
+    });
+  }
+
+  cerrarVistaPrevia(): void {
+    this.previewCurso.set(null);
   }
 
   private toast(text: string, isErr = false) {

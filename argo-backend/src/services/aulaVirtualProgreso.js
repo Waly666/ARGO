@@ -12,6 +12,7 @@ const {
   servicioMatriculaPrograma,
 } = require('./aulaVirtualCatalogo');
 const { intentarCertificadoVirtualAprobar } = require('./certificadoVirtualAuto');
+const { buscarCertificadoVinculadoCurso } = require('./aulaVirtualCertificados');
 const { puedeCursarVirtual, requierePagoParaCursar } = require('./aulaVirtualConfig');
 const { estadoPagoVirtual, buscarMatriculaVirtual } = require('./aulaVirtualMatricula');
 const { asegurarAccesoVigente, calcularEstadoPlazoAcceso } = require('./aulaVirtualAccesoPlazo');
@@ -548,6 +549,27 @@ async function listarMisCursos(numDoc) {
       matriculado: true,
       pago,
     });
+    const certDoc = await buscarCertificadoVinculadoCurso(numDoc, {
+      idPrograma: idProg,
+      idLiquidacion: pago?.idLiquidacion,
+      codigoProg: curso.codigoProg,
+    });
+    const certificadoEmitido = !!(
+      estado.certificadoEmitido ||
+      docProg?.certificadoEmitido ||
+      certDoc
+    );
+    if (certDoc && !docProg?.certificadoEmitido) {
+      try {
+        const ProgresoVirtualCurso = require('../models/ProgresoVirtualCurso');
+        await ProgresoVirtualCurso.updateOne(
+          { ...numDocQuery(numDoc), idPrograma: idProg },
+          { $set: { certificadoEmitido: true } },
+        );
+      } catch (_) {
+        /* noop */
+      }
+    }
     out.push({
       ...curso,
       matricula: {
@@ -558,7 +580,14 @@ async function listarMisCursos(numDoc) {
       pago,
       puedeCursar,
       accesoBloqueadoPago: requierePagoParaCursar(cfg) && !pago.pagado,
-      progreso: mapProgresoPublico(docProg, estado),
+      certificadoPortal: certDoc
+        ? {
+            _id: String(certDoc._id),
+            codigoCert: certDoc.codigoCert || null,
+            idProg: certDoc.idProg || idProg,
+          }
+        : null,
+      progreso: mapProgresoPublico(docProg, { ...estado, certificadoEmitido }),
       reglas: {
         modoCertificado: estado.modoCertificado,
         pctMinCompletitud: estado.pctMinCompletitud,
@@ -613,4 +642,7 @@ module.exports = {
   avanceIntentoEfectivo,
   intentoCumpleRequisitos,
   sincronizarAprobacionEnDoc,
+  normalizarClases,
+  metricasDesdeClases,
+  clampPct,
 };
