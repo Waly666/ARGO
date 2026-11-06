@@ -12,6 +12,7 @@ import { SedeService, SedeDto } from '../../core/services/sede.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import {
+  certificadoAlertaCargaDesdeInicioDia,
   clavePollCertificadoEmitido,
   configActivaCertificadoEmitido,
   idCertificadoAlerta,
@@ -2305,7 +2306,12 @@ export class ShellComponent {
     };
     const pollMs = this.pollIntervalMs(clave());
     const minutosVentana = Math.max(5, Math.ceil(pollMs / 60_000) * 2);
-    if (this.alertasRuntime.ventanaInicio(clave()) === 'desde_inicio_dia') {
+    const cargaInicioDia = certificadoAlertaCargaDesdeInicioDia(
+      (k) => this.alarmas.tiene(k),
+      (k) => this.alertasRuntime.activa(k),
+      (k) => this.alertasRuntime.ventanaInicio(k),
+    );
+    if (cargaInicioDia) {
       const inicioHoy = new Date();
       inicioHoy.setHours(0, 0, 0, 0);
       this.certSvc.listarRecientes(inicioHoy.toISOString()).subscribe({

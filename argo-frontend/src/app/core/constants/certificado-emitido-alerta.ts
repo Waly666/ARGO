@@ -30,6 +30,8 @@ export function clavePollCertificadoEmitido(
   tiene: (clave?: string | string[] | null) => boolean,
   activa: (clave: string) => boolean,
 ): string {
+  const emitido = CLAVES_ALERTA_CERTIFICADO_EMITIDO[1];
+  if (tiene(emitido) && activa(emitido)) return emitido;
   for (const k of CLAVES_ALERTA_CERTIFICADO_EMITIDO) {
     if (tiene(k) && activa(k)) return k;
   }
@@ -37,6 +39,26 @@ export function clavePollCertificadoEmitido(
     return CLAVE_ALERTA_PAGO_INGRESO;
   }
   return CLAVES_ALERTA_CERTIFICADO_EMITIDO[0];
+}
+
+type VentanaInicio = 'desde_inicio_dia' | 'desde_registro';
+
+/** Carga inicial al login: certificados del día (misma lógica que comprobantes de ingreso). */
+export function certificadoAlertaCargaDesdeInicioDia(
+  tiene: (clave?: string | string[] | null) => boolean,
+  activa: (clave: string) => boolean,
+  ventanaInicio: (clave: string) => VentanaInicio,
+): boolean {
+  const clavePoll = clavePollCertificadoEmitido(tiene, activa);
+  if (ventanaInicio(clavePoll) === 'desde_inicio_dia') return true;
+  for (const k of CLAVES_ALERTA_CERTIFICADO_EMITIDO) {
+    if (tiene(k) && activa(k) && ventanaInicio(k) === 'desde_inicio_dia') return true;
+  }
+  return (
+    tiene(CLAVE_ALERTA_PAGO_INGRESO) &&
+    activa(CLAVE_ALERTA_PAGO_INGRESO) &&
+    ventanaInicio(CLAVE_ALERTA_PAGO_INGRESO) === 'desde_inicio_dia'
+  );
 }
 
 export function idCertificadoAlerta(cert: Record<string, unknown> | null | undefined): string {
