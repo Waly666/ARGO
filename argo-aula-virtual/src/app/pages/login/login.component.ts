@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AulaApiService } from '../../core/aula-api.service';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { LOGIN_AVISO_KEY } from '../../core/interceptors/portal-auth.interceptor';
 import { PortalSeoService } from '../../core/portal-seo.service';
 
 @Component({
@@ -19,6 +20,7 @@ export class LoginComponent {
   private api = inject(AulaApiService);
   private auth = inject(PortalAuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private seo = inject(PortalSeoService);
 
   turnstile = viewChild(TurnstileComponent);
@@ -31,6 +33,7 @@ export class LoginComponent {
   loading = signal(false);
 
   constructor() {
+    this.mostrarAvisoSesion();
     this.api.config().subscribe({
       next: (c) => {
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
@@ -38,6 +41,20 @@ export class LoginComponent {
       },
       error: () => this.seo.applyLogin(null),
     });
+  }
+
+  private mostrarAvisoSesion() {
+    let msg = '';
+    try {
+      msg = sessionStorage.getItem(LOGIN_AVISO_KEY) || '';
+      if (msg) sessionStorage.removeItem(LOGIN_AVISO_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (!msg && this.route.snapshot.queryParamMap.get('sesion') === 'expirada') {
+      msg = 'Tu sesión expiró o cerraste el navegador. Inicia sesión de nuevo.';
+    }
+    if (msg) this.error.set(msg);
   }
 
   enviar() {
