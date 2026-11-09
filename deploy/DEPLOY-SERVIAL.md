@@ -34,6 +34,8 @@ Snippets del repo: `/opt/argo-servial/deploy/nginx/snippets/`.
 
 **Cursos virtuales grandes (mercancías peligrosas, error 413):** ver § [Cursos virtuales — ZIP y 413](#cursos-virtuales--zip-y-413) más abajo.
 
+**APK offline del curso (>100 MB, WinSCP):** [SUBIR-APK-CURSO-VPS.md](./SUBIR-APK-CURSO-VPS.md).
+
 Verificar que Educarte sigue en 8083/8085/5002 y **no** mezclar puertos entre clientes:
 
 ```bash

@@ -138,6 +138,8 @@ bash deploy/upload-curso-apk-vps.sh /tmp/curso-13.apk 13 'TOKEN_JWT'
 
 El APK queda en `data/uploads/aula-virtual-apk/{idPrograma}/`. Recargue la ficha del curso en el ERP.
 
+Guía paso a paso con WinSCP: **[SUBIR-APK-CURSO-VPS.md](./SUBIR-APK-CURSO-VPS.md)**.
+
 ### Verificar paquete
 
 **Finstruvial:**
