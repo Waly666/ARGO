@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -47,6 +47,7 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   saving = signal(false);
+  apkUploadPct = signal<number | null>(null);
   msg = signal<string | null>(null);
   err = signal(false);
 
@@ -220,18 +221,36 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
     const file = input.files?.[0];
     if (!sel || !file) return;
     this.saving.set(true);
+    this.apkUploadPct.set(0);
     this.svc.subirApkCurso(sel.idPrograma, file, file.name).subscribe({
-      next: (res: { message: string; config: VirtualConfig }) => {
-        if (res.config) this.config.set({ ...this.config()!, ...res.config });
-        this.saving.set(false);
-        input.value = '';
-        this.toast(res.message || 'APK subida');
-        this.refrescarCurso();
+      next: (ev) => {
+        if (ev.type === HttpEventType.UploadProgress) {
+          const total = ev.total ?? file.size;
+          if (total > 0) {
+            this.apkUploadPct.set(Math.min(100, Math.round((100 * ev.loaded) / total)));
+          }
+          return;
+        }
+        if (ev.type === HttpEventType.Response && ev.body) {
+          const res = ev.body;
+          if (res.config) this.config.set({ ...this.config()!, ...res.config });
+          this.saving.set(false);
+          this.apkUploadPct.set(null);
+          input.value = '';
+          this.toast(res.message || 'APK subida');
+          this.refrescarCurso();
+        }
       },
       error: (e: HttpErrorResponse) => {
         this.saving.set(false);
+        this.apkUploadPct.set(null);
         input.value = '';
-        this.toast(e?.error?.message || 'Error al subir APK', true);
+        let msg = e?.error?.message || 'Error al subir APK';
+        if (e.status === 413 || e.status === 0) {
+          msg +=
+            ' En producción, archivos mayores a ~100 MB deben subirse desde la VPS (deploy/upload-curso-apk-vps.sh) o con Cloudflare en modo solo DNS.';
+        }
+        this.toast(msg, true);
       },
     });
   }

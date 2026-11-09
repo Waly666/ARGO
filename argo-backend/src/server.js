@@ -72,6 +72,11 @@ const HOST = process.env.HOST || '0.0.0.0';
     const io = initForoSocket(httpServer);
     initChatSocket(io);
 
+    // Subidas grandes (APK/ZIP ~400 MB): evitar cierre a los 5 min por defecto de Node
+    httpServer.requestTimeout = 900_000;
+    httpServer.headersTimeout = 910_000;
+    httpServer.keepAliveTimeout = 120_000;
+
     const server = httpServer.listen(PORT, HOST, () => {
       console.log('');
       logCorsOnStartup();

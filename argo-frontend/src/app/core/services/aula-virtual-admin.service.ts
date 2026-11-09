@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -343,11 +343,18 @@ export class AulaVirtualAdminService {
     return this.http.post<{ message: string; playerPath?: string }>(`${this.base}/cursos/${id}/paquete`, fd);
   }
 
-  subirApkCurso(id: string | number, file: File, apkNombre?: string): Observable<{ message: string; config: VirtualConfig }> {
+  subirApkCurso(
+    id: string | number,
+    file: File,
+    apkNombre?: string,
+  ): Observable<HttpEvent<{ message: string; config: VirtualConfig }>> {
     const fd = new FormData();
     fd.append('apk', file);
     if (apkNombre?.trim()) fd.append('apkNombre', apkNombre.trim());
-    return this.http.post<{ message: string; config: VirtualConfig }>(`${this.base}/cursos/${id}/apk`, fd);
+    return this.http.post<{ message: string; config: VirtualConfig }>(`${this.base}/cursos/${id}/apk`, fd, {
+      reportProgress: true,
+      observe: 'events',
+    });
   }
 
   quitarApkCurso(id: string | number): Observable<{ message: string; config: VirtualConfig }> {

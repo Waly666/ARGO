@@ -225,10 +225,23 @@
               Aplicación Android de este curso para uso sin conexión. La regla de descarga se configura en
               <strong>Reglas y acceso</strong>.
             </p>
+            <p class="av-muted av-field-hint">
+              En producción, si el APK pesa <strong>más de ~100 MB</strong>, Cloudflare puede bloquear la subida desde el
+              navegador. Use el script <code>deploy/upload-curso-apk-vps.sh</code> en el servidor o ponga
+              <code>app.*.edu.co</code> en DNS solo (nube gris) mientras sube.
+            </p>
             @if (cfg.apkNombre) {
               <p class="av-muted"><strong>Archivo:</strong> {{ cfg.apkNombre }}</p>
             }
-            <input type="file" accept=".apk,application/vnd.android.package-archive" class="av-file" (change)="onApk($event)" />
+            @if (saving() && apkUploadPct() != null) {
+              <p class="av-apk-upload-status">Subiendo APK… {{ apkUploadPct() }}%</p>
+            }
+            <input
+              type="file"
+              accept=".apk,application/vnd.android.package-archive"
+              class="av-file"
+              [disabled]="saving()"
+              (change)="onApk($event)" />
             @if (cfg.apkRuta) {
               <button type="button" class="av-btn av-btn--ghost" [disabled]="saving()" (click)="quitarApk()">
                 Quitar APK

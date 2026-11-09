@@ -44,6 +44,7 @@ curl -sf http://127.0.0.1:5012/api/health && echo " → Servial OK"
 | Síntoma | Código | Quién lo causa | Sección |
 |---------|--------|----------------|---------|
 | Subida ZIP, HTML dice `cloudflare` | **413** | Cloudflare (~100 MB máx.) | § 1 |
+| Subida APK &gt;100 MB se queda en «Subiendo» | **—** | Cloudflare / timeout navegador | § 1b |
 | Subida ZIP, sin `cloudflare` | **413** | Nginx o backend | § 2–3 |
 | `Invalid SSL certificate` | **526** | Nginx sin HTTPS tras copiar `.conf` | § 4 |
 | Curso en blanco | **404** | Archivos no en `data/uploads/` | § 5 |
@@ -115,6 +116,27 @@ docker logs argo-backend --tail 40
 1. DNS → `app.finstruvial.edu.co` o `app.servial.edu.co` → nube **gris**
 2. Subir ZIP desde el ERP
 3. Volver nube **naranja**
+
+## 1b. APK del curso (&gt; ~100 MB)
+
+Misma limitación Cloudflare que el ZIP. **141 MB** desde el ERP suele quedarse en «Subiendo…» o fallar con **413**.
+
+**Servial** (ej. curso `13`):
+
+```bash
+cd /opt/argo-servial
+# Copiar el APK al servidor (WinSCP): /tmp/curso-13.apk
+bash deploy/upload-curso-apk-vps.sh /tmp/curso-13.apk 13 'TOKEN_JWT'
+```
+
+**Finstruvial:**
+
+```bash
+cd /opt/argo
+bash deploy/upload-curso-apk-vps.sh /tmp/curso-13.apk 13 'TOKEN_JWT'
+```
+
+El APK queda en `data/uploads/aula-virtual-apk/{idPrograma}/`. Recargue la ficha del curso en el ERP.
 
 ### Verificar paquete
 

@@ -1,5 +1,12 @@
 @use './aula-virtual-shared' as *;
 
+.av-apk-upload-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #047857;
+}
+
 .av-preview-callout {
   display: flex;
   flex-wrap: wrap;
