@@ -529,14 +529,106 @@
   padding-right: 0.65rem;
 }
 
-.dash-btn-pay-qr {
-  border-color: #67e8f9;
-  color: #0e7490;
-  background: #ecfeff;
+/* Variantes de acción (pago, documentos) — sin depender de .dash-btn-outline */
+.dash-btn-pay {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 4px 14px rgba(79, 70, 229, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-weight: 700;
 
-  &:hover {
-    border-color: #0e7490;
-    background: #cffafe;
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 8px 22px rgba(79, 70, 229, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    filter: brightness(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.75;
+    cursor: wait;
+    transform: none;
+  }
+}
+
+.dash-btn-pay-qr {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 45%, #0891b2 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 4px 14px rgba(6, 182, 212, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 8px 22px rgba(6, 182, 212, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    filter: brightness(1.04);
+  }
+}
+
+.dash-btn-recibo {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+    border-color: #a5b4fc;
+    color: #3730a3;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15);
+  }
+}
+
+.dash-btn-cert {
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 45%, #d97706 100%);
+  color: #422006;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 4px 14px rgba(245, 158, 11, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 8px 22px rgba(245, 158, 11, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    filter: brightness(1.03);
+    color: #292524;
+  }
+}
+
+.dash-btn-cert-outline {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7);
+  color: #b45309;
+  border: 1px solid #fcd34d;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(145deg, #fef3c7, #fde68a);
+    border-color: #f59e0b;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
+  }
+}
+
+.dash-course-actions .dash-btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
+  box-shadow:
+    0 4px 14px rgba(37, 99, 235, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 8px 22px rgba(37, 99, 235, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -1336,13 +1428,97 @@
 .dash-btn-sm {
   padding: var(--av-btn-sm-pad-y) var(--av-btn-sm-pad-x);
   font-size: var(--av-btn-sm-font);
+
+  .dash-btn-icon {
+    width: 1rem;
+    height: 1rem;
+  }
 }
 
 .dash-inline-actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.55rem;
+  margin-top: 0.55rem;
   flex-wrap: wrap;
+  align-items: center;
+
+  .dash-btn-sm {
+    border-radius: 999px;
+    gap: 0.4rem;
+  }
+}
+
+.dash-btn-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.dash-btn-apk {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 45%, #059669 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 4px 14px rgba(16, 185, 129, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 8px 22px rgba(16, 185, 129, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    filter: brightness(1.04);
+  }
+
+  &:disabled {
+    opacity: 0.82;
+    cursor: wait;
+    transform: none;
+  }
+}
+
+.dash-apk-pendiente {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #92400e;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fffbeb, #fef3c7);
+  border: 1px solid #fcd34d;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+}
+
+.dash-apk-pendiente--stack {
+  width: 100%;
+  text-align: left;
+}
+
+.dash-apk-pendiente-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: #d97706;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.dash-course-list-full {
+  .dash-course-actions--stack {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 100%;
+    margin-top: 0.35rem;
+  }
+
+  .dash-course-actions--stack .dash-btn-block {
+    width: 100%;
+    flex: 1 1 auto;
+  }
 }
 
 /* —— Player —— */

@@ -269,6 +269,7 @@ export interface CursoVirtual {
   reglas?: ReglasVirtual;
   matricula?: { fechaMat?: string; pagada?: string; tarifa?: number } | null;
   pago?: EstadoPagoVirtual;
+  apkOffline?: ApkOfflineCurso;
   certificadoPortal?: { _id: string; codigoCert?: string | null; idProg?: string } | null;
 }
 
@@ -277,6 +278,14 @@ export interface ReciboPortal {
   numRecibo: string | null;
   fecha?: string | null;
   valor?: number | null;
+}
+
+export interface ApkOfflineCurso {
+  tieneApk: boolean;
+  puedeDescargar: boolean;
+  modoApkDescarga?: 'al_matricular' | 'al_pagar';
+  apkNombre?: string | null;
+  mensaje?: string;
 }
 
 export interface EstadoPagoVirtual {

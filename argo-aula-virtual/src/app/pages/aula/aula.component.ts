@@ -99,6 +99,8 @@ export class AulaComponent implements OnInit, OnDestroy {
   avisoPlayer = signal('');
   pasarelaActiva = signal(false);
   pagandoCursoId = signal<string | number | null>(null);
+  apkDescargandoId = signal<string | null>(null);
+  apkError = signal('');
   pagarLineaError = signal('');
   consignacionPorCurso = signal<Record<string, EstadoConsignacionCurso>>({});
   consignacionModalCurso = signal<CursoVirtual | null>(null);
@@ -695,6 +697,62 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   tituloCert(cert: CertificadoPortal): string {
     return cert.encabezado || cert.nomCert || cert.programaDescr || 'Certificado';
+  }
+
+  puedeDescargarApk(c: CursoVirtual): boolean {
+    const apk = c.apkOffline;
+    return !!(apk?.tieneApk && apk.puedeDescargar);
+  }
+
+  tieneApkBloqueado(c: CursoVirtual): boolean {
+    const apk = c.apkOffline;
+    return !!(apk?.tieneApk && !apk.puedeDescargar);
+  }
+
+  mensajeApkBloqueado(c: CursoVirtual): string {
+    return c.apkOffline?.mensaje?.trim() || 'APK disponible cuando complete el pago del curso.';
+  }
+
+  descargandoApk(c: CursoVirtual): boolean {
+    return this.apkDescargandoId() === String(c.idPrograma);
+  }
+
+  descargarApk(c: CursoVirtual) {
+    if (!this.puedeDescargarApk(c) || this.descargandoApk(c)) return;
+    const id = String(c.idPrograma);
+    this.apkError.set('');
+    this.apkDescargandoId.set(id);
+    this.api.descargarApkCurso(c.idPrograma).subscribe({
+      next: (blob) => {
+        const nombre =
+          c.apkOffline?.apkNombre?.trim() ||
+          `${(c.nombreProg || 'curso').replace(/[^\w.\-]+/g, '_')}.apk`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombre;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.apkDescargandoId.set(null);
+      },
+      error: async (err) => {
+        this.apkDescargandoId.set(null);
+        let msg = 'No se pudo descargar el APK.';
+        const body = err?.error;
+        if (body instanceof Blob) {
+          try {
+            const text = await body.text();
+            const parsed = JSON.parse(text) as { message?: string };
+            if (parsed?.message) msg = parsed.message;
+          } catch {
+            /* ignore */
+          }
+        } else if (body?.message) {
+          msg = String(body.message);
+        }
+        this.apkError.set(msg);
+      },
+    });
   }
 
   puedeCursar(c: CursoVirtual): boolean {

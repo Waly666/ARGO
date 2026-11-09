@@ -148,6 +148,16 @@
               </select>
             </div>
             <div class="av-field">
+              <label>APK Android offline — descarga en Mi aula</label>
+              <select [(ngModel)]="cfg.modoApkDescarga">
+                <option value="al_matricular">Al matricular</option>
+                <option value="al_pagar">Al pagar</option>
+              </select>
+              <p class="av-muted av-field-hint">
+                Define cuándo el alumno ve «Descargar APK» en Tus cursos (independiente del certificado).
+              </p>
+            </div>
+            <div class="av-field">
               <label>Acceso al curso</label>
               <select [(ngModel)]="cfg.requierePagoParaCursar">
                 <option [ngValue]="false">Cursar sin pagar</option>
@@ -204,6 +214,28 @@
           </p>
         }
         <div class="av-curso-grid av-curso-grid--3">
+          <section class="av-curso-panel card">
+            <header class="av-panel-intro">
+              <h2>APK Android (offline)</h2>
+              @if (cfg.apkRuta) {
+                <span class="av-badge av-badge--ok">Publicada</span>
+              }
+            </header>
+            <p class="av-muted">
+              Aplicación Android de este curso para uso sin conexión. La regla de descarga se configura en
+              <strong>Reglas y acceso</strong>.
+            </p>
+            @if (cfg.apkNombre) {
+              <p class="av-muted"><strong>Archivo:</strong> {{ cfg.apkNombre }}</p>
+            }
+            <input type="file" accept=".apk,application/vnd.android.package-archive" class="av-file" (change)="onApk($event)" />
+            @if (cfg.apkRuta) {
+              <button type="button" class="av-btn av-btn--ghost" [disabled]="saving()" (click)="quitarApk()">
+                Quitar APK
+              </button>
+            }
+          </section>
+
           <section class="av-curso-panel card">
             <header class="av-panel-intro">
               <h2>Paquete ZIP</h2>

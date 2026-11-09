@@ -35,6 +35,7 @@ const {
   aulaVirtualCursosConduccionPublicidad,
   aulaVirtualCursosConduccionSeccion,
   aulaVirtualApk,
+  aulaVirtualApkCurso,
   aulaVirtualGoogleVerification,
   programasVirtual,
   pagoConsignacionComprobante,
@@ -142,6 +143,7 @@ router.get('/empresas/buscar-publico', buscarAlumnoLimiter, ctrl.buscarEmpresasP
 router.get('/argo-bridge.js', ctrl.bridgeScript);
 
 router.get('/mis-cursos', requirePortalAuth, ctrl.misCursos);
+router.get('/cursos/:id/apk', requirePortalAuth, ctrl.descargarApkCurso);
 router.get('/mis-clases-presenciales', requirePortalAuth, ctrl.misClasesPresenciales);
 router.get('/mis-clases-presenciales/:idCohorte/calendario', requirePortalAuth, ctrl.calendarioCohorte);
 router.post('/clases-cohorte/:idClase/asistir-meet', requirePortalAuth, ctrl.asistirClaseMeet);
@@ -190,6 +192,14 @@ router.post(
   aulaVirtualZip.single('paquete'),
   admin.subirPaqueteZip,
 );
+router.post(
+  '/admin/cursos/:id/apk',
+  requireAuth,
+  gestionar,
+  aulaVirtualApkCurso.single('apk'),
+  admin.subirApkCurso,
+);
+router.delete('/admin/cursos/:id/apk', requireAuth, gestionar, admin.quitarApkCurso);
 router.post(
   '/admin/cursos/:id/portada',
   requireAuth,

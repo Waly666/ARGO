@@ -246,8 +246,11 @@
                           <span class="dash-badge-warn">Pago pendiente</span>
                         }
                         @if (reciboDeCurso(c); as recibo) {
-                          <button type="button" class="dash-link dash-link-inline" (click)="imprimirRecibo(recibo.idIngreso)">
-                            Recibo {{ recibo.numRecibo || 'de pago' }}
+                          <button type="button" class="dash-btn dash-btn-recibo dash-btn-sm" (click)="imprimirRecibo(recibo.idIngreso)">
+                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5V7h4.5L13 3.5zM8 12h8v2H8v-2zm0 4h5v2H8v-2z" />
+                            </svg>
+                            <span>Recibo {{ recibo.numRecibo || 'de pago' }}</span>
                           </button>
                         }
                       </div>
@@ -256,34 +259,61 @@
                         <div class="dash-progress-track">
                           <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
                         </div>
-                        @if (c.tienePaquete) {
-                          <div class="dash-course-actions">
+                        <div class="dash-course-actions">
+                          @if (puedeDescargarApk(c)) {
+                            <button
+                              type="button"
+                              class="dash-btn dash-btn-apk dash-btn-block"
+                              [disabled]="descargandoApk(c)"
+                              (click)="descargarApk(c)">
+                              <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                  d="M17.6 9.48 19.44 6.3a.55.55 0 0 0-.96-.48l-1.88 3.24a7.02 7.02 0 0 0-8.12 0L6.6 5.82a.55.55 0 0 0-.96.48l1.84 3.18a6.99 6.99 0 0 0-3.17 5.87v4.5h14v-4.5a6.99 6.99 0 0 0-3.15-5.87ZM9.5 17.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z" />
+                              </svg>
+                              <span>{{ descargandoApk(c) ? 'Descargando…' : 'Descargar APK' }}</span>
+                            </button>
+                          } @else if (tieneApkBloqueado(c)) {
+                            <p class="dash-apk-pendiente dash-apk-pendiente--stack">
+                              <svg class="dash-apk-pendiente-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm-3 8V6a3 3 0 0 1 6 0v3H9Z" />
+                              </svg>
+                              <span>{{ mensajeApkBloqueado(c) }}</span>
+                            </p>
+                          }
+                          @if (c.tienePaquete) {
                             @if (puedePagarEnLinea(c)) {
                               <button
                                 type="button"
-                                class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay"
+                                class="dash-btn dash-btn-pay dash-btn-block"
                                 [disabled]="pagandoCurso(c)"
                                 (click)="pagarCurso(c)">
-                                {{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}
+                                <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 4h16v2H4V9zm2 5h4v2H6v-2z" />
+                                </svg>
+                                <span>{{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}</span>
                               </button>
                             }
                             @if (puedePagarConsignacion(c)) {
-                              <button
-                                type="button"
-                                class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay-qr"
-                                (click)="abrirPagoConsignacion(c)">
-                                Pagar (QR)
+                              <button type="button" class="dash-btn dash-btn-pay-qr dash-btn-block" (click)="abrirPagoConsignacion(c)">
+                                <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path
+                                    d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm8 2h2v2h-2v-2zm4 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2zm0-8h2v2h-2v-2z" />
+                                </svg>
+                                <span>Pagar (QR)</span>
                               </button>
                             }
                             @if (puedeCursar(c)) {
                               <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
-                                {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
+                                <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M8 5v14l11-7L8 5z" />
+                                </svg>
+                                <span>{{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}</span>
                               </button>
                             } @else if (!tieneOpcionesPago(c)) {
                               <p class="dash-course-blocked">Pago pendiente. Acérquese al CEA para habilitar el acceso.</p>
                             }
-                          </div>
-                        }
+                          }
+                        </div>
                       </div>
                     </article>
                   }
@@ -308,6 +338,9 @@
 
             @if (pagarLineaError()) {
               <p class="dash-error">{{ pagarLineaError() }}</p>
+            }
+            @if (apkError()) {
+              <p class="dash-error">{{ apkError() }}</p>
             }
 
             <div class="dash-course-list dash-course-list-full">
@@ -357,13 +390,20 @@
                     @if (idReciboCurso(c) || certificadoDeCurso(c)) {
                       <div class="dash-inline-actions">
                         @if (idReciboCurso(c); as idRecibo) {
-                          <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirRecibo(idRecibo)">
-                            Imprimir recibo@if (reciboDeCurso(c)?.numRecibo; as numRec) { ({{ numRec }})}
+                          <button type="button" class="dash-btn dash-btn-recibo dash-btn-sm" (click)="imprimirRecibo(idRecibo)">
+                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5V7h4.5L13 3.5zM8 12h8v2H8v-2zm0 4h5v2H8v-2z" />
+                            </svg>
+                            <span>Imprimir recibo@if (reciboDeCurso(c)?.numRecibo; as numRec) { ({{ numRec }})}</span>
                           </button>
                         }
                         @if (certificadoDeCurso(c); as cert) {
-                          <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirCertificado(cert)">
-                            Imprimir certificado
+                          <button type="button" class="dash-btn dash-btn-cert dash-btn-sm" (click)="imprimirCertificado(cert)">
+                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M12 2l2.35 4.76 5.26 1.15-3.8 3.62.97 5.62L12 14.9l-4.73 2.25.97-5.62-3.8-3.62 5.26-1.15L12 2zm0 4.2l-1.05 2.13-2.35.52 1.7 1.62-.43 2.5L12 11.4l2.13 1.12-.43-2.5 1.7-1.62-2.35-.52L12 6.2z" />
+                            </svg>
+                            <span>Imprimir certificado</span>
                           </button>
                         }
                       </div>
@@ -374,34 +414,63 @@
                     <div class="dash-progress-track">
                       <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
                     </div>
-                    @if (c.tienePaquete) {
-                      <div class="dash-course-actions">
+                    <div class="dash-course-actions dash-course-actions--stack">
+                      @if (puedeDescargarApk(c)) {
+                        <button
+                          type="button"
+                          class="dash-btn dash-btn-apk dash-btn-block"
+                          [disabled]="descargandoApk(c)"
+                          (click)="descargarApk(c)">
+                          <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              d="M17.6 9.48 19.44 6.3a.55.55 0 0 0-.96-.48l-1.88 3.24a7.02 7.02 0 0 0-8.12 0L6.6 5.82a.55.55 0 0 0-.96.48l1.84 3.18a6.99 6.99 0 0 0-3.17 5.87v4.5h14v-4.5a6.99 6.99 0 0 0-3.15-5.87ZM9.5 17.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z" />
+                          </svg>
+                          <span>{{ descargandoApk(c) ? 'Descargando…' : 'Descargar APK' }}</span>
+                        </button>
+                      } @else if (tieneApkBloqueado(c)) {
+                        <p class="dash-apk-pendiente dash-apk-pendiente--stack">
+                          <svg class="dash-apk-pendiente-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm-3 8V6a3 3 0 0 1 6 0v3H9Z" />
+                          </svg>
+                          <span>{{ mensajeApkBloqueado(c) }}</span>
+                        </p>
+                      }
+                      @if (c.tienePaquete) {
                         @if (puedePagarEnLinea(c)) {
                           <button
                             type="button"
-                            class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay"
+                            class="dash-btn dash-btn-pay dash-btn-block"
                             [disabled]="pagandoCurso(c)"
                             (click)="pagarCurso(c)">
-                            {{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}
+                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 4h16v2H4V9zm2 5h4v2H6v-2z" />
+                            </svg>
+                            <span>{{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}</span>
                           </button>
                         }
                         @if (puedePagarConsignacion(c)) {
-                          <button
-                            type="button"
-                            class="dash-btn dash-btn-outline dash-btn-block dash-btn-pay-qr"
-                            (click)="abrirPagoConsignacion(c)">
-                            Pagar (QR)
+                          <button type="button" class="dash-btn dash-btn-pay-qr dash-btn-block" (click)="abrirPagoConsignacion(c)">
+                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm8 2h2v2h-2v-2zm4 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2zm0-8h2v2h-2v-2z" />
+                            </svg>
+                            <span>Pagar (QR)</span>
                           </button>
                         }
                         @if (puedeCursar(c)) {
-                          <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">Entrar</button>
+                          <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
+                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M8 5v14l11-7L8 5z" />
+                            </svg>
+                            <span>Entrar</span>
+                          </button>
                         } @else if (!tieneOpcionesPago(c)) {
                           <span class="dash-muted">Pago pendiente — acérquese al CEA</span>
                         }
-                      </div>
-                    } @else {
-                      <span class="dash-muted">Contenido en preparación</span>
-                    }
+                      } @else if (!puedeDescargarApk(c) && !tieneApkBloqueado(c)) {
+                        <span class="dash-muted">Contenido en preparación</span>
+                      }
+                    </div>
                   </div>
                 </article>
               } @empty {
@@ -905,10 +974,26 @@
                       <p class="dash-muted">Recibo <strong>{{ cert.recibo?.numRecibo }}</strong></p>
                     }
                     <div class="dash-inline-actions">
-                      <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="verCertificado(cert)">Ver certificado</button>
-                      <button type="button" class="dash-btn dash-btn-primary dash-btn-sm" (click)="imprimirCertificado(cert)">Imprimir certificado</button>
+                      <button type="button" class="dash-btn dash-btn-cert-outline dash-btn-sm" (click)="verCertificado(cert)">
+                        <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zm0 2.5a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
+                        </svg>
+                        <span>Ver certificado</span>
+                      </button>
+                      <button type="button" class="dash-btn dash-btn-cert dash-btn-sm" (click)="imprimirCertificado(cert)">
+                        <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            d="M12 2l2.35 4.76 5.26 1.15-3.8 3.62.97 5.62L12 14.9l-4.73 2.25.97-5.62-3.8-3.62 5.26-1.15L12 2zm0 4.2l-1.05 2.13-2.35.52 1.7 1.62-.43 2.5L12 11.4l2.13 1.12-.43-2.5 1.7-1.62-2.35-.52L12 6.2z" />
+                        </svg>
+                        <span>Imprimir certificado</span>
+                      </button>
                       @if (cert.recibo?.idIngreso) {
-                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirReciboCert(cert)">Imprimir recibo</button>
+                        <button type="button" class="dash-btn dash-btn-recibo dash-btn-sm" (click)="imprimirReciboCert(cert)">
+                          <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5V7h4.5L13 3.5zM8 12h8v2H8v-2zm0 4h5v2H8v-2z" />
+                          </svg>
+                          <span>Imprimir recibo</span>
+                        </button>
                       }
                     </div>
                   </article>

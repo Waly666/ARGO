@@ -9,10 +9,15 @@ import { PortalSiteConfig } from '../constants/portal-site-defaults';
 export type NivelVirtual = 'PRINCIPIANTE' | 'INTERMEDIO' | 'AVANZADO';
 export const NIVELES_VIRTUAL: NivelVirtual[] = ['PRINCIPIANTE', 'INTERMEDIO', 'AVANZADO'];
 
+export type ModoApkDescarga = 'al_matricular' | 'al_pagar';
+
 export interface VirtualConfig {
   idPrograma: string;
   publicadoPortal: boolean;
   modoCertificado: 'al_pagar' | 'al_aprobar';
+  modoApkDescarga?: ModoApkDescarga;
+  apkRuta?: string | null;
+  apkNombre?: string | null;
   requierePagoParaCursar?: boolean;
   /** 0 = acceso ilimitado sin pago */
   diasAccesoSinPago?: number;
@@ -336,6 +341,17 @@ export class AulaVirtualAdminService {
     const fd = new FormData();
     fd.append('paquete', file);
     return this.http.post<{ message: string; playerPath?: string }>(`${this.base}/cursos/${id}/paquete`, fd);
+  }
+
+  subirApkCurso(id: string | number, file: File, apkNombre?: string): Observable<{ message: string; config: VirtualConfig }> {
+    const fd = new FormData();
+    fd.append('apk', file);
+    if (apkNombre?.trim()) fd.append('apkNombre', apkNombre.trim());
+    return this.http.post<{ message: string; config: VirtualConfig }>(`${this.base}/cursos/${id}/apk`, fd);
+  }
+
+  quitarApkCurso(id: string | number): Observable<{ message: string; config: VirtualConfig }> {
+    return this.http.delete<{ message: string; config: VirtualConfig }>(`${this.base}/cursos/${id}/apk`);
   }
 
   subirPortada(id: string | number, file: File): Observable<{ urlPortadaVirtual: string; message: string }> {

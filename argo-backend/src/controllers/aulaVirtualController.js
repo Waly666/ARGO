@@ -32,7 +32,13 @@ const {
 const {
   matricularVirtual,
   estadoInscripcionVirtual,
+  buscarMatriculaVirtual,
 } = require('../services/aulaVirtualMatricula');
+const { obtenerConfig } = require('../services/aulaVirtualConfig');
+const { evaluarApkDescargaPortal } = require('../services/aulaVirtualApkCurso');
+const { resolvePath } = require('../middleware/upload');
+const fs = require('fs');
+const path = require('path');
 const {
   listarMisCertificados,
   consultarCertificadosPublico,
@@ -69,7 +75,6 @@ function consentimientoDesdeBody(body, canal) {
   return snapshotConsentimiento(canal);
 }
 const { logAuthIntento } = require('../services/authSecurityLog');
-const path = require('path');
 const { models } = require('../models/catalogos');
 const { ensureCatalogosDemograficos } = require('../services/ensureCatalogosDemograficos');
 const catalogoController = require('./catalogoController');
@@ -459,6 +464,35 @@ exports.misCursos = async (req, res, next) => {
     const rows = await listarMisCursos(req.portalUser.numDoc);
     res.json(rows);
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.descargarApkCurso = async (req, res, next) => {
+  try {
+    const idProg = String(req.params.id || '').trim();
+    const numDoc = req.portalUser.numDoc;
+    const mat = await buscarMatriculaVirtual(numDoc, idProg);
+    if (!mat) {
+      return res.status(403).json({ message: 'Debe estar matriculado en este curso para descargar el APK.' });
+    }
+    const cfg = await obtenerConfig(idProg);
+    const estado = await evaluarAprobacion(numDoc, idProg);
+    const apk = evaluarApkDescargaPortal(cfg, estado.pago);
+    if (!apk.tieneApk) {
+      return res.status(404).json({ message: 'Este curso no tiene aplicación Android offline.' });
+    }
+    if (!apk.puedeDescargar) {
+      return res.status(403).json({ message: apk.mensaje || 'El APK no está disponible hasta completar el pago.' });
+    }
+    const abs = resolvePath(cfg.apkRuta);
+    if (!abs || !fs.existsSync(abs)) {
+      return res.status(404).json({ message: 'Archivo APK no encontrado en el servidor.' });
+    }
+    const nombre = apk.apkNombre || path.basename(abs);
+    res.download(abs, nombre);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

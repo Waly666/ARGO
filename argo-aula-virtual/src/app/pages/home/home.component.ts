@@ -361,7 +361,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   heroLlamarEtiqueta(): string {
-    const custom = this.landing().hero.ctaLlamarEtiqueta?.trim();
+    const custom = this.landing().hero.ctaLlamarEtiqueta.trim();
     if (custom) return custom;
     const tel = this.telefono();
     return tel ? `Llamar ${tel}` : 'Llamar';

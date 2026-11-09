@@ -29,6 +29,15 @@ const CapacitacionVirtualConfigSchema = new mongoose.Schema(
       enum: ['al_pagar', 'al_aprobar'],
       default: 'al_pagar',
     },
+    /** Cuándo el alumno puede descargar el APK offline del curso (portal Mi aula). */
+    modoApkDescarga: {
+      type: String,
+      enum: ['al_matricular', 'al_pagar'],
+      default: 'al_matricular',
+    },
+    /** Ruta relativa bajo /uploads (aula-virtual-apk/{idPrograma}/…) */
+    apkRuta: { type: String, trim: true, default: null },
+    apkNombre: { type: String, trim: true, default: null },
     /** Si true, el alumno debe pagar (saldo en cero) antes de abrir el contenido del curso. */
     requierePagoParaCursar: { type: Boolean, default: false },
     /**

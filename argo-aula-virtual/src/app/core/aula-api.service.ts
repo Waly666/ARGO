@@ -195,6 +195,13 @@ export class AulaApiService {
     });
   }
 
+  descargarApkCurso(id: string | number): Observable<Blob> {
+    return this.http.get(`${this.base}/cursos/${id}/apk`, {
+      headers: this.auth.authHeader(),
+      responseType: 'blob',
+    });
+  }
+
   misClasesPresenciales(): Observable<CohorteAlumno[]> {
     return this.http.get<CohorteAlumno[]>(`${this.base}/mis-clases-presenciales`, {
       headers: this.auth.authHeader(),

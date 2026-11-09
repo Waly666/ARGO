@@ -298,6 +298,40 @@ function sanitizeApkFilename(name) {
   return n;
 }
 
+/** APK por curso virtual — uploads/aula-virtual-apk/{idPrograma}/ */
+function buildApkCursoVirtual(maxMb = 400) {
+  const storage = multer.diskStorage({
+    destination: (req, _file, cb) => {
+      const id = String(req.params?.id || '0').replace(/[^\w.-]+/g, '_');
+      const dest = path.join(BASE, 'aula-virtual-apk', id);
+      ensureDir(dest);
+      cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+      const nombre = sanitizeApkFilename(req.body?.apkNombre || file.originalname);
+      cb(null, nombre);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ok =
+        ext === '.apk' ||
+        mime === 'application/vnd.android.package-archive' ||
+        mime === 'application/octet-stream';
+      if (!ok) {
+        const err = new Error('Solo se permiten archivos .apk de Android');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
 function buildApkAulaVirtual(maxMb = 200) {
   const dest = apkBaseDir();
   ensureDir(dest);
@@ -408,6 +442,7 @@ module.exports = {
   aulaVirtualCursosConduccionPublicidad: buildImagen('aula-virtual-cursos-conduccion-publicidad', 8),
   aulaVirtualCursosConduccionSeccion: buildImagen('aula-virtual-cursos-conduccion-seccion', 8),
   aulaVirtualApk: buildApkAulaVirtual(),
+  aulaVirtualApkCurso: buildApkCursoVirtual(),
   aulaVirtualGoogleVerification: buildGoogleVerificationHtml(),
   apkBaseDir,
   sanitizeApkFilename,

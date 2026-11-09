@@ -12,6 +12,9 @@ const { idsCategoriasConfig } = require('./aulaVirtualCategorias');
 const DEFAULTS = {
   publicadoPortal: false,
   modoCertificado: 'al_pagar',
+  modoApkDescarga: 'al_matricular',
+  apkRuta: null,
+  apkNombre: null,
   requierePagoParaCursar: false,
   diasAccesoSinPago: 0,
   diasAvisoAlumno: 8,
@@ -24,6 +27,13 @@ const DEFAULTS = {
   materiales: [],
   sesionesMeet: [],
 };
+
+function defaultsUpsertSinApk() {
+  const d = { ...DEFAULTS };
+  delete d.apkRuta;
+  delete d.apkNombre;
+  return d;
+}
 
 async function asegurarProgramaVirtual(idPrograma) {
   const prog = await buscarPrograma(idPrograma);
@@ -112,6 +122,7 @@ async function guardarConfig(idPrograma, body, usuario) {
     idPrograma: id,
     publicadoPortal: body.publicadoPortal === true || body.publicadoPortal === 'true',
     modoCertificado: body.modoCertificado === 'al_aprobar' ? 'al_aprobar' : 'al_pagar',
+    modoApkDescarga: body.modoApkDescarga === 'al_pagar' ? 'al_pagar' : 'al_matricular',
     requierePagoParaCursar:
       body.requierePagoParaCursar === true || body.requierePagoParaCursar === 'true',
     diasAccesoSinPago: Math.max(0, Math.floor(Number(body.diasAccesoSinPago ?? 0))),
@@ -186,6 +197,67 @@ function rutaPaquetePrograma(idPrograma) {
   return publicUrlPath('aula-virtual-cursos', safe);
 }
 
+function idProgramaSeguro(idPrograma) {
+  return String(idPrograma).replace(/[^\w.-]+/g, '_');
+}
+
+function rutaApkPrograma(idPrograma, filename) {
+  return publicUrlPath('aula-virtual-apk', idProgramaSeguro(idPrograma), filename);
+}
+
+function asegurarDirApk(idPrograma) {
+  const rel = publicUrlPath('aula-virtual-apk', idProgramaSeguro(idPrograma));
+  const abs = resolvePath(rel);
+  if (!abs) throw new Error('Ruta de APK inválida');
+  fs.mkdirSync(abs, { recursive: true });
+  return { rel, abs };
+}
+
+async function asignarApkCurso(idPrograma, apkRuta, apkNombre, usuario) {
+  await asegurarProgramaVirtual(idPrograma);
+  const id = String(idPrograma);
+  await CapacitacionVirtualConfig.updateOne(
+    { idPrograma: id },
+    {
+      $set: {
+        apkRuta: String(apkRuta || '').trim() || null,
+        apkNombre: String(apkNombre || '').trim() || null,
+        userChangeRecord: usuario?.username || 'sistema',
+      },
+      $setOnInsert: { idPrograma: id, ...defaultsUpsertSinApk() },
+    },
+    { upsert: true },
+  );
+  return obtenerConfig(id);
+}
+
+async function quitarApkCurso(idPrograma, usuario) {
+  await asegurarProgramaVirtual(idPrograma);
+  const id = String(idPrograma);
+  const prev = await CapacitacionVirtualConfig.findOne({ idPrograma: id }).lean();
+  if (prev?.apkRuta) {
+    const abs = resolvePath(prev.apkRuta);
+    if (abs) {
+      try {
+        fs.unlinkSync(abs);
+      } catch (_) {
+        /* noop */
+      }
+    }
+  }
+  await CapacitacionVirtualConfig.updateOne(
+    { idPrograma: id },
+    {
+      $set: {
+        apkRuta: null,
+        apkNombre: null,
+        userChangeRecord: usuario?.username || 'sistema',
+      },
+    },
+  );
+  return obtenerConfig(id);
+}
+
 function asegurarDirPaquete(idPrograma) {
   const rel = rutaPaquetePrograma(idPrograma);
   const abs = resolvePath(rel);
@@ -216,6 +288,10 @@ module.exports = {
   eliminarMaterial,
   rutaPaquetePrograma,
   asegurarDirPaquete,
+  rutaApkPrograma,
+  asegurarDirApk,
+  asignarApkCurso,
+  quitarApkCurso,
   asegurarProgramaVirtual,
   actualizarFichaPrograma,
 };

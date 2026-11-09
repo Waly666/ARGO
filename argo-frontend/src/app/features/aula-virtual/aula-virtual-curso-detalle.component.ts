@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,6 +9,7 @@ import {
   CategoriaVirtual,
   CursoVirtualAdmin,
   GuardarCursoVirtualBody,
+  ModoApkDescarga,
   NIVELES_VIRTUAL,
   SesionMeet,
   VirtualConfig,
@@ -115,6 +117,7 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
       idPrograma: String(c.idPrograma),
       publicadoPortal: false,
       modoCertificado: 'al_pagar' as const,
+      modoApkDescarga: 'al_matricular' as const,
       requierePagoParaCursar: false,
       diasAccesoSinPago: 0,
       diasAvisoAlumno: 8,
@@ -127,8 +130,11 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
       materiales: [],
       sesionesMeet: [],
     };
+    const modoApk: ModoApkDescarga =
+      cfg.modoApkDescarga === 'al_pagar' ? 'al_pagar' : 'al_matricular';
     this.config.set({
       ...cfg,
+      modoApkDescarga: modoApk,
       idCategorias: [...(cfg.idCategorias ?? c.idCategorias ?? [])],
       nivel: cfg.nivel ?? c.nivel ?? null,
     });
@@ -204,6 +210,46 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
       error: (e) => {
         this.saving.set(false);
         this.toast(e?.error?.message || 'No se pudo reintegrar ARGO', true);
+      },
+    });
+  }
+
+  onApk(ev: Event) {
+    const sel = this.curso();
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!sel || !file) return;
+    this.saving.set(true);
+    this.svc.subirApkCurso(sel.idPrograma, file, file.name).subscribe({
+      next: (res: { message: string; config: VirtualConfig }) => {
+        if (res.config) this.config.set({ ...this.config()!, ...res.config });
+        this.saving.set(false);
+        input.value = '';
+        this.toast(res.message || 'APK subida');
+        this.refrescarCurso();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.saving.set(false);
+        input.value = '';
+        this.toast(e?.error?.message || 'Error al subir APK', true);
+      },
+    });
+  }
+
+  quitarApk() {
+    const sel = this.curso();
+    if (!sel || this.saving()) return;
+    this.saving.set(true);
+    this.svc.quitarApkCurso(sel.idPrograma).subscribe({
+      next: (res: { message: string; config: VirtualConfig }) => {
+        if (res.config) this.config.set({ ...this.config()!, ...res.config });
+        this.saving.set(false);
+        this.toast(res.message || 'APK eliminada');
+        this.refrescarCurso();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.toast(e?.error?.message || 'Error', true);
       },
     });
   }

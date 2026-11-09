@@ -20,6 +20,9 @@ const {
   agregarMaterialArchivo,
   eliminarMaterial,
   asegurarDirPaquete,
+  asignarApkCurso,
+  quitarApkCurso,
+  rutaApkPrograma,
   asegurarProgramaVirtual,
   actualizarFichaPrograma,
 } = require('../services/aulaVirtualConfig');
@@ -165,6 +168,47 @@ exports.subirPaqueteZip = async (req, res, next) => {
     });
   } catch (e) {
     console.error('[ARGO] subirPaqueteZip:', e);
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirApkCurso = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione un archivo .apk de Android' });
+    }
+    const prev = await obtenerConfig(req.params.id);
+    if (prev?.apkRuta) {
+      const oldAbs = resolvePath(prev.apkRuta);
+      if (oldAbs && oldAbs !== req.file.path) {
+        try {
+          fs.unlinkSync(oldAbs);
+        } catch (_) {
+          /* noop */
+        }
+      }
+    }
+    const rel = rutaApkPrograma(req.params.id, req.file.filename);
+    const apkNombre = String(req.file.filename || '').trim();
+    const config = await asignarApkCurso(req.params.id, rel, apkNombre, req.user);
+    res.json({
+      config,
+      apkNombre,
+      message: `APK del curso publicada (${apkNombre}). Los alumnos podrán descargarla según las reglas de acceso.`,
+    });
+  } catch (e) {
+    console.error('[ARGO] subirApkCurso:', e);
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarApkCurso = async (req, res, next) => {
+  try {
+    const config = await quitarApkCurso(req.params.id, req.user);
+    res.json({ config, message: 'APK del curso eliminada' });
+  } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }

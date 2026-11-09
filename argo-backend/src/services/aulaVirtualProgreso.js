@@ -14,6 +14,7 @@ const {
 const { intentarCertificadoVirtualAprobar } = require('./certificadoVirtualAuto');
 const { buscarCertificadoVinculadoCurso } = require('./aulaVirtualCertificados');
 const { puedeCursarVirtual, requierePagoParaCursar } = require('./aulaVirtualConfig');
+const { evaluarApkDescargaPortal } = require('./aulaVirtualApkCurso');
 const { estadoPagoVirtual, buscarMatriculaVirtual } = require('./aulaVirtualMatricula');
 const { asegurarAccesoVigente, calcularEstadoPlazoAcceso } = require('./aulaVirtualAccesoPlazo');
 
@@ -578,6 +579,7 @@ async function listarMisCursos(numDoc) {
         tarifa: m.tarifa,
       },
       pago,
+      apkOffline: evaluarApkDescargaPortal(cfg, pago),
       puedeCursar,
       accesoBloqueadoPago: requierePagoParaCursar(cfg) && !pago.pagado,
       certificadoPortal: certDoc

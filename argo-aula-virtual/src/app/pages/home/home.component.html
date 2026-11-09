@@ -177,7 +177,7 @@
   [ctaPrimaryUrl]="landing().hero.ctaPrincipalUrl || '/cursos'"
   [ctaSecondary]="landing().hero.ctaSecundario || 'Crear cuenta gratis'"
   [ctaSecondaryUrl]="landing().hero.ctaSecundarioUrl || '/registro'"
-  [ctaTertiary]="landing().hero.ctaLlamarEtiqueta?.trim() || 'Solicitar información'"
+  [ctaTertiary]="landing().hero.ctaLlamarEtiqueta.trim() || 'Solicitar información'"
   [ctaTertiaryUrl]="heroLlamarVisible() ? heroLlamarHref() : '/acerca'"
   [bgImageUrl]="finstruvialHeroBg()"
   [bgImageAlt]="landing().hero.imagenAlt || 'Formación en tránsito, transporte y seguridad vial'"

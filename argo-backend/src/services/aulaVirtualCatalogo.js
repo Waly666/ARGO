@@ -171,6 +171,7 @@ async function listarCursosVirtualesAdmin() {
             idPrograma: String(prog.idPrograma),
             publicadoPortal: false,
             modoCertificado: 'al_pagar',
+            modoApkDescarga: 'al_matricular',
             requierePagoParaCursar: false,
             pctMinCompletitud: 80,
             pctMinEvaluaciones: 60,
