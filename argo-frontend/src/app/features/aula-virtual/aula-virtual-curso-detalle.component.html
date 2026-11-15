@@ -158,6 +158,29 @@
               </p>
             </div>
             <div class="av-field">
+              <label>Vigencia del APK en el teléfono</label>
+              <select [(ngModel)]="cfg.apkAcceso">
+                <option value="libre">Sin restricción</option>
+                <option value="fecha">Fecha fija para todos</option>
+                <option value="plazo">Plazo desde que cada alumno activa</option>
+              </select>
+              <p class="av-muted av-field-hint">
+                El APK sale limpio. Aquí eliges si abre sin límite, en una fecha fija o por un plazo desde la activación de cada alumno. Guarda esta regla antes de que activen.
+              </p>
+            </div>
+            @if (cfg.apkAcceso === 'fecha') {
+              <div class="av-field">
+                <label>Caduca el</label>
+                <input type="date" [(ngModel)]="cfg.apkExpiraEn" />
+              </div>
+            }
+            @if (cfg.apkAcceso === 'plazo') {
+              <div class="av-field">
+                <label>Días desde la activación</label>
+                <input type="number" min="1" [(ngModel)]="cfg.apkDiasVigencia" />
+              </div>
+            }
+            <div class="av-field">
               <label>Acceso al curso</label>
               <select [(ngModel)]="cfg.requierePagoParaCursar">
                 <option [ngValue]="false">Cursar sin pagar</option>

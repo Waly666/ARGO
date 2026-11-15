@@ -6,6 +6,7 @@ const { listarCategorias } = require('../services/aulaVirtualCategorias');
 const { listarPublicos, obtenerPublicoPorSlug } = require('../services/aulaVirtualBlog');
 const { obtenerConfigPortalPublica } = require('../services/aulaVirtualPortal');
 const { registrarPortal, loginPortal, buscarAlumnoRegistro, cambiarPasswordPortal } = require('../services/aulaVirtualAuth');
+const { emitirLicenciaApk } = require('../services/aulaVirtualApkLicencia');
 const {
   solicitarRegistroPortal,
   confirmarRegistroPortal,
@@ -330,6 +331,15 @@ exports.registroJornadaReenviarCodigo = async (req, res, next) => {
       }),
     });
     res.json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.activarApk = async (req, res, next) => {
+  try {
+    res.json(await emitirLicenciaApk(req.body || {}));
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

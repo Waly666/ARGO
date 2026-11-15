@@ -38,6 +38,10 @@ const CapacitacionVirtualConfigSchema = new mongoose.Schema(
     /** Ruta relativa bajo /uploads (aula-virtual-apk/{idPrograma}/…) */
     apkRuta: { type: String, trim: true, default: null },
     apkNombre: { type: String, trim: true, default: null },
+    /** libre: el APK abre sin permiso. fecha: todos vencen el mismo día. plazo: N días desde la activación de cada alumno. */
+    apkAcceso: { type: String, enum: ['libre', 'fecha', 'plazo', null], default: null },
+    apkExpiraEn: { type: Date, default: null },
+    apkDiasVigencia: { type: Number, default: 30, min: 1 },
     /** Si true, el alumno debe pagar (saldo en cero) antes de abrir el contenido del curso. */
     requierePagoParaCursar: { type: Boolean, default: false },
     /**

@@ -133,6 +133,7 @@ router.post('/auth/registro-jornada/solicitar', portalAuthLimiter, turnstilePort
 router.post('/auth/registro-jornada/confirmar', portalAuthLimiter, ctrl.registroJornadaConfirmar);
 router.post('/auth/registro-jornada/reenviar-codigo', portalAuthLimiter, ctrl.registroJornadaReenviarCodigo);
 router.post('/auth/login', portalAuthLimiter, turnstilePortal, ctrl.login);
+router.post('/apk-licencia', portalAuthLimiter, ctrl.activarApk);
 router.post('/contacto', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarContacto);
 router.post('/pqr', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarPqr);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);

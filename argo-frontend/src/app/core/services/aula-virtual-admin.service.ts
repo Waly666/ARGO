@@ -18,6 +18,9 @@ export interface VirtualConfig {
   modoApkDescarga?: ModoApkDescarga;
   apkRuta?: string | null;
   apkNombre?: string | null;
+  apkAcceso?: 'libre' | 'fecha' | 'plazo';
+  apkExpiraEn?: string | null;
+  apkDiasVigencia?: number;
   requierePagoParaCursar?: boolean;
   /** 0 = acceso ilimitado sin pago */
   diasAccesoSinPago?: number;

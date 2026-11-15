@@ -123,6 +123,27 @@ async function guardarConfig(idPrograma, body, usuario) {
     publicadoPortal: body.publicadoPortal === true || body.publicadoPortal === 'true',
     modoCertificado: body.modoCertificado === 'al_aprobar' ? 'al_aprobar' : 'al_pagar',
     modoApkDescarga: body.modoApkDescarga === 'al_pagar' ? 'al_pagar' : 'al_matricular',
+    ...(body.apkAcceso !== undefined
+      ? {
+          apkAcceso:
+            body.apkAcceso === 'fecha' || body.apkAcceso === 'plazo' || body.apkAcceso === 'libre'
+              ? body.apkAcceso
+              : null,
+        }
+      : {}),
+    ...(body.apkExpiraEn !== undefined
+      ? {
+          apkExpiraEn: (() => {
+            const raw = String(body.apkExpiraEn || '').trim();
+            if (!raw) return null;
+            const date = new Date(`${raw.slice(0, 10)}T23:59:59.999-05:00`);
+            return Number.isNaN(date.getTime()) ? null : date;
+          })(),
+        }
+      : {}),
+    ...(body.apkDiasVigencia !== undefined
+      ? { apkDiasVigencia: Math.max(1, Math.floor(Number(body.apkDiasVigencia) || 30)) }
+      : {}),
     requierePagoParaCursar:
       body.requierePagoParaCursar === true || body.requierePagoParaCursar === 'true',
     diasAccesoSinPago: Math.max(0, Math.floor(Number(body.diasAccesoSinPago ?? 0))),
@@ -135,6 +156,12 @@ async function guardarConfig(idPrograma, body, usuario) {
     sesionesMeet: Array.isArray(body.sesionesMeet) ? body.sesionesMeet : [],
     userChangeRecord: usuario?.username || 'sistema',
   };
+
+  if (patch.apkAcceso === 'fecha' && !patch.apkExpiraEn) {
+    const err = new Error('Indica el día en que caduca el APK.');
+    err.status = 400;
+    throw err;
+  }
 
   if (body.idCategorias !== undefined || body.idCategoria !== undefined) {
     const raw = body.idCategorias !== undefined ? body.idCategorias : body.idCategoria;

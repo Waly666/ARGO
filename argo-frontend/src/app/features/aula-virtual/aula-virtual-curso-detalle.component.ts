@@ -133,9 +133,13 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
     };
     const modoApk: ModoApkDescarga =
       cfg.modoApkDescarga === 'al_pagar' ? 'al_pagar' : 'al_matricular';
+    const apkAcceso = cfg.apkAcceso === 'fecha' || cfg.apkAcceso === 'plazo' ? cfg.apkAcceso : 'libre';
     this.config.set({
       ...cfg,
       modoApkDescarga: modoApk,
+      apkAcceso,
+      apkExpiraEn: cfg.apkExpiraEn ? String(cfg.apkExpiraEn).slice(0, 10) : '',
+      apkDiasVigencia: cfg.apkDiasVigencia || 30,
       idCategorias: [...(cfg.idCategorias ?? c.idCategorias ?? [])],
       nivel: cfg.nivel ?? c.nivel ?? null,
     });
