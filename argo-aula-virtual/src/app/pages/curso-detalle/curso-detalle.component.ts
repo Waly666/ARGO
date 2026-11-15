@@ -12,6 +12,7 @@ import { CursoVirtual, EstadoConsignacionCurso, EstadoInscripcionVirtual, MedioP
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { ApkCapsulaComponent } from '../../shared/apk-capsula/apk-capsula.component';
 import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/portal-breadcrumbs.component';
 
 
@@ -22,7 +23,7 @@ import { PortalBreadcrumbsComponent } from '../../shared/portal-breadcrumbs/port
 
   standalone: true,
 
-  imports: [CommonModule, RouterLink, PortalBreadcrumbsComponent],
+  imports: [CommonModule, RouterLink, PortalBreadcrumbsComponent, ApkCapsulaComponent],
 
   templateUrl: './curso-detalle.component.html',
 

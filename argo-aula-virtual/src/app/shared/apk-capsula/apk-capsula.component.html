@@ -1,0 +1,9 @@
+<span
+  class="apk-capsula"
+  [class.apk-capsula--si]="tieneApk()"
+  [class.apk-capsula--no]="!tieneApk()"
+  [class.apk-capsula--alineada]="alineada()"
+>
+  <span class="apk-capsula__dot" aria-hidden="true"></span>
+  {{ tieneApk() ? 'Estudia sin internet' : 'Solo en línea' }}
+</span>

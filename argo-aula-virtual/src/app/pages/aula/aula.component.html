@@ -101,6 +101,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg>
           @if (!sidebarCollapsed()) { <span>Perfil</span> }
         </button>
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'ayudaApk'" (click)="irPanel('ayudaApk')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm1.07-7.75-.9.92A2.5 2.5 0 0 0 12 13h-1v-1a3 3 0 0 1 .9-2.1l1.24-1.26A1.5 1.5 0 1 0 11 7.5H9a3.5 3.5 0 1 1 5.07 2.75z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Ayuda APK</span> }
+        </button>
         <button type="button" class="dash-nav-item dash-nav-logout" (click)="logout()">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l1.41-1.41L8.83 13H20v-2H8.83l2.58-2.59L10 7l-5 5 5 5zm9 4H4V3h15v2H6v14h13v2z"/></svg>
           @if (!sidebarCollapsed()) { <span>Cerrar sesión</span> }
@@ -1147,6 +1151,44 @@
               </div>
 
               <button type="button" class="dash-btn dash-btn-outline" (click)="logout()">Cerrar sesión</button>
+            </article>
+          }
+
+          @case ('ayudaApk') {
+            <header class="dash-page-head">
+              <h1>Ayuda APK</h1>
+              <p class="dash-welcome">Cómo instalar la aplicación cuando Android pide permiso de orígenes desconocidos.</p>
+            </header>
+
+            <article class="dash-apk-ayuda">
+              <ol class="dash-apk-ayuda__pasos">
+                <li>
+                  <strong>Abra el archivo APK.</strong>
+                  Si el teléfono avisa que no tiene permitido instalar aplicaciones desconocidas, pulse Configuración.
+                </li>
+                <li>
+                  <strong>Entre al permiso de esa fuente.</strong>
+                  Se abre la pantalla de la aplicación desde la que abrió el archivo, por ejemplo Chrome o Archivos.
+                </li>
+                <li>
+                  <strong>Active «Permitir desde esta fuente».</strong>
+                  Ese permiso solo vale para esa aplicación y puede desactivarlo después.
+                </li>
+                <li>
+                  <strong>Regrese e instale.</strong>
+                  Vuelva a la pantalla anterior y pulse Instalar sobre el archivo.
+                </li>
+                <li>
+                  <strong>Abra la aplicación</strong>
+                  cuando Android confirme que quedó instalada.
+                </li>
+              </ol>
+
+              <img
+                class="dash-apk-ayuda__guia"
+                src="/images/instructivo-apk.webp"
+                alt="Guía ilustrada: habilitar la instalación de aplicaciones de origen desconocido en Android"
+              />
             </article>
           }
 

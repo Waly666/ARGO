@@ -55,8 +55,10 @@ export class PortalAppMobileEditorComponent {
       .subscribe({
         next: (res) => {
           this.portalConfigUpdated.emit(res.config);
+          const offline = this.appMobile.offline;
           if (res.config.landing?.appMobile) {
             Object.assign(this.appMobile, res.config.landing.appMobile);
+            if (!this.appMobile.offline) this.appMobile.offline = offline;
           } else {
             this.appMobile.apkUrl = res.apkUrl;
             this.appMobile.apkNombre = res.apkNombre;
@@ -81,5 +83,13 @@ export class PortalAppMobileEditorComponent {
 
   removeFeature(i: number) {
     this.appMobile.features.splice(i, 1);
+  }
+
+  addOfflineFeature() {
+    this.appMobile.offline.features.push({ icon: '📵', title: '', text: '' });
+  }
+
+  removeOfflineFeature(i: number) {
+    this.appMobile.offline.features.splice(i, 1);
   }
 }

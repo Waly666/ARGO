@@ -45,7 +45,7 @@ import {
 } from './aula-entrar-curso-modal.component';
 import { CursoPagoConsignacionModalComponent } from '../../components/curso-pago-consignacion-modal/curso-pago-consignacion-modal.component';
 
-export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'foro';
+export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'ayudaApk' | 'foro';
 
 @Component({
   selector: 'av-aula',
@@ -265,6 +265,7 @@ export class AulaComponent implements OnInit, OnDestroy {
       puntajes: 'Mis puntajes',
       certificados: 'Certificados',
       perfil: 'Perfil',
+      ayudaApk: 'Ayuda APK',
       foro: 'Foro de cursos',
     };
     return labels[this.panel()] || 'Mi aula';

@@ -332,6 +332,15 @@ export interface PortalLandingConfig {
     notaInstalacion: string;
     apkUrl: string;
     apkNombre: string;
+    offline: {
+      kicker: string;
+      titulo: string;
+      lead: string;
+      features: { icon: string; title: string; text: string }[];
+      nota: string;
+      phoneNombre: string;
+      phoneSub: string;
+    };
   };
   faq: {
     kicker: string;
@@ -515,7 +524,11 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     lead: 'Tres pasos para matricularse en el aula virtual y comenzar su capacitación.',
     items: [...PASOS_PROGRAMAS],
   },
-  appMobile: { ...APP_MOBILE, features: [...APP_MOBILE.features] },
+  appMobile: {
+    ...APP_MOBILE,
+    features: [...APP_MOBILE.features],
+    offline: { ...APP_MOBILE.offline, features: [...APP_MOBILE.offline.features] },
+  },
   faq: {
     kicker: 'Ayuda',
     titulo: 'Preguntas frecuentes sobre cursos y programas',
@@ -776,6 +789,13 @@ export function mergePortalLanding(
       ...d.appMobile,
       ...raw.appMobile,
       features: raw.appMobile?.features?.length ? raw.appMobile.features : d.appMobile.features,
+      offline: {
+        ...d.appMobile.offline,
+        ...raw.appMobile?.offline,
+        features: raw.appMobile?.offline?.features?.length
+          ? raw.appMobile.offline.features
+          : d.appMobile.offline.features,
+      },
     },
     faq: {
       ...d.faq,

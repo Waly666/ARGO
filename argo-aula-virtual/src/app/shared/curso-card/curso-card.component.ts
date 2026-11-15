@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { CursoVirtual } from '../../core/models';
+import { ApkCapsulaComponent } from '../apk-capsula/apk-capsula.component';
 
 @Component({
   selector: 'av-curso-card',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ApkCapsulaComponent],
   templateUrl: './curso-card.component.html',
   styleUrl: './curso-card.component.scss',
 })

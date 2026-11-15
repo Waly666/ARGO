@@ -2589,6 +2589,47 @@ blockquote {
   overflow: hidden;
 }
 
+.app-mobile-fichas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0 0 2rem;
+}
+
+.app-mobile-ficha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  text-align: left;
+  padding: 0.95rem 1.1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.app-mobile-ficha.is-active {
+  border-color: rgba(245, 196, 0, 0.85);
+  background: rgba(245, 196, 0, 0.1);
+  box-shadow: 0 0 0 1px rgba(245, 196, 0, 0.25);
+}
+
+.app-mobile-ficha__kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.app-mobile-ficha__title {
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
 .app-mobile-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -2856,6 +2897,10 @@ blockquote {
 }
 
 @media (max-width: 960px) {
+  .app-mobile-fichas {
+    grid-template-columns: 1fr;
+  }
+
   .app-mobile-grid {
     grid-template-columns: 1fr;
     gap: 2rem;

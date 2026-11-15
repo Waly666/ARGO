@@ -1107,38 +1107,81 @@
 <section class="section section-starfield section-app-mobile" id="app-mobile">
   <div class="starfield-bg" aria-hidden="true"></div>
   <div class="container starfield-container">
+    <div class="app-mobile-fichas" role="tablist" aria-label="Aplicaciones del teléfono">
+      <button
+        type="button"
+        class="app-mobile-ficha"
+        role="tab"
+        [class.is-active]="appMobileFicha() === 'aula'"
+        [attr.aria-selected]="appMobileFicha() === 'aula'"
+        (click)="appMobileFicha.set('aula')">
+        <span class="app-mobile-ficha__kicker">{{ landing().appMobile.kicker }}</span>
+        <span class="app-mobile-ficha__title">{{ landing().appMobile.titulo }}</span>
+      </button>
+      <button
+        type="button"
+        class="app-mobile-ficha"
+        role="tab"
+        [class.is-active]="appMobileFicha() === 'offline'"
+        [attr.aria-selected]="appMobileFicha() === 'offline'"
+        (click)="appMobileFicha.set('offline')">
+        <span class="app-mobile-ficha__kicker">{{ landing().appMobile.offline.kicker }}</span>
+        <span class="app-mobile-ficha__title">{{ landing().appMobile.offline.titulo }}</span>
+      </button>
+    </div>
+
     <div class="app-mobile-grid">
       <div class="app-mobile-copy">
-        <p class="kicker reveal" avRevealOnScroll>{{ landing().appMobile.kicker }}</p>
-        <h2 avAnimateTitle [titleDelay]="50">{{ landing().appMobile.titulo }}</h2>
-        <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().appMobile.lead }}</p>
+        @if (appMobileFicha() === 'aula') {
+          <p class="kicker">{{ landing().appMobile.kicker }}</p>
+          <h2>{{ landing().appMobile.titulo }}</h2>
+          <p class="section-lead">{{ landing().appMobile.lead }}</p>
 
-        <ul class="app-mobile-features">
-          @for (f of landing().appMobile.features; track f.title; let i = $index) {
-            <li class="app-mobile-feature reveal" avRevealOnScroll [revealDelay]="140 + i * 70">
-              <av-portal-icon [icon]="f.icon" class="app-mobile-feature__icon" size="1.5rem" />
-              <div>
-                <strong>{{ f.title }}</strong>
-                <p>{{ f.text }}</p>
-              </div>
-            </li>
-          }
-        </ul>
+          <ul class="app-mobile-features">
+            @for (f of landing().appMobile.features; track f.title) {
+              <li class="app-mobile-feature">
+                <av-portal-icon [icon]="f.icon" class="app-mobile-feature__icon" size="1.5rem" />
+                <div>
+                  <strong>{{ f.title }}</strong>
+                  <p>{{ f.text }}</p>
+                </div>
+              </li>
+            }
+          </ul>
 
-        <div class="app-mobile-actions reveal" avRevealOnScroll [revealDelay]="320">
-          <a
-            class="btn btn-primary app-mobile-download"
-            [href]="apkDownloadUrl()"
-            [attr.download]="apkDownloadName()"
-            rel="noopener">
-            <av-portal-icon icon="download-tray" class="app-mobile-download__icon" size="1.25rem" color="currentColor" />
-            {{ landing().appMobile.btnDescargar }}
-          </a>
-          <p class="app-mobile-note">{{ landing().appMobile.notaInstalacion }}</p>
-        </div>
+          <div class="app-mobile-actions">
+            <a
+              class="btn btn-primary app-mobile-download"
+              [href]="apkDownloadUrl()"
+              [attr.download]="apkDownloadName()"
+              rel="noopener">
+              <av-portal-icon icon="download-tray" class="app-mobile-download__icon" size="1.25rem" color="currentColor" />
+              {{ landing().appMobile.btnDescargar }}
+            </a>
+            <p class="app-mobile-note">{{ landing().appMobile.notaInstalacion }}</p>
+          </div>
+        } @else {
+          <p class="kicker">{{ landing().appMobile.offline.kicker }}</p>
+          <h2>{{ landing().appMobile.offline.titulo }}</h2>
+          <p class="section-lead">{{ landing().appMobile.offline.lead }}</p>
+
+          <ul class="app-mobile-features">
+            @for (f of landing().appMobile.offline.features; track f.title) {
+              <li class="app-mobile-feature">
+                <av-portal-icon [icon]="f.icon" class="app-mobile-feature__icon" size="1.5rem" />
+                <div>
+                  <strong>{{ f.title }}</strong>
+                  <p>{{ f.text }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+
+          <p class="app-mobile-note">{{ landing().appMobile.offline.nota }}</p>
+        }
       </div>
 
-      <div class="app-mobile-visual reveal-scale" avRevealOnScroll [revealDelay]="180">
+      <div class="app-mobile-visual">
         <div class="app-mobile-glow" aria-hidden="true"></div>
         <div class="app-phone">
           <div class="app-phone__bezel">
@@ -1154,13 +1197,24 @@
                 } @else {
                   <av-portal-icon icon="device-mobile" size="1.75rem" color="currentColor" />
                 }
-                <p class="app-phone__app-name">Aula Virtual</p>
-                <p class="app-phone__app-sub">{{ nombreCea() }}</p>
+                @if (appMobileFicha() === 'aula') {
+                  <p class="app-phone__app-name">Aula Virtual</p>
+                  <p class="app-phone__app-sub">{{ nombreCea() }}</p>
+                } @else {
+                  <p class="app-phone__app-name">{{ landing().appMobile.offline.phoneNombre }}</p>
+                  <p class="app-phone__app-sub">{{ landing().appMobile.offline.phoneSub }}</p>
+                }
               </div>
               <ul class="app-phone__menu" aria-hidden="true">
-                <li><span>📚</span> Mis cursos</li>
-                <li><av-portal-icon icon="academic-cap" size="1rem" /> Certificados</li>
-                <li><span>👤</span> Mi perfil</li>
+                @if (appMobileFicha() === 'aula') {
+                  <li><span>📚</span> Mis cursos</li>
+                  <li><av-portal-icon icon="academic-cap" size="1rem" /> Certificados</li>
+                  <li><span>👤</span> Mi perfil</li>
+                } @else {
+                  @for (f of landing().appMobile.offline.features; track f.title) {
+                    <li><span>{{ f.icon }}</span> {{ f.title }}</li>
+                  }
+                }
               </ul>
             </div>
           </div>

@@ -1,0 +1,59 @@
+:host {
+  display: inline-flex;
+}
+
+.apk-capsula {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.32rem 0.8rem 0.32rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+}
+
+.apk-capsula__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+
+.apk-capsula--si {
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 55%, #15803d 100%);
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.35);
+}
+
+.apk-capsula--no {
+  background: linear-gradient(180deg, #fca5a5 0%, #ef4444 55%, #b91c1c 100%);
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.32);
+}
+
+.apk-capsula--alineada {
+  box-sizing: border-box;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: inherit;
+  gap: 0.3rem;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
+.apk-capsula--alineada.apk-capsula--si,
+.apk-capsula--alineada.apk-capsula--no {
+  box-shadow: none;
+}
+
+.apk-capsula--alineada .apk-capsula__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  box-shadow: none;
+}

@@ -88,6 +88,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   cursos = signal<CursoVirtual[]>([]);
   tabPilar = signal<'capacitacion' | 'campanas'>('capacitacion');
   faqAbierta = signal<number | null>(null);
+  appMobileFicha = signal<'aula' | 'offline'>('aula');
 
   readonly portalSectionIcon = portalSectionIcon;
 

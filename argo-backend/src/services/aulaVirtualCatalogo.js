@@ -12,6 +12,7 @@ const { programaAdmiteMatriculaVirtual } = require('./programaModalidad');
 const { mapaCategorias, idsCategoriasConfig, resolverCategoriasCurso } = require('./aulaVirtualCategorias');
 const { obtenerConfigPortalPublica } = require('./aulaVirtualPortal');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+const { tieneApkCargado } = require('./aulaVirtualApkCurso');
 
 function resolverIndexPaquete(cfg) {
   if (!cfg?.rutaPaquete) return cfg?.indexHtml || 'index.html';
@@ -78,6 +79,10 @@ function mapCursoPublico(prog, serv, cfg, opts = {}) {
     categoriaNombre: cats.categoriaNombre,
     nivel: cfg?.nivel || null,
     autor: opts.autor || null,
+    apkOffline: {
+      tieneApk: tieneApkCargado(cfg),
+      puedeDescargar: false,
+    },
     ...(opts.detalle
       ? {
           materiales: cfg?.materiales || [],

@@ -68,8 +68,71 @@
     <button type="button" class="pame-link" (click)="addFeature()">+ Añadir característica</button>
   </section>
 
+  <section class="pame-texts card">
+    <h3 class="pame-section-title"><span class="pes-order">2</span> Ficha del curso sin internet</h3>
+    <p class="pame-hint">
+      En el inicio aparece como segunda ficha, con el mismo celular. Es publicidad: no lleva botón de descarga.
+    </p>
+
+    <div class="pame-grid3">
+      <label class="psb-field psb-field--plain">
+        <argo-portal-field-label tag="p" label="Etiqueta de la ficha" />
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.offline.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain pame-span2">
+        <argo-portal-field-label tag="H2" label="Título" />
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.offline.titulo" />
+      </label>
+    </div>
+
+    <label class="psb-field psb-field--plain">
+      <argo-portal-field-label tag="p" label="Introducción" />
+      <textarea class="psb-input" rows="2" [(ngModel)]="appMobile.offline.lead"></textarea>
+    </label>
+
+    <div class="pame-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Nombre en el celular</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.offline.phoneNombre" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Línea bajo el nombre</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.offline.phoneSub" />
+      </label>
+    </div>
+
+    @for (item of appMobile.offline.features; track $index; let i = $index) {
+      <article class="pame-feature card">
+        <div class="pame-feature__head">
+          <strong>Punto {{ i + 1 }}</strong>
+          <button type="button" class="pame-link" (click)="removeOfflineFeature(i)">Quitar</button>
+        </div>
+        <div class="pame-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <argo-portal-icon-picker [(ngModel)]="item.icon" [iconografia]="iconografia" />
+          </label>
+          <label class="psb-field psb-field--plain pame-span2">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.title" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <argo-portal-field-label tag="p" label="Descripción" />
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.text"></textarea>
+        </label>
+      </article>
+    }
+    <button type="button" class="pame-link" (click)="addOfflineFeature()">+ Añadir punto</button>
+
+    <label class="psb-field psb-field--plain">
+      <span>Nota al pie</span>
+      <input type="text" class="psb-input" [(ngModel)]="appMobile.offline.nota" />
+    </label>
+  </section>
+
   <section class="pame-upload card">
-    <h3 class="pame-section-title"><span class="pes-order">2</span> Archivo APK</h3>
+    <h3 class="pame-section-title"><span class="pes-order">3</span> Archivo APK del aula</h3>
 
     <div class="pame-upload__row">
       <div class="pame-upload__meta">

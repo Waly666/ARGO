@@ -474,6 +474,32 @@ const LANDING_DEFAULTS = {
     notaInstalacion: 'Android 8.0 o superior · Instalación manual del archivo APK',
     apkUrl: '/apk/aula-virtual.apk',
     apkNombre: 'aula-virtual.apk',
+    offline: {
+      kicker: 'APK offline',
+      titulo: 'Tu capacitación te acompaña cuando no hay internet',
+      lead:
+        'El curso completo puede ir en el teléfono. Las clases, las imágenes y los PDF se abren sin señal, en el lugar donde esté el alumno.',
+      features: [
+        {
+          icon: '📵',
+          title: 'Curso en el teléfono',
+          text: 'Las clases quedan dentro de la aplicación. No hace falta abrir el navegador.',
+        },
+        {
+          icon: '📄',
+          title: 'Manuales y PDF',
+          text: 'Los documentos del curso se consultan en la misma aplicación.',
+        },
+        {
+          icon: '⏱️',
+          title: 'A su ritmo',
+          text: 'El alumno retoma la clase donde la dejó, aunque no tenga internet.',
+        },
+      ],
+      nota: 'Cada curso tiene su propia aplicación. Esta ficha es informativa.',
+      phoneNombre: 'Curso',
+      phoneSub: 'Sin internet',
+    },
   },
   blog: {
     kicker: 'Blog',
