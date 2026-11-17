@@ -624,7 +624,6 @@ function htmlInformeAlumnosInscritos({ config, resumen, filas, generado }) {
         )
         .join('')
     : `<tr><td colspan="${EXPORT_LISTA_HEADERS.length}">No hay alumnos para el filtro indicado.</td></tr>`;
-  const pie = String(config?.mensajePie || '').trim();
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -659,11 +658,6 @@ function htmlInformeAlumnosInscritos({ config, resumen, filas, generado }) {
     table.tbl tbody tr:nth-child(even) td { background: #f8fafc; }
     thead { display: table-header-group; }
     tr { page-break-inside: avoid; }
-    .doc-footer {
-      margin-top: 14px; padding-top: 8px; border-top: 1px solid #ccc;
-      font-size: 8pt; color: #666; text-align: center;
-    }
-    .doc-footer p { margin: 0; }
   </style>
 </head>
 <body>
@@ -677,7 +671,6 @@ function htmlInformeAlumnosInscritos({ config, resumen, filas, generado }) {
     <thead><tr>${thead}</tr></thead>
     <tbody>${tbody}</tbody>
   </table>
-  ${pie ? `<footer class="doc-footer"><p>${escHtmlExport(pie)}</p></footer>` : ''}
 </body>
 </html>`;
 }
