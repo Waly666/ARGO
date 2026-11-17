@@ -257,28 +257,42 @@ export interface CedulaOcrResponse {
   };
 }
 
+export interface AlumnoListaQuery {
+  q?: string;
+  limit?: number;
+  skip?: number;
+  tipoAlumno?: string;
+  sort?: string;
+  dir?: 'asc' | 'desc';
+  idJornada?: string;
+  fechaJornada?: string;
+  certJornada?: '' | 'con' | 'sin';
+  empresaId?: string;
+  origen?: string;
+  jornada?: string;
+  actorVial?: string;
+  /** YYYY-MM-DD, inclusive */
+  fechaRegDesde?: string;
+  /** YYYY-MM-DD, inclusive */
+  fechaRegHasta?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AlumnoService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/alumnos`;
 
-  listar(
-    opts: {
-      q?: string;
-      limit?: number;
-      skip?: number;
-      tipoAlumno?: string;
-      sort?: string;
-      dir?: 'asc' | 'desc';
-      idJornada?: string;
-      fechaJornada?: string;
-      certJornada?: '' | 'con' | 'sin';
-      empresaId?: string;
-      origen?: string;
-      jornada?: string;
-      actorVial?: string;
-    } = {},
-  ): Observable<AlumnoListResponse> {
+  listar(opts: AlumnoListaQuery = {}): Observable<AlumnoListResponse> {
+    return this.http.get<AlumnoListResponse>(this.base, { params: this.paramsLista(opts) });
+  }
+
+  /** Excel o PDF de todos los alumnos que coinciden con el filtro (no solo la página visible). */
+  exportarLista(formato: 'xlsx' | 'pdf', opts: AlumnoListaQuery = {}): Observable<Blob> {
+    const params = this.paramsLista(opts).set('formato', formato);
+    return this.http.get(`${this.base}/exportar`, { params, responseType: 'blob' });
+  }
+
+  private paramsLista(opts: AlumnoListaQuery): HttpParams {
     let params = new HttpParams();
     if (opts.q != null) params = params.set('q', opts.q);
     if (opts.limit != null) params = params.set('limit', opts.limit);
@@ -295,7 +309,9 @@ export class AlumnoService {
     if (opts.origen) params = params.set('origen', opts.origen);
     if (opts.jornada) params = params.set('jornada', opts.jornada);
     if (opts.actorVial) params = params.set('actorVial', opts.actorVial);
-    return this.http.get<AlumnoListResponse>(this.base, { params });
+    if (opts.fechaRegDesde) params = params.set('fechaRegDesde', opts.fechaRegDesde);
+    if (opts.fechaRegHasta) params = params.set('fechaRegHasta', opts.fechaRegHasta);
+    return params;
   }
 
   /** Atajo para autocompletados (nombre o cédula). */

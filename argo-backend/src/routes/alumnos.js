@@ -17,6 +17,7 @@ const files = upload.alumnos.fields([
 ]);
 
 router.get('/', acc.ver, ctrl.listar);
+router.get('/exportar', acc.ver, ctrl.exportarLista);
 router.get('/alertas-comprobantes-recientes', acc.ver, ctrl.comprobantesRecientes);
 router.get('/alertas-pago-hoy', acc.ver, ctrl.alertasPagoHoy);
 router.get('/verificar-doc/:numDoc', acc.ver, ctrl.verificarDocumento);

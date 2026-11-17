@@ -30,7 +30,29 @@
   <div class="card toolbar alum-toolbar" [class.toolbar-jornadas]="esJornadas()" [class.toolbar-con-filtros]="true">
     <div class="alum-toolbar-kicker-row">
       <p class="alum-kicker">Exploración</p>
-      <span class="count alum-count-pill">{{ pageLabel() }}</span>
+      <div class="alum-kicker-tools">
+        <span class="count alum-count-pill">{{ pageLabel() }}</span>
+        <div class="alum-export-actions">
+          <button
+            type="button"
+            class="ghost mini"
+            [disabled]="exportando() || loading() || total() === 0"
+            title="Descarga todos los alumnos del filtro: nombre, documento, ciudad, actor vial, correo, celular y fecha de registro"
+            (click)="exportarExcel()"
+          >
+            {{ exportando() === 'xlsx' ? 'Excel…' : 'Excel' }}
+          </button>
+          <button
+            type="button"
+            class="ghost mini"
+            [disabled]="exportando() || loading() || total() === 0"
+            title="Informe PDF con el encabezado de la empresa: nombre, documento, ciudad, actor vial, correo, celular y fecha de registro"
+            (click)="exportarPdf()"
+          >
+            {{ exportando() === 'pdf' ? 'PDF…' : 'PDF' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="alum-toolbar-band alum-toolbar-band--search">
@@ -120,6 +142,24 @@
             (seleccionado)="onActorVialPick($event)"
             (limpiado)="onActorVialLimpiar()"
           />
+        </div>
+        <div class="field-fecha">
+          <argo-date-input
+            label="Registro desde"
+            inputId="filtro-fecha-reg-desde"
+            [max]="fechaRegHasta() || null"
+            [ngModel]="fechaRegDesde()"
+            (ngModelChange)="onFechaRegDesde($event)"
+          ></argo-date-input>
+        </div>
+        <div class="field-fecha">
+          <argo-date-input
+            label="Registro hasta"
+            inputId="filtro-fecha-reg-hasta"
+            [min]="fechaRegDesde() || null"
+            [ngModel]="fechaRegHasta()"
+            (ngModelChange)="onFechaRegHasta($event)"
+          ></argo-date-input>
         </div>
 
         <ng-container *ngIf="esJornadas()">
@@ -579,9 +619,9 @@
             <p class="alum-empty-text">No hay resultados para «{{ query() }}».</p>
           </ng-container>
           <ng-template #sinDatos>
-            <ng-container *ngIf="esJornadas() && filtroJornadaActivo(); else sinDatosGeneral">
-              <p class="alum-empty-title">Lista vacía</p>
-              <p class="alum-empty-text">No hay alumnos para la jornada o fecha seleccionada.</p>
+            <ng-container *ngIf="filtroListaActivo(); else sinDatosGeneral">
+              <p class="alum-empty-title">Sin resultados</p>
+              <p class="alum-empty-text">No hay alumnos para los filtros seleccionados.</p>
             </ng-container>
             <ng-template #sinDatosGeneral>
               <p class="alum-empty-title">Aún no hay alumnos</p>

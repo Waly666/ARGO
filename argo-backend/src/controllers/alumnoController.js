@@ -41,7 +41,15 @@ const { calcularEdad, rangoEdadLabel } = require('../utils/edad');
 const { ORIGEN_SISTEMA, ORIGEN_WEB, normalizarOrigenAlumno } = require('../constants/origenAlumno');
 const { ACTOR_VIAL_DEF } = require('../constants/actorVialCatalogo');
 const { ensureActorVialCatalogo } = require('../services/actorVialCatalogo');
+const { parseFechaCalendario } = require('../utils/fechaCalendario');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
+const XLSX = require('xlsx');
+const { obtenerConfigRecibo } = require('../services/configRecibo');
+const {
+  informeGoogleFontsLinkHtml,
+  informeDocumentoBaseCss,
+  htmlEncabezadoEmpresa,
+} = require('../services/informeEncabezadoEmpresa');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const {
   provisionarAccesoPortalSiVirtual,
@@ -331,107 +339,167 @@ async function enriquecerMunicipios(items) {
   });
 }
 
+function finDiaLocal(d) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+/** Rango inclusivo de fechaReg (día civil local). Null si no hay fechas. */
+function condicionFechaRegistro(desdeRaw, hastaRaw) {
+  const desde = parseFechaCalendario(desdeRaw);
+  const hasta = parseFechaCalendario(hastaRaw);
+  if (!desde && !hasta) return null;
+  if (desde && hasta && desde.getTime() > hasta.getTime()) {
+    const err = new Error('La fecha inicial de registro no puede ser posterior a la final.');
+    err.status = 400;
+    throw err;
+  }
+  const rango = {};
+  if (desde) rango.$gte = desde;
+  if (hasta) rango.$lte = finDiaLocal(hasta);
+  return { fechaReg: rango };
+}
+
+/**
+ * Filtro compartido entre el listado paginado y la exportación.
+ * @returns {Promise<{
+ *   filter: object,
+ *   sort: object,
+ *   jornadaIds: unknown[],
+ *   filtroJornadaActivo: boolean,
+ *   vacio: boolean,
+ *   mensajeVacio: string,
+ * }>}
+ */
+async function armarFiltroListaAlumnos(req) {
+  const q = (req.query.q || '').toString().trim();
+  const tipoQ = (req.query.tipoAlumno || '').toString().trim();
+  const idJornada = (req.query.idJornada || '').toString().trim();
+  const fechaJornada = (req.query.fechaJornada || '').toString().trim();
+  const certJornada = (req.query.certJornada || '').toString().trim().toLowerCase();
+  const empresaId = (req.query.empresaId || '').toString().trim();
+  const origenQ = (req.query.origen || '').toString().trim();
+  const jornadaCat = (req.query.jornada || '').toString().trim();
+  const actorVialCat = (req.query.actorVial || '').toString().trim();
+  const fechaRegDesde = (req.query.fechaRegDesde || '').toString().trim();
+  const fechaRegHasta = (req.query.fechaRegHasta || '').toString().trim();
+  const condiciones = [];
+  if (tipoQ) {
+    condiciones.push({ tipoAlumno: normalizarTipoAlumno(tipoQ) });
+  }
+  if (q) {
+    condiciones.push(filtroBusquedaAlumno(q));
+  }
+  if (empresaId && mongoose.Types.ObjectId.isValid(empresaId)) {
+    condiciones.push({ empresaId: new mongoose.Types.ObjectId(empresaId) });
+  }
+  if (origenQ) {
+    const origen = normalizarOrigenAlumno(origenQ);
+    if (origen === ORIGEN_WEB) {
+      condiciones.push({ origen: ORIGEN_WEB });
+    } else {
+      condiciones.push({
+        $or: [
+          { origen: { $exists: false } },
+          { origen: null },
+          { origen: '' },
+          { origen: ORIGEN_SISTEMA },
+        ],
+      });
+    }
+  }
+  if (jornadaCat) {
+    const esc = jornadaCat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    condiciones.push({
+      $or: [
+        { jornada: jornadaCat },
+        { jornada: new RegExp(`^${esc}(\\D|$)`, 'i') },
+      ],
+    });
+  }
+  if (actorVialCat) {
+    const esc = actorVialCat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    condiciones.push({
+      $or: [
+        { actorVial: actorVialCat },
+        { actorVial: new RegExp(`^${esc}(\\D|$)`, 'i') },
+      ],
+    });
+  }
+  const condFecha = condicionFechaRegistro(fechaRegDesde, fechaRegHasta);
+  if (condFecha) condiciones.push(condFecha);
+
+  let jornadaIds = [];
+  const filtroJornadaActivo = !!(idJornada || fechaJornada);
+  if (filtroJornadaActivo) {
+    jornadaIds = await resolverJornadasFiltro({ idJornada, fechaJornada });
+    if (!jornadaIds.length) {
+      return {
+        filter: { _id: null },
+        sort: resolveSortAlumnos(req.query.sort, req.query.dir),
+        jornadaIds: [],
+        filtroJornadaActivo: true,
+        vacio: true,
+        mensajeVacio: 'No hay jornadas para el filtro indicado.',
+      };
+    }
+    let numDocs = await numDocsParticipantesJornadas(jornadaIds);
+    if (certJornada === 'con' || certJornada === 'sin') {
+      const conCert = new Set(await numDocsConCertificadoJornada(jornadaIds));
+      numDocs =
+        certJornada === 'con'
+          ? numDocs.filter((nd) => conCert.has(nd))
+          : numDocs.filter((nd) => !conCert.has(nd));
+    }
+    if (!numDocs.length) {
+      return {
+        filter: { _id: null },
+        sort: resolveSortAlumnos(req.query.sort, req.query.dir),
+        jornadaIds,
+        filtroJornadaActivo: true,
+        vacio: true,
+        mensajeVacio: 'No hay alumnos inscritos o con asistencia para el filtro indicado.',
+      };
+    }
+    const filtroNum = filtroAlumnosPorNumDocs(numDocs);
+    if (filtroNum) condiciones.push(filtroNum);
+  }
+
+  const alcanceGestor = await resolverAlcanceGestorMovil(req);
+  const filtroGestor = filtroAlumnosAlcanceGestor(alcanceGestor);
+  if (filtroGestor) condiciones.push(filtroGestor);
+
+  const filter = condiciones.length === 0 ? {} : condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
+  return {
+    filter,
+    sort: resolveSortAlumnos(req.query.sort, req.query.dir),
+    jornadaIds,
+    filtroJornadaActivo,
+    vacio: false,
+    mensajeVacio: '',
+  };
+}
+
 exports.listar = async (req, res, next) => {
   try {
-    const q = (req.query.q || '').toString().trim();
-    const tipoQ = (req.query.tipoAlumno || '').toString().trim();
-    const idJornada = (req.query.idJornada || '').toString().trim();
-    const fechaJornada = (req.query.fechaJornada || '').toString().trim();
-    const certJornada = (req.query.certJornada || '').toString().trim().toLowerCase();
-    const empresaId = (req.query.empresaId || '').toString().trim();
-    const origenQ = (req.query.origen || '').toString().trim();
-    const jornadaCat = (req.query.jornada || '').toString().trim();
-    const actorVialCat = (req.query.actorVial || '').toString().trim();
     const limit = Math.min(parseInt(req.query.limit, 10) || 25, 100);
     const skip = Math.max(parseInt(req.query.skip, 10) || 0, 0);
-    const condiciones = [];
-    if (tipoQ) {
-      condiciones.push({ tipoAlumno: normalizarTipoAlumno(tipoQ) });
-    }
-    if (q) {
-      condiciones.push(filtroBusquedaAlumno(q));
-    }
-    if (empresaId && mongoose.Types.ObjectId.isValid(empresaId)) {
-      condiciones.push({ empresaId: new mongoose.Types.ObjectId(empresaId) });
-    }
-    if (origenQ) {
-      const origen = normalizarOrigenAlumno(origenQ);
-      if (origen === ORIGEN_WEB) {
-        condiciones.push({ origen: ORIGEN_WEB });
-      } else {
-        condiciones.push({
-          $or: [
-            { origen: { $exists: false } },
-            { origen: null },
-            { origen: '' },
-            { origen: ORIGEN_SISTEMA },
-          ],
-        });
-      }
-    }
-    if (jornadaCat) {
-      const esc = jornadaCat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      condiciones.push({
-        $or: [
-          { jornada: jornadaCat },
-          { jornada: new RegExp(`^${esc}(\\D|$)`, 'i') },
-        ],
+    const consulta = await armarFiltroListaAlumnos(req);
+    if (consulta.vacio) {
+      return res.json({
+        items: [],
+        total: 0,
+        skip,
+        limit,
+        jornadaFiltro: {
+          activo: true,
+          jornadaIds: consulta.jornadaIds.map(String),
+          mensaje: consulta.mensajeVacio,
+        },
       });
     }
-    if (actorVialCat) {
-      const esc = actorVialCat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      condiciones.push({
-        $or: [
-          { actorVial: actorVialCat },
-          { actorVial: new RegExp(`^${esc}(\\D|$)`, 'i') },
-        ],
-      });
-    }
-
-    let jornadaIds = [];
-    const filtroJornadaActivo = !!(idJornada || fechaJornada);
-    if (filtroJornadaActivo) {
-      jornadaIds = await resolverJornadasFiltro({ idJornada, fechaJornada });
-      if (!jornadaIds.length) {
-        return res.json({
-          items: [],
-          total: 0,
-          skip,
-          limit,
-          jornadaFiltro: { activo: true, jornadaIds: [], mensaje: 'No hay jornadas para el filtro indicado.' },
-        });
-      }
-      let numDocs = await numDocsParticipantesJornadas(jornadaIds);
-      if (certJornada === 'con' || certJornada === 'sin') {
-        const conCert = new Set(await numDocsConCertificadoJornada(jornadaIds));
-        numDocs =
-          certJornada === 'con'
-            ? numDocs.filter((nd) => conCert.has(nd))
-            : numDocs.filter((nd) => !conCert.has(nd));
-      }
-      if (!numDocs.length) {
-        return res.json({
-          items: [],
-          total: 0,
-          skip,
-          limit,
-          jornadaFiltro: {
-            activo: true,
-            jornadaIds: jornadaIds.map(String),
-            mensaje: 'No hay alumnos inscritos o con asistencia para el filtro indicado.',
-          },
-        });
-      }
-      const filtroNum = filtroAlumnosPorNumDocs(numDocs);
-      if (filtroNum) condiciones.push(filtroNum);
-    }
-
-    const alcanceGestor = await resolverAlcanceGestorMovil(req);
-    const filtroGestor = filtroAlumnosAlcanceGestor(alcanceGestor);
-    if (filtroGestor) condiciones.push(filtroGestor);
-
-    const filter = condiciones.length === 0 ? {} : condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
-    const sort = resolveSortAlumnos(req.query.sort, req.query.dir);
+    const { filter, sort, jornadaIds, filtroJornadaActivo } = consulta;
     const [docs, total] = await Promise.all([
       DatosAlumno.find(filter).sort(sort).skip(skip).limit(limit).lean(),
       DatosAlumno.countDocuments(filter),
@@ -448,6 +516,217 @@ exports.listar = async (req, res, next) => {
       payload.jornadaFiltro = { activo: true, jornadaIds: jornadaIds.map(String) };
     }
     res.json(payload);
+  } catch (e) {
+    next(e);
+  }
+};
+
+const EXPORT_LISTA_MAX = 4000;
+const EXPORT_LISTA_HEADERS = [
+  'Nombre',
+  'Documento',
+  'Ciudad',
+  'Actor vial',
+  'Correo',
+  'Celular',
+  'Fecha registro',
+];
+
+function ciudadExportAlumno(it) {
+  const mun = String(it.nombreMunicipio || it.munOrigenLabel || '').trim();
+  const dep = String(it.nombreDepartamento || it.nombreDepto || '').trim();
+  if (mun && dep) return `${mun} (${dep})`;
+  if (mun) return mun;
+  return String(it.codMunicipio || it.munOrigen || '').trim();
+}
+
+function fechaRegExport(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function ymdLegible(raw) {
+  const d = parseFechaCalendario(raw);
+  if (!d) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function filasUbicacionExport(items) {
+  return items.map((it) => [
+    it.nombreCompleto || '',
+    it.numDoc != null ? String(it.numDoc) : '',
+    ciudadExportAlumno(it),
+    it.actorVialLabel || it.actorVial || '',
+    it.correo || '',
+    it.celular || '',
+    fechaRegExport(it.fechaReg),
+  ]);
+}
+
+function escHtmlExport(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function resumenFiltroExport(req, total) {
+  const desde = ymdLegible(req.query.fechaRegDesde);
+  const hasta = ymdLegible(req.query.fechaRegHasta);
+  let rango = 'Todas las fechas de registro';
+  if (desde && hasta) rango = `Registro del ${desde} al ${hasta}`;
+  else if (desde) rango = `Registro desde el ${desde}`;
+  else if (hasta) rango = `Registro hasta el ${hasta}`;
+  const q = (req.query.q || '').toString().trim();
+  const extra = q ? ` · Búsqueda: ${q}` : '';
+  return `${rango}${extra} · ${total} alumno${total === 1 ? '' : 's'}`;
+}
+
+async function itemsParaExportar(req) {
+  const consulta = await armarFiltroListaAlumnos(req);
+  if (consulta.vacio) return { items: [], total: 0, resumen: consulta.mensajeVacio || 'Sin alumnos' };
+  const total = await DatosAlumno.countDocuments(consulta.filter);
+  if (total > EXPORT_LISTA_MAX) {
+    const err = new Error(
+      `Hay ${total} alumnos con el filtro actual. Reduzca el rango de fechas u otros filtros (máximo ${EXPORT_LISTA_MAX} por archivo).`,
+    );
+    err.status = 400;
+    throw err;
+  }
+  const docs = await DatosAlumno.find(consulta.filter).sort(consulta.sort).limit(EXPORT_LISTA_MAX).lean();
+  let items = await enriquecerMunicipios(docs.map(mapListaItem));
+  items = await enriquecerCatalogos(items);
+  return { items, total, resumen: resumenFiltroExport(req, total) };
+}
+
+function nombreArchivoExport(ext) {
+  const hoy = new Date();
+  const y = hoy.getFullYear();
+  const m = String(hoy.getMonth() + 1).padStart(2, '0');
+  const d = String(hoy.getDate()).padStart(2, '0');
+  return `alumnos-ubicacion-${y}-${m}-${d}.${ext}`;
+}
+
+function htmlInformeAlumnosInscritos({ config, resumen, filas, generado }) {
+  const thead = EXPORT_LISTA_HEADERS.map((h) => `<th>${escHtmlExport(h)}</th>`).join('');
+  const tbody = filas.length
+    ? filas
+        .map(
+          (row) =>
+            `<tr>${row.map((cell) => `<td>${escHtmlExport(cell)}</td>`).join('')}</tr>`,
+        )
+        .join('')
+    : `<tr><td colspan="${EXPORT_LISTA_HEADERS.length}">No hay alumnos para el filtro indicado.</td></tr>`;
+  const pie = String(config?.mensajePie || '').trim();
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  ${informeGoogleFontsLinkHtml()}
+  <title>Informe alumnos inscritos</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm 10mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    ${informeDocumentoBaseCss()}
+    html, body {
+      margin: 0; padding: 0;
+      background: #fff; color: #1a1a1a;
+      font-size: 9pt; line-height: 1.35;
+    }
+    .doc-titulo-block {
+      text-align: center; margin: 12px 0 14px;
+      border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;
+      padding: 10px 0; background: #f8f9fb;
+    }
+    .doc-titulo-block h2 {
+      margin: 0; font-size: 12pt; text-transform: uppercase; letter-spacing: 1px;
+      color: #1e3a5f; font-weight: 700;
+    }
+    .doc-titulo-block p { margin: 4px 0 0; font-size: 9pt; color: #444; }
+    table.tbl { width: 100%; border-collapse: collapse; font-size: 8pt; }
+    table.tbl th, table.tbl td {
+      border: 1px solid #999; padding: 3px 5px; vertical-align: top;
+      text-align: left; word-break: break-word;
+    }
+    table.tbl th { background: #1a365d; color: #fff; font-weight: 700; }
+    table.tbl tbody tr:nth-child(even) td { background: #f8fafc; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    .doc-footer {
+      margin-top: 14px; padding-top: 8px; border-top: 1px solid #ccc;
+      font-size: 8pt; color: #666; text-align: center;
+    }
+    .doc-footer p { margin: 0; }
+  </style>
+</head>
+<body>
+  ${htmlEncabezadoEmpresa(config || {}, escHtmlExport)}
+  <div class="doc-titulo-block">
+    <h2>Informe alumnos inscritos</h2>
+    <p>${escHtmlExport(resumen)}</p>
+    <p>Generado ${escHtmlExport(generado)}</p>
+  </div>
+  <table class="tbl">
+    <thead><tr>${thead}</tr></thead>
+    <tbody>${tbody}</tbody>
+  </table>
+  ${pie ? `<footer class="doc-footer"><p>${escHtmlExport(pie)}</p></footer>` : ''}
+</body>
+</html>`;
+}
+
+exports.exportarLista = async (req, res, next) => {
+  try {
+    const formato = String(req.query.formato || 'xlsx').trim().toLowerCase();
+    if (formato !== 'xlsx' && formato !== 'pdf') {
+      return res.status(400).json({ message: 'Formato no soportado. Use xlsx o pdf.' });
+    }
+    const { items, resumen } = await itemsParaExportar(req);
+    const filas = filasUbicacionExport(items);
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+
+    if (formato === 'xlsx') {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([EXPORT_LISTA_HEADERS, ...filas]);
+      ws['!cols'] = [
+        { wch: 36 },
+        { wch: 16 },
+        { wch: 32 },
+        { wch: 28 },
+        { wch: 32 },
+        { wch: 16 },
+        { wch: 16 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Alumnos');
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      const filename = nombreArchivoExport('xlsx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(buffer);
+    }
+
+    const { launchBrowser, htmlToPdfBuffer } = require('../services/htmlToPdf');
+    const config = await obtenerConfigRecibo().catch(() => ({}));
+    const generado = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+    const html = htmlInformeAlumnosInscritos({ config, resumen, filas, generado });
+    const browser = await launchBrowser();
+    try {
+      const pdf = await htmlToPdfBuffer(browser, html);
+      const filename = nombreArchivoExport('pdf');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(pdf);
+    } finally {
+      await browser.close().catch(() => {});
+    }
   } catch (e) {
     next(e);
   }

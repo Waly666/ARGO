@@ -40,6 +40,7 @@ import {
   capMunicipio,
 } from '../../core/utils/capsule.util';
 import { environment } from '../../../environments/environment';
+import { descargarBlob, mensajeErrorBlob } from '../../core/utils/descargar-blob';
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import {
@@ -185,12 +186,15 @@ export class AlumnosListaComponent implements OnInit {
   cargandoJornadasCap = signal(false);
   jornadaFiltroMsg = signal('');
 
-  /** Filtros comunes (ambos listados): empresa, origen, jornada catálogo */
+  /** Filtros comunes (ambos listados): empresa, origen, jornada catálogo, fecha de registro */
   empresaFiltroId = signal('');
   empresaFiltroNombre = signal('');
   origenFiltro = signal('');
   jornadaCatFiltro = signal('');
   actorVialFiltro = signal('');
+  fechaRegDesde = signal('');
+  fechaRegHasta = signal('');
+  exportando = signal<'xlsx' | 'pdf' | null>(null);
   opcionesJornadaCat = signal<EnumBuscarOption[]>([]);
   opcionesActorVial = signal<EnumBuscarOption[]>([]);
 
@@ -247,6 +251,8 @@ export class AlumnosListaComponent implements OnInit {
         this.origenFiltro().trim() ||
         this.jornadaCatFiltro().trim() ||
         this.actorVialFiltro().trim() ||
+        this.fechaRegDesde().trim() ||
+        this.fechaRegHasta().trim() ||
         this.filtroJornadaActivo() ||
         this.certJornadaFiltro()
       ),
@@ -284,6 +290,8 @@ export class AlumnosListaComponent implements OnInit {
     origen: string;
     jornada: string;
     actorVial: string;
+    fechaRegDesde: string;
+    fechaRegHasta: string;
   }>();
 
   ngOnInit(): void {
@@ -327,7 +335,7 @@ export class AlumnosListaComponent implements OnInit {
     this.load$
       .pipe(
         debounceTime(280),
-        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada, empresaId, origen, jornada, actorVial }) => {
+        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada, empresaId, origen, jornada, actorVial, fechaRegDesde, fechaRegHasta }) => {
           this.loading.set(true);
           const opts: {
             q: string;
@@ -343,6 +351,8 @@ export class AlumnosListaComponent implements OnInit {
             origen?: string;
             jornada?: string;
             actorVial?: string;
+            fechaRegDesde?: string;
+            fechaRegHasta?: string;
           } = {
             q,
             limit: this.pageSize,
@@ -360,6 +370,8 @@ export class AlumnosListaComponent implements OnInit {
           if (origen) opts.origen = origen;
           if (jornada) opts.jornada = jornada;
           if (actorVial) opts.actorVial = actorVial;
+          if (fechaRegDesde) opts.fechaRegDesde = fechaRegDesde;
+          if (fechaRegHasta) opts.fechaRegHasta = fechaRegHasta;
           return this.alumnoSvc.listar(opts);
         }),
       )
@@ -512,6 +524,125 @@ export class AlumnosListaComponent implements OnInit {
     this.cargar();
   }
 
+  onFechaRegDesde(fecha: string) {
+    this.fechaRegDesde.set(fecha || '');
+    this.aplicarFiltroFechaReg();
+  }
+
+  onFechaRegHasta(fecha: string) {
+    this.fechaRegHasta.set(fecha || '');
+    this.aplicarFiltroFechaReg();
+  }
+
+  private aplicarFiltroFechaReg() {
+    if (!this.rangoRegistroValido()) {
+      this.msg.set('La fecha inicial de registro no puede ser posterior a la final.');
+      this.msgEsError.set(true);
+      return;
+    }
+    if (this.msg() === 'La fecha inicial de registro no puede ser posterior a la final.') {
+      this.msg.set(null);
+      this.msgEsError.set(false);
+    }
+    this.page.set(0);
+    this.cargar();
+  }
+
+  private rangoRegistroValido(): boolean {
+    const desde = this.fechaRegDesde().trim();
+    const hasta = this.fechaRegHasta().trim();
+    if (!desde || !hasta) return true;
+    return desde <= hasta;
+  }
+
+  exportarExcel() {
+    this.exportarLista('xlsx');
+  }
+
+  exportarPdf() {
+    this.exportarLista('pdf');
+  }
+
+  private exportarLista(formato: 'xlsx' | 'pdf') {
+    if (this.exportando() || this.loading() || this.total() <= 0) return;
+    if (!this.rangoRegistroValido()) {
+      this.msg.set('La fecha inicial de registro no puede ser posterior a la final.');
+      this.msgEsError.set(true);
+      return;
+    }
+    this.exportando.set(formato);
+    this.msg.set(null);
+    this.msgEsError.set(false);
+    this.alumnoSvc.exportarLista(formato, this.optsExportacion()).subscribe({
+      next: (blob) => {
+        this.exportando.set(null);
+        const fecha = new Date().toISOString().slice(0, 10);
+        const nombre = `alumnos-ubicacion-${fecha}.${formato}`;
+        void descargarBlob(blob, nombre, {
+          labelBoton: formato === 'pdf' ? 'Guardar PDF' : 'Guardar Excel',
+        }).catch((err: unknown) => {
+          this.msg.set(err instanceof Error ? err.message : 'No se pudo guardar el archivo.');
+          this.msgEsError.set(true);
+        });
+      },
+      error: (e: unknown) => {
+        this.exportando.set(null);
+        void mensajeErrorBlob(
+          e,
+          formato === 'pdf' ? 'No se pudo generar el PDF.' : 'No se pudo generar el Excel.',
+        ).then((texto) => {
+          this.msg.set(texto);
+          this.msgEsError.set(true);
+        });
+      },
+    });
+  }
+
+  /** Mismos filtros de la lista, sin paginación: el archivo trae todos los coincidentes. */
+  private optsExportacion() {
+    const opts: {
+      q: string;
+      sort: SortColAlumnos;
+      dir: SortDir;
+      tipoAlumno?: string;
+      idJornada?: string;
+      fechaJornada?: string;
+      certJornada?: '' | 'con' | 'sin';
+      empresaId?: string;
+      origen?: string;
+      jornada?: string;
+      actorVial?: string;
+      fechaRegDesde?: string;
+      fechaRegHasta?: string;
+    } = {
+      q: this.query().trim(),
+      sort: this.sortCol(),
+      dir: this.sortDir(),
+    };
+    if (this.modo() === 'jornadas') {
+      opts.tipoAlumno = TIPO_JORNADAS_CAPACITACION;
+      const idJornada = this.idJornadaCap().trim();
+      const fechaJornada = this.fechaJornadaCap().trim();
+      if (idJornada) opts.idJornada = idJornada;
+      else if (fechaJornada) opts.fechaJornada = fechaJornada;
+      const cert = this.certJornadaFiltro();
+      if (cert) opts.certJornada = cert;
+    }
+    const empresaId = this.empresaFiltroId().trim();
+    const origen = this.origenFiltro().trim();
+    const jornada = this.jornadaCatFiltro().trim();
+    const actorVial = this.actorVialFiltro().trim();
+    const fechaRegDesde = this.fechaRegDesde().trim();
+    const fechaRegHasta = this.fechaRegHasta().trim();
+    if (empresaId) opts.empresaId = empresaId;
+    if (origen) opts.origen = origen;
+    if (jornada) opts.jornada = jornada;
+    if (actorVial) opts.actorVial = actorVial;
+    if (fechaRegDesde) opts.fechaRegDesde = fechaRegDesde;
+    if (fechaRegHasta) opts.fechaRegHasta = fechaRegHasta;
+    return opts;
+  }
+
   limpiarFiltrosJornada() {
     this.fechaJornadaCap.set('');
     this.idJornadaCap.set('');
@@ -527,6 +658,8 @@ export class AlumnosListaComponent implements OnInit {
     this.origenFiltro.set('');
     this.jornadaCatFiltro.set('');
     this.actorVialFiltro.set('');
+    this.fechaRegDesde.set('');
+    this.fechaRegHasta.set('');
     this.fechaJornadaCap.set('');
     this.idJornadaCap.set('');
     this.certJornadaFiltro.set('');
@@ -558,6 +691,8 @@ export class AlumnosListaComponent implements OnInit {
       origen: this.origenFiltro().trim(),
       jornada: this.jornadaCatFiltro().trim(),
       actorVial: this.actorVialFiltro().trim(),
+      fechaRegDesde: this.fechaRegDesde().trim(),
+      fechaRegHasta: this.fechaRegHasta().trim(),
     });
   }
 
