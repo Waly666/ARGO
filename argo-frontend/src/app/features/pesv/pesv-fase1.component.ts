@@ -3,6 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { PesvAyudaComponent } from './pesv-ayuda.component';
 import { PesvNavComponent } from './pesv-nav.component';
 
 import { PesvFase1Dto, PesvFase1ItemView, PesvService } from '../../core/services/pesv.service';
@@ -26,7 +27,7 @@ export interface PesvFase1EstadoItem {
 @Component({
   selector: 'argo-pesv-fase1',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PesvNavComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PesvNavComponent, PesvAyudaComponent],
   templateUrl: './pesv-fase1.component.html',
   styleUrls: ['./pesv-shared.scss', './pesv-fase1.component.scss'],
 })
@@ -36,6 +37,7 @@ export class PesvFase1Component implements OnInit {
 
   loading = signal(true);
   saving = signal(false);
+  generando = signal<number | null>(null);
   msg = signal<string | null>(null);
   data = signal<PesvFase1Dto | null>(null);
   /** Paso Res. 40595 seleccionado en el filtro (null = todos). */
@@ -149,10 +151,13 @@ export class PesvFase1Component implements OnInit {
       return { codigo: 'na', etiqueta: 'No aplica', clase: 'estado-chip--na' };
     }
     if (this.esExternoSt(item)) {
-      const ok = !!item.respuesta.adjuntoRuta;
-      return ok
-        ? { codigo: 'cert', etiqueta: 'Certificado cargado', clase: 'estado-chip--ok' }
-        : { codigo: 'cert_pend', etiqueta: 'Falta PDF firmado', clase: 'estado-chip--pend' };
+      if (item.respuesta.adjuntoRuta) {
+        return { codigo: 'cert', etiqueta: 'PDF firmado', clase: 'estado-chip--ok' };
+      }
+      if (item.respuesta.documentoGeneradoRuta) {
+        return { codigo: 'gen', etiqueta: 'Certificación generada', clase: 'estado-chip--ok' };
+      }
+      return { codigo: 'cert_pend', etiqueta: 'Por generar', clase: 'estado-chip--pend' };
     }
     if (item.documento?.modo === 'na') {
       return { codigo: 'info', etiqueta: 'Solo registro', clase: 'estado-chip--info' };
@@ -174,7 +179,7 @@ export class PesvFase1Component implements OnInit {
     switch (item.documento?.modo) {
       case 'cert_representante_legal':
       case 'externo_st':
-        return 'Formulario + PDF firmado por rep. legal';
+        return 'Se genera desde el formulario';
       case 'excel_generado':
         return 'ARGO genera Excel';
       case 'derivado_flota':
@@ -215,7 +220,7 @@ export class PesvFase1Component implements OnInit {
 
   esGenerable(item: PesvFase1ItemView): boolean {
     const m = item.documento?.modo;
-    return m === 'generado_argo' || m === 'excel_generado' || m === 'derivado_flota';
+    return m === 'generado_argo' || m === 'excel_generado' || m === 'derivado_flota' || this.esCertRepresentanteLegal(item);
   }
 
   etiquetaModo(item: PesvFase1ItemView): string {
@@ -258,10 +263,20 @@ export class PesvFase1Component implements OnInit {
   generar(item: PesvFase1ItemView): void {
     const d = this.data();
     if (!d || !this.esGenerable(item)) return;
+    this.generando.set(item.itemNo);
     this.guardarSilencioso(() => {
       this.pesv.generarDocumentoFase1(d.vigencia, item.itemNo).subscribe({
-        next: () => this.msg.set(`Documento ítem ${item.itemNo} generado`),
+        next: () => {
+          this.generando.set(null);
+          this.msg.set(
+            this.esCertRepresentanteLegal(item)
+              ? 'Certificación generada. Descárguela, fírmela y, si quiere, adjunte el PDF firmado.'
+              : `Documento ítem ${item.itemNo} generado`,
+          );
+          this.recargar();
+        },
         error: (err) => {
+          this.generando.set(null);
           const body = err?.error;
           if (body?.code === 'PESV_GENERACION_PENDIENTE') {
             this.msg.set(
@@ -304,7 +319,10 @@ export class PesvFase1Component implements OnInit {
     const items = d.items.map((i) => ({ itemNo: i.itemNo, ...i.respuesta }));
     this.pesv.guardarFase1({ vigencia: d.vigencia, items }).subscribe({
       next: () => done(),
-      error: () => this.msg.set('Guarde los datos antes de generar'),
+      error: () => {
+        this.generando.set(null);
+        this.msg.set('Guarde los datos antes de generar');
+      },
     });
   }
 

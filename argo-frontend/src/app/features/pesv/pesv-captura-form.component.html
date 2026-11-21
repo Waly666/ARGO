@@ -23,6 +23,13 @@
 
   <argo-pesv-nav active="fase1" />
 
+  <argo-pesv-ayuda
+    ahora="Diligencie los campos marcados como obligatorio y pulse Guardar."
+    detalle="La organización se toma de Configuración → Empresa. El resto es propio de este documento y queda guardado en la vigencia. Los campos sin asterisco puede dejarlos para después."
+    siguiente="/app/pesv/fase1"
+    siguienteTexto="Volver a la lista"
+  />
+
   <div class="pesv-captura-org-aviso">
     La sección <strong>Organización</strong> se llena con los datos de
     <a routerLink="/app/configuracion/empresa">Configuración → Empresa</a>
@@ -98,7 +105,7 @@
                 <span>
                   {{ campo.label }}
                   @if (campo.requerido) {
-                    <em class="req">*</em>
+                    <em class="req">obligatorio</em>
                   }
                 </span>
                 @switch (campo.tipo) {
@@ -170,13 +177,23 @@
       <div class="pesv-captura-actions">
         <a routerLink="/app/pesv/fase1" class="btn-link">← Volver a la lista</a>
         @if (puedeEditar()) {
-          <button type="submit" [disabled]="saving()">Guardar formulario</button>
+          <button type="submit" [disabled]="saving() || generando()">Guardar formulario</button>
+          @if (esCertificacion()) {
+            <button type="button" (click)="generarCertificacion()" [disabled]="saving() || generando()">
+              {{ generando() ? 'Generando…' : 'Generar certificación' }}
+            </button>
+          }
         }
       </div>
     </form>
   }
 
   @if (msg()) {
-    <p class="msg">{{ msg() }}</p>
+    <p class="msg">
+      {{ msg() }}
+      @if (pdfGenerado(); as u) {
+        <a [href]="u" target="_blank" rel="noopener">Descargar certificación</a>
+      }
+    </p>
   }
 </section>

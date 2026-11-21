@@ -47,6 +47,10 @@ const EmpleadoSchema = new mongoose.Schema(
     cajaCompensacionId: { type: Number, index: true },
     cargoId: { type: Number, index: true },
     departamentoId: { type: Number, index: true },
+    /** Sale un vehículo del CEA (clase o desplazamiento) y diligencia la ficha preoperacional. */
+    usaVehiculosEmpresa: { type: Boolean, default: false },
+    /** Maneja el vehículo. Quien conduce un vehículo del CEA es conductor. */
+    conduce: { type: Boolean, default: false },
     /** Sede operativa del empleado; se hereda al usuario de login automático. */
     idSede: { type: String, trim: true, index: true },
     /** Usuario de login generado (cajero / instructor) */

@@ -61,6 +61,8 @@ const EMPLEADO_FIELDS = [
   'cajaCompensacionId',
   'cargoId',
   'departamentoId',
+  'usaVehiculosEmpresa',
+  'conduce',
   'idSede',
   'estado',
 ];
@@ -145,6 +147,11 @@ function pickEmpleado(body) {
   } else if (dto.salario != null) {
     dto.salario = toDec(dto.salario);
   }
+  for (const k of ['usaVehiculosEmpresa', 'conduce']) {
+    if (dto[k] === undefined) continue;
+    dto[k] = dto[k] === true || dto[k] === 'true' || dto[k] === 1 || dto[k] === '1';
+  }
+  if (dto.conduce) dto.usaVehiculosEmpresa = true;
   for (const k of ['epsId', 'afpId', 'arlId', 'cajaCompensacionId', 'cargoId', 'departamentoId']) {
     if (dto[k] === '' || dto[k] == null) {
       dto[k] = null;

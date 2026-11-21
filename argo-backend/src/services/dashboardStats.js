@@ -91,6 +91,14 @@ function matchEgresos(filtro) {
   return { fechaEgreso: f };
 }
 
+function rangoFecha(filtro) {
+  if (!filtro?.activo) return null;
+  const f = {};
+  if (filtro.desde) f.$gte = filtro.desde;
+  if (filtro.hasta) f.$lte = filtro.hasta;
+  return Object.keys(f).length ? f : null;
+}
+
 async function mapaProgramas() {
   const rows = await cat.programas.find({}).lean();
   const m = new Map();
@@ -246,6 +254,17 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
   const matchIngSerie = filtro.activo
     ? matchIngFin
     : { fecha: { $gte: desde12m }, cuadreDescuadre: { $ne: true } };
+  const rango = rangoFecha(filtro);
+  const matchCert = { estado: { $ne: 'anulado' } };
+  if (rango) matchCert.fechaEmision = rango;
+  const matchCertSerie = rango
+    ? matchCert
+    : { estado: { $ne: 'anulado' }, fechaEmision: { $gte: desde12m } };
+  const matchCertConteo = rango
+    ? matchCert
+    : { estado: { $ne: 'anulado' }, fechaEmision: { $gte: inicioMes } };
+  const matchLiq = rango ? { fechaCreacion: rango } : {};
+  const matchMat = rango ? { fechaMat: rango } : {};
 
   const [
     totalAlumnos,
@@ -282,11 +301,12 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
     cat.programas.countDocuments({}),
     cat.servicios.countDocuments({}),
     Certificado.countDocuments({ estado: { $ne: 'anulado' } }),
-    Certificado.countDocuments({ estado: { $ne: 'anulado' }, fechaEmision: { $gte: inicioMes } }),
+    Certificado.countDocuments(matchCertConteo),
     CajaSesion.countDocuments({ estado: 'cerrada' }),
     CajaDescuadre.countDocuments({ estado: 'pendiente' }),
     CajaSesion.countDocuments({ estado: 'abierta' }),
     Liquidacion.aggregate([
+      { $match: matchLiq },
       {
         $group: {
           _id: { $ifNull: ['$estado', 'pendiente'] },
@@ -297,6 +317,7 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
       },
     ]),
     Matricula.aggregate([
+      { $match: matchMat },
       {
         $group: {
           _id: { $ifNull: ['$pagada', 'No Pago'] },
@@ -336,7 +357,7 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
       },
     ]),
     Certificado.aggregate([
-      { $match: { fechaEmision: { $gte: desde12m }, estado: { $ne: 'anulado' } } },
+      { $match: matchCertSerie },
       {
         $group: {
           _id: { y: { $year: '$fechaEmision' }, m: { $month: '$fechaEmision' } },
@@ -346,6 +367,7 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
       { $sort: { '_id.y': 1, '_id.m': 1 } },
     ]),
     Liquidacion.aggregate([
+      { $match: matchLiq },
       {
         $group: {
           _id: { $ifNull: ['$idServ', 'sin_servicio'] },
@@ -356,6 +378,7 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
       { $sort: { cantidad: -1, total: -1 } },
     ]),
     Matricula.aggregate([
+      { $match: matchMat },
       { $group: { _id: '$idProg', cantidad: { $sum: 1 } } },
       { $sort: { cantidad: -1 } },
     ]),
@@ -363,8 +386,9 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
       .select('valor formaPago idTipoPago')
       .lean(),
     cat.catTipoPago.find({}).lean(),
-    Liquidacion.countDocuments({}),
+    Liquidacion.countDocuments(matchLiq),
     Liquidacion.aggregate([
+      { $match: matchLiq },
       {
         $group: {
           _id: null,
@@ -507,10 +531,11 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
 
   const serviciosTop = serviciosTodos.slice(0, 10);
 
+  const baseMatProg = matPorProgAgg.reduce((a, r) => a + r.cantidad, 0) || totalMatriculas;
   const matriculasPorPrograma = matPorProgAgg.map((r) => ({
     programa: mapProg.get(String(r._id)) || `Programa ${r._id}`,
     matriculas: r.cantidad,
-    pct: pct(r.cantidad, totalMatriculas),
+    pct: pct(r.cantidad, baseMatProg),
   }));
 
   const programasTop = matriculasPorPrograma.slice(0, 8);

@@ -125,13 +125,61 @@ export interface PesvPdfConfigDto {
   fuentesPdf?: PesvPdfFuenteOption[];
 }
 
+export interface PesvClasificacion {
+  reglaCodigo: string;
+  misionalidad: 1 | 2;
+  misionalidadTexto: string;
+  umbralObligacion: number;
+  totalVehiculos: number;
+  obligado: boolean;
+  nivel: NivelPesv | null;
+  nivelLabel: string;
+  resumen: string;
+}
+
 export interface PesvAutodiagnostico {
   vigencia?: number;
   misionalidad?: 1 | 2;
   totalVehiculos?: number;
+  totalVehiculosFlota?: number;
   totalConductores?: number;
-  nivelCalculado?: NivelPesv;
+  obligado?: boolean;
+  reglaCodigo?: string;
+  nivelCalculado?: NivelPesv | null;
   observaciones?: string;
+  clasificacion?: PesvClasificacion;
+}
+
+export interface PesvAutodiagnosticoVista {
+  vigencia: number;
+  registro: PesvAutodiagnostico | null;
+  flota: { totalVehiculos: number };
+  previa: PesvClasificacion;
+}
+
+export interface PesvPlantillaVersion {
+  version: number;
+  nombreArchivo: string;
+  generadoEn?: string | null;
+  generadoPor?: string;
+}
+
+export interface PesvPlantillaItem {
+  codigo: string;
+  nombre: string;
+  grupo: string;
+  tipo: 'generar' | 'referencia';
+  sensible: boolean;
+  bloqueado: boolean;
+  ayuda: string;
+  versiones: PesvPlantillaVersion[];
+}
+
+export interface PesvPlantillasVista {
+  vigencia: number;
+  confirmado: boolean;
+  clasificacion: PesvClasificacion;
+  grupos: { carpeta: string; items: PesvPlantillaItem[] }[];
 }
 
 export interface PesvDocumentoMeta {
@@ -205,8 +253,10 @@ export interface PesvFase1ItemView {
 
 export interface PesvFase1Dto {
   vigencia: number;
-  nivel: NivelPesv;
+  nivel: NivelPesv | null;
   nivelLabel: string;
+  mensajeNivel?: string;
+  obligado?: boolean;
   enviadoSt: boolean;
   items: PesvFase1ItemView[];
   motivos: { codigo: string; label: string }[];
@@ -241,8 +291,11 @@ export interface PesvTablero {
 }
 
 export interface PesvResumen {
-  nivel?: NivelPesv;
+  nivel?: NivelPesv | null;
   nivelLabel?: string;
+  mensajeNivel?: string;
+  clasificacion?: PesvClasificacion | null;
+  vistaFlota?: PesvClasificacion;
   autodiagnostico?: PesvAutodiagnostico | null;
   fase1?: {
     aplicables: number;
@@ -298,11 +351,9 @@ export class PesvService {
     );
   }
 
-  autodiagnostico(vigencia?: number): Observable<{ vigencia: number; registro: PesvAutodiagnostico | null }> {
+  autodiagnostico(vigencia?: number): Observable<PesvAutodiagnosticoVista> {
     const q = vigencia != null ? `?vigencia=${vigencia}` : '';
-    return this.http.get<{ vigencia: number; registro: PesvAutodiagnostico | null }>(
-      `${this.base}/autodiagnostico${q}`,
-    );
+    return this.http.get<PesvAutodiagnosticoVista>(`${this.base}/autodiagnostico${q}`);
   }
 
   guardarAutodiagnostico(body: PesvAutodiagnostico & { vigencia: number }): Observable<PesvAutodiagnostico> {
@@ -358,8 +409,8 @@ export class PesvService {
   generarDocumentoFase1(
     vigencia: number,
     itemNo: number,
-  ): Observable<{ ok?: boolean; message?: string; code?: string }> {
-    return this.http.post<{ ok?: boolean; message?: string; code?: string }>(
+  ): Observable<{ ok?: boolean; message?: string; code?: string; documentoGeneradoRuta?: string }> {
+    return this.http.post<{ ok?: boolean; message?: string; code?: string; documentoGeneradoRuta?: string }>(
       `${this.base}/fase1/${vigencia}/items/${itemNo}/generar`,
       {},
     );
@@ -397,6 +448,40 @@ export class PesvService {
   tablero(vigencia?: number): Observable<PesvTablero> {
     const q = vigencia != null ? `?vigencia=${vigencia}` : '';
     return this.http.get<PesvTablero>(`${this.base}/tablero${q}`);
+  }
+
+  plantillas(vigencia?: number): Observable<PesvPlantillasVista> {
+    const q = vigencia != null ? `?vigencia=${vigencia}` : '';
+    return this.http.get<PesvPlantillasVista>(`${this.base}/plantillas${q}`);
+  }
+
+  generarPlantilla(codigo: string, vigencia: number): Observable<{
+    codigo: string;
+    version: number;
+    nombreArchivo: string;
+    baseConEjemplo: boolean;
+    aviso?: string;
+  }> {
+    return this.http.post<{
+      codigo: string;
+      version: number;
+      nombreArchivo: string;
+      baseConEjemplo: boolean;
+      aviso?: string;
+    }>(`${this.base}/plantillas/${codigo}/generar`, { vigencia });
+  }
+
+  archivoPlantilla(codigo: string, vigencia: number, version?: number, base = false): Observable<Blob> {
+    const q = base ? '&base=1' : version != null ? `&version=${version}` : '';
+    return this.http.get(`${this.base}/plantillas/${codigo}/archivo?vigencia=${vigencia}${q}`, {
+      responseType: 'blob',
+    });
+  }
+
+  reemplazarBase(codigo: string, archivo: File): Observable<{ nombre: string }> {
+    const fd = new FormData();
+    fd.append('archivo', archivo);
+    return this.http.post<{ nombre: string }>(`${this.base}/plantillas/${codigo}/base`, fd);
   }
 
   resumen(vigencia?: number): Observable<PesvResumen> {

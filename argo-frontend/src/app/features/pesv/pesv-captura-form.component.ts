@@ -3,6 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { PesvAyudaComponent } from './pesv-ayuda.component';
 import { PesvNavComponent } from './pesv-nav.component';
 import {
   PesvCapturaDto,
@@ -14,7 +15,7 @@ import { AccionPermisoService } from '../../core/services/accion-permiso.service
 @Component({
   selector: 'argo-pesv-captura-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PesvNavComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PesvNavComponent, PesvAyudaComponent],
   templateUrl: './pesv-captura-form.component.html',
   styleUrls: ['./pesv-shared.scss', './pesv-captura-form.component.scss'],
 })
@@ -25,6 +26,8 @@ export class PesvCapturaFormComponent implements OnInit {
 
   loading = signal(true);
   saving = signal(false);
+  generando = signal(false);
+  pdfGenerado = signal<string | null>(null);
   msg = signal<string | null>(null);
   payload = signal<PesvCapturaDto | null>(null);
   datos = signal<Record<string, unknown>>({});
@@ -118,5 +121,40 @@ export class PesvCapturaFormComponent implements OnInit {
 
   esTabla(c: PesvCampoDef): boolean {
     return c.tipo === 'tabla';
+  }
+
+  esCertificacion(): boolean {
+    const n = this.payload()?.itemNo;
+    return n === 1 || n === 2;
+  }
+
+  generarCertificacion(): void {
+    const p = this.payload();
+    if (!p || !this.puedeEditar()) {
+      this.msg.set('Sin permiso para editar');
+      return;
+    }
+    this.generando.set(true);
+    this.msg.set(null);
+    this.pesv.guardarCaptura({ vigencia: p.vigencia, itemNo: p.itemNo, datos: this.datos() }).subscribe({
+      next: (r) => {
+        this.payload.set({ ...p, completitud: r.completitud });
+        this.pesv.generarDocumentoFase1(p.vigencia, p.itemNo).subscribe({
+          next: (out) => {
+            this.generando.set(false);
+            this.pdfGenerado.set(this.pesv.urlUploads(out.documentoGeneradoRuta));
+            this.msg.set('Certificación generada. Descargue el PDF, fírmelo y, si quiere, adjúntelo en la lista de Fase 1.');
+          },
+          error: (e) => {
+            this.generando.set(false);
+            this.msg.set(e?.error?.message || 'No se pudo generar la certificación');
+          },
+        });
+      },
+      error: () => {
+        this.generando.set(false);
+        this.msg.set('No se pudo guardar el formulario');
+      },
+    });
   }
 }

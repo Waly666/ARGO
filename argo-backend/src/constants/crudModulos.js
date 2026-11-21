@@ -207,6 +207,19 @@ const MODULOS_CRUD = {
       eliminar: ['pesv', 'pesv.eliminar'],
     },
   },
+  pesvSensibles: {
+    label: 'PESV datos sensibles',
+    prefijo: 'pesvSensibles',
+    entidad: 'pesvSensibles',
+    categoria: 'flota',
+    orden: 116,
+    legacyPorAccion: {
+      ver: [],
+      crear: [],
+      editar: [],
+      eliminar: [],
+    },
+  },
   empleados: {
     label: 'Empleados (RRHH)',
     prefijo: 'empleados',

@@ -31,6 +31,8 @@ export interface VehiculoDto {
   pasajeros?: string;
   combustible?: string;
   numeroLicencia?: string;
+  idOrganismoTransito?: number | null;
+  secretariaTransito?: string;
   observaciones?: string;
   urlFoto?: string;
   estado?: string;
@@ -175,8 +177,9 @@ export interface AlertasDocumentosVehiculosRes {
 export interface AlertaDocFaltanteVehiculo {
   placa: string;
   vehiculoId: string;
-  idDocVehi: string;
-  documento: string;
+  idDocVehi?: string;
+  documento?: string;
+  documentos?: string[];
   claseVehiculo?: string;
 }
 

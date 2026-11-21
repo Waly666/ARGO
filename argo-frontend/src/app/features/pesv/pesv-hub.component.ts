@@ -3,12 +3,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { PesvResumen, PesvService } from '../../core/services/pesv.service';
+import { PesvAyudaComponent } from './pesv-ayuda.component';
 import { PesvNavComponent } from './pesv-nav.component';
 
 @Component({
   selector: 'argo-pesv-hub',
   standalone: true,
-  imports: [CommonModule, RouterLink, PesvNavComponent],
+  imports: [CommonModule, RouterLink, PesvNavComponent, PesvAyudaComponent],
   templateUrl: './pesv-hub.component.html',
   styleUrls: ['./pesv-shared.scss'],
 })

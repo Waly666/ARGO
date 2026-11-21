@@ -128,17 +128,6 @@ export class EmpleadosAdminComponent implements OnInit {
   modoAcceso = signal<ModoAccesoEmpleado>('auto');
   idUsuarioVincular = signal('');
 
-  cargoSeleccionado = computed(() => {
-    const id = this.form().cargoId;
-    if (!id) return null;
-    return this.cargos().find((c) => Number(c.idCargo) === Number(id)) ?? null;
-  });
-
-  cargoSugiereAcceso = computed(() => {
-    const n = String(this.cargoSeleccionado()?.nombre || '').toLowerCase();
-    return /\bcajer/i.test(n) || /\binstructor/i.test(n);
-  });
-
   /** Usuarios que se pueden vincular: sin empleado activo o ya ligados al empleado en edición. */
   usuariosDisponibles = computed(() => {
     const ed = this.editando();
@@ -266,6 +255,8 @@ export class EmpleadosAdminComponent implements OnInit {
       observaciones: '',
       estado: 'activo',
       idSede: principal?.idSede,
+      usaVehiculosEmpresa: false,
+      conduce: false,
     };
   }
 
@@ -483,6 +474,8 @@ export class EmpleadosAdminComponent implements OnInit {
       cajaCompensacionId: e.cajaCompensacionId,
       cargoId: e.cargoId,
       departamentoId: e.departamentoId,
+      usaVehiculosEmpresa: e.usaVehiculosEmpresa === true,
+      conduce: e.conduce === true,
       idSede: e.idSede || undefined,
       estado: normalizarEstadoEmpleado(e.estado),
     });
@@ -558,13 +551,22 @@ export class EmpleadosAdminComponent implements OnInit {
   onCargoChange(raw: number | null | undefined) {
     const id = raw == null || Number.isNaN(Number(raw)) ? undefined : Number(raw);
     this.patch('cargoId', id);
-    if (this.editando()?.idUsuario || this.modoAcceso() === 'vincular') return;
-    // Solo sugerir "auto" en cargos típicos; no anular si el usuario ya eligió crear automático.
-    if (this.cargoSugiereAcceso()) {
-      this.modoAcceso.set('auto');
-    } else if (this.modoAcceso() !== 'auto') {
-      this.modoAcceso.set('ninguno');
-    }
+  }
+
+  onUsaVehiculos(valor: boolean) {
+    this.form.update((f) => ({
+      ...f,
+      usaVehiculosEmpresa: valor,
+      conduce: valor ? f.conduce : false,
+    }));
+  }
+
+  onConduce(valor: boolean) {
+    this.form.update((f) => ({
+      ...f,
+      conduce: valor,
+      usaVehiculosEmpresa: valor ? true : f.usaVehiculosEmpresa,
+    }));
   }
 
   usuarioId(u: Usuario): string {

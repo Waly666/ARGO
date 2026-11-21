@@ -1,3 +1,4 @@
+@if (!esAula()) {
 <header class="topbar">
   <div class="container topbar-inner">
     <a class="brand" routerLink="/" (click)="cerrarMenu()">
@@ -141,11 +142,13 @@
     <button type="button" class="nav-backdrop" aria-label="Cerrar menú" (click)="cerrarMenu()"></button>
   }
 </header>
+}
 
-<main class="main">
+<main class="main" [class.main--aula]="esAula()">
   <router-outlet />
 </main>
 
+@if (!esAula()) {
 <footer class="site-footer">
   <div class="site-footer__glow" aria-hidden="true"></div>
   <div class="container site-footer__main">
@@ -276,7 +279,9 @@
     </div>
   </div>
 </footer>
+}
 
+@if (!esAula()) {
 <av-portal-popup [config]="popupConfig()" [openTick]="popupOpenTick()" />
 
 @if (asistenteConfig(); as asistente) {
@@ -299,4 +304,5 @@
       />
     </svg>
   </a>
+}
 }

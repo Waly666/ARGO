@@ -19,20 +19,23 @@ import {
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { CatalogoService } from '../../core/services/catalogo.service';
 import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import { capId } from '../../core/utils/capsule.util';
 import type { DocumentoRequeridoVehiculo, TipoDocumentoRequisitoVehi } from '../../core/services/config-requisitos-documentos-vehiculos.service';
 import { environment } from '../../../environments/environment';
 import { VehiculoInspeccionPanelComponent } from './vehiculo-inspeccion-panel.component';
+import { SalidaRetornoComponent } from './salida-retorno.component';
 
-type TabKey = 'datos' | 'documentos' | 'inspeccion';
+type TabKey = 'datos' | 'documentos' | 'inspeccion' | 'salidas';
 
 @Component({
   selector: 'argo-vehiculo-detalle',
   standalone: true,
   imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FormModalComponent, VehiculoInspeccionPanelComponent,
     ArgoDateInputComponent,
+    SalidaRetornoComponent,
   ],
   templateUrl: './vehiculo-detalle.component.html',
   styleUrls: ['./vehiculo-detalle.component.scss'],
@@ -41,6 +44,7 @@ export class VehiculoDetalleComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private svc = inject(VehiculoService);
+  private catalogos = inject(CatalogoService);
   private confirm = inject(ConfirmDialogService);
   accionPermiso = inject(AccionPermisoService);
   private eliminacionOps = inject(EliminacionOperacionService);
@@ -57,6 +61,7 @@ export class VehiculoDetalleComponent implements OnInit {
 
   meta = signal<VehiculoMeta | null>(null);
   clases = signal<ClaseVehiculo[]>([]);
+  organismos = signal<{ idOrganismo: number; nombre: string; nombreMunicipio?: string; nombreDepto?: string }[]>([]);
   tiposDocumento = signal<TipoDocumentoVehiculo[]>([]);
   documentos = signal<DocVehiculoDto[]>([]);
 
@@ -173,11 +178,15 @@ export class VehiculoDetalleComponent implements OnInit {
     { key: 'datos', label: 'Datos del vehículo' },
     { key: 'documentos', label: 'Documentos' },
     { key: 'inspeccion', label: 'Inspección' },
+    { key: 'salidas', label: 'Salida y retorno' },
   ];
 
   ngOnInit(): void {
     this.svc.meta().subscribe((m) => this.meta.set(m));
     this.svc.listarClases().subscribe((rows) => this.clases.set(rows));
+    this.catalogos.list<{ idOrganismo: number; nombre: string; nombreMunicipio?: string; nombreDepto?: string }>('organismosTransito').subscribe((rows) => {
+      this.organismos.set(rows || []);
+    });
     this.svc.listarTiposDocumento().subscribe((rows) => this.tiposDocumento.set(rows));
 
     this.route.queryParamMap.subscribe((q) => {
@@ -202,7 +211,27 @@ export class VehiculoDetalleComponent implements OnInit {
       if (this.vehiculoId()) this.cargarRequisitos();
     } else if (tabParam === 'inspeccion') {
       this.tab.set('inspeccion');
+    } else if (tabParam === 'salidas') {
+      this.tab.set('salidas');
     }
+  }
+
+  opcionesSecretaria = computed<EnumBuscarOption[]>(() =>
+    this.organismos().map((o) => ({
+      value: o.idOrganismo,
+      label: o.nombre,
+      hint: [o.nombreMunicipio, o.nombreDepto].filter(Boolean).join(' · '),
+    })),
+  );
+
+  onSecretaria(opt: EnumBuscarOption): void {
+    this.patch('idOrganismoTransito', Number(opt.value));
+    this.patch('secretariaTransito', opt.label);
+  }
+
+  onSecretariaLimpiar(): void {
+    this.patch('idOrganismoTransito', null);
+    this.patch('secretariaTransito', '');
   }
 
   formVacio(): VehiculoDto {
@@ -221,7 +250,7 @@ export class VehiculoDetalleComponent implements OnInit {
   }
 
   setTab(key: TabKey): void {
-    if ((key === 'documentos' || key === 'inspeccion') && !this.puedeDocumentos()) return;
+    if ((key === 'documentos' || key === 'inspeccion' || key === 'salidas') && !this.puedeDocumentos()) return;
     this.tab.set(key);
     if (key === 'documentos') this.cargarRequisitos();
   }

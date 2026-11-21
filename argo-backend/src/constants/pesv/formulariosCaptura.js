@@ -55,45 +55,70 @@ const FORMULARIOS = {
   cert_1565: {
     titulo: 'Certificación del representante legal — Res. 1565/2014',
     descripcion:
-      'Documento en el que el representante legal certifica que el PESV está implementado conforme a la Resolución 1565 de 2014. No es un documento de Supertransporte.',
+      'ARGO arma el PDF con estos datos. Los párrafos salen listos para esta empresa: cámbielos si el texto debe decir otra cosa. La firma del PDF se hace fuera del programa y luego puede adjuntarla.',
     secciones: [
       seccion('org', 'Organización', CAMPOS_ORGANIZACION),
-      seccion('cert', 'Certificación de cumplimiento', [
+      seccion('firma', 'Quien certifica', [
         {
-          key: 'declaracionConformidad',
-          label: 'Texto de conformidad (PESV implementado según Res. 1565/2014)',
-          tipo: 'textarea',
+          key: 'tipoDocumento',
+          label: 'Tipo de documento',
+          tipo: 'select',
+          opciones: ['Cédula de ciudadanía', 'Cédula de extranjería', 'Pasaporte'],
           requerido: true,
         },
+        { key: 'numeroDocumento', label: 'Número de documento', tipo: 'text', requerido: true },
+        { key: 'lugarExpedicionDocumento', label: 'Lugar de expedición del documento', tipo: 'text', requerido: true },
+        { key: 'cargoFirma', label: 'Cargo de quien firma', tipo: 'text', requerido: true },
+      ]),
+      seccion('fecha', 'Lugar y fecha', [
+        { key: 'lugarEncabezado', label: 'Ciudad del encabezado', tipo: 'text', requerido: true },
         { key: 'fechaExpedicion', label: 'Fecha de la certificación', tipo: 'date', requerido: true },
-        { key: 'lugarExpedicion', label: 'Lugar de expedición', tipo: 'text' },
-        { key: 'nombreFirma', label: 'Nombre quien firma (representante legal)', tipo: 'text', requerido: true },
-        { key: 'cargoFirma', label: 'Cargo', tipo: 'text', requerido: true },
-        { key: 'numeroCertificado', label: 'Consecutivo interno (opcional)', tipo: 'text' },
-        { key: 'observaciones', label: 'Observaciones', tipo: 'textarea' },
+        { key: 'lugarCierre', label: 'Ciudad del cierre (Dado en…)', tipo: 'text', requerido: true },
+        { key: 'destinatario', label: 'Destinatario', tipo: 'textarea', requerido: true },
+        { key: 'tituloCertificado', label: 'Título del documento', tipo: 'text', requerido: true },
+      ]),
+      seccion('textos', 'Texto de la certificación', [
+        { key: 'parrafoConstitucion', label: 'Párrafo de cumplimiento de la Resolución 1565 de 2014', tipo: 'textarea', requerido: true },
+        { key: 'parrafoNormaNueva', label: 'Párrafo de la Resolución 40595 de 2022', tipo: 'textarea', requerido: true },
+        {
+          key: 'parrafoHabilitacion',
+          label: 'Párrafo de habilitación o situación propia (déjelo vacío si no aplica)',
+          tipo: 'textarea',
+        },
+        { key: 'parrafoImplementacion', label: 'Párrafo de implementación del plan', tipo: 'textarea', requerido: true },
+        { key: 'parrafoCierre', label: 'Párrafo de cierre', tipo: 'textarea', requerido: true },
       ]),
     ],
   },
   cert_40595: {
     titulo: 'Certificación del representante legal — Res. 40595/2022',
     descripcion:
-      'Documento en el que el representante legal da conformidad al PESV en desarrollo o implementado según la Resolución 40595 de 2022.',
+      'ARGO arma el PDF con estos datos. El nivel sale de los vehículos registrados y puede corregirlo. Los párrafos salen listos: cámbielos si el texto debe decir otra cosa.',
     secciones: [
       seccion('org', 'Organización', CAMPOS_ORGANIZACION),
-      seccion('cert', 'Certificación de cumplimiento', [
+      seccion('firma', 'Quien certifica', [
         {
-          key: 'declaracionConformidad',
-          label: 'Texto de conformidad (Res. 40595/2022)',
-          tipo: 'textarea',
+          key: 'tipoDocumento',
+          label: 'Tipo de documento',
+          tipo: 'select',
+          opciones: ['Cédula de ciudadanía', 'Cédula de extranjería', 'Pasaporte'],
           requerido: true,
         },
-        { key: 'estadoPesv', label: 'Estado que certifica', tipo: 'select', opciones: ['Implementado', 'En desarrollo'], requerido: true },
+        { key: 'numeroDocumento', label: 'Número de documento', tipo: 'text', requerido: true },
+        { key: 'cargoFirma', label: 'Cargo de quien firma', tipo: 'text', requerido: true },
+      ]),
+      seccion('fecha', 'Lugar, fecha y estado', [
+        { key: 'lugarEncabezado', label: 'Ciudad del encabezado', tipo: 'text', requerido: true },
         { key: 'fechaExpedicion', label: 'Fecha de la certificación', tipo: 'date', requerido: true },
-        { key: 'lugarExpedicion', label: 'Lugar de expedición', tipo: 'text' },
-        { key: 'nombreFirma', label: 'Nombre quien firma (representante legal)', tipo: 'text', requerido: true },
-        { key: 'cargoFirma', label: 'Cargo', tipo: 'text', requerido: true },
-        { key: 'numeroCertificado', label: 'Consecutivo interno (opcional)', tipo: 'text' },
-        { key: 'observaciones', label: 'Observaciones', tipo: 'textarea' },
+        { key: 'asunto', label: 'Asunto', tipo: 'textarea', requerido: true },
+        { key: 'estadoPesv', label: 'Estado del PESV que certifica', tipo: 'text', requerido: true },
+        { key: 'porcentajeAvance', label: 'Porcentaje de avance', tipo: 'text', requerido: true },
+        { key: 'grupoNivel', label: 'Nivel del PESV', tipo: 'text', requerido: true },
+      ]),
+      seccion('textos', 'Texto de la certificación', [
+        { key: 'parrafoPrincipal', label: 'Párrafo de certificación', tipo: 'textarea', requerido: true },
+        { key: 'parrafoAvance', label: 'Párrafo del avance', tipo: 'textarea', requerido: true },
+        { key: 'parrafoNivel', label: 'Párrafo del nivel', tipo: 'textarea', requerido: true },
       ]),
     ],
   },

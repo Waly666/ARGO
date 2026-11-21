@@ -114,7 +114,6 @@ async function calcularAlertasDocsFaltantesVehiculos() {
 
   let totalFaltantes = 0;
   const alertas = [];
-  const placasAfectadas = new Set();
 
   for (const vehiculo of vehiculos) {
     const placa = String(vehiculo.placa || '').trim();
@@ -131,31 +130,31 @@ async function calcularAlertasDocsFaltantesVehiculos() {
       idsPresentes.add(String(d.idDocVehi));
     }
 
+    const documentos = [];
     for (const idDoc of idsRequeridos) {
       if (idsPresentes.has(idDoc)) continue;
       const meta = tipoDocumentoPorId(config, idDoc);
-      totalFaltantes += 1;
-      placasAfectadas.add(placa);
-      alertas.push({
-        placa,
-        vehiculoId: String(vehiculo._id),
-        idDocVehi: idDoc,
-        documento: String(meta?.nombre || meta?.documentoVehi || meta?.documento || idDoc).trim(),
-        claseVehiculo: vehiculo.claseVehiculo || '',
-      });
+      documentos.push(String(meta?.nombre || meta?.documentoVehi || meta?.documento || idDoc).trim());
     }
+    if (!documentos.length) continue;
+
+    totalFaltantes += documentos.length;
+    alertas.push({
+      placa,
+      vehiculoId: String(vehiculo._id),
+      claseVehiculo: vehiculo.claseVehiculo || '',
+      documentos,
+      documento: documentos[0],
+      idDocVehi: '',
+    });
   }
 
-  alertas.sort((a, b) => {
-    const pa = String(a.placa).localeCompare(String(b.placa));
-    if (pa !== 0) return pa;
-    return String(a.documento).localeCompare(String(b.documento));
-  });
+  alertas.sort((a, b) => String(a.placa).localeCompare(String(b.placa), 'es'));
 
   return {
     totalFaltantes,
-    vehiculosAfectados: placasAfectadas.size,
-    alertas: alertas.slice(0, MAX_DETALLE),
+    vehiculosAfectados: alertas.length,
+    alertas,
   };
 }
 

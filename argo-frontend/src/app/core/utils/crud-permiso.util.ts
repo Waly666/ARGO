@@ -13,6 +13,7 @@ export type ModuloCrud =
   | 'combos'
   | 'vehiculos'
   | 'pesv'
+  | 'pesvSensibles'
   | 'egresos'
   | 'empleados'
   | 'clientes'
@@ -232,6 +233,18 @@ const MODULOS_CRUD: Record<
       crear: ['pesv', 'pesv.crear', 'vehiculos'],
       editar: ['pesv', 'pesv.editar', 'vehiculos'],
       eliminar: ['pesv', 'pesv.eliminar'],
+    },
+  },
+  pesvSensibles: {
+    label: 'PESV datos sensibles',
+    prefijo: 'pesvSensibles',
+    categoria: 'flota',
+    orden: 116,
+    legacyPorAccion: {
+      ver: [],
+      crear: [],
+      editar: [],
+      eliminar: [],
     },
   },
   empleados: {

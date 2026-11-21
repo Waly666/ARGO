@@ -50,18 +50,17 @@
           <span class="dash-logo-fallback">{{ (portalConfig()?.nombreCea || 'A')[0] }}</span>
         }
         @if (!sidebarCollapsed()) {
-          <span class="dash-brand-name">{{ portalConfig()?.nombreCea || 'Aula virtual' }}</span>
+          <span class="dash-brand-copy">
+            <span class="dash-brand-name">{{ portalConfig()?.nombreCea || 'Aula virtual' }}</span>
+            <span class="dash-brand-kicker">Aula virtual</span>
+          </span>
         }
       </div>
 
-      @if (!sidebarCollapsed()) {
-        <p class="dash-user-chip">{{ auth.user()?.nombreCompleto || auth.user()?.email }}</p>
-      }
-
       <nav class="dash-nav" data-aula-tour="nav">
         <button type="button" class="dash-nav-item" [class.active]="panel() === 'tablero'" (click)="irPanel('tablero')">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
-          @if (!sidebarCollapsed()) { <span>Tablero</span> }
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.7 4 12v8h6v-5h4v5h6v-8l-8-6.3z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Inicio</span> }
         </button>
         <button
           type="button"
@@ -71,7 +70,7 @@
           (click)="irPanel('cursos')"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22.5V6.5zM6.5 6H18v12H6.5a.5.5 0 0 0-.5.5v1A1.5 1.5 0 0 1 6.5 21H20V3H6.5A2.5 2.5 0 0 0 4 5.5V6h2.5z"/></svg>
-          @if (!sidebarCollapsed()) { <span>Tus cursos</span> }
+          @if (!sidebarCollapsed()) { <span>Mis cursos</span> }
         </button>
         @if (tienePresenciales()) {
         <button type="button" class="dash-nav-item" [class.active]="panel() === 'presenciales'" (click)="irPanel('presenciales')">
@@ -81,7 +80,7 @@
         }
         <button type="button" class="dash-nav-item" [class.active]="panel() === 'puntajes'" (click)="irPanel('puntajes')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 9H8v-2h4V7l4 4-4 4v-2z"/></svg>
-          @if (!sidebarCollapsed()) { <span>Mis puntajes</span> }
+          @if (!sidebarCollapsed()) { <span>Evaluaciones</span> }
         </button>
         <button
           type="button"
@@ -105,11 +104,29 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm1.07-7.75-.9.92A2.5 2.5 0 0 0 12 13h-1v-1a3 3 0 0 1 .9-2.1l1.24-1.26A1.5 1.5 0 1 0 11 7.5H9a3.5 3.5 0 1 1 5.07 2.75z"/></svg>
           @if (!sidebarCollapsed()) { <span>Ayuda APK</span> }
         </button>
-        <button type="button" class="dash-nav-item dash-nav-logout" (click)="logout()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l1.41-1.41L8.83 13H20v-2H8.83l2.58-2.59L10 7l-5 5 5 5zm9 4H4V3h15v2H6v14h13v2z"/></svg>
-          @if (!sidebarCollapsed()) { <span>Cerrar sesión</span> }
-        </button>
       </nav>
+
+      @if (!sidebarCollapsed()) {
+        <button type="button" class="dash-help" (click)="abrirGuiaTour()">
+          <span class="dash-help-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-8 8v5a3 3 0 0 0 3 3h2v-7H7v-1a5 5 0 0 1 10 0v1h-2v7h2a3 3 0 0 0 3-3v-5a8 8 0 0 0-8-8z"/></svg>
+          </span>
+          <span>
+            <strong>¿Necesitas ayuda?</strong>
+            <small>Centro de soporte</small>
+          </span>
+        </button>
+      }
+
+      <div class="dash-userbar">
+        <button type="button" class="dash-user" (click)="irPanel('perfil')">
+          <span class="dash-user-avatar">{{ inicial() }}</span>
+          @if (!sidebarCollapsed()) { <span>{{ primerNombre() }}</span> }
+        </button>
+        <button type="button" class="dash-user-logout" (click)="logout()" aria-label="Cerrar sesión">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l1.41-1.41L8.83 13H20v-2H8.83l2.58-2.59L10 7l-5 5 5 5zm9 4H4V3h15v2H6v14h13v2z"/></svg>
+        </button>
+      </div>
 
       <a routerLink="/" class="dash-back">← Volver al sitio</a>
 
@@ -149,186 +166,121 @@
       } @else {
         @switch (panel()) {
           @case ('tablero') {
-            <header class="dash-page-head dash-page-head--hero">
-              <div>
-                <p class="dash-kicker">Mi aula virtual</p>
-                <h1>Tablero</h1>
-                <p class="dash-welcome">Bienvenido de nuevo, <strong>{{ saludo() }}</strong></p>
-              </div>
-              <button type="button" class="dash-btn dash-btn-outline dash-guia-btn" (click)="abrirGuiaTour()">
-                Guía del aula
+            <header class="home-top">
+              <p class="home-crumb">
+                <button type="button" (click)="irPanel('tablero')">Inicio</button>
+                <span>/</span>
+                <button type="button" (click)="irPanel('cursos')">Mis cursos</button>
+              </p>
+              <label class="home-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28v.79l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+                <input
+                  type="search"
+                  placeholder="Buscar curso"
+                  [ngModel]="busquedaCurso()"
+                  (ngModelChange)="busquedaCurso.set($event)"
+                  name="buscarCurso"
+                />
+              </label>
+              <button type="button" class="home-bell" (click)="irPanel('foro')" aria-label="Foro de cursos">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5-6.71V4a2 2 0 1 0-4 0v.29A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z"/></svg>
               </button>
             </header>
+
+            <div class="home-hello">
+              <h1>¡Hola, {{ primerNombre() }}!</h1>
+              <p>{{ fraseInicio() }}</p>
+            </div>
 
             @if (reciboError()) {
               <p class="dash-error">{{ reciboError() }}</p>
             }
 
-            <div class="dash-stats" data-aula-tour="stats">
-              <article class="dash-stat-card">
-                <div class="dash-stat-icon dash-stat-icon-blue">
-                  <svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22.5V6.5z"/></svg>
-                </div>
-                <div>
-                  <strong>{{ totalInscritos() }}</strong>
-                  <span>Cursos inscritos</span>
-                </div>
-              </article>
-              <article class="dash-stat-card">
-                <div class="dash-stat-icon dash-stat-icon-indigo">
-                  <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
-                </div>
-                <div>
-                  <strong>{{ totalEnProgreso() }}</strong>
-                  <span>Cursos en progreso</span>
-                </div>
-              </article>
-              <article class="dash-stat-card">
-                <div class="dash-stat-icon dash-stat-icon-green">
-                  <svg viewBox="0 0 24 24"><path d="M12 2L4 7v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V7l-8-5z"/></svg>
-                </div>
-                <div>
-                  <strong>{{ totalCompletados() }}</strong>
-                  <span>Cursos completados</span>
-                </div>
-              </article>
-              <button type="button" class="dash-stat-card dash-stat-card-click" (click)="irPanel('puntajes')">
-                <div class="dash-stat-icon dash-stat-icon-violet">
-                  <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 9H8v-2h4V7l4 4-4 4v-2z"/></svg>
-                </div>
-                <div>
-                  <strong>{{ cursosConPuntajes().length }}</strong>
-                  <span>Con puntajes</span>
-                </div>
-              </button>
-              <button type="button" class="dash-stat-card dash-stat-card-click" (click)="irPanel('certificados')">
-                <div class="dash-stat-icon dash-stat-icon-amber">
-                  <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8L12 2z"/></svg>
-                </div>
-                <div>
-                  <strong>{{ totalCertificados() }}</strong>
-                  <span>Certificados</span>
-                </div>
-              </button>
-            </div>
-
-            <section class="dash-section" data-aula-tour="continuar">
-              <header class="dash-section-head">
-                <h2>Continuar estudiando</h2>
-                @if (cursos().length > cursosContinuar().length) {
-                  <button type="button" class="dash-link" (click)="irPanel('cursos')">Ver todo ›</button>
+            @if (busquedaCurso().trim()) {
+              <section class="home-results">
+                <h2>Resultados</h2>
+                @if (cursosBusqueda().length) {
+                  <ul>
+                    @for (curso of cursosBusqueda(); track curso.idPrograma) {
+                      <li>
+                        <button type="button" (click)="abrir(curso)">
+                          <strong>{{ curso.nombreProg }}</strong>
+                          <span>{{ pct(curso) | number: '1.0-0' }}% del curso</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p>No hay cursos con «{{ busquedaCurso().trim() }}».</p>
                 }
-              </header>
+              </section>
+            } @else if (cursoHero()) {
+              @let c = cursoHero()!;
+              <article class="home-hero" data-aula-tour="stats">
+                <div class="home-hero-copy">
+                  <p class="home-kicker">Curso interactivo</p>
+                  <h2>{{ c.nombreProg }}</h2>
+                  <p>{{ resumenCurso(c) }}</p>
+                  <div class="home-hero-actions">
+                    <button type="button" class="home-btn home-btn-lime" data-aula-tour="curso-fila" (click)="abrir(c)" [disabled]="!puedeCursar(c)">
+                      {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                    <button type="button" class="home-btn home-btn-ghost" (click)="irPanel('cursos')">Ver programa</button>
+                  </div>
+                  <p class="home-pace">Aprende a tu ritmo</p>
+                </div>
+              </article>
 
-              @if (cursosContinuar().length) {
-                <div class="dash-course-list">
-                  @for (c of cursosContinuar(); track c.idPrograma; let first = $first) {
-                    <article class="dash-course-row" [attr.data-aula-tour]="first ? 'curso-fila' : null">
-                      <div class="dash-course-thumb">
-                        @if (portada(c); as img) {
-                          <img [src]="img" [alt]="c.nombreProg" />
-                        } @else {
-                          <span class="dash-course-thumb-fallback">{{ c.nombreProg.charAt(0) }}</span>
-                        }
-                      </div>
-                      <div class="dash-course-info">
-                        <div class="dash-tags">
-                          @for (tag of etiquetas(c); track tag) {
-                            <span class="dash-tag">{{ tag }}</span>
-                          }
+              <div class="home-grid">
+                <section class="home-modules" data-aula-tour="continuar">
+                  <header>
+                    <h2>Explora los módulos</h2>
+                    <button type="button" (click)="irPanel('cursos')">Ver todos ›</button>
+                  </header>
+                  <div class="home-module-row">
+                    @for (cl of modulosVisibles(c); track cl.numero; let i = $index) {
+                      <article class="home-module" [class.is-lock]="estadoModulo(c, cl) === 'bloqueado'">
+                        <div class="home-module-art" [attr.data-n]="i % 4">
+                          <span>{{ cl.numero | number: '2.0-0' }}</span>
                         </div>
-                        <h3>{{ c.nombreProg }}</h3>
-                        <p class="dash-course-date">Iniciado el {{ fechaInicio(c) }}</p>
-                        @if (mejorNota(c); as nota) {
-                          <span class="dash-score-pill" [class]="'dash-score-pill--' + notaTone(nota, notaMinima(c))">
-                            Mejor nota {{ nota | number: '1.0-0' }}%
-                          </span>
-                        }
-                        @if (c.progreso?.certificadoEmitido) {
-                          <span class="dash-badge-ok">Certificado emitido</span>
-                        } @else if (c.pago && !c.pago.pagado) {
-                          <span class="dash-badge-warn">Pago pendiente</span>
-                        }
-                        @if (reciboDeCurso(c); as recibo) {
-                          <button type="button" class="dash-btn dash-btn-recibo dash-btn-sm" (click)="imprimirRecibo(recibo.idIngreso)">
-                            <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5V7h4.5L13 3.5zM8 12h8v2H8v-2zm0 4h5v2H8v-2z" />
-                            </svg>
-                            <span>Recibo {{ recibo.numRecibo || 'de pago' }}</span>
-                          </button>
-                        }
-                      </div>
-                      <div class="dash-course-progress">
-                        <span class="dash-pct">{{ pct(c) | number: '1.0-0' }}% completado</span>
-                        <div class="dash-progress-track">
-                          <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
-                        </div>
-                        <div class="dash-course-actions">
-                          @if (puedeDescargarApk(c)) {
-                            <button
-                              type="button"
-                              class="dash-btn dash-btn-apk dash-btn-block"
-                              [disabled]="descargandoApk(c)"
-                              (click)="descargarApk(c)">
-                              <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <path
-                                  d="M17.6 9.48 19.44 6.3a.55.55 0 0 0-.96-.48l-1.88 3.24a7.02 7.02 0 0 0-8.12 0L6.6 5.82a.55.55 0 0 0-.96.48l1.84 3.18a6.99 6.99 0 0 0-3.17 5.87v4.5h14v-4.5a6.99 6.99 0 0 0-3.15-5.87ZM9.5 17.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z" />
-                              </svg>
-                              <span>{{ descargandoApk(c) ? 'Descargando…' : 'Descargar APK' }}</span>
-                            </button>
-                          } @else if (tieneApkBloqueado(c)) {
-                            <p class="dash-apk-pendiente dash-apk-pendiente--stack">
-                              <svg class="dash-apk-pendiente-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm-3 8V6a3 3 0 0 1 6 0v3H9Z" />
-                              </svg>
-                              <span>{{ mensajeApkBloqueado(c) }}</span>
-                            </p>
+                        <h3><em>{{ cl.numero | number: '2.0-0' }}</em> Lección {{ cl.numero }}</h3>
+                        <p class="home-module-state" [attr.data-state]="estadoModulo(c, cl)">
+                          @switch (estadoModulo(c, cl)) {
+                            @case ('completado') { Completado }
+                            @case ('en_curso') { En curso }
+                            @default { Bloqueado }
                           }
-                          @if (c.tienePaquete) {
-                            @if (puedePagarEnLinea(c)) {
-                              <button
-                                type="button"
-                                class="dash-btn dash-btn-pay dash-btn-block"
-                                [disabled]="pagandoCurso(c)"
-                                (click)="pagarCurso(c)">
-                                <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                  <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 4h16v2H4V9zm2 5h4v2H6v-2z" />
-                                </svg>
-                                <span>{{ pagandoCurso(c) ? 'Redirigiendo…' : 'Pagar en línea' }}</span>
-                              </button>
-                            }
-                            @if (puedePagarConsignacion(c)) {
-                              <button type="button" class="dash-btn dash-btn-pay-qr dash-btn-block" (click)="abrirPagoConsignacion(c)">
-                                <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                  <path
-                                    d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm8 2h2v2h-2v-2zm4 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2zm0-8h2v2h-2v-2z" />
-                                </svg>
-                                <span>Pagar (QR)</span>
-                              </button>
-                            }
-                            @if (puedeCursar(c)) {
-                              <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
-                                <svg class="dash-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                  <path d="M8 5v14l11-7L8 5z" />
-                                </svg>
-                                <span>{{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}</span>
-                              </button>
-                            } @else if (!tieneOpcionesPago(c)) {
-                              <p class="dash-course-blocked">Pago pendiente. Acérquese al CEA para habilitar el acceso.</p>
-                            }
-                          }
-                        </div>
-                      </div>
-                    </article>
+                        </p>
+                      </article>
+                    } @empty {
+                      <p class="home-empty">Este curso todavía no tiene lecciones registradas.</p>
+                    }
+                  </div>
+                </section>
+
+                <aside class="home-learn">
+                  <h2>Tu aprendizaje</h2>
+                  <div class="home-ring-wrap">
+                    <div class="home-ring" [style.--p]="pct(c)">
+                      <span>{{ pct(c) | number: '1.0-0' }}%</span>
+                    </div>
+                    <small>Progreso del curso</small>
+                  </div>
+                  @if (siguienteLeccion(c); as sig) {
+                    <p class="home-next-kicker">Próxima lección</p>
+                    <strong class="home-next-title">Lección {{ sig.numero }}</strong>
+                    <button type="button" class="home-btn home-btn-dark" (click)="abrir(c)" [disabled]="!puedeCursar(c)">Ir a la lección</button>
                   }
-                </div>
-              } @else {
-                <div class="dash-empty">
-                  <p>No tiene cursos activos. Explore el catálogo para matricularse.</p>
-                  <a routerLink="/cursos" class="dash-btn dash-btn-primary">Ver cursos</a>
-                </div>
-              }
-            </section>
+                  <p class="home-safe">Aprende con seguridad</p>
+                </aside>
+              </div>
+            } @else {
+              <div class="home-empty-board">
+                <p>No tiene cursos activos. Explore el catálogo para matricularse.</p>
+                <a routerLink="/cursos" class="home-btn home-btn-lime">Ver cursos</a>
+              </div>
+            }
           }
 
           @case ('cursos') {
@@ -413,11 +365,15 @@
                       </div>
                     }
                   </div>
-                  <div class="dash-course-progress">
-                    <span class="dash-pct">{{ pct(c) | number: '1.0-0' }}%</span>
-                    <div class="dash-progress-track">
-                      <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
+                  <div class="dash-course-ring">
+                    <div class="home-ring-wrap">
+                      <div class="home-ring home-ring--row" [style.--p]="pct(c)">
+                        <span>{{ pct(c) | number: '1.0-0' }}%</span>
+                      </div>
+                      <small>Progreso del curso</small>
                     </div>
+                  </div>
+                  <div class="dash-course-progress">
                     <div class="dash-course-actions dash-course-actions--stack">
                       @if (puedeDescargarApk(c)) {
                         <button

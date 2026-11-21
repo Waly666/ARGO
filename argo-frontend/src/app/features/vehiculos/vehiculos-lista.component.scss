@@ -20,6 +20,13 @@
   }
 
   .title h1 { margin: 0; }
+
+  .head-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
   .title p { color: var(--text-dim); margin: 4px 0 0; font-size: .9rem; max-width: 640px; }
 }
 

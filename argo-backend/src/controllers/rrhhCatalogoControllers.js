@@ -7,6 +7,7 @@ const CajaCompensacion = require('../models/CajaCompensacion');
 const CompetenciaDesempeno = require('../models/CompetenciaDesempeno');
 const { createCatalogController } = require('../services/rrhhCatalogo');
 const { asegurarCompetenciasDefault } = require('../services/competenciasDesempenoSeed');
+const { asegurarCatalogosLaborales } = require('../services/catalogosLaboralesSeed');
 
 const cargoFields = ['nombre', 'descripcion', 'nivel', 'salarioBase', 'estado'];
 const simpleFields = ['nombre', 'descripcion', 'estado'];
@@ -26,16 +27,30 @@ function normalizeCompetenciaDto(dto) {
   return dto;
 }
 
-exports.cargo = createCatalogController(Cargo, {
+const cargoBase = createCatalogController(Cargo, {
   idField: 'idCargo',
   fields: cargoFields,
   searchFields: ['nombre', 'descripcion', 'nivel'],
 });
 
-exports.departamento = createCatalogController(DepartamentoEmpresa, {
+const departamentoBase = createCatalogController(DepartamentoEmpresa, {
   idField: 'idDepartamento',
   fields: simpleFields,
 });
+
+function listarConBase(base) {
+  return async (req, res, next) => {
+    try {
+      await asegurarCatalogosLaborales();
+      return base.listar(req, res, next);
+    } catch (e) {
+      next(e);
+    }
+  };
+}
+
+exports.cargo = { ...cargoBase, listar: listarConBase(cargoBase) };
+exports.departamento = { ...departamentoBase, listar: listarConBase(departamentoBase) };
 
 exports.eps = createCatalogController(Eps, { idField: 'idEps', fields: nitFields });
 exports.afp = createCatalogController(Afp, { idField: 'idAfp', fields: nitFields });

@@ -1,0 +1,3186 @@
+[
+  {
+    "idOrganismo": 1,
+    "nombre": "AGENCIA DEPARTAMENTAL DE SEGURIDAD VIAL DE ANTIOQUIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05001",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "MEDELLÍN"
+  },
+  {
+    "idOrganismo": 2,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRANSITO Y TRANSPORTE DE CUNDINAMARCA - SEDE LA MESA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25386",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "LA MESA"
+  },
+  {
+    "idOrganismo": 3,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRANSITO Y TRANSPORTE DEL TOLIMA SEDE ALVARADO",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73026",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "ALVARADO"
+  },
+  {
+    "idOrganismo": 4,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE CUNDINAMARCA SEDE CAQUEZA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25151",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "CÁQUEZA"
+  },
+  {
+    "idOrganismo": 5,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE CUNDINAMARCA SEDE CHOCONTA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25183",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "CHOCONTÁ"
+  },
+  {
+    "idOrganismo": 6,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE CUNDINAMARCA SEDE COTA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25214",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "COTA"
+  },
+  {
+    "idOrganismo": 7,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE CUNDINAMARCA SEDE LA CALERA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25377",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "LA CALERA"
+  },
+  {
+    "idOrganismo": 8,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE LA GUAJIRA",
+    "divipolDepto": "44",
+    "divipolMunicipio": "44001",
+    "nombreDepto": "LA GUAJIRA",
+    "nombreMunicipio": "RIOHACHA"
+  },
+  {
+    "idOrganismo": 9,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE PUTUMAYO SEDE VILLAGARZÓN",
+    "divipolDepto": "86",
+    "divipolMunicipio": "86885",
+    "nombreDepto": "PUTUMAYO",
+    "nombreMunicipio": "VILLAGARZÓN"
+  },
+  {
+    "idOrganismo": 10,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DE VILLA DEL  ROSARIO",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54874",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "VILLA DEL ROSARIO"
+  },
+  {
+    "idOrganismo": 11,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DEL TOLIMA",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73001",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "IBAGUÉ"
+  },
+  {
+    "idOrganismo": 12,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DEL TOLIMA SEDE ARMERO GUAYABAL",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73055",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "ARMERO"
+  },
+  {
+    "idOrganismo": 13,
+    "nombre": "DEPARTAMENTO ADMINISTRATIVO DE TRÁNSITO Y TRANSPORTE DISTRITAL DE CARTAGENA",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13001",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "CARTAGENA DE INDIAS"
+  },
+  {
+    "idOrganismo": 14,
+    "nombre": "DIRECCIÓN ADMINISTRATIVA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DEL ESPINAL",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73268",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "ESPINAL"
+  },
+  {
+    "idOrganismo": 15,
+    "nombre": "DIRECCIÓN DE MOVILIDAD MUNICIPAL DE EL PASO CESAR",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20250",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "EL PASO"
+  },
+  {
+    "idOrganismo": 16,
+    "nombre": "DIRECCIÓN DE TRÁNSITO DEPARTAMENTAL DE CAQUETA - SEDE OPERATIVA EL PAUJIL",
+    "divipolDepto": "18",
+    "divipolMunicipio": "18256",
+    "nombreDepto": "CAQUETÁ",
+    "nombreMunicipio": "EL PAUJÍL"
+  },
+  {
+    "idOrganismo": 17,
+    "nombre": "DIRECCIÓN DE TRÁNSITO DEPARTAMENTAL DEL CAQUETA - SEDE OPERATIVA BELÉN DE LOS ANDAQUIES",
+    "divipolDepto": "18",
+    "divipolMunicipio": "18094",
+    "nombreDepto": "CAQUETÁ",
+    "nombreMunicipio": "BELÉN DE LOS ANDAQUÍES"
+  },
+  {
+    "idOrganismo": 18,
+    "nombre": "DIRECCIÓN DE TRÁNSITO DEPARTAMENTAL DEL CAQUETA - SEDE OPERATIVA SAN VICENTE DEL CAGUAN",
+    "divipolDepto": "18",
+    "divipolMunicipio": "18753",
+    "nombreDepto": "CAQUETÁ",
+    "nombreMunicipio": "SAN VICENTE DEL CAGUÁN"
+  },
+  {
+    "idOrganismo": 19,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTE  DE CAREPA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05147",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CAREPA"
+  },
+  {
+    "idOrganismo": 20,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTE DE BUCARAMANGA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68001",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "BUCARAMANGA"
+  },
+  {
+    "idOrganismo": 21,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTE DE FLORIDABLANCA - SANTANDER",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68276",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "FLORIDABLANCA"
+  },
+  {
+    "idOrganismo": 22,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DEL CHOCÓ",
+    "divipolDepto": "27",
+    "divipolMunicipio": "27361",
+    "nombreDepto": "CHOCÓ",
+    "nombreMunicipio": "ISTMINA"
+  },
+  {
+    "idOrganismo": 23,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE BARBOSA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68077",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "BARBOSA"
+  },
+  {
+    "idOrganismo": 24,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE SAN JUAN NEPOMUCENO",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13657",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "SAN JUAN NEPOMUCENO"
+  },
+  {
+    "idOrganismo": 25,
+    "nombre": "DIRECCIÓN DE TRÁNSITO Y TRANSPORTES DONMATÍAS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05237",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "DONMATÍAS"
+  },
+  {
+    "idOrganismo": 26,
+    "nombre": "DIRECCIÓN DEPARTAMENTAL DE TRÁNSITO Y TRANSPORTE DE CASANARE",
+    "divipolDepto": "85",
+    "divipolMunicipio": "85010",
+    "nombreDepto": "CASANARE",
+    "nombreMunicipio": "AGUAZUL"
+  },
+  {
+    "idOrganismo": 27,
+    "nombre": "DIRECCIÓN DEPARTAMENTAL DE TRÁNSITO Y TRANSPORTE DEL MAGDALENA",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47053",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "ARACATACA"
+  },
+  {
+    "idOrganismo": 28,
+    "nombre": "DIRECCIÓN OPERATIVA DE TRANSPORTES Y TRÁNSITO DE RIONEGRO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05615",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "RIONEGRO"
+  },
+  {
+    "idOrganismo": 29,
+    "nombre": "DIRECCIÓN TÉCNICA DE TRÁNSITO Y TRANSPORTE DE PITALITO",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41551",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "PITALITO"
+  },
+  {
+    "idOrganismo": 30,
+    "nombre": "FONDO DEPARTAMENTAL DE TRANSITO DE VICHADA",
+    "divipolDepto": "99",
+    "divipolMunicipio": "99001",
+    "nombreDepto": "VICHADA",
+    "nombreMunicipio": "PUERTO CARREÑO"
+  },
+  {
+    "idOrganismo": 31,
+    "nombre": "FONDO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE MAGANGUÉ",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13430",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "MAGANGUÉ"
+  },
+  {
+    "idOrganismo": 32,
+    "nombre": "FTTB DEPARTAMENTAL DE BOLÍVAR FTTB EN LIQUIDACIÓN",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13001",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "CARTAGENA DE INDIAS"
+  },
+  {
+    "idOrganismo": 33,
+    "nombre": "INSPECCION DE POLICIA  DE BETANIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05091",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BETANIA"
+  },
+  {
+    "idOrganismo": 34,
+    "nombre": "INSPECCION DE POLICIA CON FUNCION DE TRANSITO DE CURITI",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68229",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "CURITÍ"
+  },
+  {
+    "idOrganismo": 35,
+    "nombre": "INSPECCION DE POLICIA CON FUNCIONES DE TRANSITO DE CISNEROS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05190",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CISNEROS"
+  },
+  {
+    "idOrganismo": 36,
+    "nombre": "INSPECCION DE POLICIA CON FUNCIONES DE TRANSITO DE GUATICA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66318",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "GUÁTICA"
+  },
+  {
+    "idOrganismo": 37,
+    "nombre": "INSPECCION DE POLICIA CON FUNCIONES DE TRANSITO DE SOPETRAN",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05761",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SOPETRÁN"
+  },
+  {
+    "idOrganismo": 38,
+    "nombre": "INSPECCION DE POLICIA DE SANTO DOMINGO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05690",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SANTO DOMINGO"
+  },
+  {
+    "idOrganismo": 39,
+    "nombre": "INSPECCION DE POLICIA DE TRANSITO DE SAN JERONIMO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05656",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN JERÓNIMO"
+  },
+  {
+    "idOrganismo": 40,
+    "nombre": "INSPECCION DE POLICIA MUNICIPAL LA FLORIDA",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52381",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "LA FLORIDA"
+  },
+  {
+    "idOrganismo": 41,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE ABEJORRAL.",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05002",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ABEJORRAL"
+  },
+  {
+    "idOrganismo": 42,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE ANGOSTURA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05038",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ANGOSTURA"
+  },
+  {
+    "idOrganismo": 43,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE BURITICA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05113",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BURITICÁ"
+  },
+  {
+    "idOrganismo": 44,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE FREDONIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05282",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "FREDONIA"
+  },
+  {
+    "idOrganismo": 45,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE GIRALDO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05306",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GIRALDO"
+  },
+  {
+    "idOrganismo": 46,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE GRANADA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05313",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GRANADA"
+  },
+  {
+    "idOrganismo": 47,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE GUATAPE",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05321",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GUATAPÉ"
+  },
+  {
+    "idOrganismo": 48,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE SAN RAFAEL",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05667",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN RAFAEL"
+  },
+  {
+    "idOrganismo": 49,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE SAN VICENTE",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05674",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN VICENTE FERRER"
+  },
+  {
+    "idOrganismo": 50,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO DE VENECIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05861",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "VENECIA"
+  },
+  {
+    "idOrganismo": 51,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO MUNICIPAL DE GOMEZ PLATA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05310",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GÓMEZ PLATA"
+  },
+  {
+    "idOrganismo": 52,
+    "nombre": "INSPECCION DE POLICIA Y TRANSITO MUNICIPAL DE TITIRIBI",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05809",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "TITIRIBÍ"
+  },
+  {
+    "idOrganismo": 53,
+    "nombre": "INSPECCION DE POLICIA, TRANSITO Y TRANSPORTE DE SALGAR",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05642",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SALGAR"
+  },
+  {
+    "idOrganismo": 54,
+    "nombre": "INSPECCION DE TRANSITO CON FUNCIONES DE INSPECCION DE POLICIA DE PINCHOTE",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68549",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "PINCHOTE"
+  },
+  {
+    "idOrganismo": 55,
+    "nombre": "INSPECCION DE TRANSITO DE ARATOCA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68051",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "ARATOCA"
+  },
+  {
+    "idOrganismo": 56,
+    "nombre": "INSPECCION DE TRANSITO DE ARBOLETES",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05051",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ARBOLETES"
+  },
+  {
+    "idOrganismo": 57,
+    "nombre": "INSPECCION DE TRANSITO DE COCORNA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05197",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "COCORNÁ"
+  },
+  {
+    "idOrganismo": 58,
+    "nombre": "INSPECCION DE TRANSITO DE SAN LUIS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05660",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN LUIS"
+  },
+  {
+    "idOrganismo": 59,
+    "nombre": "INSPECCION DE TRANSITO DE SANTA BARBARA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05679",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SANTA BÁRBARA"
+  },
+  {
+    "idOrganismo": 60,
+    "nombre": "INSPECCION DE TRANSITO DE VALDIVIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05854",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "VALDIVIA"
+  },
+  {
+    "idOrganismo": 61,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTE DE CACERES",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05120",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CÁCERES"
+  },
+  {
+    "idOrganismo": 62,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTE DE ENTRERRIOS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05264",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ENTRERRÍOS"
+  },
+  {
+    "idOrganismo": 63,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTE DE HISPANIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05353",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "HISPANIA"
+  },
+  {
+    "idOrganismo": 64,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTE DE LA PINTADA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05390",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "LA PINTADA"
+  },
+  {
+    "idOrganismo": 65,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTE DE SAN FRANCISCO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05652",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN FRANCISCO"
+  },
+  {
+    "idOrganismo": 66,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTE DE VEGACHI",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05858",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "VEGACHÍ"
+  },
+  {
+    "idOrganismo": 67,
+    "nombre": "INSPECCION DE TRANSITO Y TRANSPORTES DE VALPARAISO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05856",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "VALPARAÍSO"
+  },
+  {
+    "idOrganismo": 68,
+    "nombre": "INSPECCION MUNICIPAL DE BETULIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05093",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BETULIA"
+  },
+  {
+    "idOrganismo": 69,
+    "nombre": "INSPECCION MUNICIPAL DE POLICIA Y TRANSITO DE AMAGA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05030",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "AMAGÁ"
+  },
+  {
+    "idOrganismo": 70,
+    "nombre": "INSPECCION MUNICIPAL DE POLICIA Y TRANSITO DE REMEDIOS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05604",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "REMEDIOS"
+  },
+  {
+    "idOrganismo": 71,
+    "nombre": "INSPECCION MUNICIPAL DE POLICIA Y TRANSITO EL PLAYON",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68255",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "EL PLAYÓN"
+  },
+  {
+    "idOrganismo": 72,
+    "nombre": "INSPECCION MUNICIPAL DE TRANSITO DE CONCORDIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05209",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CONCORDIA"
+  },
+  {
+    "idOrganismo": 73,
+    "nombre": "INSPECCION MUNICIPAL DE TRANSITO PUENTE NACIONAL",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68572",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "PUENTE NACIONAL"
+  },
+  {
+    "idOrganismo": 74,
+    "nombre": "INSPECCION MUNICIPAL DE TRANSITO Y MOVILIDAD DE TARAZA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05790",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "TARAZÁ"
+  },
+  {
+    "idOrganismo": 75,
+    "nombre": "INSPECCIÓN  DE POLICÍA Y TRÁNSITO LA CUMBRE",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76377",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "LA CUMBRE"
+  },
+  {
+    "idOrganismo": 76,
+    "nombre": "INSPECCIÓN  DE TRÁNSITO MUNICIPAL DAGUA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76233",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "DAGUA"
+  },
+  {
+    "idOrganismo": 77,
+    "nombre": "INSPECCIÓN DE POLICÍA CON FUNCIONES DE TRÁNSITO DE HELICONIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05347",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "HELICONIA"
+  },
+  {
+    "idOrganismo": 78,
+    "nombre": "INSPECCIÓN DE POLICÍA CON FUNCIONES DE TRÁNSITO DE SIBUNDOY",
+    "divipolDepto": "86",
+    "divipolMunicipio": "86749",
+    "nombreDepto": "PUTUMAYO",
+    "nombreMunicipio": "SIBUNDOY"
+  },
+  {
+    "idOrganismo": 79,
+    "nombre": "INSPECCIÓN DE POLICÍA CON FUNCIONES DE TRÁNSITO VIJES",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76869",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "VIJES"
+  },
+  {
+    "idOrganismo": 80,
+    "nombre": "INSPECCIÓN DE POLICÍA DE ABREGO",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54003",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "ÁBREGO"
+  },
+  {
+    "idOrganismo": 81,
+    "nombre": "INSPECCIÓN DE POLICÍA DE BARICHARA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68079",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "BARICHARA"
+  },
+  {
+    "idOrganismo": 82,
+    "nombre": "INSPECCIÓN DE POLICÍA DE CAICEDO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05125",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CAICEDO"
+  },
+  {
+    "idOrganismo": 83,
+    "nombre": "INSPECCIÓN DE POLICÍA DE CAJAMARCA",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73124",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "CAJAMARCA"
+  },
+  {
+    "idOrganismo": 84,
+    "nombre": "INSPECCIÓN DE POLICÍA DE CONCEPCIÓN",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05206",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CONCEPCIÓN"
+  },
+  {
+    "idOrganismo": 85,
+    "nombre": "INSPECCIÓN DE POLICÍA DE CORINTO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19212",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "CORINTO"
+  },
+  {
+    "idOrganismo": 86,
+    "nombre": "INSPECCIÓN DE POLICÍA DE GUAMO (BOLÍVAR)",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13248",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "EL GUAMO"
+  },
+  {
+    "idOrganismo": 87,
+    "nombre": "INSPECCIÓN DE POLICÍA DE LIBORINA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05411",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "LIBORINA"
+  },
+  {
+    "idOrganismo": 88,
+    "nombre": "INSPECCIÓN DE POLICÍA DE PUEBLORRICO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05576",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "PUEBLORRICO"
+  },
+  {
+    "idOrganismo": 89,
+    "nombre": "INSPECCIÓN DE POLICÍA DE PUERTO SALGAR",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25572",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "PUERTO SALGAR"
+  },
+  {
+    "idOrganismo": 90,
+    "nombre": "INSPECCIÓN DE POLICÍA DE SALENTO",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63690",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "SALENTO"
+  },
+  {
+    "idOrganismo": 91,
+    "nombre": "INSPECCIÓN DE POLICÍA DE SANTO TOMAS",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08685",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "SANTO TOMÁS"
+  },
+  {
+    "idOrganismo": 92,
+    "nombre": "INSPECCIÓN DE POLICÍA DE SILVIA (CAUCA)",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19743",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "SILVIA"
+  },
+  {
+    "idOrganismo": 93,
+    "nombre": "INSPECCIÓN DE POLICÍA DE TARQUI",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41791",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "TARQUI"
+  },
+  {
+    "idOrganismo": 94,
+    "nombre": "INSPECCIÓN DE POLICÍA FILANDIA",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63272",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "FILANDIA"
+  },
+  {
+    "idOrganismo": 95,
+    "nombre": "INSPECCIÓN DE POLICÍA TRÁNSITO Y TRANSPORTE DE USIACURÍ",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08849",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "USIACURÍ"
+  },
+  {
+    "idOrganismo": 96,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO APIA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66045",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "APÍA"
+  },
+  {
+    "idOrganismo": 97,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE AIPE",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41016",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "AIPE"
+  },
+  {
+    "idOrganismo": 98,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE ALEJANDRÍA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05021",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ALEJANDRÍA"
+  },
+  {
+    "idOrganismo": 99,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE ANZÁ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05044",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ANZÁ"
+  },
+  {
+    "idOrganismo": 100,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE ARMENIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05059",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ARMENIA"
+  },
+  {
+    "idOrganismo": 101,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE BRICEÑO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05107",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BRICEÑO"
+  },
+  {
+    "idOrganismo": 102,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE CAMPO DE LA CRUZ",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08137",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "CAMPO DE LA CRUZ"
+  },
+  {
+    "idOrganismo": 103,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE CAROLINA DEL PRÍNCIPE",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05150",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CAROLINA"
+  },
+  {
+    "idOrganismo": 104,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE EL RETIRO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05607",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "RETIRO"
+  },
+  {
+    "idOrganismo": 105,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE LURUACO",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08421",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "LURUACO"
+  },
+  {
+    "idOrganismo": 106,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE MACEO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05425",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "MACEO"
+  },
+  {
+    "idOrganismo": 107,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE MERCADERES",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19450",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "MERCADERES"
+  },
+  {
+    "idOrganismo": 108,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE MONTEBELLO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05467",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "MONTEBELLO"
+  },
+  {
+    "idOrganismo": 109,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE NARIÑO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05483",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "NARIÑO"
+  },
+  {
+    "idOrganismo": 110,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE NEIRA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17486",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "NEIRA"
+  },
+  {
+    "idOrganismo": 111,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE SUPÍA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17777",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "SUPÍA"
+  },
+  {
+    "idOrganismo": 112,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE SUÁREZ",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19780",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "SUÁREZ"
+  },
+  {
+    "idOrganismo": 113,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE TUBARA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08832",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "TUBARÁ"
+  },
+  {
+    "idOrganismo": 114,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE URAMITA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05842",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "URAMITA"
+  },
+  {
+    "idOrganismo": 115,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DE YOLOMBÓ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05890",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "YOLOMBÓ"
+  },
+  {
+    "idOrganismo": 116,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO DEL MUNICIPIO DE BELMIRA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05086",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BELMIRA"
+  },
+  {
+    "idOrganismo": 117,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO EL PEÑOL",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05541",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "PEÑOL"
+  },
+  {
+    "idOrganismo": 118,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPAL DE GUADALUPE",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05315",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GUADALUPE"
+  },
+  {
+    "idOrganismo": 119,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPAL DE SAN PEDRO DE LOS MILAGROS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05664",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN PEDRO DE LOS MILAGROS"
+  },
+  {
+    "idOrganismo": 120,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPAL DE SUAN",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08770",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "SUAN"
+  },
+  {
+    "idOrganismo": 121,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPAL DE VILLA RICA",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19845",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "VILLA RICA"
+  },
+  {
+    "idOrganismo": 122,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPAL PENSILVANIA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17541",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "PENSILVANIA"
+  },
+  {
+    "idOrganismo": 123,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPAL TORO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76823",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "TORO"
+  },
+  {
+    "idOrganismo": 124,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO MUNICIPIO DE RIOFRIO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76616",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "RIOFRÍO"
+  },
+  {
+    "idOrganismo": 125,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO RISARALDA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17616",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "RISARALDA"
+  },
+  {
+    "idOrganismo": 126,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO SABANA DE TORRES",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68655",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "SABANA DE TORRES"
+  },
+  {
+    "idOrganismo": 127,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO SAN PEDRO VALLE DEL CAUCA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76670",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "SAN PEDRO"
+  },
+  {
+    "idOrganismo": 128,
+    "nombre": "INSPECCIÓN DE POLICÍA Y TRÁNSITO VILLARRICA",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73873",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "VILLARRICA"
+  },
+  {
+    "idOrganismo": 129,
+    "nombre": "INSPECCIÓN DE TRÁNSITO DE PALMAR DE VARELA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08520",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "PALMAR DE VARELA"
+  },
+  {
+    "idOrganismo": 130,
+    "nombre": "INSPECCIÓN DE TRÁNSITO DE ROSAS",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19622",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "ROSAS"
+  },
+  {
+    "idOrganismo": 131,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE AGUADAS / Caldas",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17013",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "AGUADAS"
+  },
+  {
+    "idOrganismo": 132,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE BARANOA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08078",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "BARANOA"
+  },
+  {
+    "idOrganismo": 133,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE BARRANCABERMEJA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68081",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "BARRANCABERMEJA"
+  },
+  {
+    "idOrganismo": 134,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE CAJIBIO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19130",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "CAJIBÍO"
+  },
+  {
+    "idOrganismo": 135,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE CALDONO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19137",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "CALDONO"
+  },
+  {
+    "idOrganismo": 136,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE DABEIBA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05234",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "DABEIBA"
+  },
+  {
+    "idOrganismo": 137,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE GUARNE",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05318",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GUARNE"
+  },
+  {
+    "idOrganismo": 138,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE HISPANIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05353",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "HISPANIA"
+  },
+  {
+    "idOrganismo": 139,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE NECOCLÍ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05490",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "NECOCLÍ"
+  },
+  {
+    "idOrganismo": 140,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE PLATO MAGDALENA",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47555",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "PLATO"
+  },
+  {
+    "idOrganismo": 141,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE PONEDERA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08560",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "PONEDERA"
+  },
+  {
+    "idOrganismo": 142,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE SAN ALBERTO",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20710",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "SAN ALBERTO"
+  },
+  {
+    "idOrganismo": 143,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE VEGACHÍ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05858",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "VEGACHÍ"
+  },
+  {
+    "idOrganismo": 144,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE DE ZARAGOZA-ANTIOQUIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05895",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ZARAGOZA"
+  },
+  {
+    "idOrganismo": 145,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE CARMEN DE BOLÍVAR",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13244",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "EL CARMEN DE BOLÍVAR"
+  },
+  {
+    "idOrganismo": 146,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE SONSÓN",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05756",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SONSÓN"
+  },
+  {
+    "idOrganismo": 147,
+    "nombre": "INSPECCIÓN DE TRÁNSITO Y TRANSPORTES DE BOLÍVAR",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76100",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "BOLÍVAR"
+  },
+  {
+    "idOrganismo": 148,
+    "nombre": "INSPECCIÓN LOCAL DE POLICÍA DE EL CARMEN DE ATRATO",
+    "divipolDepto": "27",
+    "divipolMunicipio": "27245",
+    "nombreDepto": "CHOCÓ",
+    "nombreMunicipio": "EL CARMEN DE ATRATO"
+  },
+  {
+    "idOrganismo": 149,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRANSPORTE DE EBÉJICO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05240",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "EBÉJICO"
+  },
+  {
+    "idOrganismo": 150,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE ANORÍ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05040",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ANORÍ"
+  },
+  {
+    "idOrganismo": 151,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE ANSERMANUEVO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76041",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "ANSERMANUEVO"
+  },
+  {
+    "idOrganismo": 152,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE ARANZAZU CALDAS",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17050",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "ARANZAZU"
+  },
+  {
+    "idOrganismo": 153,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE BELÉN DE UMBRÍA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66088",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "BELÉN DE UMBRÍA"
+  },
+  {
+    "idOrganismo": 154,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE CAÑASGORDAS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05138",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CAÑASGORDAS"
+  },
+  {
+    "idOrganismo": 155,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE ITUANGO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05361",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ITUANGO"
+  },
+  {
+    "idOrganismo": 156,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE PALESTINA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17524",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "PALESTINA"
+  },
+  {
+    "idOrganismo": 157,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE SAN CARLOS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05649",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN CARLOS"
+  },
+  {
+    "idOrganismo": 158,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE TARSO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05792",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "TARSO"
+  },
+  {
+    "idOrganismo": 159,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO DE YALI",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05885",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "YALÍ"
+  },
+  {
+    "idOrganismo": 160,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO TÁMESIS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05789",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "TÁMESIS"
+  },
+  {
+    "idOrganismo": 161,
+    "nombre": "INSPECCIÓN MUNICIPAL DE POLICÍA Y TRÁNSITO YONDÓ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05893",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "YONDÓ"
+  },
+  {
+    "idOrganismo": 162,
+    "nombre": "INSPECCIÓN MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE CIMITARRA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68190",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "CIMITARRA"
+  },
+  {
+    "idOrganismo": 163,
+    "nombre": "INSPECCIÓN MUNICIPAL DE TRÁNSITO Y TRANSPORTE LA DORADA/caldas",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17380",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "LA DORADA"
+  },
+  {
+    "idOrganismo": 164,
+    "nombre": "INSPECCIÓN MUNICIPAL Y DE TRÁNSITO DE SAN ROQUE",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05670",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SAN ROQUE"
+  },
+  {
+    "idOrganismo": 165,
+    "nombre": "INSPECCIÓN NACIONAL DE TRÁNSITO BUGALAGRANDE",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76113",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "BUGALAGRANDE"
+  },
+  {
+    "idOrganismo": 166,
+    "nombre": "INSPECCIÓN URBANA DE POLICÍA Y TRÁNSITO DE QUINCHIA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66594",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "QUINCHÍA"
+  },
+  {
+    "idOrganismo": 167,
+    "nombre": "INSTITUTO DE MOVILIDAD Y TRANSPORTE DE TAME",
+    "divipolDepto": "81",
+    "divipolMunicipio": "81794",
+    "nombreDepto": "ARAUCA",
+    "nombreMunicipio": "TAME"
+  },
+  {
+    "idOrganismo": 168,
+    "nombre": "INSTITUTO DE TRANSITO DE BOYACA - ITBOY - SEDE OPERATIVA COMBITA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15204",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "CÓMBITA"
+  },
+  {
+    "idOrganismo": 169,
+    "nombre": "INSTITUTO DE TRANSPORTES Y TRÁNSITO DEPARTAMENTAL DEL HUILA - RIVERA",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41615",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "RIVERA"
+  },
+  {
+    "idOrganismo": 170,
+    "nombre": "INSTITUTO DE TRÁNSITO DE BOYACÁ ITBOY",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15001",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "TUNJA"
+  },
+  {
+    "idOrganismo": 171,
+    "nombre": "INSTITUTO DE TRÁNSITO DEL META DEPARTAMENTAL   (RESTREPO)",
+    "divipolDepto": "50",
+    "divipolMunicipio": "50606",
+    "nombreDepto": "META",
+    "nombreMunicipio": "RESTREPO"
+  },
+  {
+    "idOrganismo": 172,
+    "nombre": "INSTITUTO DE TRÁNSITO DEPARTAMENTAL DEL QUINDÍO",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63190",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "CIRCASIA"
+  },
+  {
+    "idOrganismo": 173,
+    "nombre": "INSTITUTO DE TRÁNSITO DEPARTAMENTAL DEL QUINDÍO",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63190",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "CIRCASIA"
+  },
+  {
+    "idOrganismo": 174,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DE ACACÍAS",
+    "divipolDepto": "50",
+    "divipolMunicipio": "50006",
+    "nombreDepto": "META",
+    "nombreMunicipio": "ACACÍAS"
+  },
+  {
+    "idOrganismo": 175,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DE BOYACÁ - SEDE MIRAFLORES",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15455",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "MIRAFLORES"
+  },
+  {
+    "idOrganismo": 176,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DE EL BANCO",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47245",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "EL BANCO"
+  },
+  {
+    "idOrganismo": 177,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DE FONSECA LA GUAJIRA",
+    "divipolDepto": "44",
+    "divipolMunicipio": "44279",
+    "nombreDepto": "LA GUAJIRA",
+    "nombreMunicipio": "FONSECA"
+  },
+  {
+    "idOrganismo": 178,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEL CAQUETÁ - (FLORENCIA)",
+    "divipolDepto": "18",
+    "divipolMunicipio": "18094",
+    "nombreDepto": "CAQUETÁ",
+    "nombreMunicipio": "BELÉN DE LOS ANDAQUÍES"
+  },
+  {
+    "idOrganismo": 179,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEL META SEDE GUAMAL",
+    "divipolDepto": "50",
+    "divipolMunicipio": "50318",
+    "nombreDepto": "META",
+    "nombreMunicipio": "GUAMAL"
+  },
+  {
+    "idOrganismo": 180,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE LOS PATIOS",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54405",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "LOS PATIOS"
+  },
+  {
+    "idOrganismo": 181,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE ARAUCA",
+    "divipolDepto": "81",
+    "divipolMunicipio": "81001",
+    "nombreDepto": "ARAUCA",
+    "nombreMunicipio": "ARAUCA"
+  },
+  {
+    "idOrganismo": 182,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE BOYACÁ - SEDE OPERATIVA GUATEQUE",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15322",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "GUATEQUE"
+  },
+  {
+    "idOrganismo": 183,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE BOYACÁ - SEDE OPERATIVA MONIQUIRA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15469",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "MONIQUIRÁ"
+  },
+  {
+    "idOrganismo": 184,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE BOYACÁ - SEDE OPERATIVA RAMIRIQUI",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15599",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "RAMIRIQUÍ"
+  },
+  {
+    "idOrganismo": 185,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DEL ATLÁNTICO",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08001",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "BARRANQUILLA"
+  },
+  {
+    "idOrganismo": 186,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DEL HUILA - SEDE TIMANA",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41807",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "TIMANÁ"
+  },
+  {
+    "idOrganismo": 187,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE CIÉNAGA",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47189",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "CIÉNAGA"
+  },
+  {
+    "idOrganismo": 188,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE SOGAMOSO",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15759",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "SOGAMOSO"
+  },
+  {
+    "idOrganismo": 189,
+    "nombre": "INSTITUTO DE TRÁNSITO Y TRANSPORTES DE CHARALA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68167",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "CHARALÁ"
+  },
+  {
+    "idOrganismo": 190,
+    "nombre": "INSTITUTO DE TRÁNSITO, TRANSPORTE Y MOVILIDAD DISTRITAL DE RIOHACHA",
+    "divipolDepto": "44",
+    "divipolMunicipio": "44001",
+    "nombreDepto": "LA GUAJIRA",
+    "nombreMunicipio": "RIOHACHA"
+  },
+  {
+    "idOrganismo": 191,
+    "nombre": "INSTITUTO DEPARTAMENTAL DE TRANSITO DE BOYACA - SEDE NOBSA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15491",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "NOBSA"
+  },
+  {
+    "idOrganismo": 192,
+    "nombre": "INSTITUTO DEPARTAMENTAL DE TRANSITO DE BOYACA - SEDE SANTA ROSA DE VITERBO",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15693",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "SANTA ROSA DE VITERBO"
+  },
+  {
+    "idOrganismo": 193,
+    "nombre": "INSTITUTO DEPARTAMENTAL DE TRANSPORTE Y TRÁNSITO DEL ATLANTICO SEDE SABANAGRANDE",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08634",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "SABANAGRANDE"
+  },
+  {
+    "idOrganismo": 194,
+    "nombre": "INSTITUTO DEPARTAMENTAL DE TRÁNSITO DE BOYACÁ - SEDE SOATA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15753",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "SOATÁ"
+  },
+  {
+    "idOrganismo": 195,
+    "nombre": "INSTITUTO DEPARTAMENTAL DE TRÁNSITO DE BOYACÁ - SEDE VILLA DE LEYVA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15407",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "VILLA DE LEYVA"
+  },
+  {
+    "idOrganismo": 196,
+    "nombre": "INSTITUTO MUNICIPAL DE TRANSPORTE Y MOVILIDAD DE PUERTO ASÍS",
+    "divipolDepto": "86",
+    "divipolMunicipio": "86568",
+    "nombreDepto": "PUTUMAYO",
+    "nombreMunicipio": "PUERTO ASÍS"
+  },
+  {
+    "idOrganismo": 197,
+    "nombre": "INSTITUTO MUNICIPAL DE TRANSPORTE Y TRÁNSITO DE CERETÉ",
+    "divipolDepto": "23",
+    "divipolMunicipio": "23162",
+    "nombreDepto": "CÓRDOBA",
+    "nombreMunicipio": "CERETÉ"
+  },
+  {
+    "idOrganismo": 198,
+    "nombre": "INSTITUTO MUNICIPAL DE TRANSPORTE Y TRÁNSITO DE COROZAL",
+    "divipolDepto": "70",
+    "divipolMunicipio": "70215",
+    "nombreDepto": "SUCRE",
+    "nombreMunicipio": "COROZAL"
+  },
+  {
+    "idOrganismo": 199,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO DE ARACATACA - IMTARAC",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47053",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "ARACATACA"
+  },
+  {
+    "idOrganismo": 200,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y MOVILIDAD DE CAMPOALEGRE - HUILA",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41132",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "CAMPOALEGRE"
+  },
+  {
+    "idOrganismo": 201,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE AGUACHICA",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20011",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "AGUACHICA"
+  },
+  {
+    "idOrganismo": 202,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE ALBANIA",
+    "divipolDepto": "44",
+    "divipolMunicipio": "44035",
+    "nombreDepto": "LA GUAJIRA",
+    "nombreMunicipio": "ALBANIA"
+  },
+  {
+    "idOrganismo": 203,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE FUNDACIÓN",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47288",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "FUNDACIÓN"
+  },
+  {
+    "idOrganismo": 204,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE MAICAO",
+    "divipolDepto": "44",
+    "divipolMunicipio": "44430",
+    "nombreDepto": "LA GUAJIRA",
+    "nombreMunicipio": "MAICAO"
+  },
+  {
+    "idOrganismo": 205,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE PEREIRA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66001",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "PEREIRA"
+  },
+  {
+    "idOrganismo": 206,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE SOLEDAD IMTTRASOL",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08758",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "SOLEDAD"
+  },
+  {
+    "idOrganismo": 207,
+    "nombre": "INSTITUTO MUNICIPAL DE TRÁNSITO Y TRANSPORTES DE CLEMENCIA",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13222",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "CLEMENCIA"
+  },
+  {
+    "idOrganismo": 208,
+    "nombre": "ITBOY - DISTRITO DE TRANSITO No. 4 SABOYA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15632",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "SABOYÁ"
+  },
+  {
+    "idOrganismo": 209,
+    "nombre": "SECRETARIA DE MOVILIDAD DE CUNDINAMARCA - SEDE OPERATIVA EL ROSAL",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25260",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "EL ROSAL"
+  },
+  {
+    "idOrganismo": 210,
+    "nombre": "SECRETARIA DE MOVILIDAD DE CUNDINAMARCA - SEDE OPERATIVA SIBATE",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25740",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "SIBATÉ"
+  },
+  {
+    "idOrganismo": 211,
+    "nombre": "SECRETARIA DE MOVILIDAD DE SAN ANDRÉS ISLAS",
+    "divipolDepto": "88",
+    "divipolMunicipio": "88001",
+    "nombreDepto": "ARCHIPIÉLAGO DE SAN ANDRÉS, PROVIDENCIA Y SANTA CATALINA",
+    "nombreMunicipio": "SAN ANDRÉS"
+  },
+  {
+    "idOrganismo": 212,
+    "nombre": "SECRETARIA DE TRANSITO Y TRANSPORTE DE CAUCASIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05154",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CAUCASIA"
+  },
+  {
+    "idOrganismo": 213,
+    "nombre": "SECRETARIA DE TRÁNSITO Y TRANSPORTE DE SILVANIA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25743",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "SILVANIA"
+  },
+  {
+    "idOrganismo": 214,
+    "nombre": "SECRETARIA DEPARTAMENTAL DE TRÁNSITO Y TRANSPORTE DE CÓRDOBA",
+    "divipolDepto": "23",
+    "divipolMunicipio": "23350",
+    "nombreDepto": "CÓRDOBA",
+    "nombreMunicipio": "LA APARTADA"
+  },
+  {
+    "idOrganismo": 215,
+    "nombre": "SECRETARIA MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE PAMPLONA",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54518",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "PAMPLONA"
+  },
+  {
+    "idOrganismo": 216,
+    "nombre": "SECRETARIA MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE SAN JOSÉ DEL GUAVIARE",
+    "divipolDepto": "95",
+    "divipolMunicipio": "95001",
+    "nombreDepto": "GUAVIARE",
+    "nombreMunicipio": "SAN JOSÉ DEL GUAVIARE"
+  },
+  {
+    "idOrganismo": 217,
+    "nombre": "SECRETARÍA  DE  MOVILIDAD TRÁNSITO Y TRANSPORTE MUNICIPAL DE MIRANDA",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19455",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "MIRANDA"
+  },
+  {
+    "idOrganismo": 218,
+    "nombre": "SECRETARÍA  DE INFRAESTRUCTURA TRÁNSITO Y TRANSPORTE MUNICIPAL DE NEIVA",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41001",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "NEIVA"
+  },
+  {
+    "idOrganismo": 219,
+    "nombre": "SECRETARÍA  DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE ARJONA",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13052",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "ARJONA"
+  },
+  {
+    "idOrganismo": 220,
+    "nombre": "SECRETARÍA  DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE PACHO",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25513",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "PACHO"
+  },
+  {
+    "idOrganismo": 221,
+    "nombre": "SECRETARÍA  DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE PIENDAMO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19548",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "PIENDAMÓ - TUNÍA"
+  },
+  {
+    "idOrganismo": 222,
+    "nombre": "SECRETARÍA  DE TRÁNSITO Y TRANSPORTE MUNICIPAL EL TAMBO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19256",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "EL TAMBO"
+  },
+  {
+    "idOrganismo": 223,
+    "nombre": "SECRETARÍA  MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE CAICEDONIA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76122",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "CAICEDONIA"
+  },
+  {
+    "idOrganismo": 224,
+    "nombre": "SECRETARÍA DE GOBIERNO CON FUNCIONES DE TRÁNSITO",
+    "divipolDepto": "91",
+    "divipolMunicipio": "91001",
+    "nombreDepto": "AMAZONAS",
+    "nombreMunicipio": "LETICIA"
+  },
+  {
+    "idOrganismo": 225,
+    "nombre": "SECRETARÍA DE GOBIERNO CON FUNCIONES DE TRÁNSITO DE VITERBO",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17877",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "VITERBO"
+  },
+  {
+    "idOrganismo": 226,
+    "nombre": "SECRETARÍA DE GOBIERNO DE RIONEGRO",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68615",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "RIONEGRO"
+  },
+  {
+    "idOrganismo": 227,
+    "nombre": "SECRETARÍA DE GOBIERNO E INSPECCIÓN DE POLICÍA DE TOTORO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19824",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "TOTORÓ"
+  },
+  {
+    "idOrganismo": 228,
+    "nombre": "SECRETARÍA DE GOBIERNO TRÁNSITO Y TRANSPORTE DE MELGAR",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73449",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "MELGAR"
+  },
+  {
+    "idOrganismo": 229,
+    "nombre": "SECRETARÍA DE GOBIERNO TRÁNSITO Y TRANSPORTE DE SANTA ROSA DE CABAL",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66682",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "SANTA ROSA DE CABAL"
+  },
+  {
+    "idOrganismo": 230,
+    "nombre": "SECRETARÍA DE INFRAESTRUCTURA PRODUCTIVA DE TRÁNSITO Y TRANSPORTE",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41319",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "GUADALUPE"
+  },
+  {
+    "idOrganismo": 231,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE AMALFI",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05031",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "AMALFI"
+  },
+  {
+    "idOrganismo": 232,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE APARTADÓ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05045",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "APARTADÓ"
+  },
+  {
+    "idOrganismo": 233,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE BOGOTÁ",
+    "divipolDepto": "11",
+    "divipolMunicipio": "11001",
+    "nombreDepto": "BOGOTÁ, D.C.",
+    "nombreMunicipio": "BOGOTÁ, D.C."
+  },
+  {
+    "idOrganismo": 234,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE COPACABANA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05212",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "COPACABANA"
+  },
+  {
+    "idOrganismo": 235,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE CUNDINAMARCA - SEDE OPERATIVA MOSQUERA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25473",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "MOSQUERA"
+  },
+  {
+    "idOrganismo": 236,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE CUNDINAMARCA - SEDE OPERATIVA RICAURTE",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25612",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "RICAURTE"
+  },
+  {
+    "idOrganismo": 237,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE CUNDINAMARCA - SEDE OPERATIVA VILLETA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25875",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "VILLETA"
+  },
+  {
+    "idOrganismo": 238,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE FUNZA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25286",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "FUNZA"
+  },
+  {
+    "idOrganismo": 239,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE FUSAGASUGÁ",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25290",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "FUSAGASUGÁ"
+  },
+  {
+    "idOrganismo": 240,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE GUADALAJARA DE BUGA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76111",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "GUADALAJARA DE BUGA"
+  },
+  {
+    "idOrganismo": 241,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE ITAGÜÍ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05360",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ITAGÜÍ"
+  },
+  {
+    "idOrganismo": 242,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE LA CEJA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05376",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "LA CEJA"
+  },
+  {
+    "idOrganismo": 243,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE MEDELLÍN",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05001",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "MEDELLÍN"
+  },
+  {
+    "idOrganismo": 244,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE PRADERA VALLE",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76563",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "PRADERA"
+  },
+  {
+    "idOrganismo": 245,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE SANTA MARTA",
+    "divipolDepto": "47",
+    "divipolMunicipio": "47001",
+    "nombreDepto": "MAGDALENA",
+    "nombreMunicipio": "SANTA MARTA"
+  },
+  {
+    "idOrganismo": 246,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE SOACHA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25754",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "SOACHA"
+  },
+  {
+    "idOrganismo": 247,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE TRÁNSITO DE OCAÑA",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54498",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "OCAÑA"
+  },
+  {
+    "idOrganismo": 248,
+    "nombre": "SECRETARÍA DE MOVILIDAD DE VILLAVICENCIO",
+    "divipolDepto": "50",
+    "divipolMunicipio": "50001",
+    "nombreDepto": "META",
+    "nombreMunicipio": "VILLAVICENCIO"
+  },
+  {
+    "idOrganismo": 249,
+    "nombre": "SECRETARÍA DE MOVILIDAD DEL DEPARTAMENTO DE BOLÍVAR",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13001",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "CARTAGENA DE INDIAS"
+  },
+  {
+    "idOrganismo": 250,
+    "nombre": "SECRETARÍA DE MOVILIDAD DEL MUNICIPIO DE PALMIRA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76520",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "PALMIRA"
+  },
+  {
+    "idOrganismo": 251,
+    "nombre": "SECRETARÍA DE MOVILIDAD MUNICIPIO DE ENVIGADO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05266",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ENVIGADO"
+  },
+  {
+    "idOrganismo": 252,
+    "nombre": "SECRETARÍA DE MOVILIDAD SANTIAGO DE CALI",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76001",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "SANTIAGO DE CALI"
+  },
+  {
+    "idOrganismo": 253,
+    "nombre": "SECRETARÍA DE MOVILIDAD SOSTENIBLE DE MÁLAGA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68432",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "MÁLAGA"
+  },
+  {
+    "idOrganismo": 254,
+    "nombre": "SECRETARÍA DE MOVILIDAD TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE CARTAGO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76147",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "CARTAGO"
+  },
+  {
+    "idOrganismo": 255,
+    "nombre": "SECRETARÍA DE MOVILIDAD Y TRÁNSITO DE QUIBDÓ",
+    "divipolDepto": "27",
+    "divipolMunicipio": "27001",
+    "nombreDepto": "CHOCÓ",
+    "nombreMunicipio": "QUIBDÓ"
+  },
+  {
+    "idOrganismo": 256,
+    "nombre": "SECRETARÍA DE MOVILIDAD, TRÁNSITO Y TRANSPORTE DE PUERTO BERRIO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05579",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "PUERTO BERRÍO"
+  },
+  {
+    "idOrganismo": 257,
+    "nombre": "SECRETARÍA DE MOVILIDAD, TRÁNSITO Y TRANSPORTE EL CARMEN DE VIBORAL",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05148",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "EL CARMEN DE VIBORAL"
+  },
+  {
+    "idOrganismo": 258,
+    "nombre": "SECRETARÍA DE TRANSPORTE Y MOVILIDAD DE CUNDINAMARCA",
+    "divipolDepto": "11",
+    "divipolMunicipio": "11001",
+    "nombreDepto": "BOGOTÁ, D.C.",
+    "nombreMunicipio": "BOGOTÁ, D.C."
+  },
+  {
+    "idOrganismo": 259,
+    "nombre": "SECRETARÍA DE TRANSPORTE Y TRÁNSITO DE GIRARDOTA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05308",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "GIRARDOTA"
+  },
+  {
+    "idOrganismo": 260,
+    "nombre": "SECRETARÍA DE TRANSPORTE Y TRÁNSITO DE SANTA ROSA DE OSOS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05686",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SANTA ROSA DE OSOS"
+  },
+  {
+    "idOrganismo": 261,
+    "nombre": "SECRETARÍA DE TRANSPORTE Y TRÁNSITO DE SINCELEJO",
+    "divipolDepto": "70",
+    "divipolMunicipio": "70001",
+    "nombreDepto": "SUCRE",
+    "nombreMunicipio": "SINCELEJO"
+  },
+  {
+    "idOrganismo": 262,
+    "nombre": "SECRETARÍA DE TRANSPORTE Y TRÁNSITO DEL MUNICIPIO DE EL SANTUARIO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05697",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "EL SANTUARIO"
+  },
+  {
+    "idOrganismo": 263,
+    "nombre": "SECRETARÍA DE TRANSPORTE Y TRÁNSITO MUNICIPAL DE AGUSTÍN CODAZZI",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20013",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "AGUSTÍN CODAZZI"
+  },
+  {
+    "idOrganismo": 264,
+    "nombre": "SECRETARÍA DE TRANSPORTE, MOVILIDAD Y TRÁNSITO DE TURBO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05837",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "TURBO"
+  },
+  {
+    "idOrganismo": 265,
+    "nombre": "SECRETARÍA DE TRANSPORTE, TRÁNSITO Y MOVILIDAD DE FRONTINO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05284",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "FRONTINO"
+  },
+  {
+    "idOrganismo": 266,
+    "nombre": "SECRETARÍA DE TRANSPORTES Y TRÁNSITO DE BELLO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05088",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BELLO"
+  },
+  {
+    "idOrganismo": 267,
+    "nombre": "SECRETARÍA DE TRANSPORTES Y TRÁNSITO MUNICIPAL DE MANIZALES",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17001",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "MANIZALES"
+  },
+  {
+    "idOrganismo": 268,
+    "nombre": "SECRETARÍA DE TRÁNSITO DE CHIGORODÓ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05172",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CHIGORODÓ"
+  },
+  {
+    "idOrganismo": 269,
+    "nombre": "SECRETARÍA DE TRÁNSITO E INFRAESTRUCTURA DE SEVILLA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76736",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "SEVILLA"
+  },
+  {
+    "idOrganismo": 270,
+    "nombre": "SECRETARÍA DE TRÁNSITO MUNICIPAL DE TULUÁ",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76834",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "TULUÁ"
+  },
+  {
+    "idOrganismo": 271,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE CUNDINAMARCA SEDE CAJICA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25126",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "CAJICÁ"
+  },
+  {
+    "idOrganismo": 272,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE DOSQUEBRADAS / RISARALDA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66170",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "DOSQUEBRADAS"
+  },
+  {
+    "idOrganismo": 273,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE FLORENCIA",
+    "divipolDepto": "18",
+    "divipolMunicipio": "18001",
+    "nombreDepto": "CAQUETÁ",
+    "nombreMunicipio": "FLORENCIA"
+  },
+  {
+    "idOrganismo": 274,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE GUACARÍ",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76318",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "GUACARÍ"
+  },
+  {
+    "idOrganismo": 275,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE LA VIRGINIA",
+    "divipolDepto": "66",
+    "divipolMunicipio": "66400",
+    "nombreDepto": "RISARALDA",
+    "nombreMunicipio": "LA VIRGINIA"
+  },
+  {
+    "idOrganismo": 276,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE PIEDECUESTA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68547",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "PIEDECUESTA"
+  },
+  {
+    "idOrganismo": 277,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE SAN SEBASTÍAN DE MARIQUITA",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73443",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "SAN SEBASTIÁN DE MARIQUITA"
+  },
+  {
+    "idOrganismo": 278,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DE UBATÉ",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25843",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "VILLA DE SAN DIEGO DE UBATÉ"
+  },
+  {
+    "idOrganismo": 279,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD DEL MUNICIPIO EL CERRITO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76248",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "EL CERRITO"
+  },
+  {
+    "idOrganismo": 280,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y MOVILIDAD MUNICIPAL DE PUERTO TEJADA",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19573",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "PUERTO TEJADA"
+  },
+  {
+    "idOrganismo": 281,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE  DEL SOCORRO",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68755",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "SOCORRO"
+  },
+  {
+    "idOrganismo": 282,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE  MUNICIPAL DE BARBOSA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05079",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "BARBOSA"
+  },
+  {
+    "idOrganismo": 283,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE ANDES",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05034",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "ANDES"
+  },
+  {
+    "idOrganismo": 284,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE BOSCONIA",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20060",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "BOSCONIA"
+  },
+  {
+    "idOrganismo": 285,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE CALDAS",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05129",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CALDAS"
+  },
+  {
+    "idOrganismo": 286,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE CHIQUINQUIRÁ",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15176",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "CHIQUINQUIRÁ"
+  },
+  {
+    "idOrganismo": 287,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE CIUDAD BOLÍVAR",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05101",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "CIUDAD BOLÍVAR"
+  },
+  {
+    "idOrganismo": 288,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE CONVENCIÓN",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54206",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "CONVENCIÓN"
+  },
+  {
+    "idOrganismo": 289,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE CURUMANÍ",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20228",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "CURUMANÍ"
+  },
+  {
+    "idOrganismo": 290,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE FLORIDA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76275",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "FLORIDA"
+  },
+  {
+    "idOrganismo": 291,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE GARZÓN",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41298",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "GARZÓN"
+  },
+  {
+    "idOrganismo": 292,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE GINEBRA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76306",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "GINEBRA"
+  },
+  {
+    "idOrganismo": 293,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE LA ESTRELLA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05380",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "LA ESTRELLA"
+  },
+  {
+    "idOrganismo": 294,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE LA PLATA",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41396",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "LA PLATA"
+  },
+  {
+    "idOrganismo": 295,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE MADRID",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25430",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "MADRID"
+  },
+  {
+    "idOrganismo": 296,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE OIBA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68500",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "OIBA"
+  },
+  {
+    "idOrganismo": 297,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE PAIPA - BOYACA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15516",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "PAIPA"
+  },
+  {
+    "idOrganismo": 298,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE PLANETA RICA",
+    "divipolDepto": "23",
+    "divipolMunicipio": "23555",
+    "nombreDepto": "CÓRDOBA",
+    "nombreMunicipio": "PLANETA RICA"
+  },
+  {
+    "idOrganismo": 299,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE PUERTO TRIUNFO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05591",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "PUERTO TRIUNFO"
+  },
+  {
+    "idOrganismo": 300,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE SABANETA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05631",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SABANETA"
+  },
+  {
+    "idOrganismo": 301,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE SALAMINA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17653",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "SALAMINA"
+  },
+  {
+    "idOrganismo": 302,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE SAN GIL",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68679",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "SAN GIL"
+  },
+  {
+    "idOrganismo": 303,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE SAN VICENTE CHUCURÍ",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68689",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "SAN VICENTE DE CHUCURÍ"
+  },
+  {
+    "idOrganismo": 304,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE SEGOVIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05736",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SEGOVIA"
+  },
+  {
+    "idOrganismo": 305,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE TUNJA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15001",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "TUNJA"
+  },
+  {
+    "idOrganismo": 306,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE TURBACO",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13836",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "TURBACO"
+  },
+  {
+    "idOrganismo": 307,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE VALLEDUPAR",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20001",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "VALLEDUPAR"
+  },
+  {
+    "idOrganismo": 308,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE VÉLEZ",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68861",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "VÉLEZ"
+  },
+  {
+    "idOrganismo": 309,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE YARUMAL",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05887",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "YARUMAL"
+  },
+  {
+    "idOrganismo": 310,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DE ZARZAL",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76895",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "ZARZAL"
+  },
+  {
+    "idOrganismo": 311,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE CHACHAGUÍ",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52240",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "CHACHAGÜÍ"
+  },
+  {
+    "idOrganismo": 312,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE EL BAGRE - ANTIOQUIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05250",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "EL BAGRE"
+  },
+  {
+    "idOrganismo": 313,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE LA JAGUA DE IBIRICO",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20400",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "LA JAGUA DE IBIRICO"
+  },
+  {
+    "idOrganismo": 314,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE MALAMBO",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08433",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "MALAMBO"
+  },
+  {
+    "idOrganismo": 315,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEL MUNICIPIO DE MARINILLA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05440",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "MARINILLA"
+  },
+  {
+    "idOrganismo": 316,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE CHOCÓ",
+    "divipolDepto": "27",
+    "divipolMunicipio": "27001",
+    "nombreDepto": "CHOCÓ",
+    "nombreMunicipio": "QUIBDÓ"
+  },
+  {
+    "idOrganismo": 317,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DISTRITAL DE BUENAVENTURA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76109",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "BUENAVENTURA"
+  },
+  {
+    "idOrganismo": 318,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE DISTRITAL DE MOMPÓS",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13468",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "SANTA CRUZ DE MOMPOX"
+  },
+  {
+    "idOrganismo": 319,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL  DE SANTA ROSA DEL SUR -BOLÍVAR",
+    "divipolDepto": "13",
+    "divipolMunicipio": "13688",
+    "nombreDepto": "BOLÍVAR",
+    "nombreMunicipio": "SANTA ROSA DEL SUR"
+  },
+  {
+    "idOrganismo": 320,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL  DE YUMBO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76892",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "YUMBO"
+  },
+  {
+    "idOrganismo": 321,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE ANSERMA",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17042",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "ANSERMA"
+  },
+  {
+    "idOrganismo": 322,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE ARMENIA",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63001",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "ARMENIA"
+  },
+  {
+    "idOrganismo": 323,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE BOLÍVAR",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19100",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "BOLÍVAR"
+  },
+  {
+    "idOrganismo": 324,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE CALOTO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19142",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "CALOTO"
+  },
+  {
+    "idOrganismo": 325,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE CANDELARIA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76130",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "CANDELARIA"
+  },
+  {
+    "idOrganismo": 326,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE CHÍA",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25175",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "CHÍA"
+  },
+  {
+    "idOrganismo": 327,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE CÚCUTA",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54001",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "SAN JOSÉ DE CÚCUTA"
+  },
+  {
+    "idOrganismo": 328,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE DUITAMA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15238",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "DUITAMA"
+  },
+  {
+    "idOrganismo": 329,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE FACATATIVÁ",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25269",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "FACATATIVÁ"
+  },
+  {
+    "idOrganismo": 330,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE FRESNO",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73283",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "FRESNO"
+  },
+  {
+    "idOrganismo": 331,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE GALAPA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08296",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "GALAPA"
+  },
+  {
+    "idOrganismo": 332,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE GIRARDOT",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25307",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "GIRARDOT"
+  },
+  {
+    "idOrganismo": 333,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE GRANADA",
+    "divipolDepto": "50",
+    "divipolMunicipio": "50313",
+    "nombreDepto": "META",
+    "nombreMunicipio": "GRANADA"
+  },
+  {
+    "idOrganismo": 334,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE INÍRIDA",
+    "divipolDepto": "94",
+    "divipolMunicipio": "94001",
+    "nombreDepto": "GUAINÍA",
+    "nombreMunicipio": "INÍRIDA"
+  },
+  {
+    "idOrganismo": 335,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE IPIALES / NARIÑO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52356",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "IPIALES"
+  },
+  {
+    "idOrganismo": 336,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE JAMUNDÍ",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76364",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "JAMUNDÍ"
+  },
+  {
+    "idOrganismo": 337,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE LA TEBAIDA",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63401",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "LA TEBAIDA"
+  },
+  {
+    "idOrganismo": 338,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE LA UNIÓN",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76400",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "LA UNIÓN"
+  },
+  {
+    "idOrganismo": 339,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE LA UNIÓN",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05400",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "LA UNIÓN"
+  },
+  {
+    "idOrganismo": 340,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE LORICA",
+    "divipolDepto": "23",
+    "divipolMunicipio": "23417",
+    "nombreDepto": "CÓRDOBA",
+    "nombreMunicipio": "LORICA"
+  },
+  {
+    "idOrganismo": 341,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE LÍBANO",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73411",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "LÍBANO"
+  },
+  {
+    "idOrganismo": 342,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE MOCOA",
+    "divipolDepto": "86",
+    "divipolMunicipio": "86001",
+    "nombreDepto": "PUTUMAYO",
+    "nombreMunicipio": "MOCOA"
+  },
+  {
+    "idOrganismo": 343,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE MONTERÍA",
+    "divipolDepto": "23",
+    "divipolMunicipio": "23001",
+    "nombreDepto": "CÓRDOBA",
+    "nombreMunicipio": "MONTERÍA"
+  },
+  {
+    "idOrganismo": 344,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE NARIÑO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52480",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "NARIÑO"
+  },
+  {
+    "idOrganismo": 345,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE ORITO",
+    "divipolDepto": "86",
+    "divipolMunicipio": "86320",
+    "nombreDepto": "PUTUMAYO",
+    "nombreMunicipio": "ORITO"
+  },
+  {
+    "idOrganismo": 346,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE PATÍA",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19532",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "PATÍA"
+  },
+  {
+    "idOrganismo": 347,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE POPAYÀN",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19001",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "POPAYÁN"
+  },
+  {
+    "idOrganismo": 348,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE PUERTO BOYACÁ",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15572",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "PUERTO BOYACÁ"
+  },
+  {
+    "idOrganismo": 349,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE PUERTO COLOMBIA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08573",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "PUERTO COLOMBIA"
+  },
+  {
+    "idOrganismo": 350,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE RICAURTE - NARIÑO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52612",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "RICAURTE"
+  },
+  {
+    "idOrganismo": 351,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE SABANALARGA - ATLÁNTICO",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08638",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "SABANALARGA"
+  },
+  {
+    "idOrganismo": 352,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE SAHAGUN",
+    "divipolDepto": "23",
+    "divipolMunicipio": "23660",
+    "nombreDepto": "CÓRDOBA",
+    "nombreMunicipio": "SAHAGÚN"
+  },
+  {
+    "idOrganismo": 353,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE SANTANDER DE QUILICHAO      /    CAUCA",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19698",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "SANTANDER DE QUILICHAO"
+  },
+  {
+    "idOrganismo": 354,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE TIMBÍO",
+    "divipolDepto": "19",
+    "divipolMunicipio": "19807",
+    "nombreDepto": "CAUCA",
+    "nombreMunicipio": "TIMBÍO"
+  },
+  {
+    "idOrganismo": 355,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE TÚQUERRES",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52838",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "TÚQUERRES"
+  },
+  {
+    "idOrganismo": 356,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE URRAO",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05847",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "URRAO"
+  },
+  {
+    "idOrganismo": 357,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE YOPAL",
+    "divipolDepto": "85",
+    "divipolMunicipio": "85001",
+    "nombreDepto": "CASANARE",
+    "nombreMunicipio": "YOPAL"
+  },
+  {
+    "idOrganismo": 358,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL DE YOTOCO - VALLE DEL CAUCA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76890",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "YOTOCO"
+  },
+  {
+    "idOrganismo": 359,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE MUNICIPAL LA PAZ",
+    "divipolDepto": "20",
+    "divipolMunicipio": "20621",
+    "nombreDepto": "CESAR",
+    "nombreMunicipio": "LA PAZ"
+  },
+  {
+    "idOrganismo": 360,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTE VALLE DEL GUAMUEZ (LA HORMIGA)",
+    "divipolDepto": "86",
+    "divipolMunicipio": "86865",
+    "nombreDepto": "PUTUMAYO",
+    "nombreMunicipio": "VALLE DEL GUAMUEZ"
+  },
+  {
+    "idOrganismo": 361,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTES DE SANTA FÉ DE ANTIOQUIA",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05042",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "SANTA FÉ DE ANTIOQUIA"
+  },
+  {
+    "idOrganismo": 362,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTES DE ZIPAQUIRÁ",
+    "divipolDepto": "25",
+    "divipolMunicipio": "25899",
+    "nombreDepto": "CUNDINAMARCA",
+    "nombreMunicipio": "ZIPAQUIRÁ"
+  },
+  {
+    "idOrganismo": 363,
+    "nombre": "SECRETARÍA DE TRÁNSITO Y TRANSPORTES MUNICIPAL DE GARAGOA -BOYACA",
+    "divipolDepto": "15",
+    "divipolMunicipio": "15299",
+    "nombreDepto": "BOYACÁ",
+    "nombreMunicipio": "GARAGOA"
+  },
+  {
+    "idOrganismo": 364,
+    "nombre": "SECRETARÍA DE TRÁNSITO, TRANSPORTE Y DE LA MOVILIDAD DE IBAGUÉ",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73001",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "IBAGUÉ"
+  },
+  {
+    "idOrganismo": 365,
+    "nombre": "SECRETARÍA DE TRÁNSITO, TRANSPORTE Y MOVILIDAD DE LEBRIJA",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68406",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "LEBRIJA"
+  },
+  {
+    "idOrganismo": 366,
+    "nombre": "SECRETARÍA DE TRÁNSITO, TRANSPORTE Y SEGURIDAD DE ANDALUCIA",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76036",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "ANDALUCÍA"
+  },
+  {
+    "idOrganismo": 367,
+    "nombre": "SECRETARÍA DE TRÁSITO DEPARTAMENTAL NORTE DE SANTANDER",
+    "divipolDepto": "54",
+    "divipolMunicipio": "54261",
+    "nombreDepto": "NORTE DE SANTANDER",
+    "nombreMunicipio": "EL ZULIA"
+  },
+  {
+    "idOrganismo": 368,
+    "nombre": "SECRETARÍA DEPARTAMENTAL DE TRÁNSITO Y TRANSPORTE DE SUCRE",
+    "divipolDepto": "70",
+    "divipolMunicipio": "70670",
+    "nombreDepto": "SUCRE",
+    "nombreMunicipio": "SAMPUÉS"
+  },
+  {
+    "idOrganismo": 369,
+    "nombre": "SECRETARÍA DISTRITAL DE TRÁNSITO Y SEGURIDAD VIAL DE BARRANQUILLA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08001",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "BARRANQUILLA"
+  },
+  {
+    "idOrganismo": 370,
+    "nombre": "SECRETARÍA DISTRITAL DE TRÁNSITO Y SEGURIDAD VIAL DE BARRANQUILLA",
+    "divipolDepto": "08",
+    "divipolMunicipio": "08001",
+    "nombreDepto": "ATLÁNTICO",
+    "nombreMunicipio": "BARRANQUILLA"
+  },
+  {
+    "idOrganismo": 371,
+    "nombre": "SECRETARÍA MUNICIPAL DE TRÁNSITO DE ROLDANILLO",
+    "divipolDepto": "76",
+    "divipolMunicipio": "76622",
+    "nombreDepto": "VALLE DEL CAUCA",
+    "nombreMunicipio": "ROLDANILLO"
+  },
+  {
+    "idOrganismo": 372,
+    "nombre": "SECRETARÍA MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE CHINCHINÁ",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17174",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "CHINCHINÁ"
+  },
+  {
+    "idOrganismo": 373,
+    "nombre": "SECRETARÍA MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE GIRÓN",
+    "divipolDepto": "68",
+    "divipolMunicipio": "68307",
+    "nombreDepto": "SANTANDER",
+    "nombreMunicipio": "GIRÓN"
+  },
+  {
+    "idOrganismo": 374,
+    "nombre": "SECRETARÍA MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE HONDA",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73349",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "HONDA"
+  },
+  {
+    "idOrganismo": 375,
+    "nombre": "SECRETARÍA MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE PASTO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52001",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "PASTO"
+  },
+  {
+    "idOrganismo": 376,
+    "nombre": "SECRETARÍA TRÁNSITO Y TRANSPORTE DE SARAVENA",
+    "divipolDepto": "81",
+    "divipolMunicipio": "81736",
+    "nombreDepto": "ARAUCA",
+    "nombreMunicipio": "SARAVENA"
+  },
+  {
+    "idOrganismo": 377,
+    "nombre": "SUBSECRETARÍA  DE CONVIVENCIA CIUDADANA, ESPACIO PÚBLICO Y TRANSPORTE DE JERICÓ",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05368",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "JERICÓ"
+  },
+  {
+    "idOrganismo": 378,
+    "nombre": "SUBSECRETARÍA DE CONVIVENCIA Y MOVILIDAD DE JARDÍN",
+    "divipolDepto": "05",
+    "divipolMunicipio": "05364",
+    "nombreDepto": "ANTIOQUIA",
+    "nombreMunicipio": "JARDÍN"
+  },
+  {
+    "idOrganismo": 379,
+    "nombre": "SUBSECRETARÍA DE MOVILIDAD DE RIOSUCIO",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17614",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "RIOSUCIO"
+  },
+  {
+    "idOrganismo": 380,
+    "nombre": "SUBSECRETARÍA DE MOVILIDAD Y SEGURIDAD VIAL DEL MUNICIPIO DE CALARCÁ",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63130",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "CALARCÁ"
+  },
+  {
+    "idOrganismo": 381,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DE QUIMBAYA",
+    "divipolDepto": "63",
+    "divipolMunicipio": "63594",
+    "nombreDepto": "QUINDÍO",
+    "nombreMunicipio": "QUIMBAYA"
+  },
+  {
+    "idOrganismo": 382,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52001",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "PASTO"
+  },
+  {
+    "idOrganismo": 383,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO SEDE BUESACO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52110",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "BUESACO"
+  },
+  {
+    "idOrganismo": 384,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO SEDE CHACHAGUÍ",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52240",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "CHACHAGÜÍ"
+  },
+  {
+    "idOrganismo": 385,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO SEDE GUACHUCAL",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52317",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "GUACHUCAL"
+  },
+  {
+    "idOrganismo": 386,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO SEDE IMUES",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52354",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "IMUÉS"
+  },
+  {
+    "idOrganismo": 387,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO SEDE OPERATIVA TANGUA",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52788",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "TANGUA"
+  },
+  {
+    "idOrganismo": 388,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTE DEPARTAMENTAL DE NARIÑO SEDE PUPIALES",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52585",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "PUPIALES"
+  },
+  {
+    "idOrganismo": 389,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTES DEPARTAMENTAL DE NARIÑO SEDE SANDONA",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52683",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "SANDONÁ"
+  },
+  {
+    "idOrganismo": 390,
+    "nombre": "SUBSECRETARÍA DE TRÁNSITO Y TRANSPORTES DEPARTAMENTALES DE NARIÑO SEDE LA UNIÓN",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52399",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "LA UNIÓN"
+  },
+  {
+    "idOrganismo": 391,
+    "nombre": "UNIDAD ADMINISTRATIVA INSPECCIÓN DE POLICÍA MUNICIPAL DE MARMATO",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17442",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "MARMATO"
+  },
+  {
+    "idOrganismo": 392,
+    "nombre": "UNIDAD DE TRÁNSITO DEPARTAMENTAL CALDAS",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17873",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "VILLAMARÍA"
+  },
+  {
+    "idOrganismo": 393,
+    "nombre": "UNIDAD DE TRÁNSITO Y TRANSPORTE DE MANZANARES / caldas",
+    "divipolDepto": "17",
+    "divipolMunicipio": "17433",
+    "nombreDepto": "CALDAS",
+    "nombreMunicipio": "MANZANARES"
+  },
+  {
+    "idOrganismo": 394,
+    "nombre": "UNIDAD ESPECIAL DE TRÁNSITO Y TRANSPORTE DE TUMACO",
+    "divipolDepto": "52",
+    "divipolMunicipio": "52835",
+    "nombreDepto": "NARIÑO",
+    "nombreMunicipio": "SAN ANDRÉS DE TUMACO"
+  },
+  {
+    "idOrganismo": 395,
+    "nombre": "UNIDAD MUNICIPAL DE TRÁNSITO Y TRANSPORTE DE PALERMO",
+    "divipolDepto": "41",
+    "divipolMunicipio": "41524",
+    "nombreDepto": "HUILA",
+    "nombreMunicipio": "PALERMO"
+  },
+  {
+    "idOrganismo": 396,
+    "nombre": "UNIDAD REGIONAL DE TRANSITO Y TRANSPORTE GUAMO",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73319",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "GUAMO"
+  },
+  {
+    "idOrganismo": 397,
+    "nombre": "UNIDAD REGIONAL DE TRÁNSITO Y TRANSPORTE CHAPARRAL",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73168",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "CHAPARRAL"
+  },
+  {
+    "idOrganismo": 398,
+    "nombre": "UNIDAD REGIONAL DE TRÁNSITO Y TRANSPORTE PURIFICACIÓN",
+    "divipolDepto": "73",
+    "divipolMunicipio": "73585",
+    "nombreDepto": "TOLIMA",
+    "nombreMunicipio": "PURIFICACIÓN"
+  }
+]

@@ -14,6 +14,7 @@
       [attr.required]="required ? true : null"
       [attr.aria-required]="required ? true : null"
       [ngModel]="displayText"
+      [ngModelOptions]="{ standalone: true }"
       (ngModelChange)="onTextInput($event)"
       (blur)="onTextBlur()"
       (keydown.enter)="onTextEnter($event)"

@@ -16,9 +16,9 @@
 
           Aquí prepara cada evidencia del checklist SISI/CCPS (documentos de su empresa; el portal es solo donde usted los carga).
 
-          Vigencia <strong>{{ data()!.vigencia }}</strong> · Su nivel:
-
+          Vigencia <strong>{{ data()!.vigencia }}</strong> ·
           <strong>{{ data()!.nivelLabel }}</strong>.
+          {{ data()!.mensajeNivel }}
 
         </p>
 
@@ -31,6 +31,13 @@
 
 
   <argo-pesv-nav active="fase1" />
+
+  <argo-pesv-ayuda
+    ahora="Busque el ítem 3, el líder del PESV, y pulse Llenar formulario."
+    detalle="Cada fila es un documento. Lo que escriba queda guardado en esta vigencia. Las filas que dicen No aplica no se llenan. El asterisco del formulario marca lo obligatorio."
+    siguiente="/app/pesv/fase1/item/3"
+    siguienteTexto="Abrir el formulario del líder"
+  />
 
 
 
@@ -325,15 +332,15 @@
                   @if (esCertRepresentanteLegal(item)) {
 
                     <p class="celda-lead">
-                      Certificación firmada por el <strong>representante legal</strong> sobre cumplimiento del PESV
-                      (Res. {{ item.itemNo === 1 ? '1565/2014' : '40595/2022' }}). No es documento de Supertransporte.
+                      Llene el formulario y pulse <strong>Crear PDF</strong>. Ahí salen la razón social, el NIT, el representante, el documento y la fecha
+                      (Res. {{ item.itemNo === 1 ? '1565/2014' : '40595/2022' }}).
                     </p>
 
                     <a class="btn-form" [routerLink]="['/app/pesv/fase1/item', item.itemNo]">Llenar formulario</a>
 
                     <label class="file-mini">
 
-                      <span>Adjuntar PDF firmado</span>
+                      <span>Adjuntar el PDF ya firmado</span>
 
                       <input type="file" accept=".pdf" (change)="onFileExterno(item, $event)" />
 
@@ -419,9 +426,13 @@
 
                   @if (esGenerable(item) && item.aplica) {
 
-                    <button type="button" (click)="generar(item)">Crear {{ item.documento?.salida || 'PDF' }}</button>
+                    <button type="button" (click)="generar(item)" [disabled]="generando() === item.itemNo">
+                      {{ generando() === item.itemNo ? 'Generando…' : 'Crear ' + (item.documento?.salida || 'PDF') }}
+                    </button>
 
-                    <span class="accion-hint">Después descargue y súbalo a SISI.</span>
+                    <span class="accion-hint">
+                      {{ esCertRepresentanteLegal(item) ? 'Luego descargue la certificación para firmarla.' : 'Después descargue y súbalo a SISI.' }}
+                    </span>
 
                   }
 

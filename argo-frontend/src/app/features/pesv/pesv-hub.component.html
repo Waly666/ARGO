@@ -5,8 +5,8 @@
       <p class="pesv-crumb"><a routerLink="/app/dashboard">Inicio ERP</a> · PESV</p>
       <h1>Plan Estratégico de Seguridad Vial</h1>
       <p class="pesv-lead">
-        Captura datos en ARGO → genera documentos institucionales (plantillas PESV) → usted los carga en SISI/CCPS.
-        Autodiagnóstico, Fase 1 (generación), Fase 2 (indicadores) y tablero — vigencia {{ vigencia() }}.
+        Para generar documentos de la vigencia {{ vigencia() }}, empiece por el autodiagnóstico.
+        Antes cargue la empresa y los vehículos: de ahí salen el nivel y los datos que van en los archivos.
       </p>
     </div>
     <span class="pesv-chip">Módulo PESV</span>
@@ -21,37 +21,62 @@
   @if (loading()) {
     <p class="hint">Cargando resumen…</p>
   } @else {
+    <argo-pesv-ayuda
+      [ahora]="resumen()?.autodiagnostico ? 'Ya puede generar documentos.' : 'Empiece en el autodiagnóstico y pulse Confirmar diagnóstico.'"
+      [detalle]="resumen()?.autodiagnostico ? 'Si quiere que el archivo traiga el líder y los demás textos, llene antes el formulario de la Fase 1. Si genera ya, sale la plantilla con el texto de ejemplo.' : 'Antes revise Empresa (razón social, NIT y representante) y que los vehículos estén cargados. Ese número define el nivel.'"
+      [siguiente]="resumen()?.autodiagnostico ? '/app/pesv/documentos' : '/app/pesv/autodiagnostico'"
+      [siguienteTexto]="resumen()?.autodiagnostico ? 'Ir a generar' : 'Ir al autodiagnóstico'"
+    />
     <section class="pesv-section">
       <header class="pesv-section-head">
         <span class="pesv-section-badge">1</span>
-        <h2>Flujo recomendado</h2>
+        <h2>Empiece por aquí</h2>
       </header>
       <div class="pesv-section-body">
-        <div class="pesv-workflow">
-          <a class="pesv-wf-step" routerLink="/app/pesv/autodiagnostico">
+        <ol class="pesv-guia">
+          <li>
             <span class="num">1</span>
-            <strong>Autodiagnóstico</strong>
-            <span>Nivel Básico / Estándar / Avanzado</span>
-          </a>
-          <span class="pesv-wf-arrow">→</span>
-          <a class="pesv-wf-step" routerLink="/app/pesv/fase1">
+            <div>
+              <strong>Empresa</strong>
+              <p>Razón social, NIT y representante legal. Esos datos salen en todos los documentos.</p>
+              <a routerLink="/app/configuracion/empresa">Abrir empresa</a>
+            </div>
+          </li>
+          <li>
             <span class="num">2</span>
-            <strong>Fase 1</strong>
-            <span>Checklist implementación</span>
-          </a>
-          <span class="pesv-wf-arrow">→</span>
-          <a class="pesv-wf-step" routerLink="/app/pesv/fase2">
+            <div>
+              <strong>Vehículos</strong>
+              <p>La flota completa. Con ese número se decide si presenta el PESV y el nivel: 10 a 49 Básico, 50 a 99 Estándar, 100 o más Avanzado.</p>
+              <a routerLink="/app/vehiculos">Abrir vehículos</a>
+            </div>
+          </li>
+          <li [class.ahora]="!resumen()?.autodiagnostico">
             <span class="num">3</span>
-            <strong>Fase 2</strong>
-            <span>Periodos y evidencias</span>
-          </a>
-          <span class="pesv-wf-arrow">→</span>
-          <a class="pesv-wf-step" routerLink="/app/pesv/tablero">
+            <div>
+              <strong>Autodiagnóstico y confirmar</strong>
+              <p>Este es el paso que habilita Generar. Revise el número de vehículos y pulse Confirmar diagnóstico.</p>
+              <a class="btn-form" routerLink="/app/pesv/autodiagnostico">
+                {{ resumen()?.autodiagnostico ? 'Ya está confirmado. Revisar' : 'Ir al autodiagnóstico' }}
+              </a>
+            </div>
+          </li>
+          <li>
             <span class="num">4</span>
-            <strong>Tablero</strong>
-            <span>Indicadores 6.x · 8.x · 9.x</span>
-          </a>
-        </div>
+            <div>
+              <strong>Textos de cada documento</strong>
+              <p>En Fase 1, el ítem 3 es el líder del PESV. Cada fila tiene Llenar formulario. Si no los llena, el archivo se genera con el texto de ejemplo de la plantilla.</p>
+              <a routerLink="/app/pesv/fase1">Abrir formularios</a>
+            </div>
+          </li>
+          <li>
+            <span class="num">5</span>
+            <div>
+              <strong>Generar</strong>
+              <p>PESV → Documentos. Cada clic crea una versión nueva. La plantilla original no se modifica.</p>
+              <a class="btn-form" routerLink="/app/pesv/documentos">Ir a generar</a>
+            </div>
+          </li>
+        </ol>
       </div>
     </section>
 
@@ -59,6 +84,7 @@
       <article class="pesv-stat-card">
         <h3>Nivel PESV</h3>
         <p class="pesv-stat-value">{{ resumen()?.nivelLabel || '—' }}</p>
+        <span class="hint">{{ resumen()?.mensajeNivel }}</span>
         <a routerLink="/app/pesv/autodiagnostico">Actualizar autodiagnóstico</a>
       </article>
       <article class="pesv-stat-card">

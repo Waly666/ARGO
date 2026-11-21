@@ -13,10 +13,10 @@
 
   <argo-alerta-pago-alumno-banner modo="panel" />
 
-  <form class="date-filter" (ngSubmit)="cargar()">
+  <div class="date-filter">
     <div class="df-head">
-      <h2>Período de análisis (caja)</h2>
-      <p class="df-hint">Filtra ingresos, egresos y resumen financiero. El resto del panel es global.</p>
+      <h2>Período de análisis</h2>
+      <p class="df-hint">Mueve la caja, los certificados emitidos y las liquidaciones de esas fechas. Alumnos y caracterización siguen siendo del centro completo.</p>
     </div>
     <div class="df-row">
       <label>
@@ -28,25 +28,26 @@
         <argo-date-input [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" name="hasta" ></argo-date-input>
       </label>
       <div class="df-actions">
-        <button type="submit" class="primary sm" [disabled]="loading()">Aplicar</button>
-        <button type="button" class="ghost sm" (click)="aplicarPresetMesActual(); cargar()" [disabled]="loading()">
+        <button type="button" class="primary sm" (click)="aplicarFechas()" [disabled]="loading()">Aplicar</button>
+        <button type="button" class="ghost sm" [class.on]="preset() === 'mes'" (click)="aplicarPresetMesActual(); cargar()" [disabled]="loading()">
           Mes actual
         </button>
-        <button type="button" class="ghost sm" (click)="presetMesAnterior()" [disabled]="loading()">Mes anterior</button>
-        <button type="button" class="ghost sm" (click)="presetUltimos30()" [disabled]="loading()">Últimos 30 días</button>
-        <button type="button" class="ghost sm" (click)="presetAnioActual()" [disabled]="loading()">Año actual</button>
-        <button type="button" class="ghost sm" (click)="limpiarFiltro()" [disabled]="loading()">Sin filtro</button>
+        <button type="button" class="ghost sm" [class.on]="preset() === 'anterior'" (click)="presetMesAnterior()" [disabled]="loading()">Mes anterior</button>
+        <button type="button" class="ghost sm" [class.on]="preset() === 'd30'" (click)="presetUltimos30()" [disabled]="loading()">Últimos 30 días</button>
+        <button type="button" class="ghost sm" [class.on]="preset() === 'anio'" (click)="presetAnioActual()" [disabled]="loading()">Año actual</button>
+        <button type="button" class="ghost sm" [class.on]="preset() === 'ninguno'" (click)="limpiarFiltro()" [disabled]="loading()">Sin filtro</button>
       </div>
     </div>
-    <p class="df-active" *ngIf="filtroActivo()">
-      Mostrando caja del período: <strong>{{ periodoLabel() }}</strong>
+    <p class="df-active">
+      {{ loading() && stats() ? 'Actualizando' : 'Mostrando' }}:
+      <strong>{{ periodoLabel() }}</strong>
     </p>
-  </form>
+  </div>
 
   <p class="flash err" *ngIf="error()">{{ error() }}</p>
   <p class="loading-msg" *ngIf="loading()">Cargando indicadores…</p>
 
-  <ng-container *ngIf="stats() && !loading()">
+  <ng-container *ngIf="stats()">
     <section class="dash-hero">
       <div class="kpi-hero-grid">
         <ng-container *ngFor="let k of kpiHeroCards()">

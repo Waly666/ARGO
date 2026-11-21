@@ -1,0 +1,102 @@
+<section class="pesv-page card">
+  <header class="pesv-hero">
+    <div class="pesv-hero-icon" aria-hidden="true">▤</div>
+    <div class="pesv-hero-text">
+      <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Documentos</p>
+      <h1>Documentos de la vigencia</h1>
+      <p class="pesv-lead">
+        Aquí están todas las bases: guías, estrategia, diagnóstico, comportamiento humano y el resto.
+        Descargue el Word o el Excel, cambie el texto en su programa y súbalo con Reemplazar base.
+        No borre los campos entre corchetes: ahí ARGO escribe los datos de la empresa.
+      </p>
+    </div>
+  </header>
+
+  <argo-pesv-nav active="documentos" />
+
+  @if (loading() && !vista()) {
+    <p class="hint">Cargando plantillas…</p>
+  } @else if (vista()) {
+    <argo-pesv-ayuda
+      [ahora]="vista()!.confirmado ? 'Elija el documento y pulse Generar.' : 'Todavía no puede generar: falta confirmar el autodiagnóstico.'"
+      [detalle]="vista()!.confirmado ? 'Generar arma una copia con los datos de la base de datos. Reemplazar base cambia el texto del documento para esta empresa y deja quietos los campos entre corchetes.' : 'Vuelva, revise los vehículos y pulse Confirmar diagnóstico. La base igual se puede descargar y corregir desde aquí.'"
+      [siguiente]="vista()!.confirmado ? '/app/pesv/fase1' : '/app/pesv/autodiagnostico'"
+      [siguienteTexto]="vista()!.confirmado ? 'Llenar formularios primero' : 'Ir al autodiagnóstico'"
+    />
+    <article class="pesv-resultado" [class.warn]="!vista()!.clasificacion.obligado">
+      <p class="pesv-resultado-kicker">Vigencia {{ vista()!.vigencia }}</p>
+      <h2>{{ vista()!.clasificacion.nivelLabel }}</h2>
+      <p>{{ vista()!.clasificacion.resumen }}</p>
+      @if (!vista()!.confirmado) {
+        <p>
+          <a routerLink="/app/pesv/autodiagnostico">Confirme el autodiagnóstico</a>
+          antes de generar. Así el documento queda amarrado a un número de vehículos revisado.
+        </p>
+      }
+    </article>
+
+    <nav class="pesv-accesos" aria-label="Dónde cargar los datos">
+      <a routerLink="/app/pesv/fase1">Formularios de documentos</a>
+      <a routerLink="/app/vehiculos">Vehículos</a>
+      <a routerLink="/app/rrhh/empleados">Empleados</a>
+      <a routerLink="/app/pesv/fase2">Seguimiento</a>
+    </nav>
+
+    @if (msg()) {
+      <p class="msg" [class.err]="error()">{{ msg() }}</p>
+    }
+
+    <div class="pesv-docs">
+      @for (grupo of vista()!.grupos; track grupo.carpeta) {
+        <section class="pesv-doc-grupo">
+          <h2>{{ grupo.carpeta }}</h2>
+          @for (item of grupo.items; track item.codigo) {
+            <article class="pesv-doc-row">
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p class="hint">{{ item.ayuda }}</p>
+                @if (item.bloqueado) {
+                  <p class="hint">Pida el permiso «PESV datos sensibles» si debe verlo.</p>
+                } @else if (item.versiones.length) {
+                  <ul class="pesv-doc-versiones">
+                    @for (v of item.versiones; track v.version) {
+                      <li>
+                        <button type="button" class="linkish" (click)="descargar(item.codigo, v.version, v.nombreArchivo)">
+                          Versión {{ v.version }}
+                        </button>
+                        <span>{{ fecha(v.generadoEn) }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+              <div class="pesv-doc-acciones">
+                @if (!item.bloqueado) {
+                  <button type="button" (click)="descargarBase(item)">Descargar base</button>
+                  <label class="pesv-subir" [class.off]="!puedeEditar() || subiendo() === item.codigo">
+                    {{ subiendo() === item.codigo ? 'Subiendo…' : 'Reemplazar base' }}
+                    <input
+                      type="file"
+                      accept=".docx,.xlsx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      [disabled]="!puedeEditar() || subiendo() === item.codigo"
+                      (change)="reemplazarBase(item.codigo, $event)"
+                    />
+                  </label>
+                }
+                @if (item.tipo === 'generar') {
+                  <button
+                    type="button"
+                    (click)="generar(item.codigo)"
+                    [disabled]="item.bloqueado || !vista()!.confirmado || !puedeEditar() || generando() === item.codigo"
+                  >
+                    {{ generando() === item.codigo ? 'Generando…' : 'Generar' }}
+                  </button>
+                }
+              </div>
+            </article>
+          }
+        </section>
+      }
+    </div>
+  }
+</section>

@@ -455,6 +455,10 @@ module.exports = {
   pesvFase2: buildPesvEvidencia('pesv-evidencias', 50),
   pesvPdfLayout: buildImagen('pesv-pdf-layout', 4),
   pesvPdfPortada: buildImagen('pesv-pdf-portadas', 8),
+  pesvPlantillaBase: multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024 },
+  }),
   memory,
   baseDir: BASE,
   formatTsInicio,

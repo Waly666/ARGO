@@ -34,6 +34,7 @@ const CATALOGOS = {
   tipoSangre: 'tipoSangre',
   multiCulturalidad: 'multiCulturalidad',
   claseVehiculo: 'claseVehiculo',
+  organismosTransito: 'organismosTransito',
   marcasVehiculos: 'marcasVehiculos',
   lineasVehiculos: 'lineasVehiculos',
   coloresVehiculos: 'coloresVehiculos',

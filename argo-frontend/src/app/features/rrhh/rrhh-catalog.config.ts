@@ -13,7 +13,7 @@ const estadoOpts = [  { value: 'activo', label: 'Activo' },
 
 export const CARGOS_CONFIG: RrhhCatalogConfig = {
   titulo: 'Cargos',
-  hint: 'Catálogo de cargos — créelos dinámicamente y asígnelos a empleados.',
+  hint: 'Puesto de trabajo del empleado. No es el rol con el que entra a la aplicación. Puede crear y editar los cargos aquí.',
   apiPath: 'cargos',
   idKey: 'idCargo',
   labelKey: 'nombre',
@@ -35,6 +35,7 @@ export const CARGOS_CONFIG: RrhhCatalogConfig = {
 
 export const DEPARTAMENTOS_CONFIG: RrhhCatalogConfig = {
   titulo: 'Departamentos',
+  hint: 'Áreas de la empresa. Puede crear y editar los departamentos aquí.',
   apiPath: 'departamentos',
   idKey: 'idDepartamento',
   fields: [

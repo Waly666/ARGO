@@ -37,6 +37,9 @@ const VehiculoSchema = new mongoose.Schema(
     pasajeros: { type: String, trim: true },
     combustible: { type: String, enum: COMBUSTIBLES, trim: true },
     numeroLicencia: { type: String, trim: true },
+    /** Organismo de tránsito que expide la licencia. idOrganismo del catálogo. */
+    idOrganismoTransito: { type: Number, default: null, index: true },
+    secretariaTransito: { type: String, trim: true, default: '' },
     observaciones: { type: String, trim: true },
     urlFoto: { type: String, trim: true },
     estado: { type: String, enum: ESTADOS_VEHICULO, default: 'Libre', index: true },

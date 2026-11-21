@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { PesvNavComponent } from './pesv-nav.component';
-
-import { PesvAutodiagnostico, PesvService } from '../../core/services/pesv.service';
+import { PesvClasificacion, PesvService } from '../../core/services/pesv.service';
 import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { PesvAyudaComponent } from './pesv-ayuda.component';
+import { PesvNavComponent } from './pesv-nav.component';
 
 @Component({
   selector: 'argo-pesv-autodiagnostico',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PesvNavComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PesvNavComponent, PesvAyudaComponent],
   templateUrl: './pesv-autodiagnostico.component.html',
   styleUrls: ['./pesv-shared.scss'],
 })
@@ -23,12 +23,11 @@ export class PesvAutodiagnosticoComponent implements OnInit {
   loading = signal(true);
   saving = signal(false);
   msg = signal<string | null>(null);
-
-  misionalidad = signal<1 | 2>(2);
-  totalVehiculos = signal(0);
-  totalConductores = signal(0);
+  flota = signal(0);
   observaciones = signal('');
-  nivelLabel = signal<string | null>(null);
+  guardada = signal<PesvClasificacion | null>(null);
+
+  vista = computed(() => this.clasificar(this.flota()));
 
   ngOnInit(): void {
     this.pesv.config().subscribe({
@@ -44,24 +43,14 @@ export class PesvAutodiagnosticoComponent implements OnInit {
     this.loading.set(true);
     this.pesv.autodiagnostico(this.vigencia()).subscribe({
       next: (r) => {
+        this.flota.set(r.flota?.totalVehiculos || 0);
         const reg = r.registro;
-        if (reg) {
-          this.misionalidad.set(reg.misionalidad === 1 ? 1 : 2);
-          this.totalVehiculos.set(reg.totalVehiculos ?? 0);
-          this.totalConductores.set(reg.totalConductores ?? 0);
-          this.observaciones.set(reg.observaciones || '');
-          this.nivelLabel.set(
-            reg.nivelCalculado === 'avanzado'
-              ? 'Avanzado'
-              : reg.nivelCalculado === 'estandar'
-                ? 'Estándar'
-                : 'Básico',
-          );
-        }
+        this.observaciones.set(reg?.observaciones || '');
+        this.guardada.set(reg ? this.clasificar(this.flota()) : null);
         this.loading.set(false);
       },
       error: () => {
-        this.msg.set('No se pudo cargar el autodiagnóstico');
+        this.msg.set('No se pudo cargar el autodiagnóstico.');
         this.loading.set(false);
       },
     });
@@ -69,34 +58,48 @@ export class PesvAutodiagnosticoComponent implements OnInit {
 
   guardar(): void {
     if (!this.accionPerm.tiene('pesv', 'editar')) {
-      this.msg.set('Sin permiso para editar PESV');
+      this.msg.set('Sin permiso para editar el PESV.');
       return;
     }
     this.saving.set(true);
     this.msg.set(null);
-    const body: PesvAutodiagnostico & { vigencia: number } = {
-      vigencia: this.vigencia(),
-      misionalidad: this.misionalidad(),
-      totalVehiculos: this.totalVehiculos(),
-      totalConductores: this.totalConductores(),
-      observaciones: this.observaciones(),
+    this.pesv
+      .guardarAutodiagnostico({
+        vigencia: this.vigencia(),
+        totalVehiculos: this.flota(),
+        observaciones: this.observaciones(),
+      })
+      .subscribe({
+        next: (reg) => {
+          this.guardada.set(reg.clasificacion || this.clasificar(this.flota()));
+          this.saving.set(false);
+          this.msg.set('Diagnóstico guardado. Ya puede generar los documentos de esta vigencia.');
+        },
+        error: () => {
+          this.saving.set(false);
+          this.msg.set('No se pudo guardar el diagnóstico.');
+        },
+      });
+  }
+
+  private clasificar(total: number | undefined): PesvClasificacion {
+    const vehiculos = Math.max(0, Number(total) || 0);
+    const nivel = vehiculos >= 100 ? 'avanzado' : vehiculos >= 50 ? 'estandar' : vehiculos >= 10 ? 'basico' : null;
+    const nivelLabel = nivel === 'avanzado' ? 'Avanzado' : nivel === 'estandar' ? 'Estándar' : nivel === 'basico' ? 'Básico' : 'No obligada';
+    const obligado = nivel != null;
+    const resumen = obligado
+      ? `Con ${vehiculos} vehículos debe presentar el PESV en nivel ${nivelLabel}.`
+      : `Con ${vehiculos} vehículos no está obligada a presentar el PESV. El nivel Básico empieza en 10.`;
+    return {
+      reglaCodigo: '40595-m2-vehiculos-2022',
+      misionalidad: 2,
+      misionalidadTexto: 'Actividad distinta al transporte terrestre automotor',
+      umbralObligacion: 10,
+      totalVehiculos: vehiculos,
+      obligado,
+      nivel,
+      nivelLabel,
+      resumen,
     };
-    this.pesv.guardarAutodiagnostico(body).subscribe({
-      next: (reg) => {
-        this.nivelLabel.set(
-          reg.nivelCalculado === 'avanzado'
-            ? 'Avanzado'
-            : reg.nivelCalculado === 'estandar'
-              ? 'Estándar'
-              : 'Básico',
-        );
-        this.saving.set(false);
-        this.msg.set('Guardado. Nivel: ' + (this.nivelLabel() || ''));
-      },
-      error: () => {
-        this.saving.set(false);
-        this.msg.set('Error al guardar');
-      },
-    });
   }
 }

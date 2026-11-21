@@ -705,6 +705,13 @@ export const routes: Routes = [
           import('./features/pesv/pesv-autodiagnostico.component').then((m) => m.PesvAutodiagnosticoComponent),
       },
       {
+        path: 'pesv/documentos',
+        canActivate: [permisoGuard],
+        data: { title: 'Documentos PESV', permiso: [...PERMISOS_MENU_PESV] },
+        loadComponent: () =>
+          import('./features/pesv/pesv-documentos.component').then((m) => m.PesvDocumentosComponent),
+      },
+      {
         path: 'pesv/fase1',
         canActivate: [permisoGuard],
         data: { title: 'PESV Fase 1', permiso: [...PERMISOS_MENU_PESV] },
@@ -749,6 +756,16 @@ export const routes: Routes = [
         data: { title: 'Nuevo vehículo', permiso: 'vehiculos' },
         loadComponent: () =>
           import('./features/vehiculos/vehiculo-detalle.component').then((m) => m.VehiculoDetalleComponent),
+      },
+      {
+        path: 'vehiculos/salidas',
+        canActivate: [permisoGuard],
+        data: {
+          title: 'Salida y retorno de vehículos',
+          permiso: ['vehiculos', 'instructores.inspeccion'],
+        },
+        loadComponent: () =>
+          import('./features/vehiculos/salida-retorno.component').then((m) => m.SalidaRetornoComponent),
       },
       {
         path: 'vehiculos/:id',

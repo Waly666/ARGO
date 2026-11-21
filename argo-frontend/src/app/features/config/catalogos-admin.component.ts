@@ -661,6 +661,7 @@ export class CatalogosAdminComponent implements OnInit {
   }
 
   labelCampo(campo: string): string {
+    if (this.seleccionado() === 'organismosTransito' && campo === 'nombre') return 'Nombre del organismo';
     const map: Record<string, string> = {
       idItem: 'Ítem de inspección',
       idCaracteristica: 'ID característica',
@@ -676,6 +677,11 @@ export class CatalogosAdminComponent implements OnInit {
       aspecto2: 'Texto del ítem',
       idAdaptacion: 'ID',
       nombre: 'Descripción',
+      idOrganismo: 'ID',
+      divipolDepto: 'DIVIPOL departamento',
+      divipolMunicipio: 'DIVIPOL municipio',
+      nombreDepto: 'Departamento',
+      nombreMunicipio: 'Municipio',
       idClases: 'Clases de vehículo',
       controlaVencimiento: 'Vencimiento',
       licenciasCap: 'Licencias capacitación',

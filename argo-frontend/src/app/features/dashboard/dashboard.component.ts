@@ -61,16 +61,18 @@ export class DashboardComponent implements OnInit {
   stats = signal<DashboardStats | null>(null);
   fechaDesde = signal('');
   fechaHasta = signal('');
+  /** mes | anterior | d30 | anio | custom | ninguno */
+  preset = signal('mes');
 
   filtroActivo = computed(() => !!(this.fechaDesde() || this.fechaHasta()));
 
   periodoLabel = computed(() => {
     const d = this.fechaDesde();
     const h = this.fechaHasta();
-    if (d && h) return `${d} — ${h}`;
-    if (d) return `desde ${d}`;
-    if (h) return `hasta ${h}`;
-    return 'este mes';
+    if (d && h) return `${this.fechaCorta(d)} — ${this.fechaCorta(h)}`;
+    if (d) return `desde ${this.fechaCorta(d)}`;
+    if (h) return `hasta ${this.fechaCorta(h)}`;
+    return 'sin filtro de fechas';
   });
 
   nombre = computed(() => {
@@ -149,7 +151,7 @@ export class DashboardComponent implements OnInit {
         icon: '📜',
         label: 'Certificados',
         value: k.certificados,
-        sub: `+${k.certificadosMes} este mes`,
+        sub: filtro ? `${k.certificadosMes} en el período` : `+${k.certificadosMes} este mes`,
         tone: 'pink',
         spark: certSpark.length > 1 ? certSpark : undefined,
       },
@@ -357,6 +359,7 @@ export class DashboardComponent implements OnInit {
     const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     this.fechaDesde.set(this.fmtFechaLocal(inicio));
     this.fechaHasta.set(this.fmtFechaLocal(hoy));
+    this.preset.set('mes');
   }
 
   presetUltimos30(): void {
@@ -365,6 +368,7 @@ export class DashboardComponent implements OnInit {
     d.setDate(d.getDate() - 30);
     this.fechaDesde.set(this.fmtFechaLocal(d));
     this.fechaHasta.set(this.fmtFechaLocal(hoy));
+    this.preset.set('d30');
     this.cargar();
   }
 
@@ -374,6 +378,7 @@ export class DashboardComponent implements OnInit {
     const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
     this.fechaDesde.set(this.fmtFechaLocal(inicio));
     this.fechaHasta.set(this.fmtFechaLocal(fin));
+    this.preset.set('anterior');
     this.cargar();
   }
 
@@ -381,13 +386,26 @@ export class DashboardComponent implements OnInit {
     const hoy = new Date();
     this.fechaDesde.set(`${hoy.getFullYear()}-01-01`);
     this.fechaHasta.set(this.fmtFechaLocal(hoy));
+    this.preset.set('anio');
     this.cargar();
   }
 
   limpiarFiltro(): void {
     this.fechaDesde.set('');
     this.fechaHasta.set('');
+    this.preset.set('ninguno');
     this.cargar();
+  }
+
+  aplicarFechas(): void {
+    this.preset.set('custom');
+    this.cargar();
+  }
+
+  private fechaCorta(ymd: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
+    if (!m) return ymd;
+    return `${m[3]}/${m[2]}/${m[1]}`;
   }
 
   cargar(): void {

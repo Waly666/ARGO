@@ -97,6 +97,10 @@ export class ShellComponent implements OnInit, AfterViewInit {
   serviciosSubmenuAbierto = signal(false);
   popupOpenTick = signal(0);
   rutaActual = signal('/');
+  esAula = computed(() => {
+    const path = this.rutaActual().split('?')[0];
+    return path === '/aula' || path.startsWith('/aula/');
+  });
 
   popupConfig = computed(() => this.landing().popup);
 

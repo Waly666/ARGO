@@ -44,6 +44,10 @@ exports.listar = async (req, res, next) => {
     if (nombre === 'genero' || nombre === 'identidadGenero' || nombre === 'orientacionSexual') {
       await ensureCatalogosDemograficos(nombre);
     }
+    if (nombre === 'organismosTransito') {
+      const { asegurarOrganismosTransito } = require('../services/organismosTransitoSeed');
+      await asegurarOrganismosTransito();
+    }
 
     const admin = req.query.admin === 'true' && nombreValido(nombre);
     if (admin) {

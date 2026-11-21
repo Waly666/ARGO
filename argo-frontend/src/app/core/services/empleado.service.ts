@@ -48,6 +48,8 @@ export interface Empleado {
   cajaCompensacionId?: number;
   cargoId?: number;
   departamentoId?: number;
+  usaVehiculosEmpresa?: boolean;
+  conduce?: boolean;
   idSede?: string | null;
   urlFoto?: string;
   estado?: string;
@@ -283,6 +285,8 @@ export const EMPLEADO_WRITE_FIELDS = [
   'cajaCompensacionId',
   'cargoId',
   'departamentoId',
+  'usaVehiculosEmpresa',
+  'conduce',
   'idSede',
   'estado',
   'modoAcceso',

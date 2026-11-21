@@ -179,6 +179,10 @@ export class VehiculosListaComponent implements OnInit {
     this.cargar();
   }
 
+  salidas(): void {
+    void this.router.navigate(['/app/vehiculos/salidas']);
+  }
+
   nuevo(): void {
     void this.router.navigate(['/app/vehiculos/nuevo']);
   }

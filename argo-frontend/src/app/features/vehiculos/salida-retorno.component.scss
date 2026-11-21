@@ -1,0 +1,110 @@
+.salida-page--ficha {
+  gap: 12px;
+}
+
+.ficha-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.salida-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--text, #e8eef8);
+}
+
+.page-head {
+  border-left: 4px solid #22d3ee;
+
+  .head-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  h1 { margin: 0; }
+  p { margin: 6px 0 0; color: var(--text-dim, #9fb0c8); max-width: 720px; }
+}
+
+.ayuda, .ok, .err {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+}
+
+.ayuda { background: #102033; border: 1px solid #1d4e63; }
+.ok { background: #10291c; color: #86efac; }
+.err { background: #3a1720; color: #fecaca; }
+
+.toolbar select,
+.formulario input,
+.formulario select,
+.formulario textarea {
+  width: 100%;
+  margin-top: 4px;
+  background: #0d1726;
+  color: #e8eef8;
+  border: 1px solid #2a3c55;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.tabla-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid #24344a;
+    vertical-align: top;
+  }
+
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #122033; }
+}
+
+.sub, .vacio { display: block; color: var(--text-dim, #9fb0c8); font-size: .85rem; }
+.vacio { padding: 16px 0; }
+
+.estado {
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #1e293b;
+  font-size: .82rem;
+}
+.estado[data-estado='en_curso'] { background: #134e4a; color: #99f6e4; }
+.estado[data-estado='finalizado'] { background: #14532d; color: #bbf7d0; }
+.estado[data-estado='cancelado'] { background: #3f1d2a; color: #fecdd3; }
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-head, .acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+fieldset {
+  border: 1px solid #24344a;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+legend { padding: 0 6px; color: #67e8f9; }
+
+.ancho { grid-column: 1 / -1; }
+.km { margin: 0; align-self: end; }

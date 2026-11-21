@@ -1,5 +1,8 @@
 const PesvCaptura = require('../../models/PesvCaptura');
 const PesvFase1Registro = require('../../models/PesvFase1Registro');
+const Vehiculo = require('../../models/Vehiculo');
+const { clasificarPesv } = require('../../constants/pesv/nivelPesv');
+const { completarDatosCertificacion } = require('./pesvCertificacionService');
 const {
   obtenerDatosEmpresaInstitucional,
   mezclarOrganizacionEnDatos,
@@ -14,6 +17,17 @@ const {
 
 async function defaultsOrganizacion() {
   return obtenerDatosEmpresaInstitucional();
+}
+
+async function etiquetaNivelFlota() {
+  const total = await Vehiculo.countDocuments({});
+  return clasificarPesv(total).nivelLabel;
+}
+
+function datosConTextos(itemNo, datos, nivelLabel) {
+  const no = Number(itemNo);
+  if (no !== 1 && no !== 2) return datos;
+  return completarDatosCertificacion(no, datos, nivelLabel);
 }
 
 function flattenCampos(formulario) {
@@ -65,8 +79,9 @@ async function obtenerCaptura(vigencia, itemNo) {
   const capturaKey = capturaKeyFromMeta(meta, no);
   const formulario = getFormularioDef(capturaKey, meta);
   const org = await defaultsOrganizacion();
+  const nivelLabel = no === 1 || no === 2 ? await etiquetaNivelFlota() : '';
   const doc = await PesvCaptura.findOne({ vigencia: v, itemNo: no }).lean();
-  const datos = mezclarOrganizacionEnDatos(doc?.datos, org);
+  const datos = datosConTextos(no, mezclarOrganizacionEnDatos(doc?.datos, org), nivelLabel);
   const completitud = calcularCompletitud(formulario, datos);
   return {
     vigencia: v,
@@ -127,11 +142,16 @@ async function indiceCaptura(vigencia) {
   const guardados = await PesvCaptura.find({ vigencia: v }).lean();
   const byItem = new Map(guardados.map((d) => [d.itemNo, d]));
   const org = await defaultsOrganizacion();
+  const nivelLabel = await etiquetaNivelFlota();
 
   const items = [];
   for (const row of lista) {
     const formulario = getFormularioDef(row.capturaKey, row.meta);
-    const datos = mezclarOrganizacionEnDatos(byItem.get(row.itemNo)?.datos, org);
+    const datos = datosConTextos(
+      row.itemNo,
+      mezclarOrganizacionEnDatos(byItem.get(row.itemNo)?.datos, org),
+      nivelLabel,
+    );
     const completitud = calcularCompletitud(formulario, datos);
     items.push({
       ...row,

@@ -59,5 +59,14 @@ router.get('/flota/sugerencias', acc.ver, ctrl.getSugerenciasFlota);
 router.get('/tablero', acc.ver, ctrl.getTablero);
 
 router.get('/resumen', acc.ver, ctrl.getResumen);
+router.get('/plantillas', acc.ver, ctrl.getPlantillas);
+router.post('/plantillas/:codigo/generar', acc.editar, ctrl.postGenerarPlantilla);
+router.post(
+  '/plantillas/:codigo/base',
+  acc.editar,
+  upload.pesvPlantillaBase.single('archivo'),
+  ctrl.postReemplazarBase,
+);
+router.get('/plantillas/:codigo/archivo', acc.ver, ctrl.getArchivoPlantilla);
 
 module.exports = router;

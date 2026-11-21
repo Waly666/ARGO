@@ -1,3 +1,4 @@
+const path = require('path');
 const PesvConfig = require('../../models/PesvConfig');
 const PesvAutodiagnostico = require('../../models/PesvAutodiagnostico');
 const PesvFase1Registro = require('../../models/PesvFase1Registro');
@@ -11,9 +12,12 @@ const {
   sugerenciaRespuestaItem,
 } = require('../../constants/pesv/catalogoFase1');
 const catalogoFase2 = require('../../constants/pesv/catalogoFase2');
-const { calcularNivelPesv, etiquetaNivel } = require('../../constants/pesv/nivelPesv');
+const { clasificarPesv } = require('../../constants/pesv/nivelPesv');
 const { metaDocumentoItem, MODO_DOCUMENTO } = require('../../constants/pesv/catalogoDocumentos');
 const upload = require('../../middleware/upload');
+const PesvCaptura = require('../../models/PesvCaptura');
+const { completarDatosCertificacion, generarPdfCertificacion } = require('./pesvCertificacionService');
+const { mezclarOrganizacionEnDatos, obtenerDatosEmpresaInstitucional } = require('../empresaInstitucional');
 
 const CONFIG_KEY = 'default';
 
@@ -46,36 +50,55 @@ async function guardarConfig(body, user) {
   return doc;
 }
 
+async function contarVehiculosFlota() {
+  return Vehiculo.countDocuments({}).catch(() => 0);
+}
+
 async function obtenerAutodiagnostico(vigencia) {
   const v = Number(vigencia) || (await obtenerConfig()).vigenciaActiva;
   const doc = await PesvAutodiagnostico.findOne({ vigencia: v, vigente: true }).lean();
-  return { vigencia: v, registro: doc };
+  const totalFlota = await contarVehiculosFlota();
+  return {
+    vigencia: v,
+    registro: doc,
+    flota: { totalVehiculos: totalFlota },
+    previa: clasificarPesv(totalFlota),
+  };
 }
 
 async function guardarAutodiagnostico(body, user) {
   const vigencia = Number(body.vigencia) || new Date().getFullYear();
-  const misionalidad = Number(body.misionalidad) === 1 ? 1 : 2;
-  const totalVehiculos = Math.max(0, Number(body.totalVehiculos) || 0);
-  const totalConductores = Math.max(0, Number(body.totalConductores) || 0);
-  const nivelCalculado = calcularNivelPesv({ misionalidad, totalVehiculos, totalConductores });
-  const userChangeRecord = user?.usuario || user?.email || '';
+  const totalVehiculosFlota = await contarVehiculosFlota();
+  const totalVehiculos = totalVehiculosFlota;
+  const clasificacion = clasificarPesv(totalVehiculos);
+  const userChangeRecord = user?.usuario || user?.username || user?.email || '';
 
   await PesvAutodiagnostico.updateMany({ vigencia, vigente: true }, { $set: { vigente: false } });
   const doc = await PesvAutodiagnostico.create({
     vigencia,
-    misionalidad,
+    misionalidad: clasificacion.misionalidad,
     totalVehiculos,
-    totalConductores,
-    nivelCalculado,
+    totalVehiculosFlota,
+    totalConductores: 0,
+    obligado: clasificacion.obligado,
+    reglaCodigo: clasificacion.reglaCodigo,
+    ...(clasificacion.nivel ? { nivelCalculado: clasificacion.nivel } : {}),
     observaciones: String(body.observaciones || '').trim(),
     vigente: true,
     userChangeRecord,
   });
-  return doc.toObject();
+  return { ...doc.toObject(), clasificacion };
+}
+
+function clasificacionGuardada(registro, totalFlota) {
+  if (!registro) return null;
+  const total = totalFlota == null ? registro.totalVehiculos : totalFlota;
+  return clasificarPesv(total);
 }
 
 function nivelVigenteDesdeAuto(auto) {
-  return auto?.registro?.nivelCalculado || 'basico';
+  const clas = clasificacionGuardada(auto?.registro, auto?.flota?.totalVehiculos);
+  return clas?.obligado ? clas.nivel : null;
 }
 
 function mergeItemsFase1(registro, nivelOrg) {
@@ -101,15 +124,24 @@ function mergeItemsFase1(registro, nivelOrg) {
 async function obtenerFase1(vigencia) {
   const v = Number(vigencia) || (await obtenerConfig()).vigenciaActiva;
   const auto = await obtenerAutodiagnostico(v);
-  const nivel = nivelVigenteDesdeAuto(auto);
+  const clas = clasificacionGuardada(auto.registro, auto.flota?.totalVehiculos);
+  const nivel = clas?.obligado ? clas.nivel : null;
   let reg = await PesvFase1Registro.findOne({ vigencia: v }).lean();
   if (!reg) {
     reg = { vigencia: v, items: [], enviadoSt: false };
   }
+  let mensajeNivel = 'Confirme el autodiagnóstico para saber si debe presentar el PESV.';
+  let nivelLabel = 'Pendiente';
+  if (clas) {
+    nivelLabel = clas.nivelLabel;
+    mensajeNivel = clas.resumen;
+  }
   return {
     vigencia: v,
     nivel,
-    nivelLabel: etiquetaNivel(nivel),
+    nivelLabel,
+    mensajeNivel,
+    obligado: !!clas?.obligado,
     motivos: MOTIVOS_FASE1,
     enviadoSt: !!reg.enviadoSt,
     items: mergeItemsFase1(reg, nivel),
@@ -188,6 +220,42 @@ async function adjuntarFase1Item(vigencia, itemNo, file, user) {
   return { itemNo: no, adjuntoRuta: rel, adjuntoNombre: file.originalname };
 }
 
+async function generarCertificacionRepresentante(vigencia, itemNo, user) {
+  const v = Number(vigencia) || (await obtenerConfig()).vigenciaActiva;
+  const no = Number(itemNo);
+  const org = await obtenerDatosEmpresaInstitucional();
+  const doc = await PesvCaptura.findOne({ vigencia: v, itemNo: no }).lean();
+  const total = await contarVehiculosFlota();
+  const datos = completarDatosCertificacion(
+    no,
+    mezclarOrganizacionEnDatos(doc?.datos, org),
+    clasificarPesv(total).nivelLabel,
+  );
+  const nombreArchivo = no === 1
+    ? 'certificacion-representante-legal-1565-2014.pdf'
+    : 'certificacion-representante-legal-40595-2022.pdf';
+  const dir = path.join(upload.baseDir, 'pesv-certificaciones', String(v));
+  await generarPdfCertificacion({ itemNo: no, datos, dir, nombreArchivo });
+  const rel = upload.publicUrlPath('pesv-certificaciones', String(v), nombreArchivo);
+
+  const reg = await PesvFase1Registro.findOne({ vigencia: v }).lean();
+  const items = [...(reg?.items || [])];
+  const idx = items.findIndex((i) => i.itemNo === no);
+  const row = idx >= 0 ? { ...items[idx] } : { itemNo: no };
+  row.documentoGeneradoRuta = rel;
+  row.documentoGeneradoEn = new Date();
+  row.datosCapturados = datos;
+  if (idx >= 0) items[idx] = row;
+  else items.push(row);
+  const userChangeRecord = user?.usuario || user?.email || '';
+  await PesvFase1Registro.findOneAndUpdate(
+    { vigencia: v },
+    { $set: { items, userChangeRecord } },
+    { upsert: true },
+  );
+  return { ok: true, documentoGeneradoRuta: rel, nombre: nombreArchivo };
+}
+
 async function generarDocumentoFase1(vigencia, itemNo, user) {
   const no = Number(itemNo);
   const cat = CATALOGO_FASE1.find((c) => c.itemNo === no);
@@ -198,11 +266,7 @@ async function generarDocumentoFase1(vigencia, itemNo, user) {
   }
   const meta = metaDocumentoItem(no);
   if (meta.modo === MODO_DOCUMENTO.CERT_REPRESENTANTE_LEGAL) {
-    const err = new Error(
-      'Use el formulario de certificación del representante legal y adjunte el PDF firmado; la generación automática de esta plantilla se habilitará pronto.',
-    );
-    err.status = 400;
-    throw err;
+    return generarCertificacionRepresentante(Number(vigencia), no, user);
   }
   if (meta.modo === MODO_DOCUMENTO.NA) {
     const err = new Error('Ítem sin documento asociado.');
@@ -402,18 +466,29 @@ async function adjuntarFase2Evidencia(vigencia, mes, tab, evidenciaId, file, use
   return { adjuntoRuta: rel, adjuntoNombre: file.originalname, tipo };
 }
 
+async function contextoDocumentos(vigencia) {
+  const auto = await obtenerAutodiagnostico(vigencia);
+  const config = await obtenerConfig();
+  return {
+    vigencia: auto.vigencia,
+    config,
+    confirmado: !!auto.registro,
+    clasificacion: clasificacionGuardada(auto.registro, auto.flota?.totalVehiculos) || clasificarPesv(auto.flota?.totalVehiculos || 0),
+  };
+}
+
 async function resumen(vigencia) {
   const v = Number(vigencia) || (await obtenerConfig()).vigenciaActiva;
   const config = await obtenerConfig();
   const auto = await obtenerAutodiagnostico(v);
   const fase1 = await obtenerFase1(v);
   const nivel = fase1.nivel;
+  const totalVehiculosFlota = auto.flota?.totalVehiculos || 0;
+  const clas = clasificacionGuardada(auto.registro, totalVehiculosFlota);
 
   const aplicables = fase1.items.filter((i) => i.aplica);
   const conRespuesta = aplicables.filter((i) => i.respuesta?.existe);
   const conCaptura = aplicables.filter((i) => i.respuesta?.datosCapturados);
-
-  const totalVehiculosFlota = await Vehiculo.countDocuments({}).catch(() => 0);
 
   const y = v;
   const mesActual = new Date().getMonth() + 1;
@@ -428,7 +503,10 @@ async function resumen(vigencia) {
     config,
     autodiagnostico: auto.registro,
     nivel,
-    nivelLabel: etiquetaNivel(nivel),
+    nivelLabel: fase1.nivelLabel,
+    mensajeNivel: fase1.mensajeNivel,
+    clasificacion: clas,
+    vistaFlota: clasificarPesv(totalVehiculosFlota),
     fase1: {
       totalItems: CATALOGO_FASE1.length,
       aplicables: aplicables.length,
@@ -451,6 +529,7 @@ module.exports = {
   guardarConfig,
   obtenerAutodiagnostico,
   guardarAutodiagnostico,
+  contextoDocumentos,
   obtenerFase1,
   guardarFase1,
   adjuntarFase1Item,

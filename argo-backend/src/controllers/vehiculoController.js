@@ -67,6 +67,8 @@ const VEHICULO_FIELDS = [
   'pasajeros',
   'combustible',
   'numeroLicencia',
+  'idOrganismoTransito',
+  'secretariaTransito',
   'observaciones',
   'estado',
 ];
@@ -128,6 +130,13 @@ function pickVehiculo(body) {
   if (dto.estado) {
     const e = String(dto.estado).trim();
     dto.estado = e.charAt(0).toUpperCase() + e.slice(1).toLowerCase();
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'idOrganismoTransito')) {
+    const n = Number(body.idOrganismoTransito);
+    dto.idOrganismoTransito = body.idOrganismoTransito === '' || !Number.isFinite(n) ? null : n;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'secretariaTransito')) {
+    dto.secretariaTransito = String(body.secretariaTransito || '').trim();
   }
   return dto;
 }

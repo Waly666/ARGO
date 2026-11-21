@@ -19,6 +19,7 @@ export class VehiculoDocsFaltantesBannerComponent {
   visible = this.alertSvc.visible;
 
   rows = computed(() => this.agrupar(this.alertSvc.resumen()?.alertas || []));
+  totalVehiculos = computed(() => this.alertSvc.resumen()?.vehiculosAfectados || this.rows().length);
 
   cerrar() {
     this.alertSvc.cerrar();
@@ -41,7 +42,10 @@ export class VehiculoDocsFaltantesBannerComponent {
         };
         map.set(key, row);
       }
-      if (!row.docs.includes(a.documento)) row.docs.push(a.documento);
+      const nombres = a.documentos?.length ? a.documentos : a.documento ? [a.documento] : [];
+      for (const nombre of nombres) {
+        if (nombre && !row.docs.includes(nombre)) row.docs.push(nombre);
+      }
     }
     return [...map.values()]
       .map(({ docs, ...row }) => ({

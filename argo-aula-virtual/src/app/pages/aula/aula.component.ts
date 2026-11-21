@@ -101,6 +101,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   pagandoCursoId = signal<string | number | null>(null);
   apkDescargandoId = signal<string | null>(null);
   apkError = signal('');
+  busquedaCurso = signal('');
   pagarLineaError = signal('');
   consignacionPorCurso = signal<Record<string, EstadoConsignacionCurso>>({});
   consignacionModalCurso = signal<CursoVirtual | null>(null);
@@ -315,6 +316,86 @@ export class AulaComponent implements OnInit, OnDestroy {
   saludo(): string {
     const u = this.auth.user();
     return u?.nombreCompleto?.trim() || u?.email?.split('@')[0] || 'estudiante';
+  }
+
+  primerNombre(): string {
+    const n = this.saludo().split(/\s+/)[0] || 'estudiante';
+    return n.charAt(0).toUpperCase() + n.slice(1);
+  }
+
+  inicial(): string {
+    return this.primerNombre().charAt(0).toUpperCase();
+  }
+
+  cursoHero(): CursoVirtual | null {
+    return this.cursosContinuar()[0] || this.cursosLista()[0] || null;
+  }
+
+  fraseInicio(): string {
+    const c = this.cursoHero();
+    if (!c) return 'Cuando tenga un curso, aquí aparece su siguiente paso.';
+    return `Tu próximo paso: ${c.nombreProg}.`;
+  }
+
+  resumenCurso(c: CursoVirtual): string {
+    const raw = String(c.descripcionVirtual || c.descripcion || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (raw) return raw.length > 140 ? `${raw.slice(0, 137)}…` : raw;
+    const tags = this.etiquetas(c);
+    return tags.length ? tags.join(' · ') : 'Continúa las lecciones de este curso a tu ritmo.';
+  }
+
+  modulosVisibles(c: CursoVirtual) {
+    return this.leccionesReales(c).slice(0, 4);
+  }
+
+  cursosBusqueda(): CursoVirtual[] {
+    const q = this.textoBusqueda(this.busquedaCurso());
+    if (!q) return [];
+    return this.cursosLista().filter((c) => this.textoBusqueda(this.textoCurso(c)).includes(q));
+  }
+
+  private textoBusqueda(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  private textoCurso(c: CursoVirtual): string {
+    return [
+      c.nombreProg,
+      c.codigoProg,
+      c.nomCert,
+      c.descripcion,
+      c.descripcionVirtual,
+      c.categoriaNombre,
+      c.nivel,
+      ...(c.categoriaNombres || []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .replace(/<[^>]+>/g, ' ');
+  }
+
+  private leccionesReales(c: CursoVirtual): ClaseProgresoVirtual[] {
+    const total = Math.max(c.progreso?.totalClases ?? 0, c.progreso?.clases?.length ?? 0);
+    if (!total) return [];
+    return this.clasesDetalle(c).slice(0, total);
+  }
+
+  estadoModulo(c: CursoVirtual, cl: ClaseProgresoVirtual): 'completado' | 'en_curso' | 'bloqueado' {
+    if (cl.aprobada || cl.pct >= 100) return 'completado';
+    const lista = this.leccionesReales(c);
+    const idx = lista.findIndex((x) => x.numero === cl.numero);
+    const previaLista = idx <= 0 || lista.slice(0, idx).every((x) => x.aprobada || x.pct >= 100);
+    if (cl.pct > 0 || previaLista) return 'en_curso';
+    return 'bloqueado';
+  }
+
+  siguienteLeccion(c: CursoVirtual): ClaseProgresoVirtual | null {
+    const lista = this.leccionesReales(c);
+    return lista.find((cl) => this.estadoModulo(c, cl) === 'en_curso') || lista[0] || null;
   }
 
   intentosDe(c: CursoVirtual): IntentoEvalVirtual[] {

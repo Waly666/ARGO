@@ -60,10 +60,10 @@
           role="tab"
           class="veh-tab"
           [class.veh-tab--active]="tab() === t.key"
-          [disabled]="(t.key === 'documentos' || t.key === 'inspeccion') && !puedeDocumentos()"
+          [disabled]="(t.key === 'documentos' || t.key === 'inspeccion' || t.key === 'salidas') && !puedeDocumentos()"
           (click)="setTab(t.key)">
           <span class="veh-tab-label">{{ t.label }}</span>
-          @if ((t.key === 'documentos' || t.key === 'inspeccion') && !puedeDocumentos()) {
+          @if ((t.key === 'documentos' || t.key === 'inspeccion' || t.key === 'salidas') && !puedeDocumentos()) {
             <span class="veh-tab-hint">Guarde primero</span>
           }
           @if (t.key === 'documentos' && docsResumen().pendientes > 0) {
@@ -266,11 +266,11 @@
               <span class="veh-section-badge">5</span>
               <div>
                 <h2 class="veh-section-title">Capacidad y licencia</h2>
-                <p class="veh-section-desc">Tonelaje, pasajeros y licencia de tránsito.</p>
+                <p class="veh-section-desc">Primero la capacidad. Debajo, la licencia de tránsito y la secretaría que la expide.</p>
               </div>
             </header>
             <div class="veh-section-body">
-              <div class="veh-grid veh-grid--3">
+              <div class="veh-grid veh-grid--2">
                 <label class="veh-field">
                   <span class="veh-label">Tonelaje</span>
                   <input type="text" [ngModel]="form().tonelaje" (ngModelChange)="patch('tonelaje', $event)" />
@@ -279,10 +279,25 @@
                   <span class="veh-label">Pasajeros</span>
                   <input type="text" [ngModel]="form().pasajeros" (ngModelChange)="patch('pasajeros', $event)" />
                 </label>
+              </div>
+              <div class="veh-grid veh-grid--2">
                 <label class="veh-field">
-                  <span class="veh-label">Licencia tránsito</span>
+                  <span class="veh-label">Licencia de tránsito</span>
                   <input type="text" [ngModel]="form().numeroLicencia" (ngModelChange)="patch('numeroLicencia', $event)" />
                 </label>
+                <div class="veh-field">
+                  <argo-catalogo-enum-buscar
+                    label="Secretaría de tránsito"
+                    placeholder="Seleccione el organismo de tránsito"
+                    [textoInicial]="form().secretariaTransito || ''"
+                    [modoCombo]="true"
+                    [remoto]="false"
+                    [minLength]="1"
+                    [opcionesLocales]="opcionesSecretaria()"
+                    (seleccionado)="onSecretaria($event)"
+                    (limpiado)="onSecretariaLimpiar()"
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -328,6 +343,10 @@
         </button>
       </footer>
     </div>
+  }
+
+  @if (!loading() && tab() === 'salidas' && puedeDocumentos()) {
+    <app-salida-retorno [placaFija]="form().placa" />
   }
 
   @if (!loading() && tab() === 'documentos' && puedeDocumentos()) {

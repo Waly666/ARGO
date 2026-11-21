@@ -430,7 +430,7 @@
         <span class="emp-block-num" aria-hidden="true">03</span>
         <div>
           <h3>Datos laborales</h3>
-          <p>Cargo, sede, contrato y fechas</p>
+          <p>Cargo y departamento salen de los catálogos. El uso del vehículo no cambia el rol de la aplicación.</p>
         </div>
       </header>
       <div class="row">
@@ -474,6 +474,30 @@
         <div class="col-4">
           <argo-date-input label="Fecha retiro" [ngModel]="form().fechaRetiro" (ngModelChange)="patch('fechaRetiro', $event)" ></argo-date-input>
         </div>
+      </div>
+      <div class="emp-vehiculo">
+        <label class="emp-check">
+          <input
+            type="checkbox"
+            [ngModel]="form().usaVehiculosEmpresa === true"
+            (ngModelChange)="onUsaVehiculos($event)"
+          />
+          <span>
+            <strong>Usa vehículos de la empresa</strong>
+            <small>Sale un carro para clase o para un desplazamiento y diligencia la ficha preoperacional al salir y al entrar.</small>
+          </span>
+        </label>
+        <label class="emp-check">
+          <input
+            type="checkbox"
+            [ngModel]="form().conduce === true"
+            (ngModelChange)="onConduce($event)"
+          />
+          <span>
+            <strong>Conduce</strong>
+            <small>Si maneja un vehículo del CEA, queda como conductor. No depende del nombre del cargo.</small>
+          </span>
+        </label>
       </div>
     </section>
 
@@ -523,11 +547,8 @@
           <span class="emp-block-num" aria-hidden="true">05</span>
           <div>
             <h3 class="sec acceso-sec">Acceso al sistema</h3>
-            <p class="hint acceso-hint" *ngIf="cargoSugiereAcceso()">
-              Cargo Cajero/Instructor: al crear automático se asigna el rol correspondiente. La sede del empleado se hereda al usuario.
-            </p>
-            <p class="hint acceso-hint" *ngIf="!cargoSugiereAcceso()">
-              Crear automático genera una cuenta de login (rol usuario). Cajero/Instructor/Recepción usan su rol propio.
+            <p class="hint acceso-hint">
+              El cargo no crea el usuario. Aquí se vincula la cuenta solo si la persona va a entrar a ARGO, y el rol (instructor, administrativo u otro) se asigna en esa cuenta.
             </p>
           </div>
         </div>
@@ -635,7 +656,11 @@
           </td>
           <td class="mono col-doc">{{ e.tipoDocumento }} {{ e.numeroDocumento }}</td>
           <td class="col-nombre">{{ e.nombreCompleto }}</td>
-          <td class="col-cargo">{{ e.cargoNombre || '—' }}</td>
+          <td class="col-cargo">
+            {{ e.cargoNombre || '—' }}
+            <span class="cap cap-sm" *ngIf="e.conduce">Conduce</span>
+            <span class="cap cap-sm" *ngIf="e.usaVehiculosEmpresa && !e.conduce">Usa vehículo</span>
+          </td>
           <td class="col-sede">{{ e.sedeNombre || e.idSede || '—' }}</td>
           <td class="mono sm col-usuario">{{ e.usuarioLogin || '—' }}</td>
           <td class="col-depto">{{ e.departamentoNombre || '—' }}</td>

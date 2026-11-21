@@ -469,6 +469,7 @@ function nivelIndice(n) {
 }
 
 function itemAplicaAlNivel(item, nivelOrg) {
+  if (!NIVELES_ORDEN.includes(nivelOrg)) return false;
   if (!item.nivelMinimo) return true;
   return nivelIndice(nivelOrg) >= nivelIndice(item.nivelMinimo);
 }

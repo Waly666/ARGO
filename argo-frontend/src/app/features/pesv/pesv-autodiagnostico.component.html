@@ -1,49 +1,66 @@
 <section class="pesv-page card">
   <header class="pesv-hero">
-    <div class="pesv-hero-icon">◎</div>
+    <div class="pesv-hero-icon" aria-hidden="true">◎</div>
     <div class="pesv-hero-text">
       <p class="pesv-crumb"><a routerLink="/app/pesv">PESV</a> · Autodiagnóstico</p>
-      <h1>Autodiagnóstico de nivel</h1>
-      <p class="pesv-lead">Res. 40595 — misionalidad, tamaño de flota y conductores → Básico, Estándar o Avanzado.</p>
+      <h1>¿Debe presentar el PESV?</h1>
+      <p class="pesv-lead">
+        Esta organización hace una actividad distinta al transporte. Desde 10 vehículos presenta el PESV.
+        El nivel lo marca la cantidad de vehículos.
+      </p>
     </div>
   </header>
 
   <argo-pesv-nav active="autodiagnostico" />
 
+  <argo-pesv-ayuda
+    ahora="El número sale de los vehículos registrados. Pulse Confirmar diagnóstico."
+    detalle="ARGO cuenta la flota de la base de datos. De 10 a 49 es Básico, de 50 a 99 Estándar y desde 100 Avanzado. Si entra o sale un vehículo, el nivel se actualiza al volver a confirmar."
+    siguiente="/app/pesv/documentos"
+    siguienteTexto="Después de confirmar, ir a generar"
+  />
+
   @if (loading()) {
-    <p class="hint">Cargando…</p>
+    <p class="hint">Cargando la flota…</p>
   } @else {
+    <article class="pesv-resultado" [class.warn]="!vista().obligado">
+      <p class="pesv-resultado-kicker">Resultado con los vehículos de la base</p>
+      <h2>{{ vista().nivelLabel }}</h2>
+      <p>{{ vista().resumen }}</p>
+      @if (vista().obligado) {
+        <p class="hint">
+          10 a 49: Básico. 50 a 99: Estándar. Desde 100: Avanzado.
+        </p>
+      }
+    </article>
+
     <div class="pesv-panel">
       <label>
         Vigencia
-        <input type="number" [ngModel]="vigencia()" (ngModelChange)="vigencia.set($event)" min="2020" max="2100" />
+        <input type="number" [ngModel]="vigencia()" (ngModelChange)="vigencia.set(+$event); cargar()" min="2020" max="2100" />
       </label>
-      <label>
-        Misionalidad
-        <select [ngModel]="misionalidad()" (ngModelChange)="misionalidad.set($event == 1 ? 1 : 2)">
-          <option [ngValue]="1">1 — Presta servicio de transporte</option>
-          <option [ngValue]="2">2 — No presta servicio de transporte</option>
-        </select>
-      </label>
-      <label>
-        Total vehículos
-        <input type="number" min="0" [ngModel]="totalVehiculos()" (ngModelChange)="totalVehiculos.set(+$event)" />
-      </label>
-      <label>
-        Total conductores
-        <input type="number" min="0" [ngModel]="totalConductores()" (ngModelChange)="totalConductores.set(+$event)" />
-      </label>
+      <p class="flota-hint">
+        Vehículos que cuentan para el PESV: <strong>{{ flota() }}</strong>.
+        Es el total registrado en Vehículos. No se escribe a mano.
+      </p>
       <label>
         Observaciones
-        <textarea rows="3" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)"></textarea>
+        <textarea rows="3" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" placeholder="Notas de esta confirmación. El número de vehículos no se edita aquí."></textarea>
       </label>
 
-      @if (nivelLabel()) {
-        <p class="nivel">Nivel calculado: <strong>{{ nivelLabel() }}</strong></p>
-      }
+      <nav class="pesv-accesos" aria-label="Datos que ya puede cargar">
+        <a routerLink="/app/vehiculos">Vehículos</a>
+        <a routerLink="/app/pesv/fase1">Formularios</a>
+        <a routerLink="/app/rrhh/empleados">Empleados</a>
+      </nav>
 
       <div class="pesv-toolbar">
-        <button type="button" (click)="guardar()" [disabled]="saving()">Guardar autodiagnóstico</button>
+        <button type="button" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Confirmar diagnóstico' }}
+        </button>
+        @if (guardada()) {
+          <a class="btn-form" routerLink="/app/pesv/documentos">Generar documentos</a>
+        }
       </div>
       @if (msg()) {
         <p class="msg">{{ msg() }}</p>

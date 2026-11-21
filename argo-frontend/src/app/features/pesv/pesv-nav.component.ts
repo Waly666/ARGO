@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-export type PesvNavId = 'inicio' | 'autodiagnostico' | 'fase1' | 'fase2' | 'tablero' | 'config';
+export type PesvNavId = 'inicio' | 'autodiagnostico' | 'documentos' | 'fase1' | 'fase2' | 'tablero' | 'config';
 
 @Component({
   selector: 'argo-pesv-nav',

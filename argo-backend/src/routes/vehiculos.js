@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/vehiculoController');
 const inspCtrl = require('../controllers/inspeccionVehiculoController');
+const salidaCtrl = require('../controllers/registroSalidaRetornoController');
 const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 const { accionesModulo } = require('../middleware/gateAccion');
 const upload = require('../middleware/upload');
@@ -22,6 +23,11 @@ router.get('/colores', accVeh.ver, ctrl.listarColores);
 router.get('/clases', accVeh.ver, ctrl.listarClases);
 router.get('/tipos-documento', accVeh.ver, ctrl.listarTiposDocumento);
 router.get('/verificar-placa/:placa', accVeh.ver, ctrl.verificarPlaca);
+
+router.get('/salidas/apoyos', permisoInspeccion, salidaCtrl.apoyos);
+router.get('/salidas', permisoInspeccion, salidaCtrl.listar);
+router.post('/salidas', permisoInspeccion, salidaCtrl.crear);
+router.put('/salidas/:id', permisoInspeccion, salidaCtrl.actualizar);
 
 router.get('/', accVeh.ver, ctrl.listar);
 router.get('/:id/inspeccion', permisoInspeccion, inspCtrl.listar);

@@ -1,6 +1,7 @@
 const pesv = require('../services/pesv/pesvService');
 const pesvCaptura = require('../services/pesv/pesvCapturaService');
 const pesvPdfConfig = require('../services/pesv/pesvPdfConfigService');
+const plantillas = require('../services/pesv/pesvPlantillasService');
 const upload = require('../middleware/upload');
 
 function userFromReq(req) {
@@ -150,8 +151,8 @@ async function putCaptura(req, res, next) {
 
 async function postFase1Generar(req, res, next) {
   try {
-    await pesv.generarDocumentoFase1(req.params.vigencia, req.params.itemNo, userFromReq(req));
-    res.json({ ok: true });
+    const out = await pesv.generarDocumentoFase1(req.params.vigencia, req.params.itemNo, userFromReq(req));
+    res.json(out);
   } catch (e) {
     if (e.status === 501) {
       return res.status(501).json({
@@ -198,6 +199,80 @@ async function putFase2(req, res, next) {
 async function getResumen(req, res, next) {
   try {
     res.json(await pesv.resumen(req.query.vigencia));
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function getPlantillas(req, res, next) {
+  try {
+    const ctx = await pesv.contextoDocumentos(req.query.vigencia);
+    res.json(
+      plantillas.listar({
+        vigencia: ctx.vigencia,
+        clasificacion: ctx.clasificacion,
+        confirmado: ctx.confirmado,
+        permisos: req.permisos,
+        user: req.user,
+      }),
+    );
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function postGenerarPlantilla(req, res, next) {
+  try {
+    const ctx = await pesv.contextoDocumentos(req.body?.vigencia || req.query.vigencia);
+    if (!ctx.confirmado) {
+      const err = new Error('Confirme el autodiagnóstico antes de generar documentos.');
+      err.status = 400;
+      throw err;
+    }
+    res.status(201).json(
+      plantillas.generar({
+        codigo: req.params.codigo,
+        vigencia: ctx.vigencia,
+        user: req.user,
+        permisos: req.permisos,
+        config: ctx.config,
+        clasificacion: ctx.clasificacion,
+      }),
+    );
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function getArchivoPlantilla(req, res, next) {
+  try {
+    const ctx = await pesv.contextoDocumentos(req.query.vigencia);
+    const { archivo, descarga } = plantillas.rutaArchivo({
+      codigo: req.params.codigo,
+      vigencia: ctx.vigencia,
+      version: req.query.version,
+      base: req.query.base === '1',
+      user: req.user,
+      permisos: req.permisos,
+    });
+    res.download(archivo, descarga);
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function postReemplazarBase(req, res, next) {
+  try {
+    if (!req.file?.buffer) return res.status(400).json({ message: 'Archivo requerido' });
+    res.json(
+      plantillas.reemplazarBase({
+        codigo: req.params.codigo,
+        buffer: req.file.buffer,
+        nombreOriginal: req.file.originalname,
+        user: req.user,
+        permisos: req.permisos,
+      }),
+    );
   } catch (e) {
     next(e);
   }
@@ -263,6 +338,10 @@ module.exports = {
   getFase2,
   putFase2,
   getResumen,
+  getPlantillas,
+  postGenerarPlantilla,
+  getArchivoPlantilla,
+  postReemplazarBase,
   getSugerenciasFlota,
   getTablero,
   postFase2Adjunto,

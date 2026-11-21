@@ -1,0 +1,234 @@
+<section class="lista-page salida-page" [class.salida-page--ficha]="!!placaFija()">
+  @if (placaFija()) {
+    <header class="page-head card ficha-head">
+      <div class="head-row">
+        <div class="title">
+          <h2>Salida y retorno</h2>
+          <p>Registre aquí cuándo sale {{ placaFija() }} y cuándo regresa. La inspección preoperacional sigue en su ficha.</p>
+        </div>
+        <button type="button" class="primary" (click)="nuevo()">Registrar salida</button>
+      </div>
+    </header>
+  } @else {
+  <header class="page-head card">
+    <div class="head-row">
+      <div class="title">
+        <h1>Registro de salida y retorno</h1>
+        <p>
+          Cada vez que un vehículo sale del CEA queda aquí: quién lo conduce, para qué, a qué hora y con qué odómetro.
+          La inspección preoperacional se diligencia en el vehículo; este registro solo la vincula.
+        </p>
+      </div>
+      <button type="button" class="primary" (click)="nuevo()">Registrar salida</button>
+    </div>
+  </header>
+
+  <div class="card ayuda">
+    <strong>Qué hacer ahora.</strong>
+    Elija el vehículo y el conductor. Si sale a clase, enlace la clase y el alumno que ya están en ARGO.
+    Al volver, registre la hora y el kilometraje final. El sistema calcula los kilómetros recorridos.
+  </div>
+  }
+
+  @if (aviso()) {
+    <p class="ok">{{ aviso() }}</p>
+  }
+  @if (error() && !abierto()) {
+    <p class="err">{{ error() }}</p>
+  }
+
+  <div class="card toolbar">
+    <label>
+      Estado
+      <select [ngModel]="filtro()" (ngModelChange)="filtro.set($event); cargar()">
+        <option value="">Todos</option>
+        @for (e of estados; track e.id) {
+          <option [value]="e.id">{{ e.label }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="card tabla-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Registro</th>
+          @if (!placaFija()) {
+            <th>Vehículo</th>
+          }
+          <th>Conductor</th>
+          <th>Motivo</th>
+          <th>Salida</th>
+          <th>Retorno</th>
+          <th>Km</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item._id) {
+          <tr (click)="editar(item)">
+            <td>{{ item.numeroRegistro }}</td>
+            @if (!placaFija()) {
+              <td>{{ item.placa }}</td>
+            }
+            <td>{{ item.nombreConductor }}</td>
+            <td>
+              {{ etiquetaMotivo(item.motivo) }}
+              @if (item.alumnoNombre) {
+                <span class="sub">{{ item.alumnoNombre }}</span>
+              }
+            </td>
+            <td>{{ item.fechaHoraSalida ? (item.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+            <td>{{ item.fechaHoraRegreso ? (item.fechaHoraRegreso | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+            <td>{{ item.kilometrosRecorridos != null ? item.kilometrosRecorridos : '—' }}</td>
+            <td><span class="estado" [attr.data-estado]="item.estado">{{ etiquetaEstado(item.estado) }}</span></td>
+          </tr>
+        } @empty {
+          <tr>
+            <td [attr.colspan]="placaFija() ? 7 : 8" class="vacio">
+              {{ placaFija() ? 'Todavía no hay salidas de este vehículo.' : 'Todavía no hay salidas registradas.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (abierto()) {
+    <form class="card formulario" (ngSubmit)="guardar()">
+      <div class="form-head">
+        <h2>{{ editando() ? 'Editar desplazamiento' : 'Nueva salida' }}</h2>
+        <button type="button" class="ghost" (click)="cerrar()">Cerrar</button>
+      </div>
+      @if (error()) {
+        <p class="err">{{ error() }}</p>
+      }
+
+      <fieldset>
+        <legend>Identificación</legend>
+        @if (!placaFija()) {
+        <label>
+          Vehículo
+          <select [ngModel]="form().placa" (ngModelChange)="patch({ placa: $event })" name="placa" required>
+            <option value="">Seleccione</option>
+            @for (v of apoyos().vehiculos; track v.placa) {
+              <option [value]="v.placa">{{ v.label }}</option>
+            }
+          </select>
+        </label>
+        }
+        <label>
+          Conductor o instructor
+          <select [ngModel]="form().idEmpleadoConductor" (ngModelChange)="patch({ idEmpleadoConductor: $event })" name="conductor" required>
+            <option value="">Seleccione</option>
+            @for (c of apoyos().conductores; track c.idEmpleado) {
+              <option [value]="c.idEmpleado">{{ c.nombre }}</option>
+            }
+          </select>
+          @if (!apoyos().conductores.length) {
+            <span class="sub">Marque «Conduce» en el empleado que va a sacar el vehículo.</span>
+          }
+        </label>
+        <label>
+          Motivo
+          <select [ngModel]="form().motivo" (ngModelChange)="patch({ motivo: $event })" name="motivo">
+            @for (m of motivos; track m.id) {
+              <option [value]="m.id">{{ m.label }}</option>
+            }
+          </select>
+        </label>
+        @if (form().motivo === 'clase') {
+          <label>
+            Clase práctica
+            <select [ngModel]="form().claseId" (ngModelChange)="patch({ claseId: $event, alumnoNumDoc: '' })" name="clase">
+              <option value="">Seleccione la clase del vehículo y del día</option>
+              @for (c of apoyos().clases; track c.id) {
+                <option [value]="c.id">{{ c.resumen }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Alumno de la clase
+            <select [ngModel]="form().alumnoNumDoc" (ngModelChange)="patch({ alumnoNumDoc: $event })" name="alumno">
+              <option value="">Seleccione</option>
+              @for (a of apoyos().alumnos; track a.numDoc) {
+                <option [value]="a.numDoc">{{ a.nombre }}</option>
+              }
+            </select>
+          </label>
+        }
+      </fieldset>
+
+      <fieldset>
+        <legend>Recorrido</legend>
+        <label>
+          Origen
+          <input [ngModel]="form().origen" (ngModelChange)="patch({ origen: $event })" name="origen" />
+        </label>
+        <label>
+          Destino
+          <input [ngModel]="form().destino" (ngModelChange)="patch({ destino: $event })" name="destino" />
+        </label>
+        <label>
+          Fecha y hora de salida
+          <input type="datetime-local" [ngModel]="form().fechaHoraSalida" (ngModelChange)="patch({ fechaHoraSalida: $event })" name="salida" />
+        </label>
+        <label>
+          Kilometraje inicial
+          <input type="number" min="0" [ngModel]="form().kilometrajeInicial" (ngModelChange)="patch({ kilometrajeInicial: $event })" name="kmi" />
+        </label>
+        <label>
+          Inspección preoperacional
+          <select [ngModel]="form().inspeccionId" (ngModelChange)="patch({ inspeccionId: $event })" name="insp">
+            <option value="">Sin vincular</option>
+            @for (i of apoyos().inspecciones; track i.id) {
+              <option [value]="i.id">{{ i.label }}</option>
+            }
+          </select>
+          <span class="sub">Se busca la inspección del mismo vehículo y del día de la salida.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Retorno</legend>
+        <label>
+          Fecha y hora de regreso
+          <input type="datetime-local" [ngModel]="form().fechaHoraRegreso" (ngModelChange)="patch({ fechaHoraRegreso: $event })" name="regreso" />
+        </label>
+        <label>
+          Kilometraje final
+          <input type="number" min="0" [ngModel]="form().kilometrajeFinal" (ngModelChange)="patch({ kilometrajeFinal: $event })" name="kmf" />
+        </label>
+        <p class="km">Kilómetros recorridos: {{ km() != null ? km() : 'se calculan al guardar el retorno' }}</p>
+        <button type="button" class="ghost" (click)="registrarRetorno()">Marcar retorno ahora</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Novedades y cierre</legend>
+        <label class="ancho">
+          Observaciones
+          <textarea rows="2" [ngModel]="form().observaciones" (ngModelChange)="patch({ observaciones: $event })" name="obs"></textarea>
+        </label>
+        <label class="ancho">
+          Incidente o falla
+          <textarea rows="2" [ngModel]="form().incidente" (ngModelChange)="patch({ incidente: $event })" name="inc" placeholder="Déjelo vacío si no hubo novedad"></textarea>
+        </label>
+        <label>
+          Estado
+          <select [ngModel]="form().estado" (ngModelChange)="patch({ estado: $event })" name="estado">
+            @for (e of estados; track e.id) {
+              <option [value]="e.id">{{ e.label }}</option>
+            }
+          </select>
+        </label>
+      </fieldset>
+
+      <div class="acciones">
+        <button type="submit" class="primary" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Guardar registro' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>
