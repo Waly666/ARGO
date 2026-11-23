@@ -35,31 +35,31 @@ export const SERVIAL_AULA_VIRTUAL_CATALOGO_OVERRIDES = [
     patron: 'mercancías peligrosas',
     titulo: 'Curso de Mercancías Peligrosas',
     url: '/mercancias-peligrosas',
-    cta: 'Ver Curso de Mercancías Peligrosas',
+    cta: 'Ver curso',
   },
   {
     patron: 'trabajo en alturas',
     titulo: 'Curso de Trabajo en Alturas',
     url: '/trabajo-en-alturas',
-    cta: 'Ver Curso de Trabajo en Alturas',
+    cta: 'Ver curso',
   },
   {
     patron: 'primeros auxilios',
     titulo: 'Curso de Primeros Auxilios',
     url: '/curso-primeros-auxilios',
-    cta: 'Ver Curso de Primeros Auxilios',
+    cta: 'Ver curso',
   },
   {
     patron: 'manejo defensivo',
     titulo: 'Curso Virtual de Manejo Defensivo',
     url: '/curso-manejo-defensivo',
-    cta: 'Ver Curso de Manejo Defensivo',
+    cta: 'Ver curso',
   },
   {
     patron: 'seguridad vial',
     titulo: 'Curso Virtual de Seguridad Vial',
     url: '/cursos',
-    cta: 'Conocer Curso de Seguridad Vial',
+    cta: 'Ver curso',
   },
 ];
 

@@ -54,7 +54,6 @@ export interface ServicioCatalogoCardView {
   curso: CursoVirtual;
   titulo?: string;
   linkRoute?: string;
-  btnLabel?: string;
 }
 
 @Component({
@@ -244,7 +243,6 @@ export class ServicioLineaComponent implements OnInit {
         curso,
         titulo: match?.titulo,
         linkRoute: match?.url,
-        btnLabel: match?.cta,
       };
     });
   });
