@@ -21,6 +21,7 @@ import {
   capValorEgreso,
 } from '../../core/utils/capsule.util';
 import {
+  faltaSoporteEgreso,
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
@@ -184,11 +185,10 @@ export class CajaEgresosTodosComponent implements OnInit {
   capFormaPago = capFormaPago;
   capValorEgreso = capValorEgreso;
 
-  egresosSinSoporte = computed(() =>
-    this.itemsOrdenados().filter((e) => !this.esAnulado(e) && !tieneSoporteEgreso(e)),
-  );
+  egresosSinSoporte = computed(() => this.itemsOrdenados().filter((e) => faltaSoporteEgreso(e)));
   cantSinSoporte = computed(() => this.egresosSinSoporte().length);
   tieneSoporte = tieneSoporteEgreso;
+  faltaSoporte = faltaSoporteEgreso;
   tituloSoporte = tituloSoporteEgreso;
 
   ngOnInit(): void {

@@ -16,7 +16,7 @@ import {
   CajaDescuadre,
 } from '../../core/services/caja-sesion.service';
 import {
-  tieneSoporteEgreso,
+  faltaSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
 import { ArqueoLinea } from '../../core/constants/caja-arqueo.constants';
 import { crearLineasArqueoVacias, totalArqueo as calcTotalArqueo } from '../../core/utils/caja-arqueo.helpers';
@@ -81,7 +81,7 @@ export class CajaCuadreComponent implements OnInit {
   descuadreInforme = signal<CajaDescuadre | null>(null);
   empresaConfig = signal<ConfigRecibo | null>(null);
 
-  egresosSinSoporte = computed(() => this.egresosSesion().filter((e) => !tieneSoporteEgreso(e)));
+  egresosSinSoporte = computed(() => this.egresosSesion().filter((e) => faltaSoporteEgreso(e)));
   cantSinSoporte = computed(() => this.egresosSinSoporte().length);
 
   ventasBrutas = computed(() => this.resumen()?.ventasBrutas ?? this.resumen()?.totalIngresos ?? 0);

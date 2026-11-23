@@ -15,6 +15,7 @@ import {
   ResumenCaja,
 } from '../../core/services/caja-sesion.service';
 import {
+  faltaSoporteEgreso,
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
@@ -145,9 +146,10 @@ export class CajaCierreDetalleComponent implements OnInit {
 
   sesionReabierta = computed(() => this.sesion()?.estado === 'abierta' && !!this.sesion()?.fechaReapertura);
 
-  egresosSinSoporte = computed(() => this.egresos().filter((e) => !tieneSoporteEgreso(e)));
+  egresosSinSoporte = computed(() => this.egresos().filter((e) => faltaSoporteEgreso(e)));
   cantSinSoporte = computed(() => this.egresosSinSoporte().length);
   tieneSoporte = tieneSoporteEgreso;
+  faltaSoporte = faltaSoporteEgreso;
   tituloSoporte = tituloSoporteEgreso;
 
   metodosPago = computed((): MetodoPagoCard[] => {

@@ -148,7 +148,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let e of itemsOrdenados()" [class.fila-sin-soporte]="!esAnulado(e) && !tieneSoporte(e)" [class.row-anulado]="esAnulado(e)">
+          <tr *ngFor="let e of itemsOrdenados()" [class.fila-sin-soporte]="faltaSoporte(e)" [class.row-anulado]="esAnulado(e)">
             <td><span [ngClass]="capFecha(e.fechaEgreso)">{{ e.fechaEgreso | date: 'dd/MM/yyyy HH:mm' }}</span></td>
             <td>
               <span [ngClass]="capRecibo(e.numRecibo)">{{ e.numRecibo || '—' }}</span>
@@ -176,7 +176,7 @@
                 <button
                   type="button"
                   class="row-alarm doc-alarm"
-                  *ngIf="!tieneSoporte(e)"
+                  *ngIf="faltaSoporte(e)"
                   (click)="onAlarmaSoporte(e, $event)"
                   [attr.title]="tituloSoporte(e)"
                   [attr.aria-label]="tituloSoporte(e)">
@@ -184,7 +184,7 @@
                   <span class="row-alarm-icon">!</span>
                   <span class="row-alarm-label">Sop.</span>
                 </button>
-                <span *ngIf="tieneSoporte(e)" class="dim">OK</span>
+                <span *ngIf="!faltaSoporte(e)" class="dim">OK</span>
               </ng-container>
               <span *ngIf="esAnulado(e)" class="dim" [attr.title]="tituloAnulado(e)">—</span>
             </td>
@@ -212,7 +212,7 @@
       <article
         class="list-card"
         *ngFor="let e of itemsOrdenados()"
-        [class.list-card-sin-soporte]="!esAnulado(e) && !tieneSoporte(e)"
+        [class.list-card-sin-soporte]="faltaSoporte(e)"
         [class.list-card-anulado]="esAnulado(e)">
         <div class="card-title">
           <h3>
@@ -226,7 +226,7 @@
           <button
             type="button"
             class="row-alarm doc-alarm card-soporte-alarm"
-            *ngIf="!esAnulado(e) && !tieneSoporte(e)"
+            *ngIf="faltaSoporte(e)"
             (click)="onAlarmaSoporte(e, $event)"
             [attr.title]="tituloSoporte(e)"
             [attr.aria-label]="tituloSoporte(e)">

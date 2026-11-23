@@ -42,6 +42,7 @@ import { CajaAperturaAlertService } from '../../core/services/caja-apertura-aler
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
 import {
+  faltaSoporteEgreso,
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
@@ -378,9 +379,7 @@ export class EgresosAdminComponent implements OnInit {
     this.accionPermiso.puedeEliminar('egresos') ? 'Anular' : 'Solicitar anulación',
   );
 
-  egresosSinSoporte = computed(() =>
-    this.egresos().filter((e) => !this.tieneSoporte(e)),
-  );
+  egresosSinSoporte = computed(() => this.egresos().filter((e) => faltaSoporteEgreso(e)));
 
   cantSinSoporte = computed(() => this.egresosSinSoporte().length);
 
@@ -1574,6 +1573,7 @@ export class EgresosAdminComponent implements OnInit {
   }
 
   tieneSoporte = tieneSoporteEgreso;
+  faltaSoporte = faltaSoporteEgreso;
 
   tituloSoporte = tituloSoporteEgreso;
 

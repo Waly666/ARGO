@@ -17,6 +17,7 @@ import {
   capValorEgreso,
 } from '../../core/utils/capsule.util';
 import {
+  faltaSoporteEgreso,
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
@@ -61,11 +62,12 @@ export class CajaEgresosSesionComponent implements OnInit {
 
   total = () => this.items().reduce((a, e) => a + (e.valorEgreso || 0), 0);
 
-  sinSoporte = () => this.items().filter((e) => !tieneSoporteEgreso(e));
+  sinSoporte = () => this.items().filter((e) => faltaSoporteEgreso(e));
 
   cantSinSoporte = () => this.sinSoporte().length;
 
   tieneSoporte = tieneSoporteEgreso;
+  faltaSoporte = faltaSoporteEgreso;
 
   tituloSoporte = tituloSoporteEgreso;
 

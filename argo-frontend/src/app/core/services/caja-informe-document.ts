@@ -12,7 +12,7 @@ import {
 import { ArqueoLinea } from '../constants/caja-arqueo.constants';
 import { resolverFormaPagoIngreso } from '../utils/caja-forma-pago.util';
 import { tieneSoporteAdjunto } from '../utils/pago-soporte.helpers';
-import { tieneSoporteEgreso } from '../utils/egreso-soporte.helpers';
+import { faltaSoporteEgreso } from '../utils/egreso-soporte.helpers';
 import { esFormaPagoEfectivo } from '../utils/referencia-pago.util';
 import {
   informePrintToolbarCss,
@@ -193,8 +193,8 @@ function esMovimientoAnulado(row?: { anulado?: boolean; estado?: string | null }
 }
 
 /**
- * Ingresos: efectivo NO exige soporte; el resto de formas de pago sí.
- * Egresos: todos exigen soporte (factura/voucher), sin importar la forma de pago.
+ * Efectivo no exige soporte, ni en ingresos ni en egresos.
+ * El resto de formas de pago sí.
  */
 function ingresoEsEfectivo(i: CajaIngresoItem): boolean {
   if (String(i.idTipoPago ?? '').trim() === '1') return true;
@@ -211,10 +211,9 @@ function ingresoSinSoporteRequerido(i: CajaIngresoItem): boolean {
   return !tieneSoporteAdjunto(i);
 }
 
-/** Todos los egresos vigentes deben llevar soporte. */
+/** Egresos en efectivo no exigen soporte. El resto sí. */
 function egresoSinSoporte(e: CajaEgresoItem): boolean {
-  if (esMovimientoAnulado(e)) return false;
-  return !tieneSoporteEgreso(e);
+  return faltaSoporteEgreso(e);
 }
 
 function htmlAlertaSinSoporte(ingresos: CajaIngresoItem[], egresos: CajaEgresoItem[]): string {
@@ -243,14 +242,16 @@ function htmlAlertaSinSoporte(ingresos: CajaIngresoItem[], egresos: CajaEgresoIt
   const detalleIng = ingSin.length
     ? `${ingSin.length} ingreso(s) (formas distintas de efectivo)`
     : '';
-  const detalleEg = egSin.length ? `${egSin.length} egreso(s)` : '';
+  const detalleEg = egSin.length
+    ? `${egSin.length} egreso(s) (formas distintas de efectivo)`
+    : '';
   const detalle = [detalleIng, detalleEg].filter(Boolean).join(' · ');
 
   return `<div class="alerta-soporte">
     <strong>⚠ ALERTA: comprobantes sin soporte adjunto (${total})</strong>
     <p style="margin:0 0 4px">
-      Regla: ingresos en efectivo no requieren soporte; las demás formas de pago de ingreso sí.
-      Todos los egresos deben llevar soporte (factura, voucher o comprobante).
+      Regla: el efectivo no requiere soporte, ni en ingresos ni en egresos.
+      Las demás formas de pago sí deben llevar imagen de factura, voucher o comprobante.
       ${detalle ? `Faltan: ${esc(detalle)}.` : ''}
     </p>
     <ul>${items.join('')}</ul>

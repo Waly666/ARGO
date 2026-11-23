@@ -717,7 +717,7 @@
 
     <tbody>
 
-      <tr *ngFor="let e of egresos()" [class.fila-sin-soporte]="!tieneSoporte(e)" [class.row-anulado]="esAnulado(e)">
+      <tr *ngFor="let e of egresos()" [class.fila-sin-soporte]="faltaSoporte(e)" [class.row-anulado]="esAnulado(e)">
 
         <td class="mono comprobante-cell">
           {{ e.numRecibo || '—' }}
@@ -756,7 +756,7 @@
           <button
             type="button"
             class="row-alarm doc-alarm"
-            *ngIf="!tieneSoporte(e)"
+            *ngIf="faltaSoporte(e)"
             (click)="onAlarmaSoporte(e, $event)"
             [attr.title]="tituloSoporte(e)"
             [attr.aria-label]="tituloSoporte(e)">
@@ -764,7 +764,7 @@
             <span class="row-alarm-icon">!</span>
             <span class="row-alarm-label">Sop.</span>
           </button>
-          <span *ngIf="tieneSoporte(e)" class="dim">—</span>
+          <span *ngIf="!faltaSoporte(e)" class="dim">—</span>
         </td>
 
         <td class="actions-cell">
