@@ -103,7 +103,7 @@ async function generarSitemapXml(req) {
   ].join('\n');
 }
 
-/** robots.txt — Sitemap debe ser URL absoluta (Google / Lighthouse). */
+/** robots.txt — solo directivas que PageSpeed/Lighthouse aceptan (User-agent, Allow, Disallow, Sitemap). */
 function generarRobotsTxt(req) {
   const base = siteBaseUrl(req);
   const lines = [
@@ -117,7 +117,6 @@ function generarRobotsTxt(req) {
   ];
   if (base) {
     lines.push(`Sitemap: ${base}/sitemap.xml`, '');
-    lines.push(`Agentmap: ${base}/.well-known/ard.json`, '');
   }
   return lines.join('\n');
 }
