@@ -556,6 +556,23 @@
         />
       }
 
+      @case ('landingCursos') {
+        <p class="psb-note">
+          Página pública en <strong>/landing-cursos</strong>. Úsela para el curso que vaya a anunciar.
+          Enciéndala o apáguela en <strong>Páginas visibles</strong>. Pulse <strong>Publicar cambios</strong> para los textos.
+          <a
+            class="psb-btn psb-btn--ghost psb-note__action"
+            [href]="portalUrl + 'landing-cursos'"
+            target="_blank"
+            rel="noopener"
+          >Abrir página en el portal ↗</a>
+        </p>
+        <argo-portal-mecanica-vehiculos-electricos-editor
+          [landing]="ensureLandingCursos()"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
       @case ('primerosAuxilios') {
         <p class="psb-note">
           Página pública en <strong>/curso-primeros-auxilios</strong>. Vincule el programa del catálogo para que

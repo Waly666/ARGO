@@ -24,6 +24,11 @@ export const PORTAL_ASISTENTE_PAGINAS: {
   { key: 'trabajoEnAlturas', titulo: 'Trabajo en alturas', descripcion: 'Landing de trabajo en alturas' },
   { key: 'manejoDefensivo', titulo: 'Manejo defensivo', descripcion: 'Landing de manejo defensivo' },
   { key: 'primerosAuxilios', titulo: 'Primeros auxilios', descripcion: 'Landing de primeros auxilios' },
+  {
+    key: 'landingCursos',
+    titulo: 'Landing de cursos',
+    descripcion: 'Landing para anunciar un curso',
+  },
   { key: 'servicios', titulo: 'Portafolio de servicios', descripcion: 'Hub y páginas de servicios' },
   { key: 'jornadasCapacitacion', titulo: 'Jornadas de capacitación', descripcion: 'Inscripción a jornadas' },
   { key: 'evaluacionJornadas', titulo: 'Evaluación de jornadas', descripcion: 'Encuesta de satisfacción' },

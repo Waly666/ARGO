@@ -24,6 +24,7 @@ export type PortalPaginaKey =
   | 'trabajoEnAlturas'
   | 'manejoDefensivo'
   | 'primerosAuxilios'
+  | 'landingCursos'
   | 'servicios'
   | 'jornadasCapacitacion'
   | 'evaluacionJornadas'
@@ -170,6 +171,7 @@ export const PORTAL_PAGINA_RUTAS: Record<PortalPaginaKey, string> = {
   trabajoEnAlturas: '/trabajo-en-alturas',
   manejoDefensivo: '/curso-manejo-defensivo',
   primerosAuxilios: '/curso-primeros-auxilios',
+  landingCursos: '/landing-cursos',
   servicios: '/servicios',
   jornadasCapacitacion: '/jornadas-capacitacion',
   evaluacionJornadas: '/evaluacion-jornadas',
@@ -211,6 +213,11 @@ export const PORTAL_PAGINA_META: { key: PortalPaginaKey; titulo: string; descrip
     key: 'primerosAuxilios',
     titulo: 'Primeros auxilios',
     descripcion: 'Curso y landing de primeros auxilios',
+  },
+  {
+    key: 'landingCursos',
+    titulo: 'Landing de cursos',
+    descripcion: 'Página para anunciar un curso. Se edita por completo y queda apagada hasta que la empresa la active.',
   },
   {
     key: 'servicios',
@@ -255,7 +262,7 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
   for (const m of PORTAL_PAGINA_META) {
     if (!paginas[m.key]) {
       paginas[m.key] = {
-        activa: true,
+        activa: m.key !== 'landingCursos',
         etiquetaMenu: m.titulo,
         ruta: PORTAL_PAGINA_RUTAS[m.key],
         menuGrupo: m.key === 'cursosConduccion' ? 'servicios' : 'principal',

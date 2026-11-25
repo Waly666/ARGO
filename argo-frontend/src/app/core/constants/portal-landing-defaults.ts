@@ -51,6 +51,11 @@ import {
   PortalPrimerosAuxiliosLanding,
 } from './primeros-auxilios-landing-defaults';
 import {
+  LANDING_CURSOS_DEFAULT,
+  mergeLandingCursos,
+  type PortalLandingCursos,
+} from './landing-cursos-defaults';
+import {
   EVALUACION_JORNADAS_LANDING_DEFAULTS,
   mergeEvaluacionJornadasLanding,
   PortalEvaluacionJornadasLanding,
@@ -362,6 +367,7 @@ export interface PortalLandingConfig {
   trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
   manejoDefensivo: PortalManejoDefensivoLanding;
   primerosAuxilios: PortalPrimerosAuxiliosLanding;
+  landingCursos: PortalLandingCursos;
   finstruvialServicios: PortalFinstruvialServiciosConfig;
   servicios: { titulo: string; items: LandingServicioItem[] };
   valores: { titulo: string; lead: string; items: LandingItemBasico[] };
@@ -630,6 +636,7 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   primerosAuxilios: JSON.parse(
     JSON.stringify(PRIMEROS_AUXILIOS_LANDING),
   ) as PortalPrimerosAuxiliosLanding,
+  landingCursos: JSON.parse(JSON.stringify(LANDING_CURSOS_DEFAULT)) as PortalLandingCursos,
   finstruvialServicios: JSON.parse(
     JSON.stringify(FINSTRUVIAL_SERVICIOS_DEFAULTS),
   ) as PortalFinstruvialServiciosConfig,
@@ -1068,6 +1075,10 @@ export function mergePortalLanding(
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
     manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo, manejoDefensivoDefaultsForTema(tema), tema),
     primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios, primerosAuxiliosDefaultsForTema(tema), tema),
+    landingCursos: mergeLandingCursos(
+      raw.landingCursos ||
+        (raw as { mecanicaVehiculosElectricos?: PortalLandingCursos }).mecanicaVehiculosElectricos,
+    ),
     finstruvialServicios: mergePortafolioServicios(raw.finstruvialServicios, tema),
     servicios: {
       ...d.servicios,

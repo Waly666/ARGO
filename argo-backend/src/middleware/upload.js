@@ -426,6 +426,7 @@ module.exports = {
   aulaVirtualTrabajoEnAlturas: buildImagen('aula-virtual-trabajo-en-alturas', 8),
   aulaVirtualManejoDefensivo: buildImagen('aula-virtual-manejo-defensivo', 8),
   aulaVirtualPrimerosAuxilios: buildImagen('aula-virtual-primeros-auxilios', 8),
+  aulaVirtualMecanicaVehiculosElectricos: buildImagen('aula-virtual-mecanica-vehiculos-electricos', 8),
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   aulaVirtualBlogHero: buildImagen('aula-virtual-blog-hero', 8),
   aulaVirtualPqrHero: buildImagen('aula-virtual-pqr-hero', 8),

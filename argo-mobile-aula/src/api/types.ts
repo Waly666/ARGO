@@ -99,6 +99,7 @@ export type PortalPaginaKey =
   | 'trabajoEnAlturas'
   | 'manejoDefensivo'
   | 'primerosAuxilios'
+  | 'landingCursos'
   | 'servicios'
   | 'jornadasCapacitacion'
   | 'evaluacionJornadas'

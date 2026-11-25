@@ -20,6 +20,7 @@ const {
   aulaVirtualTrabajoEnAlturas,
   aulaVirtualManejoDefensivo,
   aulaVirtualPrimerosAuxilios,
+  aulaVirtualMecanicaVehiculosElectricos,
   aulaVirtualBlog,
   aulaVirtualBlogHero,
   aulaVirtualPqrHero,
@@ -468,6 +469,19 @@ router.delete(
   requireAuth,
   configPortal,
   admin.quitarImagenPrimerosAuxiliosPortal,
+);
+router.post(
+  '/admin/portal/mecanica-vehiculos-electricos-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualMecanicaVehiculosElectricos.single('imagen'),
+  admin.subirImagenMecanicaVehiculosElectricosPortal,
+);
+router.delete(
+  '/admin/portal/mecanica-vehiculos-electricos-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenMecanicaVehiculosElectricosPortal,
 );
 
 router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);

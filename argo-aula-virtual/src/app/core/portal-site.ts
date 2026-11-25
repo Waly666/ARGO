@@ -17,6 +17,7 @@ export type PortalPaginaKey =
   | 'trabajoEnAlturas'
   | 'manejoDefensivo'
   | 'primerosAuxilios'
+  | 'landingCursos'
   | 'servicios'
   | 'jornadasCapacitacion'
   | 'evaluacionJornadas'
@@ -38,6 +39,7 @@ const RUTA_PAGINA: Record<PortalPaginaKey, string> = {
   trabajoEnAlturas: '/trabajo-en-alturas',
   manejoDefensivo: '/curso-manejo-defensivo',
   primerosAuxilios: '/curso-primeros-auxilios',
+  landingCursos: '/landing-cursos',
   servicios: '/servicios',
   jornadasCapacitacion: '/jornadas-capacitacion',
   evaluacionJornadas: '/evaluacion-jornadas',
@@ -76,6 +78,7 @@ const DEFAULT_HOME_ORDER = [
 export function paginaActiva(config: PortalConfig | null, key: PortalPaginaKey): boolean {
   if (key === 'home' || key === 'aula') return true;
   const p = config?.site?.paginas?.[key];
+  if (key === 'landingCursos') return p?.activa === true;
   if (!p) return true;
   return p.activa !== false;
 }
@@ -160,6 +163,7 @@ export function clavePaginaPorRuta(path: string, config?: PortalConfig | null): 
   if (base.startsWith('/cursos/')) return 'cursos';
   if (base === '/blog' || base.startsWith('/blog/')) return 'blog';
   if (base === '/primeros-auxilios') return 'primerosAuxilios';
+  if (base === '/mecanica-vehiculos-electricos') return 'landingCursos';
   if (base === '/servicios' || base.startsWith('/servicios/')) return 'servicios';
   for (const [key, ruta] of Object.entries(RUTA_PAGINA)) {
     if (ruta !== '/' && base === ruta) return key as PortalPaginaKey;

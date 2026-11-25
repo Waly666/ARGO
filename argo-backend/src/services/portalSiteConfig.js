@@ -43,7 +43,8 @@ function normalizarPaginas(raw, navFallback = {}) {
     const fb = base[key];
     const item = src[key] && typeof src[key] === 'object' ? src[key] : {};
     out[key] = {
-      activa: item.activa !== false,
+      activa:
+        key === 'landingCursos' ? item.activa === true : item.activa !== false,
       etiquetaMenu: str(item.etiquetaMenu, fb.etiquetaMenu) || fb.etiquetaMenu,
       ruta: normalizarRutaPagina(key, item.ruta, fb.ruta),
       menuGrupo:

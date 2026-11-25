@@ -143,6 +143,11 @@ export class ShellComponent implements OnInit, AfterViewInit {
         route: rutaPagina('cursosConduccion', cfg),
         label: etiquetaPagina(cfg, 'cursosConduccion', nav.cursosConduccion),
       },
+      {
+        key: 'landingCursos',
+        route: rutaPagina('landingCursos', cfg),
+        label: etiquetaPagina(cfg, 'landingCursos', 'Landing de cursos'),
+      },
       { key: 'galeria', route: rutaPagina('galeria', cfg), label: etiquetaPagina(cfg, 'galeria', nav.galeria) },
       { key: 'blog', route: rutaPagina('blog', cfg), label: etiquetaPagina(cfg, 'blog', nav.blog) },
       { key: 'acerca', route: rutaPagina('acerca', cfg), label: etiquetaPagina(cfg, 'acerca', nav.acerca) },

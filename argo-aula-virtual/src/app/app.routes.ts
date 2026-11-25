@@ -103,6 +103,19 @@ export const routes: Routes = [
         pathMatch: 'full',
       },
       {
+        path: 'mecanica-vehiculos-electricos',
+        redirectTo: 'landing-cursos',
+        pathMatch: 'full',
+      },
+      {
+        path: 'landing-cursos',
+        canActivate: [portalPageGuard],
+        loadComponent: () =>
+          import('./pages/mecanica-vehiculos-electricos/mecanica-vehiculos-electricos.component').then(
+            (m) => m.MecanicaVehiculosElectricosComponent,
+          ),
+      },
+      {
         path: 'curso-primeros-auxilios',
         canActivate: [portalPageGuard],
         loadComponent: () =>

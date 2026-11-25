@@ -20,6 +20,7 @@ const PORTAL_PAGINA_RUTAS: Record<PortalPaginaKey, string> = {
   trabajoEnAlturas: '/trabajo-en-alturas',
   manejoDefensivo: '/curso-manejo-defensivo',
   primerosAuxilios: '/curso-primeros-auxilios',
+  landingCursos: '/landing-cursos',
   servicios: '/servicios',
   jornadasCapacitacion: '/jornadas-capacitacion',
   evaluacionJornadas: '/evaluacion-jornadas',
@@ -126,6 +127,7 @@ export function clavePaginaPorRutaConConfig(
 
   if (base === '/blog' || base.startsWith('/blog/')) return 'blog';
   if (base === '/primeros-auxilios') return 'primerosAuxilios';
+  if (base === '/mecanica-vehiculos-electricos') return 'landingCursos';
 
   const index = buildPortalRouteIndex(config);
   const hit = index.get(base);

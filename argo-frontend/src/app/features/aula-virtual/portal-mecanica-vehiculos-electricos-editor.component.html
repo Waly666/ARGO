@@ -1,0 +1,150 @@
+<div class="lc-editor">
+  <p class="psb-note">
+    Esta es la landing de cursos. Cámbiela según el curso que vaya a anunciar.
+    Los textos se guardan al publicar. Las imágenes se guardan al subirlas o al quitarlas.
+    Puede usar {{ '{' }}empresa{{ '}' }}, {{ '{' }}telefono{{ '}' }} y {{ '{' }}direccion{{ '}' }}: en el sitio se reemplazan por los datos de la empresa.
+  </p>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Título</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Título del curso (H1)</span>
+      <input type="text" class="psb-input" [(ngModel)]="landing.h1" name="lc-h1" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Frase bajo el banner</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="landing.bandTexto" name="lc-band"></textarea>
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Habilidades</h3>
+    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.habilidadesKicker" name="lc-hk" /></label>
+    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.habilidadesTitulo" name="lc-ht" /></label>
+    <label class="psb-field psb-field--plain"><span>Texto</span><textarea class="psb-input" rows="2" [(ngModel)]="landing.habilidadesLead" name="lc-hl"></textarea></label>
+    @for (item of landing.habilidades; track $index; let i = $index) {
+      <div class="lc-item">
+        <div class="lc-item__head"><strong>Tarjeta {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.habilidades, i)">Eliminar</button></div>
+        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'hab-t-' + i" placeholder="Título" />
+        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'hab-x-' + i" placeholder="Texto"></textarea>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addBloque(landing.habilidades)">+ Añadir tarjeta</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Programa</h3>
+    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.programaKicker" name="lc-pk" /></label>
+    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.programaTitulo" name="lc-pt" /></label>
+    <label class="psb-field psb-field--plain"><span>Texto</span><textarea class="psb-input" rows="2" [(ngModel)]="landing.programaLead" name="lc-pl"></textarea></label>
+    @for (item of landing.modulos; track $index; let i = $index) {
+      <div class="lc-item">
+        <div class="lc-item__head"><strong>Clase {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.modulos, i)">Eliminar</button></div>
+        <input class="psb-input" [(ngModel)]="item.numero" [name]="'mod-n-' + i" placeholder="Número" />
+        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'mod-t-' + i" placeholder="Título" />
+        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'mod-x-' + i"></textarea>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addModulo()">+ Añadir clase</button>
+    <h4>Bloques extra</h4>
+    @for (item of landing.extras; track $index; let i = $index) {
+      <div class="lc-item">
+        <div class="lc-item__head"><strong>Extra {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.extras, i)">Eliminar</button></div>
+        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'ex-t-' + i" placeholder="Título" />
+        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'ex-x-' + i"></textarea>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addBloque(landing.extras)">+ Añadir bloque</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Para quién</h3>
+    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.audienciaKicker" name="lc-ak" /></label>
+    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.audienciaTitulo" name="lc-at" /></label>
+    @for (p of landing.audienciaParrafos; track $index; let i = $index) {
+      <div class="lc-item">
+        <div class="lc-item__head"><strong>Párrafo {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.audienciaParrafos, i)">Eliminar</button></div>
+        <textarea class="psb-input" rows="2" [(ngModel)]="landing.audienciaParrafos[i]" [name]="'aud-' + i"></textarea>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addParrafo()">+ Añadir párrafo</button>
+    <label class="psb-field psb-field--plain"><span>Nota</span><textarea class="psb-input" rows="2" [(ngModel)]="landing.audienciaNota" name="lc-an"></textarea></label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Datos de inscripción</h3>
+    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.datosKicker" name="lc-dk" /></label>
+    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.datosTitulo" name="lc-dt" /></label>
+    @for (item of landing.datos; track $index; let i = $index) {
+      <div class="lc-item">
+        <div class="lc-item__head"><strong>Tarjeta {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.datos, i)">Eliminar</button></div>
+        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'dato-t-' + i" placeholder="Título" />
+        <input class="psb-input" [(ngModel)]="item.precio" [name]="'dato-p-' + i" placeholder="Precio en grande, si aplica" />
+        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'dato-x-' + i"></textarea>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addDato()">+ Añadir tarjeta</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Preguntas</h3>
+    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.faqKicker" name="lc-fk" /></label>
+    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.faqTitulo" name="lc-ft" /></label>
+    @for (item of landing.faq; track $index; let i = $index) {
+      <div class="lc-item">
+        <div class="lc-item__head"><strong>Pregunta {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.faq, i)">Eliminar</button></div>
+        <input class="psb-input" [(ngModel)]="item.pregunta" [name]="'faq-q-' + i" placeholder="Pregunta" />
+        <textarea class="psb-input" rows="2" [(ngModel)]="item.respuesta" [name]="'faq-a-' + i"></textarea>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addFaq()">+ Añadir pregunta</button>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Cierre</h3>
+    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.ctaKicker" name="lc-ck" /></label>
+    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.ctaTitulo" name="lc-ct" /></label>
+    <label class="psb-field psb-field--plain"><span>Texto</span><textarea class="psb-input" rows="3" [(ngModel)]="landing.ctaTexto" name="lc-cx"></textarea></label>
+    <label class="psb-field psb-field--plain"><span>Botón de compra</span><input class="psb-input" [(ngModel)]="landing.ctaComprarTexto" name="lc-cbt" /></label>
+    <label class="psb-field psb-field--plain"><span>Enlace del botón de compra</span><input class="psb-input" [(ngModel)]="landing.ctaComprarUrl" name="lc-cbu" placeholder="/registro" /></label>
+    <label class="psb-field psb-field--plain"><span>Botón del asesor</span><input class="psb-input" [(ngModel)]="landing.ctaAsesorTexto" name="lc-ca" /></label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Imágenes</h3>
+    <p class="psb-note">Agregue las que necesite y elija en qué parte de la página se ven. Si quita el archivo, el espacio queda vacío. Si elimina la imagen, desaparece de la landing.</p>
+    @for (img of landing.imagenes; track img.id; let i = $index) {
+      <div class="psb-imagen-slot">
+        <div class="psb-imagen-slot__head">
+          <strong>{{ img.etiqueta || 'Imagen' }}</strong>
+          <button type="button" class="psb-link" (click)="eliminarImagen(i)">Eliminar</button>
+        </div>
+        @if (previewUrl(img); as src) {
+          <img class="psb-imagen-slot__preview" [src]="src" [alt]="img.alt" />
+        } @else {
+          <div class="psb-imagen-slot__empty">Sin archivo. Esta imagen no se muestra.</div>
+        }
+        <label class="psb-field psb-field--plain"><span>Nombre interno</span><input class="psb-input" [(ngModel)]="img.etiqueta" [name]="'img-e-' + img.id" /></label>
+        <label class="psb-field psb-field--plain">
+          <span>Dónde se muestra</span>
+          <select class="psb-input" [(ngModel)]="img.zona" [name]="'img-z-' + img.id">
+            @for (z of zonas; track z.id) {
+              <option [value]="z.id">{{ z.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="psb-field psb-field--plain"><span>Texto alternativo</span><input class="psb-input" [(ngModel)]="img.alt" [name]="'img-a-' + img.id" /></label>
+        <div class="psb-imagen-slot__actions">
+          <label class="psb-btn psb-btn--primary psb-btn--file" [class.psb-btn--disabled]="uploadingId() === img.id">
+            {{ uploadingId() === img.id ? 'Subiendo…' : 'Subir imagen' }}
+            <input type="file" accept="image/png,image/jpeg,image/webp" [disabled]="uploadingId() === img.id" (change)="onImagenSelected($event, img)" />
+          </label>
+          @if (img.url) {
+            <button type="button" class="psb-btn psb-btn--ghost" [disabled]="uploadingId() === img.id" (click)="quitarArchivo(img)">Quitar archivo</button>
+          }
+        </div>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addImagen()">+ Agregar imagen</button>
+  </section>
+</div>

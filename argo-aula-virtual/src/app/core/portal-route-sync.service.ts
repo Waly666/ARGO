@@ -22,6 +22,7 @@ const ALIAS_PAGE_KEYS: PortalPaginaKey[] = [
   'trabajoEnAlturas',
   'manejoDefensivo',
   'primerosAuxilios',
+  'landingCursos',
   'blog',
   'galeria',
   'pqr',

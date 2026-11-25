@@ -95,6 +95,11 @@ function paginasDefault(nav = {}) {
       etiquetaMenu: nav.primerosAuxilios || 'Primeros auxilios',
       ruta: '/curso-primeros-auxilios',
     },
+    landingCursos: {
+      activa: false,
+      etiquetaMenu: nav.landingCursos || 'Landing de cursos',
+      ruta: '/landing-cursos',
+    },
     servicios: {
       activa: true,
       etiquetaMenu: nav.servicios || 'Portafolio de servicios',

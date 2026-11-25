@@ -17,6 +17,9 @@ const {
   PRIMEROS_AUXILIOS_DEFAULTS,
   mergePrimerosAuxiliosLanding,
 } = require('./aulaVirtualPrimerosAuxiliosDefaults');
+const {
+  LANDING_CURSOS_DEFAULT,
+} = require('./aulaVirtualLandingCursosDefaults');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('./aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('./aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS } = require('./aulaVirtualHomeFotosDefaults');
@@ -230,6 +233,7 @@ const LANDING_DEFAULTS = {
   trabajoEnAlturas: JSON.parse(JSON.stringify(TRABAJO_EN_ALTURAS_DEFAULTS)),
   manejoDefensivo: JSON.parse(JSON.stringify(MANEJO_DEFENSIVO_DEFAULTS)),
   primerosAuxilios: JSON.parse(JSON.stringify(PRIMEROS_AUXILIOS_DEFAULTS)),
+  landingCursos: JSON.parse(JSON.stringify(LANDING_CURSOS_DEFAULT)),
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [

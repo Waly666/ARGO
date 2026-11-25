@@ -774,6 +774,42 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenMecanicaVehiculosElectricosPortal(
+    file: File,
+    imagenId: string,
+    extra?: { etiqueta?: string; zona?: string; alt?: string },
+  ): Observable<{
+    config: PortalAulaConfig;
+    imagenId: string;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('imagenId', imagenId);
+    if (extra?.etiqueta) fd.append('etiqueta', extra.etiqueta);
+    if (extra?.zona) fd.append('zona', extra.zona);
+    if (extra?.alt) fd.append('alt', extra.alt);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      imagenId: string;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/mecanica-vehiculos-electricos-imagen`, fd);
+  }
+
+  quitarImagenMecanicaVehiculosElectricosPortal(
+    imagenId: string,
+    eliminar = false,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/mecanica-vehiculos-electricos-imagen`,
+      { body: { imagenId, eliminar } },
+    );
+  }
+
   subirImagenFinstruvialServiciosHubPortal(
     file: File,
     slot: 'hero' | 'formacion' | 'formacion2' = 'hero',

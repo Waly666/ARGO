@@ -13,6 +13,7 @@ const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMe
 const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
 const { mergeManejoDefensivoLanding } = require('../constants/aulaVirtualManejoDefensivoDefaults');
 const { mergePrimerosAuxiliosLanding } = require('../constants/aulaVirtualPrimerosAuxiliosDefaults');
+const { mergeLandingCursos } = require('../constants/aulaVirtualLandingCursosDefaults');
 const { mergeAcercaLanding } = require('../constants/aulaVirtualAcercaDefaults');
 const { mergePromoHeroPillars, mergePromoHeroTheme } = require('../constants/portalPromoHeroFields');
 const { mergePortalIconografia } = require('../constants/portalIconCatalog');
@@ -267,6 +268,10 @@ function normalizarTrabajoEnAlturas(raw, fallback) {
     };
   });
   return { ...merged, imagenes };
+}
+
+function normalizarLandingCursos(raw, legacy) {
+  return mergeLandingCursos(raw || legacy || null);
 }
 
 function normalizarPrimerosAuxilios(raw, fallback) {
@@ -558,6 +563,7 @@ function normalizarLanding(input, tema, storedLanding) {
     trabajoEnAlturas: normalizarTrabajoEnAlturas(src.trabajoEnAlturas, d.trabajoEnAlturas),
     manejoDefensivo: normalizarManejoDefensivo(src.manejoDefensivo, d.manejoDefensivo),
     primerosAuxilios: normalizarPrimerosAuxilios(src.primerosAuxilios, d.primerosAuxilios),
+    landingCursos: normalizarLandingCursos(src.landingCursos, src.mecanicaVehiculosElectricos),
     servicios: {
       titulo: str(serviciosSrc.titulo, d.servicios.titulo),
       items: normalizarItemsIcono(serviciosSrc.items, d.servicios.items, ['icon', 'title', 'url']),

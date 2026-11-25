@@ -51,6 +51,10 @@ import {
   PortalPrimerosAuxiliosLanding,
 } from '../../core/constants/primeros-auxilios-landing-defaults';
 import {
+  mergeLandingCursos,
+  PortalLandingCursos,
+} from '../../core/constants/landing-cursos-defaults';
+import {
   manejoDefensivoDefaultsForTema,
   primerosAuxiliosDefaultsForTema,
 } from '../../core/constants/servial-seo-landing-defaults';
@@ -64,6 +68,7 @@ import { PortalMercanciasPeligrosasEditorComponent } from './portal-mercancias-p
 import { PortalTrabajoEnAlturasEditorComponent } from './portal-trabajo-en-alturas-editor.component';
 import { PortalManejoDefensivoEditorComponent } from './portal-manejo-defensivo-editor.component';
 import { PortalPrimerosAuxiliosEditorComponent } from './portal-primeros-auxilios-editor.component';
+import { PortalMecanicaVehiculosElectricosEditorComponent } from './portal-mecanica-vehiculos-electricos-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
 import { PortalIconografiaEditorComponent } from './portal-iconografia-editor.component';
 import { PortalGaleriaHeroImagenEditorComponent } from './portal-galeria-hero-imagen-editor.component';
@@ -132,6 +137,7 @@ export type BuilderPanel =
   | 'trabajoEnAlturas'
   | 'manejoDefensivo'
   | 'primerosAuxilios'
+  | 'landingCursos'
   | 'finstruvialServiciosHub'
   | 'finstruvialServicioAulaVirtual'
   | 'finstruvialServicioPeridata'
@@ -193,6 +199,7 @@ interface GuiaPaso {
     PortalMercanciasPeligrosasEditorComponent,
     PortalPopupEditorComponent,
     PortalPrimerosAuxiliosEditorComponent,
+    PortalMecanicaVehiculosElectricosEditorComponent,
     PortalPromoHeroFieldsEditorComponent,
     PortalPromoHeroImagenEditorComponent,
     PortalSeoEditorComponent,
@@ -273,6 +280,7 @@ export class PortalSiteBuilderComponent {
         { id: 'trabajoEnAlturas', icon: '🪜', label: 'Trabajo en alturas' },
         { id: 'manejoDefensivo', icon: '🚘', label: 'Manejo defensivo' },
         { id: 'primerosAuxilios', icon: '❤️', label: 'Primeros auxilios' },
+        { id: 'landingCursos', icon: '📣', label: 'Landing de cursos' },
         { id: 'galeria', icon: '📷', label: 'Galería' },
         { id: 'blog', icon: '📰', label: 'Blog' },
         { id: 'asistente', icon: '🤖', label: 'Asistente' },
@@ -480,6 +488,16 @@ export class PortalSiteBuilderComponent {
     return this.portalForm.landing.primerosAuxilios;
   }
 
+  ensureLandingCursos(): PortalLandingCursos {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    if (!this.portalForm.landing.landingCursos) {
+      this.portalForm.landing.landingCursos = mergeLandingCursos(mergePortalLanding().landingCursos);
+    }
+    return this.portalForm.landing.landingCursos;
+  }
+
   ensureFinstruvialServiciosLanding(): PortalFinstruvialServiciosConfig {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding(null, this.portalForm.site?.tema);
@@ -551,6 +569,7 @@ export class PortalSiteBuilderComponent {
       trabajoEnAlturas: 'trabajoEnAlturas',
       manejoDefensivo: 'manejoDefensivo',
       primerosAuxilios: 'primerosAuxilios',
+      landingCursos: 'landingCursos',
       galeria: 'galeria',
       blog: 'blog',
       consultaCertificados: 'consultaCertificados',
@@ -634,6 +653,11 @@ export class PortalSiteBuilderComponent {
         title: 'Curso de primeros auxilios',
         help:
           'Página pública en /curso-primeros-auxilios. Edite H1, H2, textos, CTAs e imágenes. El título SEO y la meta descripción se configuran en SEO (Google). Las imágenes se guardan al subirlas; publique el sitio para los textos.',
+      },
+      landingCursos: {
+        title: 'Landing de cursos',
+        help:
+          'Página pública en /landing-cursos para anunciar el curso que esté promocionando. Cambie textos, agregue o quite bloques e imágenes. Enciéndala o apáguela en Páginas visibles. El teléfono y el WhatsApp salen de la empresa.',
       },
       finstruvialServiciosHub: {
         title: 'Portafolio de servicios',

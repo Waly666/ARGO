@@ -88,6 +88,11 @@ import {
   type PortalPrimerosAuxiliosLanding,
 } from '../pages/primeros-auxilios/primeros-auxilios-content';
 import {
+  LANDING_CURSOS_DEFAULT,
+  mergeLandingCursos,
+  type PortalLandingCursos,
+} from '../pages/mecanica-vehiculos-electricos/landing-cursos-content';
+import {
   manejoDefensivoDefaultsForTema,
   primerosAuxiliosDefaultsForTema,
 } from './constants/servial-seo-landing-defaults';
@@ -309,6 +314,7 @@ export interface PortalLandingConfig {
   trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
   manejoDefensivo: PortalManejoDefensivoLanding;
   primerosAuxilios: PortalPrimerosAuxiliosLanding;
+  landingCursos: PortalLandingCursos;
   servicios: { titulo: string; items: { icon: string; title: string; url?: string }[] };
   valores: { titulo: string; lead: string; items: { title: string; text: string }[] };
   testimonios: {
@@ -510,6 +516,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   primerosAuxilios: JSON.parse(
     JSON.stringify(PRIMEROS_AUXILIOS_LANDING),
   ) as PortalPrimerosAuxiliosLanding,
+  landingCursos: JSON.parse(JSON.stringify(LANDING_CURSOS_DEFAULT)) as PortalLandingCursos,
   servicios: { titulo: 'Todo lo que necesita tu empresa en seguridad vial', items: [...SERVICIOS_EMPRESA] },
   valores: { titulo: '¡Somos tu mejor opción!', lead: '', items: [...VALORES] },
   testimonios: {
@@ -765,6 +772,10 @@ export function mergePortalLanding(
     trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
     manejoDefensivo: mergeManejoDefensivoLanding(raw.manejoDefensivo, manejoDefensivoDefaultsForTema(tema), tema),
     primerosAuxilios: mergePrimerosAuxiliosLanding(raw.primerosAuxilios, primerosAuxiliosDefaultsForTema(tema), tema),
+    landingCursos: mergeLandingCursos(
+      raw.landingCursos ||
+        (raw as { mecanicaVehiculosElectricos?: PortalLandingCursos }).mecanicaVehiculosElectricos,
+    ),
     servicios: {
       ...d.servicios,
       ...raw.servicios,
