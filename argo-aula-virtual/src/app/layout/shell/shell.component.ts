@@ -102,6 +102,11 @@ export class ShellComponent implements OnInit, AfterViewInit {
     return path === '/aula' || path.startsWith('/aula/');
   });
 
+  muestraBandaInstitucional = computed(() => {
+    const path = this.rutaActual().split('?')[0].split('#')[0];
+    return path === rutaPagina('landingCursos', this.config());
+  });
+
   popupConfig = computed(() => this.landing().popup);
 
   asistentePaginaKey = computed(() => clavePaginaPorRuta(this.rutaActual(), this.config()));

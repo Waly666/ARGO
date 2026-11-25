@@ -144,6 +144,15 @@
 </header>
 }
 
+@if (muestraBandaInstitucional()) {
+  <div class="inst-bar">
+    <div class="container inst-bar-inner">
+      <span class="inst-name">{{ nombreCea() | uppercase }}</span>
+      <span class="inst-tag">{{ landing().instBarTag }}</span>
+    </div>
+  </div>
+}
+
 <main class="main" [class.main--aula]="esAula()">
   <router-outlet />
 </main>

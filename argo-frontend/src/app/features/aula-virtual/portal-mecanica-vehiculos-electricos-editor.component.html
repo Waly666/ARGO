@@ -44,105 +44,106 @@
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Título</h3>
+    <h3 class="psb-card__title">H1 — Título de la página</h3>
+    <p class="psb-note">El H1 es el título principal. En esta landing no se pinta sobre el banner: queda para el nombre de la página.</p>
     <label class="psb-field psb-field--plain">
-      <span>Título del curso (H1)</span>
+      <argo-portal-field-label tag="H1" label="Título del curso" />
       <input type="text" class="psb-input" [(ngModel)]="landing.h1" name="lc-h1" />
     </label>
     <label class="psb-field psb-field--plain">
-      <span>Frase bajo el banner</span>
+      <argo-portal-field-label tag="p" label="Frase bajo el banner" />
       <textarea class="psb-input" rows="2" [(ngModel)]="landing.bandTexto" name="lc-band"></textarea>
     </label>
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Habilidades</h3>
-    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.habilidadesKicker" name="lc-hk" /></label>
-    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.habilidadesTitulo" name="lc-ht" /></label>
-    <label class="psb-field psb-field--plain"><span>Texto</span><textarea class="psb-input" rows="2" [(ngModel)]="landing.habilidadesLead" name="lc-hl"></textarea></label>
+    <h3 class="psb-card__title">H2 — Habilidades</h3>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Antetítulo" /><input class="psb-input" [(ngModel)]="landing.habilidadesKicker" name="lc-hk" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H2" label="Título" /><input class="psb-input" [(ngModel)]="landing.habilidadesTitulo" name="lc-ht" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="2" [(ngModel)]="landing.habilidadesLead" name="lc-hl"></textarea></label>
     @for (item of landing.habilidades; track $index; let i = $index) {
       <div class="lc-item">
         <div class="lc-item__head"><strong>Tarjeta {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.habilidades, i)">Eliminar</button></div>
-        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'hab-t-' + i" placeholder="Título" />
-        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'hab-x-' + i" placeholder="Texto"></textarea>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H3" label="Título" /><input class="psb-input" [(ngModel)]="item.titulo" [name]="'hab-t-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'hab-x-' + i"></textarea></label>
       </div>
     }
     <button type="button" class="psb-link" (click)="addBloque(landing.habilidades)">+ Añadir tarjeta</button>
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Programa</h3>
-    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.programaKicker" name="lc-pk" /></label>
-    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.programaTitulo" name="lc-pt" /></label>
-    <label class="psb-field psb-field--plain"><span>Texto</span><textarea class="psb-input" rows="2" [(ngModel)]="landing.programaLead" name="lc-pl"></textarea></label>
+    <h3 class="psb-card__title">H2 — Programa</h3>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Antetítulo" /><input class="psb-input" [(ngModel)]="landing.programaKicker" name="lc-pk" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H2" label="Título" /><input class="psb-input" [(ngModel)]="landing.programaTitulo" name="lc-pt" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="2" [(ngModel)]="landing.programaLead" name="lc-pl"></textarea></label>
     @for (item of landing.modulos; track $index; let i = $index) {
       <div class="lc-item">
         <div class="lc-item__head"><strong>Clase {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.modulos, i)">Eliminar</button></div>
-        <input class="psb-input" [(ngModel)]="item.numero" [name]="'mod-n-' + i" placeholder="Número" />
-        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'mod-t-' + i" placeholder="Título" />
-        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'mod-x-' + i"></textarea>
+        <label class="psb-field psb-field--plain"><span>Número</span><input class="psb-input" [(ngModel)]="item.numero" [name]="'mod-n-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H3" label="Título" /><input class="psb-input" [(ngModel)]="item.titulo" [name]="'mod-t-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'mod-x-' + i"></textarea></label>
       </div>
     }
     <button type="button" class="psb-link" (click)="addModulo()">+ Añadir clase</button>
-    <h4>Bloques extra</h4>
+    <h4>Bloques extra — H3</h4>
     @for (item of landing.extras; track $index; let i = $index) {
       <div class="lc-item">
         <div class="lc-item__head"><strong>Extra {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.extras, i)">Eliminar</button></div>
-        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'ex-t-' + i" placeholder="Título" />
-        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'ex-x-' + i"></textarea>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H3" label="Título" /><input class="psb-input" [(ngModel)]="item.titulo" [name]="'ex-t-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'ex-x-' + i"></textarea></label>
       </div>
     }
     <button type="button" class="psb-link" (click)="addBloque(landing.extras)">+ Añadir bloque</button>
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Para quién</h3>
-    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.audienciaKicker" name="lc-ak" /></label>
-    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.audienciaTitulo" name="lc-at" /></label>
+    <h3 class="psb-card__title">H2 — Para quién</h3>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Antetítulo" /><input class="psb-input" [(ngModel)]="landing.audienciaKicker" name="lc-ak" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H2" label="Título" /><input class="psb-input" [(ngModel)]="landing.audienciaTitulo" name="lc-at" /></label>
     @for (p of landing.audienciaParrafos; track $index; let i = $index) {
       <div class="lc-item">
         <div class="lc-item__head"><strong>Párrafo {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.audienciaParrafos, i)">Eliminar</button></div>
-        <textarea class="psb-input" rows="2" [(ngModel)]="landing.audienciaParrafos[i]" [name]="'aud-' + i"></textarea>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Párrafo" /><textarea class="psb-input" rows="2" [(ngModel)]="landing.audienciaParrafos[i]" [name]="'aud-' + i"></textarea></label>
       </div>
     }
     <button type="button" class="psb-link" (click)="addParrafo()">+ Añadir párrafo</button>
-    <label class="psb-field psb-field--plain"><span>Nota</span><textarea class="psb-input" rows="2" [(ngModel)]="landing.audienciaNota" name="lc-an"></textarea></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Nota" /><textarea class="psb-input" rows="2" [(ngModel)]="landing.audienciaNota" name="lc-an"></textarea></label>
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Datos de inscripción</h3>
-    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.datosKicker" name="lc-dk" /></label>
-    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.datosTitulo" name="lc-dt" /></label>
+    <h3 class="psb-card__title">H2 — Datos de inscripción</h3>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Antetítulo" /><input class="psb-input" [(ngModel)]="landing.datosKicker" name="lc-dk" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H2" label="Título" /><input class="psb-input" [(ngModel)]="landing.datosTitulo" name="lc-dt" /></label>
     @for (item of landing.datos; track $index; let i = $index) {
       <div class="lc-item">
         <div class="lc-item__head"><strong>Tarjeta {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.datos, i)">Eliminar</button></div>
-        <input class="psb-input" [(ngModel)]="item.titulo" [name]="'dato-t-' + i" placeholder="Título" />
-        <input class="psb-input" [(ngModel)]="item.precio" [name]="'dato-p-' + i" placeholder="Precio en grande, si aplica" />
-        <textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'dato-x-' + i"></textarea>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H3" label="Título" /><input class="psb-input" [(ngModel)]="item.titulo" [name]="'dato-t-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Precio en grande, si aplica" /><input class="psb-input" [(ngModel)]="item.precio" [name]="'dato-p-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="2" [(ngModel)]="item.texto" [name]="'dato-x-' + i"></textarea></label>
       </div>
     }
     <button type="button" class="psb-link" (click)="addDato()">+ Añadir tarjeta</button>
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Preguntas</h3>
-    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.faqKicker" name="lc-fk" /></label>
-    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.faqTitulo" name="lc-ft" /></label>
+    <h3 class="psb-card__title">H2 — Preguntas</h3>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Antetítulo" /><input class="psb-input" [(ngModel)]="landing.faqKicker" name="lc-fk" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H2" label="Título" /><input class="psb-input" [(ngModel)]="landing.faqTitulo" name="lc-ft" /></label>
     @for (item of landing.faq; track $index; let i = $index) {
       <div class="lc-item">
         <div class="lc-item__head"><strong>Pregunta {{ i + 1 }}</strong><button type="button" class="psb-link" (click)="quitarDeLista(landing.faq, i)">Eliminar</button></div>
-        <input class="psb-input" [(ngModel)]="item.pregunta" [name]="'faq-q-' + i" placeholder="Pregunta" />
-        <textarea class="psb-input" rows="2" [(ngModel)]="item.respuesta" [name]="'faq-a-' + i"></textarea>
+        <label class="psb-field psb-field--plain"><span>Pregunta (se abre y se cierra; no es un título)</span><input class="psb-input" [(ngModel)]="item.pregunta" [name]="'faq-q-' + i" /></label>
+        <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Respuesta" /><textarea class="psb-input" rows="2" [(ngModel)]="item.respuesta" [name]="'faq-a-' + i"></textarea></label>
       </div>
     }
     <button type="button" class="psb-link" (click)="addFaq()">+ Añadir pregunta</button>
   </section>
 
   <section class="psb-card">
-    <h3 class="psb-card__title">Cierre</h3>
-    <label class="psb-field psb-field--plain"><span>Antetítulo</span><input class="psb-input" [(ngModel)]="landing.ctaKicker" name="lc-ck" /></label>
-    <label class="psb-field psb-field--plain"><span>Título</span><input class="psb-input" [(ngModel)]="landing.ctaTitulo" name="lc-ct" /></label>
-    <label class="psb-field psb-field--plain"><span>Texto</span><textarea class="psb-input" rows="3" [(ngModel)]="landing.ctaTexto" name="lc-cx"></textarea></label>
+    <h3 class="psb-card__title">H2 — Cierre</h3>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Antetítulo" /><input class="psb-input" [(ngModel)]="landing.ctaKicker" name="lc-ck" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="H2" label="Título" /><input class="psb-input" [(ngModel)]="landing.ctaTitulo" name="lc-ct" /></label>
+    <label class="psb-field psb-field--plain"><argo-portal-field-label tag="p" label="Texto" /><textarea class="psb-input" rows="3" [(ngModel)]="landing.ctaTexto" name="lc-cx"></textarea></label>
     <label class="psb-field psb-field--plain"><span>Botón de compra</span><input class="psb-input" [(ngModel)]="landing.ctaComprarTexto" name="lc-cbt" /></label>
     <label class="psb-field psb-field--plain"><span>Enlace del botón de compra</span><input class="psb-input" [(ngModel)]="landing.ctaComprarUrl" name="lc-cbu" placeholder="/registro" /></label>
     <label class="psb-field psb-field--plain"><span>Botón del asesor</span><input class="psb-input" [(ngModel)]="landing.ctaAsesorTexto" name="lc-ca" /></label>

@@ -305,6 +305,30 @@
   }
 }
 
+.inst-bar {
+  background: var(--av-inst-bar-bg, var(--servial-red, #dc2626));
+  color: var(--av-inst-bar-text, #fff);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.inst-bar-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  flex-wrap: wrap;
+}
+
+.inst-name {
+  font-weight: 800;
+}
+
+.inst-tag {
+  opacity: 0.9;
+}
+
 .main {
   min-height: calc(100vh - 160px);
   font-family: var(--av-font-sans);

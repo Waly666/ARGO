@@ -11,11 +11,12 @@ import {
 import { AulaVirtualAdminService } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { removeAt } from './portal-landing-editor-helpers';
+import { PortalFieldLabelComponent } from './portal-field-label.component';
 
 @Component({
   selector: 'argo-portal-mecanica-vehiculos-electricos-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalFieldLabelComponent],
   templateUrl: './portal-mecanica-vehiculos-electricos-editor.component.html',
   styleUrl: './portal-mecanica-vehiculos-electricos-editor.component.scss',
 })
