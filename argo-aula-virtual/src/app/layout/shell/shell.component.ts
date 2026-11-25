@@ -201,44 +201,14 @@ export class ShellComponent implements OnInit, AfterViewInit {
       { key: 'fundacion', route: rutaPagina('fundacion', cfg) },
       { key: 'galeria', route: rutaPagina('galeria', cfg) },
       { key: 'blog', route: rutaPagina('blog', cfg) },
-      { key: 'acerca', route: rutaPagina('acerca', cfg) },
     ];
-    const pages = paginas
+    return paginas
       .filter((p) => paginaActiva(cfg, p.key))
+      .slice(0, 6)
       .map((p) => ({
         label: etiquetaPagina(cfg, p.key, nav[p.key as keyof typeof nav] as string),
         route: p.route,
       }));
-    const serviciosEnlace: FooterEnlace[] =
-      paginaActiva(cfg, 'servicios') && finstruvialPortafolioActivo(this.landing().finstruvialServicios)
-        ? [
-            {
-              label: this.landing().finstruvialServicios.menuLabel || 'Servicios',
-              route: finstruvialServiciosHubRoute(cfg),
-            },
-          ]
-        : [{ label: 'Servicios', route: '/', fragment: 'servicios-empresa' }];
-    const extras: FooterEnlace[] = [];
-    if (paginaActiva(cfg, 'manejoDefensivo')) {
-      extras.push({
-        label: etiquetaPagina(cfg, 'manejoDefensivo', 'Manejo defensivo'),
-        route: rutaPagina('manejoDefensivo', cfg),
-      });
-    }
-    if (paginaActiva(cfg, 'primerosAuxilios')) {
-      extras.push({
-        label: etiquetaPagina(cfg, 'primerosAuxilios', 'Primeros auxilios'),
-        route: rutaPagina('primerosAuxilios', cfg),
-      });
-    }
-    return [
-      ...pages,
-      ...serviciosEnlace,
-      ...extras,
-      { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
-      { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
-      { label: 'Contacto', route: rutaPagina('acerca', cfg), fragment: 'contacto' },
-    ];
   });
 
   footerServiciosLinks = computed((): FooterServicioEnlace[] => {
