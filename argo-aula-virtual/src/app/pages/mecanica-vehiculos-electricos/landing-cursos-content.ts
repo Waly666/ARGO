@@ -69,7 +69,7 @@ export const LC_ZONAS: { id: LcZonaImagen; label: string }[] = [
   { id: 'hero-desktop', label: 'Banner de escritorio' },
   { id: 'hero-mobile', label: 'Banner de móvil' },
   { id: 'lateral', label: 'Foto al lado del texto' },
-  { id: 'ancho', label: 'Foto ancha' },
+  { id: 'ancho', label: 'Vehículo en carga' },
   { id: 'galeria', label: 'Galería' },
 ];
 
@@ -92,14 +92,14 @@ const IMAGENES: LcImagen[] = [
     id: 'formacion',
     etiqueta: 'Foto de formación',
     zona: 'lateral',
-    url: '/assets/mecanica-ev/formacion.jpg',
+    url: '',
     alt: 'Dos técnicos en un taller de formación revisan un diagrama y una pantalla de diagnóstico junto a un vehículo eléctrico.',
   },
   {
     id: 'carga',
-    etiqueta: 'Foto ancha',
+    etiqueta: 'Vehículo en carga',
     zona: 'ancho',
-    url: '/assets/mecanica-ev/carga.jpg',
+    url: '',
     alt: 'Vehículo eléctrico conectado a un cargador público, de día.',
   },
 ];
@@ -225,13 +225,44 @@ function parrafos(raw: unknown, fb: string[]): string[] {
   return raw.map((item) => String(item ?? ''));
 }
 
+function normalizarImagen(item: Partial<LcImagen> | null | undefined, i: number): LcImagen {
+  const id = String(item?.id || `img-${i + 1}`).trim();
+  const zonaRaw = item?.zona as LcZonaImagen;
+  const zona = ZONAS.has(zonaRaw) ? zonaRaw : ZONA_POR_ID[id] || 'galeria';
+  return {
+    id,
+    etiqueta: txt(item?.etiqueta, 'Imagen'),
+    zona,
+    url: String(item?.url ?? '').trim(),
+    urlAbsoluta: String(item?.urlAbsoluta ?? '').trim(),
+    alt: txt(item?.alt, ''),
+  };
+}
+
+function unirImagenes(srcList: unknown): LcImagen[] {
+  const saved = (Array.isArray(srcList) ? srcList : []).map((item, i) => normalizarImagen(item, i));
+  const byId = new Map(saved.map((img) => [img.id, img]));
+  const base = IMAGENES.map((img) => {
+    const hit = byId.get(img.id);
+    if (!hit) return { ...img, urlAbsoluta: '' };
+    return {
+      ...img,
+      ...hit,
+      id: img.id,
+      zona: hit.zona || img.zona,
+      etiqueta: hit.etiqueta || img.etiqueta,
+    };
+  });
+  const extras = saved.filter((img) => !IMAGENES.some((d) => d.id === img.id));
+  return [...base, ...extras];
+}
+
 export function mergeLandingCursos(raw?: Partial<PortalLandingCursos> | null): PortalLandingCursos {
   const d = LANDING_CURSOS_DEFAULT;
   const src = raw && typeof raw === 'object' ? raw : null;
   if (!src) {
     return JSON.parse(JSON.stringify(d)) as PortalLandingCursos;
   }
-  const imagenesSrc = Array.isArray(src.imagenes) ? src.imagenes : d.imagenes;
   return {
     h1: txt(src.h1, d.h1),
     bandTexto: txt(src.bandTexto, d.bandTexto),
@@ -260,18 +291,6 @@ export function mergeLandingCursos(raw?: Partial<PortalLandingCursos> | null): P
     ctaComprarTexto: txt(src.ctaComprarTexto, d.ctaComprarTexto),
     ctaComprarUrl: txt(src.ctaComprarUrl, d.ctaComprarUrl),
     ctaAsesorTexto: txt(src.ctaAsesorTexto, d.ctaAsesorTexto),
-    imagenes: imagenesSrc.map((item, i) => {
-      const id = String(item?.id || `img-${i + 1}`).trim();
-      const zonaRaw = item?.zona as LcZonaImagen;
-      const zona = ZONAS.has(zonaRaw) ? zonaRaw : ZONA_POR_ID[id] || 'galeria';
-      return {
-        id,
-        etiqueta: txt(item?.etiqueta, 'Imagen'),
-        zona,
-        url: String(item?.url ?? '').trim(),
-        urlAbsoluta: String(item?.urlAbsoluta ?? '').trim(),
-        alt: txt(item?.alt, ''),
-      };
-    }),
+    imagenes: unirImagenes(src.imagenes),
   };
 }

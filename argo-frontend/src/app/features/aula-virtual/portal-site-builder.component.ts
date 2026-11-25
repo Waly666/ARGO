@@ -495,7 +495,13 @@ export class PortalSiteBuilderComponent {
     if (!this.portalForm.landing.landingCursos) {
       this.portalForm.landing.landingCursos = mergeLandingCursos(mergePortalLanding().landingCursos);
     }
-    return this.portalForm.landing.landingCursos;
+    const actual = this.portalForm.landing.landingCursos;
+    const ids = new Set((actual.imagenes || []).map((img) => img.id));
+    const faltan = ['hero-desktop', 'hero-mobile', 'formacion', 'carga'].some((id) => !ids.has(id));
+    if (faltan) {
+      actual.imagenes = mergeLandingCursos(actual).imagenes;
+    }
+    return actual;
   }
 
   ensureFinstruvialServiciosLanding(): PortalFinstruvialServiciosConfig {

@@ -1852,7 +1852,12 @@ exports.subirImagenMecanicaVehiculosElectricosPortal = async (req, res, next) =>
     }
 
     const filePath = path.join(req.file.destination, req.file.filename);
-    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1280 });
+    const ext = path.extname(req.file.originalname || req.file.filename).toLowerCase();
+    const mime = String(req.file.mimetype || '').toLowerCase();
+    if (ext !== '.webp' && mime !== 'image/webp') {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(400).json({ message: 'La imagen debe ser WebP. Conviértala y vuelva a cargarla.' });
+    }
     const nuevaUrl = urlMecanicaVehiculosElectricos(req.file.filename);
     quitarImagenMecanicaVehiculosElectricosAnterior(pagina.imagenes[idx].url);
     pagina.imagenes[idx] = { ...pagina.imagenes[idx], url: nuevaUrl, urlAbsoluta: '' };

@@ -32,14 +32,14 @@ const IMAGENES = [
     id: 'formacion',
     etiqueta: 'Foto de formación',
     zona: 'lateral',
-    url: '/assets/mecanica-ev/formacion.jpg',
+    url: '',
     alt: 'Dos técnicos en un taller de formación revisan un diagrama y una pantalla de diagnóstico junto a un vehículo eléctrico.',
   },
   {
     id: 'carga',
-    etiqueta: 'Foto ancha',
+    etiqueta: 'Vehículo en carga',
     zona: 'ancho',
-    url: '/assets/mecanica-ev/carga.jpg',
+    url: '',
     alt: 'Vehículo eléctrico conectado a un cargador público, de día.',
   },
 ];
@@ -165,13 +165,44 @@ function parrafos(raw, fb) {
   return raw.map((item) => String(item ?? ''));
 }
 
+function normalizarImagen(item, i) {
+  const id = String((item && item.id) || `img-${i + 1}`).trim();
+  const zonaRaw = item && item.zona;
+  const zona = ZONAS.has(zonaRaw) ? zonaRaw : ZONA_POR_ID[id] || 'galeria';
+  return {
+    id,
+    etiqueta: txt(item && item.etiqueta, 'Imagen'),
+    zona,
+    url: String((item && item.url) ?? '').trim(),
+    urlAbsoluta: String((item && item.urlAbsoluta) ?? '').trim(),
+    alt: txt(item && item.alt, ''),
+  };
+}
+
+function unirImagenes(srcList) {
+  const saved = (Array.isArray(srcList) ? srcList : []).map((item, i) => normalizarImagen(item, i));
+  const byId = new Map(saved.map((img) => [img.id, img]));
+  const base = IMAGENES.map((img) => {
+    const hit = byId.get(img.id);
+    if (!hit) return { ...img, urlAbsoluta: '' };
+    return {
+      ...img,
+      ...hit,
+      id: img.id,
+      zona: hit.zona || img.zona,
+      etiqueta: hit.etiqueta || img.etiqueta,
+    };
+  });
+  const extras = saved.filter((img) => !IMAGENES.some((d) => d.id === img.id));
+  return base.concat(extras);
+}
+
 function mergeLandingCursos(raw) {
   const d = LANDING_CURSOS_DEFAULT;
   const src = raw && typeof raw === 'object' ? raw : null;
   if (!src) {
     return JSON.parse(JSON.stringify(d));
   }
-  const imagenesSrc = Array.isArray(src.imagenes) ? src.imagenes : d.imagenes;
   return {
     h1: txt(src.h1, d.h1),
     bandTexto: txt(src.bandTexto, d.bandTexto),
@@ -200,19 +231,7 @@ function mergeLandingCursos(raw) {
     ctaComprarTexto: txt(src.ctaComprarTexto, d.ctaComprarTexto),
     ctaComprarUrl: txt(src.ctaComprarUrl, d.ctaComprarUrl),
     ctaAsesorTexto: txt(src.ctaAsesorTexto, d.ctaAsesorTexto),
-    imagenes: imagenesSrc.map((item, i) => {
-      const id = String(item?.id || `img-${i + 1}`).trim();
-      const zonaRaw = item?.zona ;
-      const zona = ZONAS.has(zonaRaw) ? zonaRaw : ZONA_POR_ID[id] || 'galeria';
-      return {
-        id,
-        etiqueta: txt(item?.etiqueta, 'Imagen'),
-        zona,
-        url: String(item?.url ?? '').trim(),
-        urlAbsoluta: String(item?.urlAbsoluta ?? '').trim(),
-        alt: txt(item?.alt, ''),
-      };
-    }),
+    imagenes: unirImagenes(src.imagenes),
   };
 }
 

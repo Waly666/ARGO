@@ -67,6 +67,9 @@ export class MecanicaVehiculosElectricosComponent implements OnInit {
   urlDe(img: LcImagen | undefined): string | null {
     const url = img?.urlAbsoluta?.trim() || img?.url?.trim();
     if (!url) return null;
+    if (url.startsWith('/assets/') || url.startsWith('assets/')) {
+      return url.startsWith('/') ? url : `/${url}`;
+    }
     return resolveUploadUrl(url) || url;
   }
 

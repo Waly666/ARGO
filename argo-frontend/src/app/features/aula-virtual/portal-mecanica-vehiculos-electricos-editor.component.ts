@@ -26,6 +26,10 @@ export class PortalMecanicaVehiculosElectricosEditorComponent {
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   readonly zonas = LC_ZONAS;
+
+  nombreZona(zona: string): string {
+    return this.zonas.find((z) => z.id === zona)?.label || 'Imagen';
+  }
   uploadingId = signal<string | null>(null);
 
   previewUrl(img: LcImagen): string | null {
@@ -73,6 +77,11 @@ export class PortalMecanicaVehiculosElectricosEditorComponent {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    const esWebp = file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp');
+    if (!esWebp) {
+      this.avNotice.emit({ message: 'Solo se acepta WebP. Convierta la imagen y vuelva a cargarla.', error: true });
+      return;
+    }
     this.uploadingId.set(img.id);
     this.api
       .subirImagenMecanicaVehiculosElectricosPortal(file, img.id, {
