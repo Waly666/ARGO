@@ -6,6 +6,7 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalConfig } from '../../core/models';
+import { PortalSeoService } from '../../core/portal-seo.service';
 import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { LcImagen, LcZonaImagen, mergeLandingCursos } from './landing-cursos-content';
@@ -19,6 +20,7 @@ import { LcImagen, LcZonaImagen, mergeLandingCursos } from './landing-cursos-con
 })
 export class MecanicaVehiculosElectricosComponent implements OnInit {
   private api = inject(AulaApiService);
+  private seo = inject(PortalSeoService);
 
   @ViewChild('islandTrack') islandTrack?: ElementRef<HTMLElement>;
 
@@ -47,8 +49,11 @@ export class MecanicaVehiculosElectricosComponent implements OnInit {
 
   ngOnInit() {
     this.api.config().subscribe({
-      next: (c) => this.config.set(c),
-      error: () => this.config.set(null),
+      next: (c) => {
+        this.config.set(c);
+        this.seo.applyLandingCursos(c);
+      },
+      error: () => this.seo.applyLandingCursos(null),
     });
   }
 

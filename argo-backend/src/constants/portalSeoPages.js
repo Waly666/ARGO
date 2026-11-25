@@ -13,6 +13,7 @@ const PORTAL_SEO_PAGE_KEYS = [
   'trabajoEnAlturas',
   'manejoDefensivo',
   'primerosAuxilios',
+  'landingCursos',
   'serviciosHub',
   'servicio_aulaVirtual',
   'servicio_peridata',

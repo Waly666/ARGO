@@ -20,6 +20,7 @@ export type PortalSeoPageKey =
   | 'trabajoEnAlturas'
   | 'manejoDefensivo'
   | 'primerosAuxilios'
+  | 'landingCursos'
   | 'serviciosHub'
   | FinstruvialServicioSeoKey
   | 'blog'

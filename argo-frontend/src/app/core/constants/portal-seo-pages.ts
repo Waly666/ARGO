@@ -28,6 +28,7 @@ export type PortalSeoPageKey =
   | 'trabajoEnAlturas'
   | 'manejoDefensivo'
   | 'primerosAuxilios'
+  | 'landingCursos'
   | 'serviciosHub'
   | FinstruvialServicioSeoKey
   | 'blog'
@@ -240,6 +241,19 @@ export const PORTAL_SEO_PAGE_CATALOG: PortalSeoPageMeta[] = [
     defaultKeywords:
       'curso de primeros auxilios, curso primeros auxilios Villavicencio, curso de primeros auxilios en Villavicencio, curso primeros auxilios Meta, curso de RCP Villavicencio, curso primeros auxilios virtual, capacitación primeros auxilios empresas Villavicencio',
   },
+  {
+    key: 'landingCursos',
+    label: 'Landing de cursos',
+    ruta: '/landing-cursos',
+    grupo: 'Servicios',
+    hint:
+      'Página /landing-cursos. El título y la meta descripción se usan en Google. El H1, los H2 y los párrafos se editan en «Landing de cursos».',
+    defaultTitulo: 'Mecánica básica de vehículos híbridos y eléctricos | SERVIAL',
+    defaultDescripcion:
+      'Curso virtual de mecánica básica de vehículos híbridos y eléctricos. El curso y las evaluaciones se hacen en el aula virtual. La APK sirve para consultar el material sin internet. El certificado se entrega al pagar.',
+    defaultKeywords:
+      'curso vehículos híbridos y eléctricos, mecánica vehículos eléctricos, curso virtual Villavicencio, SERVIAL',
+  },
   ...buildFinstruvialSeoCatalog(),
   {
     key: 'blog',
@@ -410,6 +424,7 @@ const SEO_KEY_TO_PAGINA: Partial<Record<PortalSeoPageKey, PortalPaginaKey>> = {
   trabajoEnAlturas: 'trabajoEnAlturas',
   manejoDefensivo: 'manejoDefensivo',
   primerosAuxilios: 'primerosAuxilios',
+  landingCursos: 'landingCursos',
   serviciosHub: 'servicios',
   blog: 'blog',
   galeria: 'galeria',

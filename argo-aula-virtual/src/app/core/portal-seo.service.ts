@@ -38,6 +38,9 @@ import {
   TIENDA_SEO_TITLE,
 } from './portal-seo-defaults';
 import { CursoVirtual, PortalConfig } from './models';
+import { rutaPagina } from './portal-site';
+import { resolveUploadUrl } from './upload-url.util';
+import { mergeLandingCursos } from '../pages/mecanica-vehiculos-electricos/landing-cursos-content';
 import { resolvePortalSeoPage, PortalSeoPageKey, finstruvialServicioSeoKey } from './portal-seo-resolver.util';
 
 type PageMetaOpts = {
@@ -959,6 +962,69 @@ export class PortalSeoService {
         { name: 'Inicio', path: '/' },
         { name: 'Evaluación jornadas', path: '/evaluacion-jornadas' },
       ]),
+    });
+  }
+
+  applyLandingCursos(config: PortalConfig | null) {
+    const lc = mergeLandingCursos(config?.landing?.landingCursos);
+    const h1 = lc.h1?.trim() || 'Landing de cursos';
+    const fallbackTitle = `${h1} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
+      lc.programaLead?.trim() || lc.ctaTexto?.trim() || lc.bandTexto?.trim() || h1,
+    );
+    const path = rutaPagina('landingCursos', config);
+    const url = this.pageUrl(path);
+    const hero = lc.imagenes?.find((img) => img.zona === 'hero-desktop' && (img.urlAbsoluta?.trim() || img.url?.trim()));
+    const heroRaw = hero?.urlAbsoluta?.trim() || hero?.url?.trim() || '';
+    const heroUrl =
+      heroRaw.startsWith('/assets/') || heroRaw.startsWith('assets/')
+        ? heroRaw.startsWith('/')
+          ? heroRaw
+          : `/${heroRaw}`
+        : resolveUploadUrl(heroRaw) || '';
+    const image = heroUrl || this.defaultImage(config);
+    const seo = this.resolvedSeo(config, 'landingCursos', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: '',
+    });
+    const faqs = Array.isArray(lc.faq) ? lc.faq.filter((f) => f.pregunta?.trim() && f.respuesta?.trim()) : [];
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image,
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: [
+        ...this.breadcrumbJsonLd(url, [
+          { name: 'Inicio', path: '/' },
+          { name: h1, path },
+        ]),
+        {
+          '@type': 'Course',
+          name: h1,
+          description: this.truncate(seo.description, 300),
+          provider: { '@type': 'EducationalOrganization', name: this.orgName(config) },
+          url,
+          image,
+          inLanguage: 'es-CO',
+          courseMode: 'online',
+        },
+        ...(faqs.length
+          ? [
+              {
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((item) => ({
+                  '@type': 'Question',
+                  name: item.pregunta,
+                  acceptedAnswer: { '@type': 'Answer', text: item.respuesta },
+                })),
+              },
+            ]
+          : []),
+      ],
     });
   }
 
