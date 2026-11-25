@@ -1,24 +1,4 @@
 (function () {
-  var toggle = document.querySelector(".nav-toggle");
-  var nav = document.getElementById("nav-principal");
-  var toggleLabel = toggle.querySelector(".visually-hidden");
-
-  function closeNav() {
-    nav.classList.remove("is-open");
-    toggle.setAttribute("aria-expanded", "false");
-    toggleLabel.textContent = "Abrir menú";
-  }
-
-  toggle.addEventListener("click", function () {
-    var open = nav.classList.toggle("is-open");
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    toggleLabel.textContent = open ? "Cerrar menú" : "Abrir menú";
-  });
-
-  nav.addEventListener("click", function (event) {
-    if (event.target.closest("a")) closeNav();
-  });
-
   var island = document.querySelector("[data-island]");
   if (!island) return;
   var track = island.querySelector(".island__track");

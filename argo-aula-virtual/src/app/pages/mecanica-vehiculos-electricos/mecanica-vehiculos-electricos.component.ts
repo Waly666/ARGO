@@ -24,7 +24,6 @@ export class MecanicaVehiculosElectricosComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
   habilidadActiva = signal(0);
-  menuAbierto = signal(false);
 
   contenido = computed(() => {
     const landing = mergePortalLanding(this.config()?.landing, this.config()?.site?.tema);
@@ -37,10 +36,6 @@ export class MecanicaVehiculosElectricosComponent implements OnInit {
   telefono = computed(() => this.config()?.telefono?.trim() || '');
   direccion = computed(() => this.config()?.direccion?.trim() || '');
   whatsappHref = computed(() => whatsappHrefFromPhone(this.config()?.telefono));
-  logoUrl = computed(() => {
-    const cfg = this.config();
-    return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo) || '';
-  });
 
   heroDesktop = computed(() => this.imagenPorZona('hero-desktop'));
   heroMobile = computed(() => this.imagenPorZona('hero-mobile'));
@@ -92,14 +87,6 @@ export class MecanicaVehiculosElectricosComponent implements OnInit {
     if (titulo.includes('dura')) return 'reloj';
     if (titulo.includes('fecha')) return 'calendario';
     return 'pantalla';
-  }
-
-  toggleMenu() {
-    this.menuAbierto.update((v) => !v);
-  }
-
-  cerrarMenu() {
-    this.menuAbierto.set(false);
   }
 
   moverIsla(direccion: number) {
