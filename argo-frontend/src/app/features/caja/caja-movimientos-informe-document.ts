@@ -177,22 +177,31 @@ function htmlResumenPagos(filas: MovimientoInformeFila[]): string {
 function htmlBarras(
   titulo: string,
   items: { etiqueta: string; valor: number; texto: string; puesto?: number }[],
+  tono: 'navy' | 'teal' | 'slate',
   maxValor?: number,
 ): string {
   if (!items.length) return '';
   const max = maxValor && maxValor > 0 ? maxValor : Math.max(...items.map((i) => i.valor), 1);
+  const suma = items.reduce((a, i) => a + (Number(i.valor) || 0), 0) || 1;
+  const mostrarParte = !(maxValor && maxValor > 0);
   const rows = items
     .map((item, i) => {
-      const pct = Math.max(2, Math.round((item.valor / max) * 100));
+      const ancho = Math.max(3, Math.round((item.valor / max) * 100));
+      const parte = Math.round((item.valor / suma) * 1000) / 10;
+      const parteHtml = mostrarParte ? ` <em>${esc(parte)}%</em>` : '';
       return `<div class="barra">
         <span class="barra-pos">${item.puesto ?? i + 1}</span>
-        <span class="barra-nombre" title="${esc(item.etiqueta)}">${esc(item.etiqueta)}</span>
-        <span class="barra-pista"><span class="barra-fill" style="width:${pct}%"></span></span>
-        <span class="barra-val">${esc(item.texto)}</span>
+        <div class="barra-cuerpo">
+          <div class="barra-meta">
+            <span class="barra-nombre" title="${esc(item.etiqueta)}">${esc(item.etiqueta)}</span>
+            <span class="barra-val">${esc(item.texto)}${parteHtml}</span>
+          </div>
+          <span class="barra-pista"><span class="barra-fill" style="width:${ancho}%"></span></span>
+        </div>
       </div>`;
     })
     .join('');
-  return `<article class="grafico"><h3>${esc(titulo)}</h3>${rows}</article>`;
+  return `<article class="grafico tono-${tono}"><h3>${esc(titulo)}</h3>${rows}</article>`;
 }
 
 function htmlVentas(filas: MovimientoInformeFila[]): string {
@@ -230,6 +239,7 @@ function htmlVentas(filas: MovimientoInformeFila[]): string {
           texto: dinero(v.valor),
           puesto: ventas.length - menosItems.length + i + 1,
         })),
+        'slate',
         mas.valor,
       )
     : '';
@@ -243,10 +253,12 @@ function htmlVentas(filas: MovimientoInformeFila[]): string {
       ${htmlBarras(
         'Recaudo por servicio',
         porValor.map((v) => ({ etiqueta: v.nombre, valor: v.valor, texto: dinero(v.valor) })),
+        'navy',
       )}
       ${htmlBarras(
         'Cantidad de cobros',
         porCantidad.map((v) => ({ etiqueta: v.nombre, valor: v.cobros, texto: String(v.cobros) })),
+        'teal',
       )}
       ${graficoMenos}
     </div>
@@ -348,26 +360,57 @@ function css(atPageCss: string): string {
   table.tbl-resumen { table-layout: auto; font-size: 8pt; }
   table.tbl-resumen th, table.tbl-resumen td { white-space: normal; font-size: 8pt; }
   .graficos {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
   }
   .grafico {
-    border: 1px solid #94a3b8; background: #f8fafc; padding: 8px;
+    border: 1px solid #d6dee8; border-top: 3px solid #1a365d; background: #fff;
+    padding: 8px 10px 4px; border-radius: 2px;
     break-inside: avoid; page-break-inside: avoid;
   }
+  .grafico.tono-teal { border-top-color: #0f766e; }
+  .grafico.tono-slate { border-top-color: #64748b; }
   .grafico:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .grafico h3 {
-    margin: 0 0 6px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.03em;
+    margin: 0 0 8px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em;
     color: #1e3a5f;
   }
   .barra {
-    display: grid; grid-template-columns: 14px minmax(72px, 34%) 1fr 72px;
-    gap: 4px; align-items: center; margin-bottom: 3px; font-size: 7pt;
+    display: grid; grid-template-columns: 16px 1fr; gap: 6px; align-items: center;
+    margin-bottom: 7px;
   }
-  .barra-pos { text-align: right; color: #64748b; font-weight: 700; }
-  .barra-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b; }
-  .barra-pista { height: 7px; background: #e2e8f0; }
-  .barra-fill { display: block; height: 100%; background: #1e4d8c; }
-  .barra-val { text-align: right; white-space: nowrap; color: #1e293b; }
+  .barra-pos {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #1a365d; color: #fff; font-size: 6.5pt; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .tono-teal .barra-pos { background: #0f766e; }
+  .tono-slate .barra-pos { background: #64748b; }
+  .barra-meta {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    margin-bottom: 2px;
+  }
+  .barra-nombre {
+    font-size: 7.5pt; color: #1e293b; line-height: 1.2;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .barra-val { font-size: 7pt; color: #1e293b; white-space: nowrap; font-weight: 700; }
+  .barra-val em { font-style: normal; font-weight: 600; color: #64748b; margin-left: 3px; }
+  .barra-pista { display: block; height: 8px; background: #e8eef5; border-radius: 99px; overflow: hidden; }
+  .barra-fill { display: block; height: 100%; border-radius: 99px; background: #1e4d8c; }
+  .tono-navy .barra:nth-of-type(1) .barra-fill { background: #0f2744; }
+  .tono-navy .barra:nth-of-type(2) .barra-fill { background: #1a365d; }
+  .tono-navy .barra:nth-of-type(3) .barra-fill { background: #1e4d8c; }
+  .tono-navy .barra:nth-of-type(4) .barra-fill { background: #2b6cb0; }
+  .tono-navy .barra:nth-of-type(n + 5) .barra-fill { background: #4a86c5; }
+  .tono-teal .barra-fill { background: #0f766e; }
+  .tono-teal .barra:nth-of-type(1) .barra-fill { background: #134e4a; }
+  .tono-teal .barra:nth-of-type(2) .barra-fill { background: #0f766e; }
+  .tono-teal .barra:nth-of-type(3) .barra-fill { background: #0d9488; }
+  .tono-teal .barra:nth-of-type(4) .barra-fill { background: #14b8a6; }
+  .tono-teal .barra:nth-of-type(n + 5) .barra-fill { background: #2dd4bf; }
+  .tono-slate .barra-fill { background: #94a3b8; }
+  .tono-slate .barra:nth-of-type(1) .barra-fill { background: #475569; }
+  .tono-slate .barra:nth-of-type(n + 2) .barra-fill { background: #94a3b8; }
   .doc-footer {
     margin-top: 18px; padding-top: 10px; border-top: 1px solid #ccc;
     font-size: 8pt; color: #666; text-align: center;
