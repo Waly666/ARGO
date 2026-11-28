@@ -59,6 +59,12 @@ export interface CertificadoListItem {
   nomCert?: string | null;
   empresaId?: string | null;
   empresaNombre?: string | null;
+  /** Recibos de ingreso que pagaron la liquidación de este certificado. */
+  numRecibos?: string[];
+  /** migracion: importado del sistema anterior. programa: expedido en ARGO con un programa. */
+  origenCert?: 'migracion' | 'programa';
+  /** Usuario que expidió el certificado. */
+  elaboro?: string;
 }
 
 export interface CertificadoListadoRes {
@@ -181,6 +187,7 @@ export class CertificadoService {
     q?: string;
     tipoFormatoCert?: string;
     estado?: string;
+    origen?: string;
     empresaId?: string;
     desde?: string;
     hasta?: string;
@@ -192,6 +199,7 @@ export class CertificadoService {
     if (params?.q?.trim()) p.set('q', params.q.trim());
     if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
     if (params?.estado) p.set('estado', params.estado);
+    if (params?.origen) p.set('origen', params.origen);
     if (params?.empresaId) p.set('empresaId', params.empresaId);
     if (params?.desde) p.set('desde', params.desde);
     if (params?.hasta) p.set('hasta', params.hasta);

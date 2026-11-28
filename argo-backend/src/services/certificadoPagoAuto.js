@@ -57,7 +57,7 @@ async function tipoCapExcluido(prog, excluidos) {
  * @param {{ numDoc:any, liq:object, saldo?:number }} params
  * @returns {Promise<{creado:boolean, motivo?:string, certificado?:object}>}
  */
-async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {}) {
+async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo, userAddReg, idUsuario } = {}) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null) return { creado: false, motivo: 'numDoc_invalido' };
   if (!liq || !liq.idProg) return { creado: false, motivo: 'sin_programa' };
@@ -146,6 +146,8 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
     tipoFormatoCert: tipoFormato,
     tipoCertificado: tipoCert,
     generadoAutoPago: true,
+    userAddReg: String(userAddReg || '').trim() || undefined,
+    idUsuario: idUsuario || undefined,
     observaciones: 'Certificado emitido automáticamente al completar el pago del programa.',
     fechaEmision: fechaEm,
     fechaVencimiento: fechaVe,

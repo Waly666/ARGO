@@ -118,6 +118,14 @@ const GRUPOS = [
         hint: 'Listado PDF de todos los egresos. Tamaño inicial carta horizontal; aquí se cambia tamaño y orientación.',
       },
       {
+        key: 'informe_certificados',
+        label: 'Informe de certificados',
+        size: 'letter',
+        orientation: 'landscape',
+        defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
+        hint: 'Listado PDF de certificados con el número de ingreso. Tamaño inicial carta horizontal.',
+      },
+      {
         key: 'informe_academico',
         label: 'Informes académicos (tablas)',
         size: 'letter',

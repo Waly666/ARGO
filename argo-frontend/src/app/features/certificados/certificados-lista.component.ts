@@ -21,6 +21,13 @@ import {
   CertificadoService,
 } from '../../core/services/certificado.service';
 import { ClienteService, Cliente } from '../../core/services/cliente.service';
+import { ConfigService } from '../../core/services/config.service';
+import { ConfigPaginasInformesService } from '../../core/services/config-paginas-informes.service';
+import {
+  abrirInformeCertificados,
+  buildInformeCertificadosHtml,
+  CertificadoInformeFila,
+} from './certificados-informe-document';
 import { nombreCompletoAlumno } from '../../core/utils/mensaje-plantilla.helpers';
 import { TIPOS_CERTIFICADO, capEncabezadoCert, capTipoFormatoCert, labelTipoCert } from '../../core/constants/tipos-certificado';
 import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
@@ -63,6 +70,8 @@ import {
 export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewInit {
   private certSvc    = inject(CertificadoService);
   private clienteSvc = inject(ClienteService);
+  private configSvc = inject(ConfigService);
+  private paginasSvc = inject(ConfigPaginasInformesService);
   private confirmSvc = inject(ConfirmDialogService);
   private accionPermiso = inject(AccionPermisoService);
   private eliminacionOps = inject(EliminacionOperacionService);
@@ -77,6 +86,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
           q: this.filtro().trim() || undefined,
           tipoFormatoCert: this.tipoFormato() || undefined,
           estado: this.estadoFiltro() || undefined,
+          origen: this.origenFiltro() || undefined,
           empresaId: this.empresaFiltroId() || undefined,
           desde: this.fechaDesde() || undefined,
           hasta: this.fechaHasta() || undefined,
@@ -105,10 +115,12 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   readonly porPagina = 100;
 
   loading = signal(false);
+  generandoInforme = signal(false);
   guardando = signal(false);
   filtro = signal('');
   tipoFormato = signal('');
   estadoFiltro = signal('');
+  origenFiltro = signal('');
   fechaDesde = signal('');
   fechaHasta = signal('');
   paginaActual = signal(1);
@@ -184,6 +196,11 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     { value: 'vigente', label: 'Vigente' },
     { value: 'vencido', label: 'Vencido' },
     { value: 'anulado', label: 'Anulado' },
+  ] as const;
+  readonly origenesFiltro = [
+    { value: '', label: 'Todos' },
+    { value: 'programa', label: 'Expedido con el programa' },
+    { value: 'migracion', label: 'Migración' },
   ] as const;
   readonly tiposCertificadoCat = TIPOS_ALUMNO_DEF;
   readonly capEncabezadoCert = capEncabezadoCert;
@@ -276,6 +293,12 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     this.solicitarRecargaServidor();
   }
 
+  onOrigenFiltroChange(val: string) {
+    this.origenFiltro.set(val);
+    this.paginaActual.set(1);
+    this.solicitarRecargaServidor();
+  }
+
   onFechaDesdeChange(val: string) {
     this.fechaDesde.set(val);
     this.paginaActual.set(1);
@@ -319,6 +342,110 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     this.recargar$.next();
   }
 
+  informePdf(): void {
+    if (this.generandoInforme()) return;
+    this.generandoInforme.set(true);
+    this.recolectarInforme(1, []);
+  }
+
+  private filtrosListado() {
+    return {
+      q: this.filtro().trim() || undefined,
+      tipoFormatoCert: this.tipoFormato() || undefined,
+      estado: this.estadoFiltro() || undefined,
+      origen: this.origenFiltro() || undefined,
+      empresaId: this.empresaFiltroId() || undefined,
+      desde: this.fechaDesde() || undefined,
+      hasta: this.fechaHasta() || undefined,
+    };
+  }
+
+  private recolectarInforme(page: number, acc: CertificadoListItem[]): void {
+    this.certSvc
+      .listarGlobal({ ...this.filtrosListado(), page, limit: 200, cacheBust: Date.now() })
+      .subscribe({
+        next: (res) => {
+          const merged = acc.concat(res.items || []);
+          const totalPages = res.totalPages || 1;
+          if (page < totalPages) this.recolectarInforme(page + 1, merged);
+          else this.emitirInforme(merged);
+        },
+        error: (e) => {
+          this.generandoInforme.set(false);
+          this.msgError.set(true);
+          this.msg.set(e?.error?.message || 'No se pudo armar el informe.');
+        },
+      });
+  }
+
+  private emitirInforme(items: CertificadoListItem[]): void {
+    this.generandoInforme.set(false);
+    if (!items.length) {
+      this.msgError.set(true);
+      this.msg.set('No hay certificados para el informe con los filtros elegidos.');
+      return;
+    }
+    const filas = items.map((c) => this.filaInforme(c));
+    const titulo = 'Informe de certificados';
+    this.paginasSvc.ensureAndAtPageCss('informe_certificados').subscribe({
+      next: (atPageCss) => this.abrirInforme(titulo, filas, atPageCss),
+      error: () => this.abrirInforme(titulo, filas),
+    });
+  }
+
+  private abrirInforme(titulo: string, filas: CertificadoInformeFila[], atPageCss?: string): void {
+    this.configSvc.obtenerReciboEncabezado().subscribe({
+      next: (empresa) => this.escribirInforme(titulo, filas, empresa, atPageCss),
+      error: () => this.escribirInforme(titulo, filas, null, atPageCss),
+    });
+  }
+
+  private escribirInforme(
+    titulo: string,
+    filas: CertificadoInformeFila[],
+    empresa: Parameters<typeof buildInformeCertificadosHtml>[0]['empresa'],
+    atPageCss?: string,
+  ): void {
+    const tipo = this.tiposFormato.find((t) => t.id === this.tipoFormato());
+    const estado = this.estadosFiltro.find((e) => e.value === this.estadoFiltro());
+    const origen = this.origenesFiltro.find((e) => e.value === this.origenFiltro());
+    const html = buildInformeCertificadosHtml({
+      titulo,
+      filas,
+      empresa,
+      atPageCss,
+      filtros: {
+        buscar: this.filtro().trim(),
+        tipo: tipo?.label || '',
+        estado: estado?.value ? estado.label : '',
+        origen: origen?.value ? origen.label : '',
+        desde: this.fechaDesde(),
+        hasta: this.fechaHasta(),
+        empresa: this.empresaFiltroNombre().trim(),
+      },
+    });
+    if (!abrirInformeCertificados(html)) {
+      this.msgError.set(true);
+      this.msg.set('El navegador bloqueó la ventana del informe. Permite ventanas emergentes para este sitio.');
+    }
+  }
+
+  private filaInforme(c: CertificadoListItem): CertificadoInformeFila {
+    const estado = this.estadoVigencia(c);
+    return {
+      codigo: c.codigoCert || '—',
+      alumno: c.nombreCompleto || c.nombreTitular || '—',
+      documento: c.numDoc != null ? String(c.numDoc) : '—',
+      tipo: c.tipoFormatoCertLabel || c.tipoFormatoCert || '—',
+      curso: c.encabezado || c.programaDescr || c.nomCert || '—',
+      emision: this.fmtFecha(c.fechaEmision),
+      estado,
+      origen: c.origenCert === 'migracion' ? 'migracion' : 'programa',
+      elaboro: String(c.elaboro || '—').trim() || '—',
+      ingresos: (c.numRecibos || []).map((n) => String(n).trim()).filter(Boolean),
+    };
+  }
+
   cargar(silencioso = false) {
     if (!silencioso) this.loading.set(true);
     this.certSvc
@@ -326,6 +453,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
         q: this.filtro().trim() || undefined,
         tipoFormatoCert: this.tipoFormato() || undefined,
         estado: this.estadoFiltro() || undefined,
+        origen: this.origenFiltro() || undefined,
         empresaId: this.empresaFiltroId() || undefined,
         desde: this.fechaDesde() || undefined,
         hasta: this.fechaHasta() || undefined,

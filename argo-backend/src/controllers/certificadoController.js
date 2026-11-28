@@ -10,6 +10,7 @@ const {
   tipoCertificadoEmisionNoJornada,
 } = require('../constants/tipoRegularJornada');
 const { models: cat } = require('../models/catalogos');
+const { ID_PROG_HISTORICO } = require('../constants/migracionHistorico');
 const { obtenerConfigCertificado, siguienteCodigoCertificado, normalizeDiasAvisoCert, DEFAULT_DIAS_AVISO_POR_VENCER, DEFAULT_DIAS_AVISO_VENCIDO } = require('../services/configCertificado');
 const { reglaPorClave } = require('../services/configAlertas');
 const { buscarPrograma } = require('../services/programaServicio');
@@ -241,6 +242,8 @@ exports.crear = async (req, res, next) => {
     const cert = await Certificado.create({
       numDoc,
       idLiquidacion: liq._id,
+      idUsuario: idUsuarioObjectIdDesdeReq(req),
+      userAddReg: String(req.user?.username || '').trim() || undefined,
       idProg: liq.idProg,
       codigoCert,
       encabezado,
@@ -560,6 +563,119 @@ function esFechaEmisionHoy(fechaEmision) {
   return ymdCalendario(fechaEmision) === ymdLocalDate(new Date());
 }
 
+function esCertificadoMigracion(c) {
+  if (!c) return false;
+  if (c.migrado === true || c.migracionHistorica === true) return true;
+  if (String(c.loteMigracion || '').trim()) return true;
+  return String(c.idProg || '').trim() === ID_PROG_HISTORICO;
+}
+
+function filtroOrigenCertificado(origen) {
+  const marcas = [
+    { migrado: true },
+    { migracionHistorica: true },
+    { loteMigracion: { $exists: true, $nin: [null, ''] } },
+    { idProg: ID_PROG_HISTORICO },
+  ];
+  if (origen === 'migracion') return { $or: marcas };
+  if (origen === 'programa') return { $nor: marcas };
+  return null;
+}
+
+/** Recibos de ingreso vigentes que pagaron cada liquidación del certificado. */
+async function numRecibosPorLiquidacion(liqIds) {
+  const ids = [...new Set((liqIds || []).map((id) => String(id || '')).filter(Boolean))];
+  const map = new Map();
+  if (!ids.length) return map;
+  const oids = ids.filter((id) => mongoose.Types.ObjectId.isValid(id)).map((id) => new mongoose.Types.ObjectId(id));
+  if (!oids.length) return map;
+  const Ingreso = require('../models/Ingreso');
+  const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
+  const ingresos = await Ingreso.find({
+    $or: [{ idLiquidacion: { $in: oids } }, { 'detalle.idLiquidacion': { $in: oids } }],
+  })
+    .select('numRecibo idLiquidacion detalle anulado estado userAddReg')
+    .lean();
+  const add = (liqId, recibo, elaboro) => {
+    const key = String(liqId || '');
+    const rec = String(recibo || '').trim();
+    if (!key || !rec) return;
+    const slot = map.get(key) || { recibos: [], elaboro: '' };
+    if (!slot.recibos.includes(rec)) slot.recibos.push(rec);
+    const quien = String(elaboro || '').trim();
+    if (!slot.elaboro && quien) slot.elaboro = quien;
+    map.set(key, slot);
+  };
+  for (const ing of ingresos) {
+    if (esComprobanteAnulado(ing)) continue;
+    if (ing.idLiquidacion) add(ing.idLiquidacion, ing.numRecibo, ing.userAddReg);
+    for (const d of ing.detalle || []) add(d.idLiquidacion, ing.numRecibo, ing.userAddReg);
+  }
+  return map;
+}
+
+/** Usuario que emitió el certificado: campo propio, ficha de usuario o auditoría de creación. */
+async function elaboroDirectoPorCertificado(rows) {
+  const Usuario = require('../models/Usuario');
+  const Auditoria = require('../models/Auditoria');
+  const out = new Map();
+  const idsUsuario = [];
+  for (const c of rows) {
+    const propio = String(c.userAddReg || '').trim();
+    if (propio) {
+      out.set(String(c._id), propio);
+      continue;
+    }
+    if (c.idUsuario) idsUsuario.push(c.idUsuario);
+  }
+  const usuarios = idsUsuario.length
+    ? await Usuario.find({ _id: { $in: idsUsuario } }).select('username').lean()
+    : [];
+  const userById = new Map(usuarios.map((u) => [String(u._id), String(u.username || '').trim()]));
+  const codigos = [];
+  for (const c of rows) {
+    const id = String(c._id);
+    if (out.has(id)) continue;
+    const porId = c.idUsuario ? userById.get(String(c.idUsuario)) : '';
+    if (porId) {
+      out.set(id, porId);
+      continue;
+    }
+    const codigo = String(c.codigoCert || '').trim();
+    if (codigo) codigos.push(codigo);
+  }
+  if (codigos.length) {
+    const audits = await Auditoria.find({
+      entidad: 'certificados',
+      accion: 'crear',
+      'datosDespues.codigoCert': { $in: codigos },
+    })
+      .select('usuario datosDespues.codigoCert fecha')
+      .sort({ fecha: 1 })
+      .lean();
+    const porCodigo = new Map();
+    for (const a of audits) {
+      const codigo = String(a.datosDespues?.codigoCert || '').trim();
+      const usuario = String(a.usuario || '').trim();
+      if (!codigo || !usuario || usuario === 'sistema' || porCodigo.has(codigo)) continue;
+      porCodigo.set(codigo, usuario);
+    }
+    for (const c of rows) {
+      const id = String(c._id);
+      if (out.has(id)) continue;
+      const usuario = porCodigo.get(String(c.codigoCert || '').trim());
+      if (usuario) out.set(id, usuario);
+    }
+  }
+  return out;
+}
+
+function idUsuarioObjectIdDesdeReq(req) {
+  const s = String(req?.user?.sub || '').trim();
+  if (/^[a-fA-F0-9]{24}$/.test(s)) return new mongoose.Types.ObjectId(s);
+  return null;
+}
+
 function inicioDia(d = new Date()) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -804,8 +920,37 @@ exports.listarGlobal = async (req, res, next) => {
     if (tipoFmt) q.tipoFormatoCert = tipoFmt;
 
     const estadoParam = String(req.query.estado || '').trim().toLowerCase();
-    if (estadoParam === 'vencido' || estadoParam === 'vigente' || estadoParam === 'anulado') {
-      q.estado = estadoParam;
+    if (estadoParam === 'anulado') {
+      q.estado = 'anulado';
+    } else if (estadoParam === 'vencido' || estadoParam === 'vigente') {
+      const hoyFin = finDia();
+      if (!q.$and) q.$and = [];
+      if (estadoParam === 'vencido') {
+        q.$and.push({
+          $or: [
+            { estado: 'vencido' },
+            {
+              estado: { $nin: ['anulado', 'vencido'] },
+              fechaVencimiento: { $ne: null, $lte: hoyFin },
+            },
+          ],
+        });
+      } else {
+        q.$and.push({
+          estado: { $nin: ['anulado', 'vencido'] },
+          $or: [
+            { fechaVencimiento: null },
+            { fechaVencimiento: { $gt: hoyFin } },
+          ],
+        });
+      }
+    }
+
+    const origenParam = String(req.query.origen || '').trim().toLowerCase();
+    const filtroOrigen = filtroOrigenCertificado(origenParam);
+    if (filtroOrigen) {
+      if (!q.$and) q.$and = [];
+      q.$and.push(filtroOrigen);
     }
 
     const empresaIdParam = String(req.query.empresaId || '').trim();
@@ -866,6 +1011,10 @@ exports.listarGlobal = async (req, res, next) => {
       ? await Contratacion.find({ _id: { $in: [...contratoIds] } }).select('codContrato').lean()
       : [];
 
+    const [recibosPorLiq, elaboroPorCert] = await Promise.all([
+      numRecibosPorLiquidacion(rows.map((c) => c.idLiquidacion)),
+      elaboroDirectoPorCertificado(rows),
+    ]);
     const alByDoc = new Map(alumnosRows.map((a) => [a.numDoc, a]));
     const jornById = new Map(jornadas.map((j) => [String(j._id), j]));
     const contrById = new Map(contratos.map((c) => [String(c._id), c]));
@@ -913,6 +1062,12 @@ exports.listarGlobal = async (req, res, next) => {
         ubicacionJornada: ubicacionJornada || null,
         empresaId: c.empresaId ? String(c.empresaId) : null,
         empresaNombre: c.empresaNombre || null,
+        numRecibos: c.idLiquidacion ? recibosPorLiq.get(String(c.idLiquidacion))?.recibos || [] : [],
+        elaboro:
+          elaboroPorCert.get(String(c._id)) ||
+          (c.idLiquidacion ? recibosPorLiq.get(String(c.idLiquidacion))?.elaboro : '') ||
+          (esCertificadoMigracion(c) ? 'Migración' : '—'),
+        origenCert: esCertificadoMigracion(c) ? 'migracion' : 'programa',
       });
     }
 

@@ -60,7 +60,7 @@
 
 .filtros-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr));
+  grid-template-columns: minmax(200px, 1.6fr) repeat(5, minmax(120px, 1fr));
   gap: 10px 12px;
 }
 
@@ -158,6 +158,29 @@
   color: #e2e8f0;
   background: rgba(100, 116, 139, 0.35);
   border-color: rgba(148, 163, 184, 0.45);
+}
+
+.origen-cert-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.origen-cert-programa {
+  color: #ccfbf1;
+  background: rgba(15, 118, 110, 0.55);
+  border: 1px solid rgba(45, 212, 191, 0.7);
+}
+
+.origen-cert-migracion {
+  color: #f3e8ff;
+  background: rgba(91, 33, 182, 0.55);
+  border: 1px solid rgba(196, 181, 253, 0.75);
 }
 
 .fecha-vence-vencida {

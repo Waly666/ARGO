@@ -56,7 +56,7 @@ async function buscarLiquidacionPagada(numDoc, idProg) {
  * Emite certificado al aprobar curso virtual (modoCertificado = al_aprobar).
  * Reutiliza plantillas y numeración de ARGO; nunca lanza.
  */
-async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma } = {}) {
+async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma, userAddReg, idUsuario } = {}) {
   const numDoc = parseNumDoc(numDocRaw);
   const idProg = String(idPrograma || '').trim();
   if (numDoc == null) return { creado: false, motivo: 'numDoc_invalido' };
@@ -145,6 +145,8 @@ async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma
     tipoFormatoCert: tipoFormato,
     tipoCertificado: tipoCert,
     generadoAutoVirtual: true,
+    userAddReg: String(userAddReg || '').trim() || undefined,
+    idUsuario: idUsuario || undefined,
     observaciones: `Certificado emitido automáticamente al aprobar el curso virtual (nota ${estado.mejorNotaEval}%, completitud ${estado.pctCompletitud}%).`,
     fechaEmision: fechaEm,
     fechaVencimiento: fechaVe,

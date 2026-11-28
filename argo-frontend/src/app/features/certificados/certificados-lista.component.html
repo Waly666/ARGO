@@ -26,6 +26,9 @@
       </p>
     </div>
     <div class="head-actions">
+      <button type="button" class="ghost" (click)="informePdf()" [disabled]="generandoInforme() || loading()">
+        {{ generandoInforme() ? 'Armando informe…' : 'Informe PDF' }}
+      </button>
       <button type="button" class="ghost" (click)="cargar()" [disabled]="loading()">↻ Actualizar</button>
     </div>
   </header>
@@ -60,6 +63,14 @@
         <select id="estado-cert" [ngModel]="estadoFiltro()" (ngModelChange)="onEstadoFiltroChange($event)">
           @for (e of estadosFiltro; track e.value) {
             <option [value]="e.value">{{ e.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="filtro-field">
+        <label for="origen-cert">Origen</label>
+        <select id="origen-cert" [ngModel]="origenFiltro()" (ngModelChange)="onOrigenFiltroChange($event)">
+          @for (o of origenesFiltro; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
           }
         </select>
       </div>
@@ -127,6 +138,7 @@
             <th>Emisión</th>
             <th>Vence</th>
             <th>Estado</th>
+            <th>Origen</th>
             <th></th>
           </tr>
         </thead>
@@ -193,6 +205,13 @@
                   [attr.title]="tituloEstadoVigencia(c)">
                   {{ labelEstadoVigencia(c) }}
                 </span>
+              </td>
+              <td>
+                @if (c.origenCert === 'migracion') {
+                  <span class="origen-cert-badge origen-cert-migracion">Migración</span>
+                } @else {
+                  <span class="origen-cert-badge origen-cert-programa">Programa</span>
+                }
               </td>
               <td class="actions-cell">
                 <button type="button" class="mini ghost" (click)="imprimir(c)">Imprimir</button>
