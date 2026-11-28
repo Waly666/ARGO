@@ -17,7 +17,7 @@ const { assertAlumnoPorNumDocGestor } = require('../services/alcanceGestorUsuari
 const { assertCreditoDiarioGestorMovil } = require('../services/gestorCreditoDiario');
 const { assertPagoGestorSoloTransferencia } = require('../services/gestorPagoTransferencia');
 const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
-const { validarPagoIntangibleIngreso } = require('../utils/referenciaPago');
+const { validarPagoIntangibleIngreso, esFormaPagoEfectivo } = require('../utils/referenciaPago');
 const upload = require('../middleware/upload');
 const {
   validarTipoIngresoCaja,
@@ -887,6 +887,25 @@ exports.listarTodos = async (req, res, next) => {
   }
 };
 
+function cuentaInformeIngreso(i, formaPago) {
+  const descr = String(i?.cuentaBancariaDescr || '').trim();
+  if (descr) return descr;
+  if (esFormaPagoEfectivo(formaPago)) return 'Caja';
+  const recibe = String(i?.cuentaRecibe || '').trim();
+  const id = String(i?.idCuentaBancaria || '').trim();
+  if (recibe && recibe !== id) return recibe;
+  return 'Sin cuenta registrada';
+}
+
+function serviciosInformeIngreso(i) {
+  const detalle = Array.isArray(i?.detalle) ? i.detalle : [];
+  const lineas = detalle
+    .map((d) => ({ nombre: String(d?.descripcion || '').trim(), valor: num(d?.valor) }))
+    .filter((d) => d.nombre || d.valor);
+  if (lineas.length) return lineas;
+  return [{ nombre: i.conceptoLabel || i.liquidacionDescr || i.concepto || '—', valor: num(i.valor) }];
+}
+
 function etiquetaTerceroIngreso(i) {
   if (i.esIngresoCaja) return i.pagadorDescr || i.recibidoDe || 'Tercero';
   return i.alumnoNombre || i.pagadorDescr || (i.numDoc != null ? String(i.numDoc) : '');
@@ -969,6 +988,7 @@ exports.exportarZip = async (req, res, next) => {
       atPageKey: 'informe_ingresos_caja',
       idSede: req.idSede,
       columnaSoporte: true,
+      analisisIngresos: true,
       headers: ['Fecha', 'Recibo', 'Sesión', 'Tercero', 'Documento', 'Tipo', 'Concepto', 'Pago', 'Valor', 'Estado', 'Soporte'],
       filasExcel: items.map((i) => [
         fmtFecha(i.fecha || i.createdAt),
@@ -983,19 +1003,25 @@ exports.exportarZip = async (req, res, next) => {
         i.anulado ? 'Anulado' : 'Vigente',
         ingresoFaltaSoporte(i) ? 'Falta soporte' : '',
       ]),
-      filasPdf: items.map((i) => ({
-        fecha: fmtFecha(i.fecha || i.createdAt),
-        recibo: i.numRecibo || '—',
-        sesion: i.idSesion != null ? `#${i.idSesion}` : '—',
-        tercero: etiquetaTerceroIngreso(i),
-        documento: i.numDoc != null ? String(i.numDoc) : i.documentoTercero || '—',
-        tipo: i.tipoIngresoDescr || i.tipoIngreso || '—',
-        concepto: i.conceptoLabel || i.liquidacionDescr || i.concepto || '—',
-        formaPago: i.tipoPagoDescr || i.formaPago || '—',
-        valor: num(i.valor),
-        anulado: !!i.anulado,
-        sinSoporte: ingresoFaltaSoporte(i),
-      })),
+      filasPdf: items.map((i) => {
+        const formaPago = i.tipoPagoDescr || i.formaPago || '—';
+        return {
+          fecha: fmtFecha(i.fecha || i.createdAt),
+          recibo: i.numRecibo || '—',
+          elaboro: String(i.userAddReg || '—').trim() || '—',
+          sesion: i.idSesion != null ? `#${i.idSesion}` : '—',
+          tercero: etiquetaTerceroIngreso(i),
+          documento: i.numDoc != null ? String(i.numDoc) : i.documentoTercero || '—',
+          tipo: i.tipoIngresoDescr || i.tipoIngreso || '—',
+          concepto: i.conceptoLabel || i.liquidacionDescr || i.concepto || '—',
+          formaPago,
+          cuenta: cuentaInformeIngreso(i, formaPago),
+          servicios: serviciosInformeIngreso(i),
+          valor: num(i.valor),
+          anulado: !!i.anulado,
+          sinSoporte: ingresoFaltaSoporte(i),
+        };
+      }),
       soportes: items
         .filter((i) => i.urlSoporte)
         .map((i) => ({ numRecibo: i.numRecibo || String(i._id || '').slice(-8), url: i.urlSoporte })),
