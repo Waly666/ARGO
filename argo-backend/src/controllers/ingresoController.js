@@ -26,6 +26,8 @@ const {
 } = require('../services/tipoIngresoCaja');
 const {
   resolverTipoIngresoDesdeLiquidacion,
+  resolverTipoIngresoPredominante,
+  aplicarTipoPredominante,
   resolverTipoIngresoIngreso,
   formaPagoDesdeCatalogo,
 } = require('../services/tipoIngresoResolver');
@@ -479,7 +481,14 @@ exports.crearAlumno = async (req, res, next) => {
     const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
     const recibiDe = body.recibiDe || body.recibidoDe || nombreAlumno(alumno) || String(numDoc);
 
-    const tipoIngDoc = await resolverTipoIngresoDesdeLiquidacion(liqDocs[0].liq._id);
+    const tipoIngDoc = await resolverTipoIngresoPredominante(
+      liqDocs.map((x) => ({
+        idLiquidacion: x.liq._id,
+        idServ: x.liq.idServ,
+        idProg: x.liq.idProg,
+        valor: x.valor,
+      })),
+    );
     const tipoIng = camposTipoIngreso(tipoIngDoc);
 
     // Aplicar el abono a cada liquidación (con rollback si falla la creación).
@@ -782,7 +791,7 @@ async function listarIngresosEnriquecidos(rows) {
       conceptoLabel: concepto,
     });
   }
-  return out;
+  return aplicarTipoPredominante(out);
 }
 
 function rangoFechaQuery(desde, hasta, campo = 'fecha') {

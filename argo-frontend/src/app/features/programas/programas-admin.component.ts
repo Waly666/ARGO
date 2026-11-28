@@ -1464,17 +1464,16 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   inferirTipoServ(idTipCap: string | number | undefined): string {
+    const label = this.normTipoCap(this.labelTipo(idTipCap));
 
-    const label = this.labelTipo(idTipCap).toLowerCase();
-
-    if (/licencia|conduccion/.test(label)) return 'CEA';
+    if (/licencia/.test(label) && /conduccion/.test(label)) return 'CEA';
 
     if (/diplomado/.test(label)) return 'DIP';
 
-    if (/tecnico|competenc/.test(label)) return 'TEC';
+    // Técnico laboral. «Competencias» sola no es técnico.
+    if (/tecnico/.test(label)) return 'TEC';
 
     return 'CUR';
-
   }
 
   esLicenciaConduccionForm(): boolean {

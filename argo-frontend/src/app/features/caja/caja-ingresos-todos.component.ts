@@ -338,6 +338,35 @@ export class CajaIngresosTodosComponent implements OnInit {
     return resolverFormaPagoIngreso(i);
   }
 
+  cuentaInforme(i: any): string {
+    const descr = String(i?.cuentaBancariaDescr || '').trim();
+    if (descr) return descr;
+    if (esFormaPagoEfectivo(this.formaPagoLabel(i))) return 'Caja';
+    const recibe = String(i?.cuentaRecibe || '').trim();
+    const id = String(i?.idCuentaBancaria || '').trim();
+    if (recibe && recibe !== id) return recibe;
+    return 'Sin cuenta registrada';
+  }
+
+  /** Un comprobante puede pagar varios servicios: cada ítem del detalle es una venta. */
+  serviciosInforme(i: any): { nombre: string; valor: number }[] {
+    const detalle = Array.isArray(i?.detalle) ? i.detalle : [];
+    const lineas = detalle
+      .map((d: { descripcion?: string; valor?: number }) => ({
+        nombre: String(d?.descripcion || '').trim(),
+        valor: Number(d?.valor) || 0,
+      }))
+      .filter((d: { nombre: string; valor: number }) => d.nombre || d.valor);
+    if (lineas.length) {
+      const respaldo = this.conceptoLabel(i);
+      return lineas.map((d: { nombre: string; valor: number }) => ({
+        nombre: d.nombre || respaldo,
+        valor: d.valor,
+      }));
+    }
+    return [{ nombre: this.conceptoLabel(i), valor: Number(i?.valor) || 0 }];
+  }
+
   informePdf(): void {
     this.pendientePdf = true;
     this.cargar();
@@ -435,6 +464,7 @@ export class CajaIngresosTodosComponent implements OnInit {
     const html = buildInformeMovimientosCajaHtml({
       titulo,
       columnaSoporte: true,
+      analisisIngresos: true,
       filtros: {
         desde: this.desde() || undefined,
         hasta: this.hasta() || undefined,
@@ -451,6 +481,8 @@ export class CajaIngresosTodosComponent implements OnInit {
         tipo: String(i.tipoIngresoDescr || i.tipoIngreso || '—'),
         concepto: this.conceptoLabel(i),
         formaPago: this.formaPagoLabel(i),
+        cuenta: this.cuentaInforme(i),
+        servicios: this.serviciosInforme(i),
         valor: Number(i.valor || 0),
         anulado: this.esAnulado(i),
         sinSoporte: this.faltaSoporte(i),

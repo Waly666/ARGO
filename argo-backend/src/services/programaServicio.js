@@ -73,11 +73,15 @@ async function insertarCatalogo(collection, doc) {
 }
 
 function inferirTipoServ(idTipCap) {
-  const t = String(idTipCap ?? '').toLowerCase();
+  const t = String(idTipCap ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
   if (/diplomado/.test(t)) return 'DIP';
-  if (/tecnico|competenc/.test(t)) return 'TEC';
+  // Técnico laboral. «Competencias» sola no es técnico (p. ej. normas o cursos).
+  if (/tecnico/.test(t)) return 'TEC';
   if (/licencia|conduccion/.test(t)) return 'CUR';
-  if (/curso|no formal/.test(t)) return 'CUR';
+  if (/curso|no formal|complementari/.test(t)) return 'CUR';
   return 'CUR';
 }
 

@@ -1,4 +1,6 @@
 import { ConfigRecibo } from '../../core/services/config.service';
+import { canonicoMetodoPago } from '../../core/utils/metodo-pago.util';
+import { esFormaPagoEfectivo } from '../../core/utils/referencia-pago.util';
 import {
   informePrintToolbarCss,
   informePrintToolbarHtml,
@@ -26,6 +28,10 @@ export type MovimientoInformeFila = {
   placa?: string;
   /** Pago distinto de efectivo sin imagen de soporte. */
   sinSoporte?: boolean;
+  /** Cuenta que recibe el pago. En efectivo, caja. */
+  cuenta?: string;
+  /** Servicios del comprobante. Un recibo con varios ítems aporta una línea por servicio. */
+  servicios?: { nombre: string; valor: number }[];
 };
 
 export type FiltrosInformeMovimientos = {
@@ -50,6 +56,206 @@ function dinero(n: number): string {
     currency: 'COP',
     maximumFractionDigits: 0,
   }).format(Number(n) || 0);
+}
+
+function medioPago(forma: string): string {
+  const canon = canonicoMetodoPago(forma);
+  if (canon === 'Efectivo' || canon === 'Transferencia') return canon;
+  return canon || 'Otro';
+}
+
+function etiquetaSoporte(f: MovimientoInformeFila): string {
+  if (esFormaPagoEfectivo(f.formaPago)) return 'No aplica';
+  return f.sinSoporte ? 'Sin soporte' : 'Con soporte';
+}
+
+function cuentaPago(f: MovimientoInformeFila): string {
+  const cuenta = String(f.cuenta || '').trim();
+  if (cuenta) return cuenta;
+  return esFormaPagoEfectivo(f.formaPago) ? 'Caja' : 'Sin cuenta registrada';
+}
+
+type GrupoPago = {
+  medio: string;
+  cuenta: string;
+  soporte: string;
+  cantidad: number;
+  total: number;
+};
+
+function gruposPago(filas: MovimientoInformeFila[]): GrupoPago[] {
+  const ordenMedio = (m: string) => (m === 'Efectivo' ? 0 : m === 'Transferencia' ? 1 : 2);
+  const map = new Map<string, GrupoPago>();
+  for (const f of filas) {
+    if (f.anulado) continue;
+    const medio = medioPago(f.formaPago);
+    const cuenta = cuentaPago(f);
+    const soporte = etiquetaSoporte(f);
+    const key = `${medio}\u0000${cuenta}\u0000${soporte}`;
+    const prev = map.get(key) || { medio, cuenta, soporte, cantidad: 0, total: 0 };
+    prev.cantidad += 1;
+    prev.total += Number(f.valor) || 0;
+    map.set(key, prev);
+  }
+  return [...map.values()].sort(
+    (a, b) =>
+      ordenMedio(a.medio) - ordenMedio(b.medio) ||
+      b.total - a.total ||
+      a.cuenta.localeCompare(b.cuenta, 'es'),
+  );
+}
+
+type VentaServicio = { nombre: string; valor: number; cobros: number };
+
+function ventasPorServicio(filas: MovimientoInformeFila[]): VentaServicio[] {
+  const map = new Map<string, VentaServicio>();
+  for (const f of filas) {
+    if (f.anulado) continue;
+    const lineas = f.servicios?.length
+      ? f.servicios
+      : [{ nombre: f.concepto || 'Sin concepto', valor: Number(f.valor) || 0 }];
+    for (const linea of lineas) {
+      const nombre = String(linea.nombre || 'Sin concepto').trim() || 'Sin concepto';
+      const key = nombre.toLocaleLowerCase('es');
+      const prev = map.get(key) || { nombre, valor: 0, cobros: 0 };
+      prev.valor += Number(linea.valor) || 0;
+      prev.cobros += 1;
+      map.set(key, prev);
+    }
+  }
+  return [...map.values()].sort(
+    (a, b) => b.valor - a.valor || b.cobros - a.cobros || a.nombre.localeCompare(b.nombre, 'es'),
+  );
+}
+
+function htmlResumenPagos(filas: MovimientoInformeFila[]): string {
+  const vigentes = filas.filter((f) => !f.anulado);
+  const suma = (medio: string) =>
+    vigentes
+      .filter((f) => medioPago(f.formaPago) === medio)
+      .reduce((a, f) => a + (Number(f.valor) || 0), 0);
+  const efectivo = suma('Efectivo');
+  const transferencia = suma('Transferencia');
+  const otros = vigentes
+    .filter((f) => {
+      const m = medioPago(f.formaPago);
+      return m !== 'Efectivo' && m !== 'Transferencia';
+    })
+    .reduce((a, f) => a + (Number(f.valor) || 0), 0);
+  const grupos = gruposPago(filas);
+  const filasHtml = grupos
+    .map((g) => {
+      const cls = g.soporte === 'Sin soporte' ? ' class="sin-soporte"' : '';
+      return `<tr${cls}>
+        <td>${esc(g.medio)}</td>
+        <td title="${esc(g.cuenta)}">${esc(g.cuenta)}</td>
+        <td class="soporte">${esc(g.soporte)}</td>
+        <td class="num">${esc(g.cantidad)}</td>
+        <td class="num">${esc(dinero(g.total))}</td>
+      </tr>`;
+    })
+    .join('');
+  const vacio = '<tr><td colspan="5">Sin pagos vigentes</td></tr>';
+  const otrosStat = otros
+    ? `<div class="stat"><span>Otros medios</span><strong>${esc(dinero(otros))}</strong></div>`
+    : '';
+  return `<div class="sec">Pagos: motivo, medio y cuenta</div>
+    <p class="nota">Totales de comprobantes vigentes. El efectivo no exige soporte. Transferencia y los demás medios quedan marcados si el sistema tiene o no la imagen del comprobante.</p>
+    <div class="stats">
+      <div class="stat"><span>Total en efectivo</span><strong>${esc(dinero(efectivo))}</strong></div>
+      <div class="stat"><span>Total en transferencia</span><strong>${esc(dinero(transferencia))}</strong></div>
+      ${otrosStat}
+    </div>
+    <table class="tbl tbl-resumen">
+      <thead><tr>
+        <th>Medio</th><th>Cuenta</th><th>Soporte</th><th class="num">Pagos</th><th class="num">Total</th>
+      </tr></thead>
+      <tbody>${filasHtml || vacio}</tbody>
+    </table>`;
+}
+
+function htmlBarras(
+  titulo: string,
+  items: { etiqueta: string; valor: number; texto: string; puesto?: number }[],
+  maxValor?: number,
+): string {
+  if (!items.length) return '';
+  const max = maxValor && maxValor > 0 ? maxValor : Math.max(...items.map((i) => i.valor), 1);
+  const rows = items
+    .map((item, i) => {
+      const pct = Math.max(2, Math.round((item.valor / max) * 100));
+      return `<div class="barra">
+        <span class="barra-pos">${item.puesto ?? i + 1}</span>
+        <span class="barra-nombre" title="${esc(item.etiqueta)}">${esc(item.etiqueta)}</span>
+        <span class="barra-pista"><span class="barra-fill" style="width:${pct}%"></span></span>
+        <span class="barra-val">${esc(item.texto)}</span>
+      </div>`;
+    })
+    .join('');
+  return `<article class="grafico"><h3>${esc(titulo)}</h3>${rows}</article>`;
+}
+
+function htmlVentas(filas: MovimientoInformeFila[]): string {
+  const ventas = ventasPorServicio(filas);
+  if (!ventas.length) return '';
+  const total = ventas.reduce((a, v) => a + v.valor, 0) || 1;
+  const mas = ventas[0];
+  const menos = ventas[ventas.length - 1];
+  const tope = 12;
+  const porValor = ventas.slice(0, tope);
+  const porCantidad = [...ventas].sort((a, b) => b.cobros - a.cobros || b.valor - a.valor).slice(0, tope);
+  const menosItems = ventas.length > tope ? ventas.slice(-5) : [];
+  const cuerpo = ventas
+    .map((v, i) => {
+      const pct = Math.round((v.valor / total) * 1000) / 10;
+      return `<tr>
+        <td class="num">${i + 1}</td>
+        <td class="concepto" title="${esc(v.nombre)}">${esc(v.nombre)}</td>
+        <td class="num">${esc(v.cobros)}</td>
+        <td class="num">${esc(dinero(v.valor))}</td>
+        <td class="num">${esc(pct)}%</td>
+      </tr>`;
+    })
+    .join('');
+  const notaTope =
+    ventas.length > tope
+      ? `<p class="nota">Cada servicio se cuenta por su valor dentro del comprobante. Un recibo con varios servicios suma en cada uno. Los gráficos muestran los ${tope} primeros; la tabla lista los ${ventas.length}, del que más recauda al que menos. Los anulados no entran.</p>`
+      : `<p class="nota">Cada servicio se cuenta por su valor dentro del comprobante. Un recibo con varios servicios suma en cada uno. Los anulados no entran.</p>`;
+  const graficoMenos = menosItems.length
+    ? htmlBarras(
+        'Los que menos se venden',
+        menosItems.map((v, i) => ({
+          etiqueta: v.nombre,
+          valor: v.valor,
+          texto: dinero(v.valor),
+          puesto: ventas.length - menosItems.length + i + 1,
+        })),
+        mas.valor,
+      )
+    : '';
+  return `<div class="sec">Ventas por servicio</div>
+    ${notaTope}
+    <div class="stats">
+      <div class="stat stat-nombre"><span>Más vendido</span><strong>${esc(mas.nombre)}</strong><em>${esc(dinero(mas.valor))} · ${esc(mas.cobros)} cobro${mas.cobros === 1 ? '' : 's'}</em></div>
+      <div class="stat stat-nombre"><span>Menos vendido</span><strong>${esc(menos.nombre)}</strong><em>${esc(dinero(menos.valor))} · ${esc(menos.cobros)} cobro${menos.cobros === 1 ? '' : 's'}</em></div>
+    </div>
+    <div class="graficos">
+      ${htmlBarras(
+        'Recaudo por servicio',
+        porValor.map((v) => ({ etiqueta: v.nombre, valor: v.valor, texto: dinero(v.valor) })),
+      )}
+      ${htmlBarras(
+        'Cantidad de cobros',
+        porCantidad.map((v) => ({ etiqueta: v.nombre, valor: v.cobros, texto: String(v.cobros) })),
+      )}
+      ${graficoMenos}
+    </div>
+    <table class="tbl tbl-resumen">
+      <thead><tr>
+        <th class="num">#</th><th class="concepto">Servicio o concepto</th><th class="num">Cobros</th><th class="num">Valor</th><th class="num">Parte</th>
+      </tr></thead>
+      <tbody>${cuerpo}</tbody>
+    </table>`;
 }
 
 function css(atPageCss: string): string {
@@ -133,6 +339,35 @@ function css(atPageCss: string): string {
   .alerta-soporte strong { color: #9b2c2c; display: block; margin-bottom: 4px; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; }
+  .nota { margin: 0 0 8px; font-size: 8pt; color: #444; }
+  .stat em {
+    display: block; margin-top: 2px; font-style: normal; font-size: 8pt;
+    font-weight: 600; color: #334155;
+  }
+  .stat.stat-nombre strong { font-size: 9pt; line-height: 1.25; }
+  table.tbl-resumen { table-layout: auto; font-size: 8pt; }
+  table.tbl-resumen th, table.tbl-resumen td { white-space: normal; font-size: 8pt; }
+  .graficos {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;
+  }
+  .grafico {
+    border: 1px solid #94a3b8; background: #f8fafc; padding: 8px;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .grafico:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .grafico h3 {
+    margin: 0 0 6px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.03em;
+    color: #1e3a5f;
+  }
+  .barra {
+    display: grid; grid-template-columns: 14px minmax(72px, 34%) 1fr 72px;
+    gap: 4px; align-items: center; margin-bottom: 3px; font-size: 7pt;
+  }
+  .barra-pos { text-align: right; color: #64748b; font-weight: 700; }
+  .barra-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b; }
+  .barra-pista { height: 7px; background: #e2e8f0; }
+  .barra-fill { display: block; height: 100%; background: #1e4d8c; }
+  .barra-val { text-align: right; white-space: nowrap; color: #1e293b; }
   .doc-footer {
     margin-top: 18px; padding-top: 10px; border-top: 1px solid #ccc;
     font-size: 8pt; color: #666; text-align: center;
@@ -162,6 +397,8 @@ export function buildInformeMovimientosCajaHtml(opts: {
   incluirPlaca?: boolean;
   /** Columna y resalte de ingresos sin soporte. Solo el informe de ingresos. */
   columnaSoporte?: boolean;
+  /** Resumen de medio, cuenta y soporte, más gráficos de venta por servicio. */
+  analisisIngresos?: boolean;
   empresa?: ConfigRecibo | null;
   atPageCss?: string;
 }): string {
@@ -189,6 +426,7 @@ export function buildInformeMovimientosCajaHtml(opts: {
     'Concepto',
     ...(opts.incluirPlaca ? ['Placa'] : []),
     'Pago',
+    ...(opts.analisisIngresos ? ['Cuenta'] : []),
     ...(opts.columnaSoporte ? ['Soporte'] : []),
     'Valor',
   ];
@@ -210,6 +448,7 @@ export function buildInformeMovimientosCajaHtml(opts: {
         f.concepto,
         ...(opts.incluirPlaca ? [f.placa || '—'] : []),
         f.formaPago,
+        ...(opts.analisisIngresos ? [cuentaPago(f)] : []),
       ];
       const soporteTd = opts.columnaSoporte
         ? `<td class="soporte">${f.sinSoporte ? 'Falta soporte' : '—'}</td>`
@@ -258,6 +497,8 @@ export function buildInformeMovimientosCajaHtml(opts: {
       <div class="stat"><span>Total vigente</span><strong>${esc(dinero(total))}</strong></div>
       ${sinSoporte ? `<div class="stat alerta"><span>Sin soporte</span><strong>${esc(sinSoporte)}</strong></div>` : ''}
     </div>
+    ${opts.analisisIngresos ? htmlResumenPagos(opts.filas) : ''}
+    ${opts.analisisIngresos ? htmlVentas(opts.filas) : ''}
     ${alertaSoporte}
     <div class="sec">${esc(opts.titulo)} (${opts.filas.length})</div>
     <table class="tbl">
