@@ -475,6 +475,7 @@ export class CajaIngresosTodosComponent implements OnInit {
       filas: filas.map((i) => ({
         fecha: fechaInforme(i.fecha || i.createdAt),
         recibo: String(i.numRecibo || '—'),
+        elaboro: String(i.userAddReg || '—').trim() || '—',
         sesion: i.idSesion ? `#${i.idSesion}` : '—',
         tercero: this.pagadorLabel(i),
         documento: this.docLabel(i),

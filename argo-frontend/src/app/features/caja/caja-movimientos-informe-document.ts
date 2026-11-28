@@ -17,6 +17,8 @@ const DEFAULT_AT_PAGE = '@page { size: letter landscape; margin: 10mm; }';
 export type MovimientoInformeFila = {
   fecha: string;
   recibo: string;
+  /** Usuario que registró el comprobante. */
+  elaboro?: string;
   sesion: string;
   tercero: string;
   documento: string;
@@ -325,7 +327,8 @@ function css(atPageCss: string): string {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   table.tbl th { background: #1a365d; color: #fff; font-weight: 700; text-align: left; font-size: 6.5pt; }
-  table.tbl td.concepto, table.tbl th.concepto { width: 28%; font-size: 6.5pt; }
+  table.tbl td.concepto, table.tbl th.concepto { width: 22%; font-size: 6.5pt; }
+  table.tbl td.usuario, table.tbl th.usuario { width: 8%; }
   table.tbl td.num, table.tbl th.num { text-align: right; white-space: nowrap; }
   table.tbl tbody tr:nth-child(even) td { background: #f8fafc; }
   table.tbl tbody tr.sin-soporte td {
@@ -462,6 +465,7 @@ export function buildInformeMovimientosCajaHtml(opts: {
   const cols = [
     'Fecha',
     'Recibo',
+    ...(opts.analisisIngresos ? ['Elaboró'] : []),
     'Sesión',
     'Tercero',
     'Documento',
@@ -475,7 +479,11 @@ export function buildInformeMovimientosCajaHtml(opts: {
   ];
   const th = cols
     .map((c, i) => {
-      const clases = [c === 'Concepto' ? 'concepto' : '', i === cols.length - 1 ? 'num' : ''].filter(Boolean).join(' ');
+      const clases = [
+        c === 'Concepto' ? 'concepto' : '',
+        c === 'Elaboró' ? 'usuario' : '',
+        i === cols.length - 1 ? 'num' : '',
+      ].filter(Boolean).join(' ');
       return `<th class="${clases}">${esc(c)}</th>`;
     })
     .join('');
@@ -484,6 +492,7 @@ export function buildInformeMovimientosCajaHtml(opts: {
       const celdas = [
         f.fecha,
         f.recibo,
+        ...(opts.analisisIngresos ? [f.elaboro || '—'] : []),
         f.sesion,
         f.tercero,
         f.documento,
@@ -500,9 +509,10 @@ export function buildInformeMovimientosCajaHtml(opts: {
         .map((c, i) => {
           const texto = esc(c || '—');
           const badge = i === 1 && f.sinSoporte ? '<span class="badge-sin-soporte">Sin soporte</span>' : '';
-          const esConcepto = i === 6;
-          const titulo = esConcepto ? ` title="${esc(c || '')}"` : '';
-          const clase = esConcepto ? ' class="concepto"' : '';
+          const esConcepto = i === 6 + (opts.analisisIngresos ? 1 : 0);
+          const esUsuario = opts.analisisIngresos && i === 2;
+          const titulo = esConcepto || esUsuario ? ` title="${esc(c || '')}"` : '';
+          const clase = esConcepto ? ' class="concepto"' : esUsuario ? ' class="usuario"' : '';
           return `<td${clase}${titulo}>${texto}${badge}</td>`;
         })
         .join('');
