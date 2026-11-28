@@ -385,7 +385,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       this.msg.set('No hay certificados para el informe con los filtros elegidos.');
       return;
     }
-    const filas = items.map((c) => this.filaInforme(c));
+    const filas = items.map((c) => this.filaInforme(c)).sort((a, b) => compararCodigoCert(a.codigo, b.codigo));
     const titulo = 'Informe de certificados';
     this.paginasSvc.ensureAndAtPageCss('informe_certificados').subscribe({
       next: (atPageCss) => this.abrirInforme(titulo, filas, atPageCss),
@@ -829,4 +829,12 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       nomCert: prog?.nomCert || null,
     };
   }
+}
+
+function compararCodigoCert(a: string, b: string): number {
+  const va = !a || a === '—' ? '' : a.trim();
+  const vb = !b || b === '—' ? '' : b.trim();
+  if (!va && vb) return 1;
+  if (va && !vb) return -1;
+  return va.localeCompare(vb, 'es', { numeric: true, sensitivity: 'base' });
 }
