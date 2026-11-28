@@ -329,6 +329,11 @@ function css(atPageCss: string): string {
   table.tbl th { background: #1a365d; color: #fff; font-weight: 700; text-align: left; font-size: 6.5pt; }
   table.tbl td.concepto, table.tbl th.concepto { width: 22%; font-size: 6.5pt; }
   table.tbl td.usuario, table.tbl th.usuario { width: 8%; }
+  table.tbl.tbl-auditoria { table-layout: auto; font-size: 8pt; }
+  table.tbl.tbl-auditoria th, table.tbl.tbl-auditoria td {
+    white-space: normal; overflow: visible; text-overflow: clip;
+    overflow-wrap: anywhere; vertical-align: top;
+  }
   table.tbl td.num, table.tbl th.num { text-align: right; white-space: nowrap; }
   table.tbl tbody tr:nth-child(even) td { background: #f8fafc; }
   table.tbl tbody tr.sin-soporte td {
@@ -554,7 +559,7 @@ export function buildInformeMovimientosCajaHtml(opts: {
     ${opts.analisisIngresos ? htmlVentas(opts.filas) : ''}
     ${alertaSoporte}
     <div class="sec">${esc(opts.titulo)} (${opts.filas.length})</div>
-    <table class="tbl">
+    <table class="tbl${opts.analisisIngresos ? ' tbl-auditoria' : ''}">
       <thead><tr>${th}</tr></thead>
       <tbody>
         ${body || vacio}

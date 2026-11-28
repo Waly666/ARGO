@@ -217,12 +217,12 @@ function css(atPageCss: string): string {
   .origen-teal { color: #0f766e; }
   .origen-navy { color: #5b21b6; }
   .grafico.tono-navy.origen-mig { border-top-color: #5b21b6; }
-  table.tbl { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 7pt; table-layout: fixed; }
+  table.tbl { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 8pt; table-layout: auto; }
   table.tbl th, table.tbl td {
-    border: 1px solid #999; padding: 2px 4px; vertical-align: middle;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    border: 1px solid #999; padding: 2px 4px; vertical-align: top;
+    white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere;
   }
-  table.tbl th { background: #1a365d; color: #fff; font-weight: 700; text-align: left; font-size: 6.5pt; }
+  table.tbl th { background: #1a365d; color: #fff; font-weight: 700; text-align: left; font-size: 7pt; }
   table.tbl tbody tr:nth-child(even) td { background: #f8fafc; }
   table.tbl td.ingreso, table.tbl th.ingreso { width: 12%; text-align: center; }
   table.tbl td.ingreso .num-ingreso {

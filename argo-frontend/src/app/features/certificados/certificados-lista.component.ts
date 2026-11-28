@@ -387,7 +387,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     }
     const filas = items.map((c) => this.filaInforme(c)).sort((a, b) => compararCodigoCert(a.codigo, b.codigo));
     const titulo = 'Informe de certificados';
-    this.paginasSvc.ensureAndAtPageCss('informe_certificados').subscribe({
+    this.paginasSvc.ensureAndAtPageCss('informe_certificados', 'letter landscape').subscribe({
       next: (atPageCss) => this.abrirInforme(titulo, filas, atPageCss),
       error: () => this.abrirInforme(titulo, filas),
     });

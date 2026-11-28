@@ -439,7 +439,7 @@ export class CajaIngresosTodosComponent implements OnInit {
       return;
     }
     const titulo = 'Informe de ingresos';
-    this.paginasSvc.ensureAndAtPageCss('informe_ingresos_caja').subscribe({
+    this.paginasSvc.ensureAndAtPageCss('informe_ingresos_caja', 'letter landscape').subscribe({
       next: (atPageCss) => {
         this.configSvc.obtenerReciboEncabezado().subscribe({
           next: (empresa) => this.abrirInformeIngresos(titulo, filas, empresa, atPageCss),

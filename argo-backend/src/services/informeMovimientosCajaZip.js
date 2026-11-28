@@ -190,6 +190,10 @@ function cssAnalisis() {
   .sec { margin: 14px 0 6px; font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 3px; }
   .nota { margin: 0 0 8px; font-size: 8pt; color: #444; font-weight: 400; }
   table.tbl td.usuario, table.tbl th.usuario { width: 8%; }
+  table.tbl.tbl-auditoria { table-layout: auto; font-size: 8pt; }
+  table.tbl.tbl-auditoria th, table.tbl.tbl-auditoria td {
+    white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; vertical-align: top;
+  }
   table.tbl-resumen { table-layout: auto; font-size: 8pt; }
   table.tbl-resumen th, table.tbl-resumen td { white-space: normal; font-size: 8pt; }
   .graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -303,7 +307,7 @@ function htmlInforme({ titulo, filtros, filas, empresa, atPageCss, columnaSoport
   ${alerta}
   ${analisisIngresos ? htmlResumenPagos(filas) : ''}
   ${analisisIngresos ? htmlVentas(filas) : ''}
-  <table class="tbl"><thead><tr>${th}</tr></thead><tbody>
+  <table class="tbl${analisisIngresos ? ' tbl-auditoria' : ''}"><thead><tr>${th}</tr></thead><tbody>
     ${body || `<tr><td colspan="${cols.length}">Sin movimientos</td></tr>`}
     <tr class="total"><td colspan="${cols.length - 1}">Total (sin anulados)</td><td class="num">${esc(dinero(total))}</td></tr>
   </tbody></table>
@@ -346,7 +350,10 @@ function nombreSoporte(numRecibo, filePath, usados) {
 }
 
 async function enviarPaquete(res, opts) {
-  const atPageCss = await atPageCssPara(opts.atPageKey);
+  const atPageCss = await atPageCssPara(
+    opts.atPageKey,
+    opts.analisisIngresos ? { sizeOverride: '279.4mm 215.9mm' } : {},
+  );
   let empresa = null;
   try {
     empresa = await obtenerConfigRecibo(opts.idSede || null);
@@ -366,7 +373,13 @@ async function enviarPaquete(res, opts) {
   const browser = await launchBrowser();
   let pdfBuffer;
   try {
-    pdfBuffer = await htmlToPdfBuffer(browser, html);
+    pdfBuffer = await htmlToPdfBuffer(
+      browser,
+      html,
+      opts.analisisIngresos
+        ? { format: 'Letter', landscape: true, preferCSSPageSize: false }
+        : undefined,
+    );
   } finally {
     await browser.close().catch(() => {});
   }

@@ -68,7 +68,7 @@ async function launchBrowser() {
  * @param {import('puppeteer-core').Browser} browser
  * @param {string} html
  */
-async function htmlToPdfBuffer(browser, html) {
+async function htmlToPdfBuffer(browser, html, pdfOpts = {}) {
   const page = await browser.newPage();
   try {
     await page.emulateMediaType('print');
@@ -104,8 +104,9 @@ async function htmlToPdfBuffer(browser, html) {
     });
     const buf = await page.pdf({
       printBackground: true,
-      preferCSSPageSize: true,
+      preferCSSPageSize: pdfOpts.preferCSSPageSize !== false,
       margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      ...pdfOpts,
     });
     return Buffer.from(buf);
   } finally {
